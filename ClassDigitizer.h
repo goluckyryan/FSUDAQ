@@ -70,7 +70,8 @@ class Digitizer{
     int  CloseDigitizer();
     void Initalization();
     void Reset();
-    bool IsDummy()         {return isDummy;};
+    bool IsDummy()         {return isDummy;}
+    bool IsConnected()     {return isConnected;}
     
     void         PrintBoard()      ;    
     virtual int  ProgramBoard()    ;    /// program a generic board, no program channel

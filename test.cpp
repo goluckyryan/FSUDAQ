@@ -17,63 +17,120 @@
 
 static struct termios g_old_kbd_mode;
 
-static void cooked(void){
-  tcsetattr(0, TCSANOW, &g_old_kbd_mode);
-}
-
-static void uncooked(void){
-  struct termios new_kbd_mode;
-  /** put keyboard (stdin, actually) in raw, unbuffered mode */
-  tcgetattr(0, &g_old_kbd_mode);
-  memcpy(&new_kbd_mode, &g_old_kbd_mode, sizeof(struct termios));
-  new_kbd_mode.c_lflag &= ~(ICANON | ECHO);
-  new_kbd_mode.c_cc[VTIME] = 0;
-  new_kbd_mode.c_cc[VMIN] = 1;
-  tcsetattr(0, TCSANOW, &new_kbd_mode);
-}
-
-static void raw(void){
-
-  static char init;
-  if(init) return;
-  /** put keyboard (stdin, actually) in raw, unbuffered mode */
-  uncooked();
-  /** when we exit, go back to normal, "cooked" mode */
-  atexit(cooked);
-
-  init = 1;
-}
-
-int keyboardhit(){
-
-  struct timeval timeout;
-  fd_set read_handles;
-  int status;
-  
-  raw();
-  /** check stdin (fd 0) for activity */
-  FD_ZERO(&read_handles);
-  FD_SET(0, &read_handles);
-  timeout.tv_sec = timeout.tv_usec = 0;
-  status = select(0 + 1, &read_handles, NULL, NULL, &timeout);
-  if(status < 0){
-    printf("select() failed in keyboardhit()\n");
-    exit(1);
-  }
-  return (status);
-}
-
-int getch(void){
-  unsigned char temp;
-  raw();
-  /** stdin = fd 0 */
-  if(read(0, &temp, 1) != 1) return 0;
-  return temp;
-}
+static void cooked(void);
+static void uncooked(void);
+static void raw(void);
+int keyboardhit();
+int getch(void);
 
 //^======================================
 
 int main(int argc, char* argv[]){
+
+  /**///#####################  Demo with 2 digitizers
+
+  const int nBoard = 2;
+  Digitizer **dig = new Digitizer *[nBoard];
+  
+  for( int i = 0 ; i < nBoard; i++){
+    int board = i % 3;
+    int port = i/3;
+    dig[i] = new Digitizer(board, port, false, true);
+  }
+  
+  /******
+  TApplication * app = new TApplication("app", &argc, argv);
+  TCanvas * canvas = new TCanvas("c", "haha", 1200, 400);
+  canvas->Divide(3, 1);
+  
+  TH1F * h1 = new TH1F("h1", "count", dig[0]->GetNChannel(), 0, dig[0]->GetNChannel());
+  TH1F * h2 = new TH1F("h2", "energy ch-0", 400, 0, 40000);
+  
+  TGraph * g1 = new TGraph();
+  
+  canvas->cd(1); h1->Draw("hist");
+  canvas->cd(2); h2->Draw();
+  canvas->cd(3); g1->Draw("AP");
+  
+  Data * data =  dig[0]->GetData();
+  data->AllocateMemory();
+  
+  remove("test.bin");
+  
+  dig[0]->StartACQ();
+  
+  std::vector<unsigned short> haha ;
+
+  uint32_t PreviousTime = get_time();
+  uint32_t CurrentTime = 0;
+  uint32_t ElapsedTime = 0;
+
+  while(true){
+   
+    if(keyboardhit()) {
+      break;
+    }
+    
+    usleep(50000);
+    dig[0]->ReadData();
+    
+    if( data->nByte > 0 ){
+      data->SaveBuffer("test");
+      data->DecodeBuffer(0);
+      
+      unsigned short nData = data->NumEvents[0]; //channel-0
+      haha = data->Waveform1[0][nData-1];
+      for( int i = 0; i < waveFormLength; i++) g1->SetPoint(i, i*ch2ns, haha[i]);
+
+      canvas->cd(3); g1->Draw("AP");
+      
+      canvas->Modified();
+      canvas->Update(); 
+      gSystem->ProcessEvents();
+      
+    }
+    
+    CurrentTime = get_time();
+    ElapsedTime = CurrentTime - PreviousTime; /// milliseconds
+
+    if( ElapsedTime > 1000 ){
+      int temp = system("clear");
+      data->PrintStat();
+      
+      for(int i = 0; i < dig[0]->GetNChannel(); i++){
+        h1->Fill(i, data->NumEvents[i]);
+      }
+      
+      for( int i = 0; i < data->NumEvents[0]; i++){
+        h2->Fill( data->Energy[0][i]);
+      }
+      data->ClearData();
+      
+      canvas->cd(1); h1->Draw("hist");
+      canvas->cd(2); h2->Draw();
+      canvas->Modified();
+      canvas->Update(); 
+      gSystem->ProcessEvents();
+      
+      PreviousTime = CurrentTime;
+      
+      printf("Press any key to Stop\n");
+    }
+   
+  }
+  app->Run();
+
+  ***********/
+
+
+  printf("Closing digitizers..............\n");
+  for( int i = 0; i < nBoard; i++){
+    if(dig[i]->IsConnected()) dig[i]->StopACQ();
+    delete dig[i];
+  }
+  delete [] dig;
+  
+  /*********************/
 
   /**////##################### Demo for loading and change setting without open a digitizer
   
@@ -169,116 +226,64 @@ int main(int argc, char* argv[]){
   //
   //dig->StopACQ();
   
-  
-  /**///#####################  test with 2 digitizers
 
-  /**
-  const int nBoard = 2;
-  Digitizer **dig = new Digitizer *[nBoard];
-  
-  for( int i = 0 ; i < nBoard; i++){
-    int board = i % 3;
-    int port = i/3;
-    dig[i] = new Digitizer(board, port, false, true);
-    dig[i]->OpenSettingBinary("setting_" + to_string(dig[i]->GetSerialNumber()) + ".bin");
-    dig[i]->LoadSettingBinaryToMemory("setting_" + to_string(dig[0]->GetSerialNumber()) + ".bin");
-  }
-
-  dig[0]->SaveSettingAsText("haha.txt");
-  
-  
-  
-  delete dig[0];
-  delete dig[1];
-  
-  TApplication * app = new TApplication("app", &argc, argv);
-  TCanvas * canvas = new TCanvas("c", "haha", 1200, 400);
-  canvas->Divide(3, 1);
-  
-  TH1F * h1 = new TH1F("h1", "count", dig[0]->GetNChannel(), 0, dig[0]->GetNChannel());
-  TH1F * h2 = new TH1F("h2", "energy ch-0", 400, 0, 40000);
-  
-  TGraph * g1 = new TGraph();
-  
-  canvas->cd(1); h1->Draw("hist");
-  canvas->cd(2); h2->Draw();
-  canvas->cd(3); g1->Draw("AP");
-  
-  Data * data =  dig[0]->GetData();
-  data->AllocateMemory();
-  
-  remove("test.bin");
-  
-  dig[0]->StartACQ();
-  
-  std::vector<unsigned short> haha ;
-
-  uint32_t PreviousTime = get_time();
-  uint32_t CurrentTime = 0;
-  uint32_t ElapsedTime = 0;
-
-  while(true){
-   
-    if(keyboardhit()) {
-      break;
-    }
-    
-    usleep(50000);
-    dig[0]->ReadData();
-    
-    if( data->nByte > 0 ){
-      data->SaveBuffer("test");
-      data->DecodeBuffer(0);
-      
-      unsigned short nData = data->NumEvents[0]; //channel-0
-      haha = data->Waveform1[0][nData-1];
-      for( int i = 0; i < waveFormLength; i++) g1->SetPoint(i, i*ch2ns, haha[i]);
-
-      canvas->cd(3); g1->Draw("AP");
-      
-      canvas->Modified();
-      canvas->Update(); 
-      gSystem->ProcessEvents();
-      
-    }
-    
-    CurrentTime = get_time();
-    ElapsedTime = CurrentTime - PreviousTime; /// milliseconds
-
-    if( ElapsedTime > 1000 ){
-      int temp = system("clear");
-      data->PrintStat();
-      
-      for(int i = 0; i < dig[0]->GetNChannel(); i++){
-        h1->Fill(i, data->NumEvents[i]);
-      }
-      
-      for( int i = 0; i < data->NumEvents[0]; i++){
-        h2->Fill( data->Energy[0][i]);
-      }
-      data->ClearData();
-      
-      canvas->cd(1); h1->Draw("hist");
-      canvas->cd(2); h2->Draw();
-      canvas->Modified();
-      canvas->Update(); 
-      gSystem->ProcessEvents();
-      
-      PreviousTime = CurrentTime;
-      
-      printf("Press any key to Stop\n");
-    }
-    
-    
-  }
-  
-  dig[0]->StopACQ();
-  
-  app->Run();
-  
-  delete [] dig;
-  
-  /*********************/
   
   return 0;
+}
+
+//*********************************
+//*********************************
+
+static void cooked(void){
+  tcsetattr(0, TCSANOW, &g_old_kbd_mode);
+}
+
+static void uncooked(void){
+  struct termios new_kbd_mode;
+  /** put keyboard (stdin, actually) in raw, unbuffered mode */
+  tcgetattr(0, &g_old_kbd_mode);
+  memcpy(&new_kbd_mode, &g_old_kbd_mode, sizeof(struct termios));
+  new_kbd_mode.c_lflag &= ~(ICANON | ECHO);
+  new_kbd_mode.c_cc[VTIME] = 0;
+  new_kbd_mode.c_cc[VMIN] = 1;
+  tcsetattr(0, TCSANOW, &new_kbd_mode);
+}
+
+static void raw(void){
+
+  static char init;
+  if(init) return;
+  /** put keyboard (stdin, actually) in raw, unbuffered mode */
+  uncooked();
+  /** when we exit, go back to normal, "cooked" mode */
+  atexit(cooked);
+
+  init = 1;
+}
+
+int keyboardhit(){
+
+  struct timeval timeout;
+  fd_set read_handles;
+  int status;
+  
+  raw();
+  /** check stdin (fd 0) for activity */
+  FD_ZERO(&read_handles);
+  FD_SET(0, &read_handles);
+  timeout.tv_sec = timeout.tv_usec = 0;
+  status = select(0 + 1, &read_handles, NULL, NULL, &timeout);
+  if(status < 0){
+    printf("select() failed in keyboardhit()\n");
+    exit(1);
+  }
+  return (status);
+}
+
+int getch(void){
+  unsigned char temp;
+  raw();
+  /** stdin = fd 0 */
+  if(read(0, &temp, 1) != 1) return 0;
+  return temp;
 }
