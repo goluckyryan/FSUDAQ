@@ -177,7 +177,8 @@ inline void Data::SaveBuffer(const char * fileName){
     fclose(haha);
     saveFileIndex ++;
     sprintf(saveFileName, "%s_%03u.fsu", fileName , saveFileIndex);
-    FILE * haha = fopen(saveFileName, "a+");
+    fclose(haha);
+    haha = fopen(saveFileName, "a+");
   }
   
   fwrite(buffer, nByte, 1, haha);
@@ -204,7 +205,7 @@ inline void Data::PrintStat() const{
 
 inline void Data::PrintBuffer() const{
   unsigned int length = sizeof(buffer);
-  for( int i = 0; i < length; i++){
+  for( unsigned int i = 0; i < length; i++){
     printf("%3d | 0x%08x \n", i, buffer[i]);
   }
 }
@@ -399,7 +400,7 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
   }
   
   ///========== decode an event
-  for( int ev = 0; ev < nEvents ; ev++){
+  for( unsigned int ev = 0; ev < nEvents ; ev++){
     if( verbose >= 2 ) printf("------ event : %d\n", ev);
     nw = nw +1 ; word = ReadBuffer(nw, verbose);
     bool channelTag = ((word >> 31) & 0x1);
@@ -419,7 +420,7 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
     if( fastDecode ){
       nw += nSample/2;
     }else{
-      for( int wi = 0; wi < nSample/2; wi++){
+      for( unsigned int wi = 0; wi < nSample/2; wi++){
         nw = nw +1 ; word = ReadBuffer(nw, verbose-2);
         ///The CAEN manual is wrong, the bit [31:16] is anaprobe 1
         bool isTrigger1 = (( word >> 31 ) & 0x1 );
@@ -486,6 +487,7 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
     bool pileUpOrRollOver = ((word >> 15) & 0x1);
     
     if( verbose >= 3 ) {
+      printf("PileUp or RollOver : %d\n", pileUpOrRollOver);
       printf("PileUp : %d , extra : 0x%03x, energy : %d \n", pileUp, extra, energy);      
       printf("     lost event : %d \n", ((extra >>  0) & 0x1) );
       printf("      roll-over : %d (fake event)\n", ((extra >>  1) & 0x1) );
@@ -601,7 +603,7 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
   if( verbose >= 2 ) printf("----------------- nEvents : %d \n", nEvents);
 
   ///========= Decode an event
-  for( int ev = 0; ev < nEvents ; ev++){
+  for( unsigned int ev = 0; ev < nEvents ; ev++){
     if( verbose >= 2 ) printf("--------------------------- event : %d\n", ev);
     nw = nw +1 ; word = ReadBuffer(nw, verbose);
     bool channelTag = ((word >> 31) & 0x1);
@@ -620,7 +622,7 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
     if( fastDecode ){
       nw += nSample/2;
     }else{
-      for( int wi = 0; wi < nSample/2; wi++){
+      for( unsigned int wi = 0; wi < nSample/2; wi++){
         nw = nw +1 ; word = ReadBuffer(nw, verbose - 2);
         bool dp2b = (( word >> 31 ) & 0x1 );
         bool dp1b = (( word >> 30 ) & 0x1 );

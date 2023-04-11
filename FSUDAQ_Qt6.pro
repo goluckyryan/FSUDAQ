@@ -6,9 +6,12 @@ TEMPLATE = app
 TARGET = FSUDAQ_Qt6
 INCLUDEPATH += .
 
-QT += widgets charts
+CONFIG += c++17
 
-LIBS += -lCAENDigitizer
+QT += core widgets charts
+
+QMAKE_CXXFLAGS += `root-config --cflags --glibs`
+LIBS += -lCAENDigitizer  `root-config --cflags --glibs`
 
 # You can make your code fail to compile if you use deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -20,3 +23,5 @@ LIBS += -lCAENDigitizer
 # Input
 HEADERS += ClassData.h ClassDigitizer.h macro.h mainWindow.h RegisterAddress.h
 SOURCES += ClassDigitizer.cpp main.cpp mainWindow.C
+
+

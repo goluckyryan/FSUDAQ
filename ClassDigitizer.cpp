@@ -654,7 +654,7 @@ int Digitizer::LoadSettingBinaryToMemory(std::string fileName){
     uint32_t fileDPP = ((ReadSettingFromFile(Register::DPP::AMCFirmwareRevision_R, 0) >> 8) & 0xFF);
     
     /// compare seeting DPP version;
-    if( isConnected && DPPType != fileDPP ){
+    if( isConnected && DPPType != (int) fileDPP ){
       printf("DPPType in the file is %s(0x%X), but the dgitizer DPPType is %s(0x%X). \n", GetDPPString(fileDPP).c_str(), fileDPP, GetDPPString().c_str(),  DPPType);
       return -1;
     }else{
@@ -705,7 +705,7 @@ void Digitizer::SaveSettingToFile(Reg registerAddress, unsigned int value, unsig
   ///fseek( settingFile, address, SEEK_SET); 
   fseek( settingFile, index * 4, SEEK_SET); 
   unsigned int jaja[1] = {value};
-  size_t dummy = fwrite( jaja, sizeof(unsigned int), 1, settingFile);
+  fwrite( jaja, sizeof(unsigned int), 1, settingFile);
   ///printf("fwrite ret : %d, 0x%0X, 0x%0X, %d, 0x%X = %d\n", (int)dummy, registerAddress, index*4, index, jaja[0], jaja[0]);
   fclose (settingFile);
 }
