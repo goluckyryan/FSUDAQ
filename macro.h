@@ -1,0 +1,23 @@
+#ifndef MACRO_H
+#define MACRO_H
+
+#define MaxNPorts 4
+#define MaxNBoards 22
+#define MaxNChannels 16
+#define MaxRecordLength 0x3fff * 8 
+#define MaxSaveFileSize  1024 * 1024 * 1024 * 2
+
+#define SETTINGSIZE 2048
+
+#include <sys/time.h> /** struct timeval, select() */
+
+inline unsigned int get_time(){
+  unsigned int time_us;
+  struct timeval t1;
+  struct timezone tz;
+  gettimeofday(&t1, &tz);
+  time_us = (t1.tv_sec) * 1000 * 1000 + t1.tv_usec;
+  return time_us;
+}
+
+#endif
