@@ -59,7 +59,8 @@ class Data{
     
     void CopyBuffer( const char * buffer, const unsigned int size); 
     
-    void SaveBuffer(const char * fileName);
+    void SetOutputFileName(std::string fileName);
+    void SaveBuffer();
     unsigned int GetPresentFileSize() {return presentFileSizeByte;}
     
     void PrintBuffer() const; //Incorrect
@@ -74,6 +75,8 @@ class Data{
     
     unsigned int nw;
     bool SaveWaveToMemory;
+
+    std::string outputFileName;
     
     ///for temperary
     std::vector<unsigned short> tempWaveform1; 
@@ -105,6 +108,8 @@ inline Data::Data(){
   SaveWaveToMemory = true;
   nw = 0;
   saveFileIndex = 0;
+
+  outputFileName = "";
 }
 
 inline Data::~Data(){
@@ -163,10 +168,14 @@ inline void Data::CopyBuffer(const char * buffer, const unsigned int size){
   std::memcpy(this->buffer, buffer, size);
 }
 
-inline void Data::SaveBuffer(const char * fileName){
+inline void Data::SetOutputFileName(std::string fileName){
+  this->outputFileName = fileName;
+}
+
+inline void Data::SaveBuffer(){
 
   char saveFileName[100];
-  sprintf(saveFileName, "%s_%03d_%03d_%03u.fsu", fileName , boardSN, DPPType, saveFileIndex);
+  sprintf(saveFileName, "%s_%03d_%03d_%03u.fsu", outputFileName.c_str() , boardSN, DPPType, saveFileIndex);
 
   FILE * haha = fopen(saveFileName, "a+");
   fseek(haha, 0L, SEEK_END);
@@ -176,7 +185,7 @@ inline void Data::SaveBuffer(const char * fileName){
   if( inFileSize > (unsigned int)MaxSaveFileSize ) { /// 2 GB
     fclose(haha);
     saveFileIndex ++;
-    sprintf(saveFileName, "%s_%03u.fsu", fileName , saveFileIndex);
+    sprintf(saveFileName, "%s_%03u.fsu", outputFileName.c_str() , saveFileIndex);
     fclose(haha);
     haha = fopen(saveFileName, "a+");
   }

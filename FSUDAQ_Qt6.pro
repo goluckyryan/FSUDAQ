@@ -21,7 +21,7 @@ LIBS += -lCAENDigitizer  `root-config --cflags --glibs`
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 # Input
-HEADERS += ClassData.h ClassDigitizer.h macro.h mainWindow.h RegisterAddress.h
+HEADERS += ClassData.h ClassDigitizer.h macro.h mainWindow.h RegisterAddress.h CustomWidgets.h CustomThreads.h
 SOURCES += ClassDigitizer.cpp main.cpp mainWindow.C
 
 

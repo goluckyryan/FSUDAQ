@@ -394,7 +394,8 @@ unsigned int Digitizer::CalByteForBuffer(){
   ///  printf("Paired Ch : %d, RecordLength (bit value): %u, Event per Agg. : %u \n", pCh, recordLength[pCh], eventAgg[pCh]);
   ///}
 
-  unsigned int bufferSize = 0; 
+  unsigned int bufferSize = aggOrgan; // just for get rip of the warning in complier
+  bufferSize = 0;
   for( int pCh = 0; pCh < NChannel/2 ; pCh++){
     if( (chMask & ( 3 << (2 * pCh) )) == 0 ) continue; 
     bufferSize +=  2 + ( 2  + ((boardCfg >> 17) & 0x1) + ((boardCfg >> 16) & 0x1)*recordLength[pCh]*4 ) * eventAgg[pCh] ;
@@ -406,12 +407,12 @@ unsigned int Digitizer::CalByteForBuffer(){
   return  bufferSize ;
 }
 
-void Digitizer::ReadData(){
-  if( !isConnected ) return;
-  if( !AcqRun) return;
+int Digitizer::ReadData(){
+  if( !isConnected ) return CAEN_DGTZ_DigitizerNotFound;
+  if( !AcqRun) return CAEN_DGTZ_WrongAcqMode;
   if( data->buffer == NULL ) {
     printf("need allocate memory for readout buffer\n");
-    return;
+    return CAEN_DGTZ_InvalidBuffer;
   }
   
   ret = CAEN_DGTZ_ReadData(handle, CAEN_DGTZ_SLAVE_TERMINATED_READOUT_MBLT, data->buffer, &(data->nByte));
@@ -420,8 +421,9 @@ void Digitizer::ReadData(){
   
   if (ret || data->nByte == 0) {
     ErrorMsg(__func__);
-    return;
   }
+
+  return ret;
 }
 
 void Digitizer::PrintACQStatue(){
@@ -665,6 +667,8 @@ int Digitizer::LoadSettingBinaryToMemory(std::string fileName){
       settingFile = fopen(fileName.c_str(), "r");
       size_t dummy = fread( setting, SETTINGSIZE * sizeof(unsigned int), 1, settingFile);
       fclose (settingFile);
+
+      if( dummy == 0 ) printf("reach the end of file\n");
       
       uint32_t boardInfo = GetSettingFromMemory(Register::DPP::BoardInfo_R);
       if( (boardInfo & 0xFF) == 0x0E ) ch2ns = 4.0;
@@ -691,6 +695,9 @@ unsigned int Digitizer::ReadSettingFromFile(Reg registerAddress, unsigned short 
   size_t dummy = fread( lala, sizeof(unsigned int), 1, settingFile);
   ///printf(" data at pos %lu(%lu) : %X = %d\n", ftell(settingFile) - sizeof(unsigned int), (ftell(settingFile) - sizeof(unsigned int))/4, lala[0], lala[0]);
   fclose (settingFile);
+
+  if( dummy == 0 ) printf("reach the end of file\n");
+
   return lala[0];
    
 }
