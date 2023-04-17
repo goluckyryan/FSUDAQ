@@ -9,6 +9,7 @@
 #include <iostream> ///cout
 #include <bitset>
 #include <vector>
+#include <sys/stat.h>
 
 #include "CAENDigitizerType.h"
 #include "macro.h"
@@ -18,8 +19,8 @@
 class Data{
 
   public:
-  
-    int DPPType; /// this is set from the boardID from the Board Agg. header when it is > 0
+    int DPPType;
+    std::string DPPTypeStr;
     unsigned short boardSN;
     float ch2ns;
     
@@ -31,7 +32,7 @@ class Data{
     unsigned long TotNumEvents[MaxNChannels];
     unsigned short NumEventsDecoded[MaxNChannels];
 
-    /// stored Raw event
+    /// store a single Raw event
     bool IsNotRollOverFakeAgg;
     unsigned short     NumEvents[MaxNChannels];
     unsigned long long Timestamp[MaxNChannels][MaxNData]; /// 47 bit
@@ -58,11 +59,7 @@ class Data{
     void ClearBuffer();
     
     void CopyBuffer( const char * buffer, const unsigned int size); 
-    
-    void SetOutputFileName(std::string fileName);
-    void SaveBuffer();
-    unsigned int GetPresentFileSize() {return presentFileSizeByte;}
-    
+        
     void PrintBuffer() const; //Incorrect
     void DecodeBuffer(bool fastDecode, int verbose = 0); /// fastDecode will not save waveform
     void DecodeBuffer(char * buffer, unsigned int size, bool fastDecode, int verbose = 0); // for outside data
@@ -70,13 +67,26 @@ class Data{
     void PrintStat() const;
 
     void PrintData() const;
+
+    //^================= Saving data
+    void OpenSaveFile(std::string fileNamePrefix);
+    void SaveData();
+    void CloseSaveFile();
+    unsigned int GetFileSize() const {return outFileSize;}
+    uint64_t GetTotalFileSize() const {return FinishedOutFilesSize + outFileSize;}
+
   
   protected:
     
     unsigned int nw;
     bool SaveWaveToMemory;
 
-    std::string outputFileName;
+    unsigned int outFileIndex;
+    std::string outFilePrefix;
+    std::string outFileName;
+    FILE * outFile;
+    unsigned int outFileSize; // should be max at 2 GB
+    uint64_t FinishedOutFilesSize; // sum of files size.
     
     ///for temperary
     std::vector<unsigned short> tempWaveform1; 
@@ -88,9 +98,7 @@ class Data{
 
     int DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDecode, int verbose);
     int DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDecode, int verbose);
-    
-    unsigned int  presentFileSizeByte;
-    unsigned short saveFileIndex;
+
     
 };
 
@@ -100,6 +108,7 @@ inline Data::Data(){
   ch2ns = 2.0;
   boardSN = 0;
   DPPType = V1730_DPP_PHA_CODE;
+  DPPTypeStr = "";
   IsNotRollOverFakeAgg = false;
   buffer = NULL;
   for ( int i = 0; i < MaxNChannels; i++) TotNumEvents[i] = 0;
@@ -107,9 +116,13 @@ inline Data::Data(){
   ClearTriggerRate();
   SaveWaveToMemory = true;
   nw = 0;
-  saveFileIndex = 0;
 
-  outputFileName = "";
+  outFileIndex = 0;
+  outFilePrefix = "";
+  outFileName = "";
+  outFile = nullptr;
+  outFileSize = 0; // should be max at 2 GB
+  FinishedOutFilesSize = 0; // sum of files size.
 }
 
 inline Data::~Data(){
@@ -168,34 +181,42 @@ inline void Data::CopyBuffer(const char * buffer, const unsigned int size){
   std::memcpy(this->buffer, buffer, size);
 }
 
-inline void Data::SetOutputFileName(std::string fileName){
-  this->outputFileName = fileName;
+inline void Data::OpenSaveFile(std::string fileNamePrefix){
+
+  outFilePrefix = fileNamePrefix;
+  char saveFileName[100];
+  sprintf(saveFileName, "%s_%03d_%3s_%03u.fsu", outFilePrefix.c_str() , boardSN, DPPTypeStr.c_str(), outFileIndex);
+
+  outFileName = saveFileName;
+  outFile = fopen(saveFileName, "wb"); // overwrite binary
+  fseek(outFile, 0L, SEEK_END);
+  outFileSize = ftell(outFile);
+
 }
 
-inline void Data::SaveBuffer(){
+inline void Data::SaveData(){
 
-  char saveFileName[100];
-  sprintf(saveFileName, "%s_%03d_%03d_%03u.fsu", outputFileName.c_str() , boardSN, DPPType, saveFileIndex);
-
-  FILE * haha = fopen(saveFileName, "a+");
-  fseek(haha, 0L, SEEK_END);
-  unsigned int inFileSize = ftell(haha); /// unsigned int = Max ~ 4 GB
-  ///printf("file Size = %u Byte\n", inFileSize);
-  
-  if( inFileSize > (unsigned int)MaxSaveFileSize ) { /// 2 GB
-    fclose(haha);
-    saveFileIndex ++;
-    sprintf(saveFileName, "%s_%03u.fsu", outputFileName.c_str() , saveFileIndex);
-    fclose(haha);
-    haha = fopen(saveFileName, "a+");
+  if( outFileSize > (unsigned int) MaxSaveFileSize){
+    FinishedOutFilesSize += ftell(outFile);
+    CloseSaveFile();
+    outFileIndex ++;
+    char saveFileName[100];
+    sprintf(saveFileName, "%s_%03d_%3s_%03u.fsu", outFilePrefix.c_str() , boardSN, DPPTypeStr.c_str(), outFileIndex);
+    outFileName = saveFileName;
+    outFile = fopen(outFileName.c_str(), "wb"); //overwrite binary
   }
-  
-  fwrite(buffer, nByte, 1, haha);
 
-  presentFileSizeByte = ftell(haha);
-  ///printf("=========== file Size : %u Byte = %.2f MB\n", presentFileSizeByte, presentFileSizeByte/1024./1024.);
+  fwrite(buffer, nByte, 1, outFile);
+  outFileSize = ftell(outFile);
 
-  fclose(haha);
+}
+
+inline void Data::CloseSaveFile(){
+  if( outFile != NULL ){
+    fclose(outFile);
+    int result = chmod(outFileName.c_str(), S_IRUSR | S_IRGRP | S_IROTH);
+    if( result != 0 ) printf("somewrong when set file (%s) to read only.", outFileName.c_str());
+  }
 }
 
 inline void Data::PrintStat() const{

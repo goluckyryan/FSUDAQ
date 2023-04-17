@@ -113,6 +113,21 @@ int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose
   ///====================== Check DPP firmware revision 
   sscanf(BoardInfo.AMC_FirmwareRel, "%d", &DPPType);
   data->DPPType = DPPType;
+  switch( DPPType ) {
+    case 0x80 : data->DPPTypeStr = "PHA"; break;  // x724
+    case 0x82 : data->DPPTypeStr = "xCI"; break;  // x720
+    case 0x83 : data->DPPTypeStr = "PSD"; break;  // x720
+    case 0x84 : data->DPPTypeStr = "PSD"; break;  // x751
+    case 0x85 : data->DPPTypeStr = "ZLE"; break;  // x751
+    case 0x86 : data->DPPTypeStr = "PSD"; break;  // x743
+    case 0x87 : data->DPPTypeStr = "QDC"; break;  // x740
+    case 0x88 : data->DPPTypeStr = "PSD"; break;  // x730
+    case 0x89 : data->DPPTypeStr = "DAW"; break;  // x724
+    case 0x8B : data->DPPTypeStr = "PHA"; break;  // x730
+    case 0x8C : data->DPPTypeStr = "ZLE"; break;  // x730
+    case 0x8D : data->DPPTypeStr = "DAW"; break;  // x730
+    default : data->DPPTypeStr = "STD"; break; // stardard
+  }
   /// change address 0xEF08 (5 bits), this will reflected in the 2nd word of the Board Agg. header.
   ret = CAEN_DGTZ_WriteRegister(handle, Register::DPP::BoardID, (DPPType & 0xF));
   if ( verbose ){

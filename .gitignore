@@ -1,4 +1,5 @@
 *.o
+*.fsu
 
 FSUDAQ_Qt6
 test

@@ -137,7 +137,6 @@ MainWindow::~MainWindow(){
 
   if( digi ) CloseDigitizers();
 
-
 }
 
 //***************************************************************
@@ -172,6 +171,7 @@ void MainWindow::OpenDigitizers(){
   for( unsigned int i = 0; i < nDigi; i++){
     digi[i] = new Digitizer(portList[i].first, portList[i].second);
     readDataThread[i] = new ReadDataThread(digi[i], i);
+    connect(readDataThread[i], &ReadDataThread::sendMsg, this, &MainWindow::LogMsg);
   }
 
   LogMsg(QString("Done. Opened %1 digitizer(s).").arg(nDigi));
@@ -220,7 +220,7 @@ void MainWindow::StartACQ(){
   if( digi == nullptr ) return;
 
   for( unsigned int i = 0; i < nDigi ; i++){
-    digi[i]->GetData()->SetOutputFileName("haha");
+    digi[i]->GetData()->OpenSaveFile("haha");
     digi[i]->StartACQ();
     readDataThread[i]->SetSaveData(true);
     readDataThread[i]->start();
@@ -233,12 +233,12 @@ void MainWindow::StopACQ(){
 
   for( unsigned int i = 0; i < nDigi; i++){
     digi[i]->StopACQ();
+    digi[i]->GetData()->CloseSaveFile();
 
     if( readDataThread[i]->isRunning() ) {
       readDataThread[i]->quit();
       readDataThread[i]->wait();
     }
-
   }
   
 }

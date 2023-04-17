@@ -29,7 +29,7 @@ public:
       if( ret == CAEN_DGTZ_Success ){
         digiMTX[ID].lock();
         if( isSaveData ) {
-          digi->GetData()->SaveBuffer();
+          digi->GetData()->SaveData();
         }else{
           digi->GetData()->DecodeBuffer(false);
         }
