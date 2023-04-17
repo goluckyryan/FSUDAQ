@@ -10,6 +10,7 @@
 #include <QCoreApplication>
 #include <QDialog>
 #include <QFileDialog>
+#include <QScrollArea>
 
 #include <TH1.h>
 
@@ -33,19 +34,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     layoutMain->addWidget(box);
     QGridLayout * layout = new QGridLayout(box);
 
-    QPushButton * bnOpenDigitizers = new QPushButton("Open Digitizers", this);
+    bnOpenDigitizers = new QPushButton("Open Digitizers", this);
     layout->addWidget(bnOpenDigitizers, 0, 0);
     connect(bnOpenDigitizers, &QPushButton::clicked, this, &MainWindow::OpenDigitizers);
     
-    QPushButton * bnCloseDigitizers = new QPushButton("Close Digitizers", this);
+    bnCloseDigitizers = new QPushButton("Close Digitizers", this);
     layout->addWidget(bnCloseDigitizers, 0, 1);
-    connect(bnCloseDigitizers, &QPushButton::clicked, this, &MainWindow::OpenDigitizers);
+    connect(bnCloseDigitizers, &QPushButton::clicked, this, &MainWindow::CloseDigitizers);
 
-    QPushButton * bnOpenScope = new QPushButton("Open Scope", this);
+    bnOpenScope = new QPushButton("Open Scope", this);
     layout->addWidget(bnOpenScope, 1, 0);
     //connect(bnDigiSettings, &QPushButton::clicked, this, &MainWindow::OpenDigiSettings);
 
-    QPushButton * bnDigiSettings = new QPushButton("Digitizers Settings", this);
+    bnDigiSettings = new QPushButton("Digitizers Settings", this);
     layout->addWidget(bnDigiSettings, 1, 1);
     //connect(bnDigiSettings, &QPushButton::clicked, this, &MainWindow::OpenDigiSettings);
 
@@ -60,8 +61,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     QLabel * lbDataPath = new QLabel("Data Path : ", this);
     lbDataPath->setAlignment(Qt::AlignRight | Qt::AlignCenter);
     leDataPath = new QLineEdit(this);
-    leDataPath->setEnabled(false);
-    leDataPath->setStyleSheet("color : black;");
+    leDataPath->setReadOnly(true);
     QPushButton * bnSetDataPath = new QPushButton("Set Path", this);
     connect(bnSetDataPath, &QPushButton::clicked, this, &MainWindow::OpenDataPath);
 
@@ -77,10 +77,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     QLabel * lbRunID = new QLabel("Run No. :", this);
     lbRunID->setAlignment(Qt::AlignRight | Qt::AlignCenter);
     leRunID = new QLineEdit(this);
-    leRunID->setEnabled(false);
-    leRunID->setStyleSheet("color : black;");
+    leRunID->setReadOnly(true);
 
-    QPushButton * bnOpenScaler = new QPushButton("Scalar", this);
+    bnOpenScaler = new QPushButton("Scalar", this);
+    connect(bnOpenScaler, &QPushButton::clicked, this, &MainWindow::OpenScalar);
 
     layout->addWidget(lbPrefix, rowID, 0);
     layout->addWidget(lePrefix, rowID, 1);
@@ -95,16 +95,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     leComment = new QLineEdit(this);
     leComment->setEnabled(false);
 
-    QPushButton * bnStartACQ = new QPushButton("Start ACQ", this);
+    bnStartACQ = new QPushButton("Start ACQ", this);
     connect( bnStartACQ, &QPushButton::clicked, this, &MainWindow::StartACQ);
-    QPushButton * bnStopACQ = new QPushButton("Stop ACQ", this);
+    bnStopACQ = new QPushButton("Stop ACQ", this);
     connect( bnStopACQ, &QPushButton::clicked, this, &MainWindow::StopACQ);
 
     layout->addWidget(lbComment, rowID, 0);
     layout->addWidget(leComment, rowID, 1, 1, 2);
     layout->addWidget(bnStartACQ, rowID, 3);
     layout->addWidget(bnStopACQ, rowID, 4);
-
 
     layout->setColumnStretch(0, 1);
     layout->setColumnStretch(1, 2);
@@ -140,7 +139,34 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
   programSettingsFilePath = QDir::current().absolutePath() + "/programSettings.txt";
   LoadProgramSettings();
 
+  {
+    scalar = new QMainWindow(this);
+    scalar->setWindowTitle("Scalar");
 
+    QScrollArea * scopeScroll = new QScrollArea(scalar);
+    scalar->setCentralWidget(scopeScroll);
+    scopeScroll->setWidgetResizable(true);
+    scopeScroll->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+    QWidget * layoutWidget = new QWidget(scalar);
+    scopeScroll->setWidget(layoutWidget);
+
+    scalarLayout = new QGridLayout(layoutWidget);
+    scalarLayout->setSpacing(0);
+    scalarLayout->setAlignment(Qt::AlignTop);
+
+    leTrigger = nullptr;
+    leAccept = nullptr;
+
+    lbLastUpdateTime = nullptr;
+    lbScalarACQStatus = nullptr;
+
+    nScalarBuilt = 0;
+
+    scalarThread = new ScalarThread();
+    //connect(scalarThread, &ScalarThread::updataScalar, this, &MainWindow::UpdateScalar);
+
+  }
 }
 
 MainWindow::~MainWindow(){
@@ -152,6 +178,20 @@ MainWindow::~MainWindow(){
 
 //***************************************************************
 //***************************************************************
+void MainWindow::OpenDataPath(){
+
+  QFileDialog fileDialog(this);
+  fileDialog.setFileMode(QFileDialog::Directory);
+  int result = fileDialog.exec();
+
+  //qDebug() << fileDialog.selectedFiles();
+  if( result > 0 ) {
+    leDataPath->setText(fileDialog.selectedFiles().at(0));
+  }else{
+    leDataPath->clear();
+  }
+
+}
 
 void MainWindow::LoadProgramSettings(){
 
@@ -290,11 +330,15 @@ void MainWindow::OpenDigitizers(){
 
   LogMsg(QString("Done. Opened %1 digitizer(s).").arg(nDigi));
 
+  SetupScalar();
+
 }
 
 void MainWindow::CloseDigitizers(){
 
   LogMsg("Closing Digitizer(s)....");
+
+  CleanUpScalar();
 
   for(unsigned int i = 0; i < nDigi; i ++){
     digi[i]->CloseDigitizer();
@@ -311,24 +355,138 @@ void MainWindow::CloseDigitizers(){
 
   LogMsg("Done. Closed " + QString::number(nDigi) + " Digitizer(s).");
   nDigi = 0;
+
+
 }
 
 //***************************************************************
 //***************************************************************
-void MainWindow::OpenDataPath(){
+void MainWindow::SetupScalar(){
 
-  QFileDialog fileDialog(this);
-  fileDialog.setFileMode(QFileDialog::Directory);
-  int result = fileDialog.exec();
+  scalar->setGeometry(0, 0, 10 + nDigi * 180, 110 + MaxNChannels * 20);
 
-  //qDebug() << fileDialog.selectedFiles();
-  if( result > 0 ) {
-    leDataPath->setText(fileDialog.selectedFiles().at(0));
-  }else{
-    leDataPath->clear();
+  if( lbLastUpdateTime == nullptr ){
+    lbLastUpdateTime = new QLabel("Last update : NA", scalar);
+    lbScalarACQStatus = new QLabel("ACQ status", scalar);
+  }
+  
+  lbLastUpdateTime->setAlignment(Qt::AlignCenter);
+  scalarLayout->removeWidget(lbLastUpdateTime);
+  scalarLayout->addWidget(lbLastUpdateTime, 0, 1, 1, 1 + nDigi);
+
+  lbScalarACQStatus->setAlignment(Qt::AlignCenter);
+  scalarLayout->removeWidget(lbScalarACQStatus);
+  scalarLayout->addWidget(lbScalarACQStatus, 1, 1, 1, 1 + nDigi);
+
+  int rowID = 3;
+  if( nScalarBuilt == 0 ){
+    ///==== create the header row
+    for( int ch = 0; ch < MaxNChannels; ch++){
+
+      if( ch == 0 ){
+        QLabel * lbCH_H = new QLabel("Ch", scalar); 
+        scalarLayout->addWidget(lbCH_H, rowID, 0);
+      }  
+
+      rowID ++;
+      QLabel * lbCH = new QLabel(QString::number(ch), scalar);
+      lbCH->setAlignment(Qt::AlignCenter);
+      scalarLayout->addWidget(lbCH, rowID, 0);
+    }
+  }
+
+  ///===== create the trigger and accept
+  leTrigger = new QLineEdit**[nDigi];
+  leAccept = new QLineEdit**[nDigi];
+  lbDigi    = new QLabel * [nDigi];
+  lbTrigger = new QLabel * [nDigi];
+  lbAccept  = new QLabel * [nDigi];
+  for( unsigned int iDigi = 0; iDigi < nDigi; iDigi++){
+    rowID = 2;
+    leTrigger[iDigi] = new QLineEdit *[digi[iDigi]->GetNChannels()];
+    leAccept[iDigi] = new QLineEdit *[digi[iDigi]->GetNChannels()];
+
+    lbDigi[iDigi] = new QLabel("Digi-" + QString::number(digi[iDigi]->GetSerialNumber()), scalar); 
+    lbDigi[iDigi]->setAlignment(Qt::AlignCenter);
+    scalarLayout->addWidget(lbDigi[iDigi], rowID, 2*iDigi+1, 1, 2);
+
+    rowID ++;
+
+    lbTrigger[iDigi] = new QLabel("Trig. [Hz]", scalar);
+    lbTrigger[iDigi]->setAlignment(Qt::AlignCenter);
+    scalarLayout->addWidget(lbTrigger[iDigi], rowID, 2*iDigi+1);
+    lbAccept[iDigi] = new QLabel("Accp. [Hz]", scalar);
+    lbAccept[iDigi]->setAlignment(Qt::AlignCenter);
+    scalarLayout->addWidget(lbAccept[iDigi], rowID, 2*iDigi+2);
+
+    for( int ch = 0; ch < MaxNChannels; ch++){
+   
+      rowID ++;
+
+      leTrigger[iDigi][ch] = new QLineEdit(scalar);
+      leTrigger[iDigi][ch]->setReadOnly(true);
+      leTrigger[iDigi][ch]->setAlignment(Qt::AlignRight);
+      scalarLayout->addWidget(leTrigger[iDigi][ch], rowID, 2*iDigi+1);
+
+      leAccept[iDigi][ch] = new QLineEdit(scalar);
+      leAccept[iDigi][ch]->setReadOnly(true);
+      leAccept[iDigi][ch]->setAlignment(Qt::AlignRight);
+      leAccept[iDigi][ch]->setStyleSheet("background-color: #F0F0F0;");
+      scalarLayout->addWidget(leAccept[iDigi][ch], rowID, 2*iDigi+2);
+    }
   }
 
 }
+
+void MainWindow::CleanUpScalar(){
+
+  scalar->close();
+
+  if( leTrigger == nullptr ) return;
+
+  for( unsigned int i = 0; i < nDigi; i++){
+    for( int ch = 0; ch < digi[i]->GetNChannels(); ch ++){
+      delete leTrigger[i][ch];
+      delete leAccept[i][ch];
+    }
+    delete [] leTrigger[i];
+    delete [] leAccept[i];
+
+    delete lbDigi[i];
+    delete lbTrigger[i];
+    delete lbAccept[i];
+  }
+  delete [] leTrigger;
+  delete [] lbDigi;
+  delete [] lbTrigger;
+  delete [] lbAccept;
+  leTrigger = nullptr;
+  leAccept = nullptr;
+  lbDigi = nullptr;
+  lbTrigger = nullptr;
+  lbAccept = nullptr;
+
+  delete lbLastUpdateTime;
+  delete lbScalarACQStatus;
+
+  lbLastUpdateTime = nullptr;
+  lbScalarACQStatus = nullptr;
+
+  printf("---- end of %s \n", __func__);
+
+}
+
+void MainWindow::OpenScalar(){
+  scalar->show();
+}
+
+void MainWindow::UpdateScalar(){
+
+
+}
+
+//***************************************************************
+//***************************************************************
 
 void MainWindow::StartACQ(){
   if( digi == nullptr ) return;

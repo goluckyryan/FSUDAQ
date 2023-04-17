@@ -102,7 +102,7 @@ class Digitizer{
     int         GetChannelMask()             const {return channelMask;}
     bool        GetChannelOnOff(unsigned ch) const {return (channelMask & ( 1 << ch) );} 
     float       GetCh2ns()                   const {return ch2ns;}
-    int         GetNChannel()                const {return NChannel;}
+    int         GetNChannels()               const {return NChannel;}
     int         GetHandle()                  const {return handle;}
     int         GetDPPType()                 const {return DPPType;}
     std::string GetDPPString(int DPPType = 0);  /// if no input, use digitizer DPPType

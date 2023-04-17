@@ -6,6 +6,8 @@
 #include <QPushButton>
 #include <QPlainTextEdit>
 #include <QLineEdit>
+#include <QLabel>
+#include <QGridLayout>
 
 #include "ClassDigitizer.h"
 #include "CustomThreads.h"
@@ -20,6 +22,7 @@ public:
 
 private slots:
 
+  void OpenDataPath();
   void LoadProgramSettings();
   void SaveProgramSettings();
   void LoadLastRunFile();
@@ -28,7 +31,10 @@ private slots:
   void OpenDigitizers();
   void CloseDigitizers();
 
-  void OpenDataPath();
+  void SetupScalar();
+  void CleanUpScalar();
+  void OpenScalar();
+  void UpdateScalar();
 
   void StartACQ();
   void StopACQ();
@@ -43,6 +49,15 @@ private:
   QString prefix;
   unsigned int runID;
   unsigned int elogID;
+
+  QPushButton * bnOpenDigitizers;
+  QPushButton * bnCloseDigitizers;
+  QPushButton * bnOpenScope;
+  QPushButton * bnDigiSettings;
+
+  QPushButton * bnOpenScaler;
+  QPushButton * bnStartACQ;
+  QPushButton * bnStopACQ;
 
   //@----- log msg
   QPlainTextEdit * logInfo;
@@ -59,6 +74,14 @@ private:
   QMainWindow  * scalar;
   QLineEdit  *** leTrigger; // need to delete manually
   QLineEdit  *** leAccept; // need to delete manually
+  QLabel **lbDigi; 
+  QLabel ** lbTrigger;
+  QLabel ** lbAccept;
+  QGridLayout * scalarLayout;
+  ScalarThread * scalarThread;
+  QLabel * lbLastUpdateTime;
+  QLabel * lbScalarACQStatus;
+  int nScalarBuilt;
 
   //@----- ACQ
   ReadDataThread ** readDataThread;
