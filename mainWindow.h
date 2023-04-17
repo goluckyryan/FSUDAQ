@@ -20,6 +20,11 @@ public:
 
 private slots:
 
+  void LoadProgramSettings();
+  void SaveProgramSettings();
+  void LoadLastRunFile();
+  void SaveLastRunFile();
+
   void OpenDigitizers();
   void CloseDigitizers();
 
@@ -33,6 +38,12 @@ private:
   Digitizer ** digi;
   unsigned int nDigi;
 
+  QString programSettingsFilePath;
+  QString rawDataPath;
+  QString prefix;
+  unsigned int runID;
+  unsigned int elogID;
+
   //@----- log msg
   QPlainTextEdit * logInfo;
   void LogMsg(QString msg);
@@ -42,6 +53,7 @@ private:
   QLineEdit * leDataPath;
   QLineEdit * lePrefix;
   QLineEdit * leComment;
+  QLineEdit * leRunID;
 
   //@----- Scalar
   QMainWindow  * scalar;

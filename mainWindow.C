@@ -61,6 +61,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     lbDataPath->setAlignment(Qt::AlignRight | Qt::AlignCenter);
     leDataPath = new QLineEdit(this);
     leDataPath->setEnabled(false);
+    leDataPath->setStyleSheet("color : black;");
     QPushButton * bnSetDataPath = new QPushButton("Set Path", this);
     connect(bnSetDataPath, &QPushButton::clicked, this, &MainWindow::OpenDataPath);
 
@@ -75,8 +76,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
 
     QLabel * lbRunID = new QLabel("Run No. :", this);
     lbRunID->setAlignment(Qt::AlignRight | Qt::AlignCenter);
-    QLineEdit * leRunID = new QLineEdit(this);
+    leRunID = new QLineEdit(this);
     leRunID->setEnabled(false);
+    leRunID->setStyleSheet("color : black;");
 
     QPushButton * bnOpenScaler = new QPushButton("Scalar", this);
 
@@ -131,11 +133,123 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
 
   LogMsg("<font style=\"color: blue;\"><b>Welcome to FSU DAQ.</b></font>");
 
+  rawDataPath = "";
+  prefix = "temp";
+  runID = 0;
+  elogID = 0;
+  programSettingsFilePath = QDir::current().absolutePath() + "/programSettings.txt";
+  LoadProgramSettings();
+
+
 }
 
 MainWindow::~MainWindow(){
 
   if( digi ) CloseDigitizers();
+  SaveProgramSettings();
+
+}
+
+//***************************************************************
+//***************************************************************
+
+void MainWindow::LoadProgramSettings(){
+
+  LogMsg("Loading <b>" + programSettingsFilePath + "</b> for Program Settings.");
+  QFile file(programSettingsFilePath);
+
+  if( !file.open(QIODevice::Text | QIODevice::ReadOnly) ) {
+    LogMsg("<b>" + programSettingsFilePath + "</b> not found.");
+  }else{
+
+    QTextStream in(&file);
+    QString line = in.readLine();
+
+    int count = 0;
+    while( !line.isNull()){
+      if( line.left(6) == "//----") break;
+
+      if( count == 0 ) rawDataPath = line;
+      count ++;
+      line = in.readLine();
+    }
+
+    //looking for the lastRun.sh for 
+    leDataPath->setText(rawDataPath);
+    LoadLastRunFile();
+  }
+
+}
+
+void MainWindow::SaveProgramSettings(){
+
+  rawDataPath = leDataPath->text();
+
+  QFile file(programSettingsFilePath);
+  
+  file.open(QIODevice::Text | QIODevice::WriteOnly);
+
+  file.write((rawDataPath+"\n").toStdString().c_str());
+  file.write("//------------end of file.");
+  
+  file.close();
+  LogMsg("Saved program settings to <b>"+ programSettingsFilePath + "<b>.");
+
+}
+
+void MainWindow::LoadLastRunFile(){
+
+  QFile file(rawDataPath + "/lastRun.sh");
+
+  if( !file.open(QIODevice::Text | QIODevice::ReadOnly) ) {
+    LogMsg("<b>" + rawDataPath + "/lastRun.sh</b> not found.");
+    runID = 0;
+    prefix = "temp";
+    leRunID->setText(QString::number(runID));
+    lePrefix->setText(prefix);
+  }else{
+
+    QTextStream in(&file);
+    QString line = in.readLine();
+
+    int count = 0;
+    while( !line.isNull()){
+
+      int index = line.indexOf("=");
+      QString haha = line.mid(index+1).remove(" ");
+
+      //qDebug() << haha;
+
+      switch (count){
+        case 0 : prefix = haha; break;
+        case 1 : runID = haha.toInt(); break;
+        case 2 : elogID = haha.toInt(); break;
+      }
+
+      count ++;
+      line = in.readLine();
+    }
+
+    lePrefix->setText(prefix);
+    leRunID->setText(QString::number(runID));
+
+  }
+
+}
+
+void MainWindow::SaveLastRunFile(){
+
+  QFile file(rawDataPath + "/lastRun.sh");
+
+  file.open(QIODevice::Text | QIODevice::WriteOnly);
+
+  file.write(("prefix=" + prefix + "\n").toStdString().c_str());
+  file.write(("runID=" + QString::number(runID) + "\n").toStdString().c_str());
+  file.write(("elogID=" + QString::number(elogID) + "\n").toStdString().c_str());
+  file.write("//------------end of file.");
+  
+  file.close();
+  LogMsg("Saved program settings to <b>"+ rawDataPath + "/lastRun.sh<b>.");
 
 }
 
@@ -220,11 +334,13 @@ void MainWindow::StartACQ(){
   if( digi == nullptr ) return;
 
   for( unsigned int i = 0; i < nDigi ; i++){
-    digi[i]->GetData()->OpenSaveFile("haha");
+    digi[i]->GetData()->OpenSaveFile((rawDataPath + "/" + prefix).toStdString());
     digi[i]->StartACQ();
     readDataThread[i]->SetSaveData(true);
     readDataThread[i]->start();
   }
+
+  SaveLastRunFile();
 
 }
 
