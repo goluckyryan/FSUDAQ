@@ -82,6 +82,8 @@
     }
   ],
   "files.associations": {
-    "mainWindow.C": "cpp"
+    "mainWindow.C": "cpp",
+    "Scope.C": "cpp",
+    "new": "cpp"
   }
 }

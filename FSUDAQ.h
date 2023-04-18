@@ -7,10 +7,13 @@
 #include <QPlainTextEdit>
 #include <QLineEdit>
 #include <QLabel>
+#include <QComboBox>
+#include <QCheckBox>
 #include <QGridLayout>
 
 #include "ClassDigitizer.h"
 #include "CustomThreads.h"
+#include "Scope.h"
 
 //^#===================================================== MainWindow
 class MainWindow : public QMainWindow{
@@ -38,6 +41,11 @@ private slots:
 
   void StartACQ();
   void StopACQ();
+  void AutoRun();
+  bool CommentDialog(bool isStartRun);
+  void WriteRunTimestamp(bool isStartRun);
+
+  void OpenScope();
 
 private:
 
@@ -70,21 +78,26 @@ private:
   QLineEdit * leComment;
   QLineEdit * leRunID;
 
+  QCheckBox * chkSaveData;
+  QComboBox * cbAutoRun;
+
+  QString startComment;
+  QString stopComment;
+
   //@----- Scalar
   QMainWindow  * scalar;
-  QLineEdit  *** leTrigger; // need to delete manually
-  QLineEdit  *** leAccept; // need to delete manually
-  QLabel **lbDigi; 
-  QLabel ** lbTrigger;
-  QLabel ** lbAccept;
   QGridLayout * scalarLayout;
   ScalarThread * scalarThread;
+  QLineEdit  *** leTrigger; // need to delete manually
+  QLineEdit  *** leAccept; // need to delete manually
   QLabel * lbLastUpdateTime;
   QLabel * lbScalarACQStatus;
-  int nScalarBuilt;
 
   //@----- ACQ
   ReadDataThread ** readDataThread;
+
+  //@----- Scope
+  Scope * scope;
 
 };
 

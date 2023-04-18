@@ -1,4 +1,4 @@
-#include "mainWindow.h"
+#include "FSUDAQ.h"
 
 #include <QWidget>
 #include <QVBoxLayout>
@@ -23,6 +23,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
 
   digi = nullptr;
   nDigi = 0;
+
+  scope = nullptr;
 
   QWidget * mainLayoutWidget = new QWidget(this);
   setCentralWidget(mainLayoutWidget);
@@ -58,6 +60,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     QGridLayout * layout = new QGridLayout(box);
 
     int rowID = 0;
+    //------------------------------------------
     QLabel * lbDataPath = new QLabel("Data Path : ", this);
     lbDataPath->setAlignment(Qt::AlignRight | Qt::AlignCenter);
     leDataPath = new QLineEdit(this);
@@ -66,28 +69,45 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     connect(bnSetDataPath, &QPushButton::clicked, this, &MainWindow::OpenDataPath);
 
     layout->addWidget(lbDataPath, rowID, 0);
-    layout->addWidget(leDataPath, rowID, 1, 1, 3);
-    layout->addWidget(bnSetDataPath, rowID, 4);
+    layout->addWidget(leDataPath, rowID, 1, 1, 6);
+    layout->addWidget(bnSetDataPath, rowID, 7);
 
+    //------------------------------------------
     rowID ++;
     QLabel * lbPrefix = new QLabel("Prefix : ", this);
     lbPrefix->setAlignment(Qt::AlignRight | Qt::AlignCenter);
     lePrefix = new QLineEdit(this);
+    lePrefix->setAlignment(Qt::AlignHCenter);
 
     QLabel * lbRunID = new QLabel("Run No. :", this);
     lbRunID->setAlignment(Qt::AlignRight | Qt::AlignCenter);
     leRunID = new QLineEdit(this);
     leRunID->setReadOnly(true);
+    leRunID->setAlignment(Qt::AlignHCenter);
 
-    bnOpenScaler = new QPushButton("Scalar", this);
-    connect(bnOpenScaler, &QPushButton::clicked, this, &MainWindow::OpenScalar);
+    chkSaveData = new QCheckBox("Save Data", this);
+    cbAutoRun = new QComboBox(this);
+    cbAutoRun->addItem("Single Infinite", 0);
+    cbAutoRun->addItem("Single 30 mins", 30);
+    cbAutoRun->addItem("Single 60 mins", 60);
+    cbAutoRun->addItem("Repeat 60 mins", -60);
+    cbAutoRun->setEnabled(false);
+
+    bnStartACQ = new QPushButton("Start ACQ", this);
+    connect( bnStartACQ, &QPushButton::clicked, this, &MainWindow::StartACQ);
+    bnStopACQ = new QPushButton("Stop ACQ", this);
+    connect( bnStopACQ, &QPushButton::clicked, this, &MainWindow::StopACQ);
 
     layout->addWidget(lbPrefix, rowID, 0);
     layout->addWidget(lePrefix, rowID, 1);
     layout->addWidget(lbRunID, rowID, 2);
     layout->addWidget(leRunID, rowID, 3);
-    layout->addWidget(bnOpenScaler, rowID, 4);
+    layout->addWidget(chkSaveData, rowID, 4);
+    layout->addWidget(cbAutoRun, rowID, 5);
+    layout->addWidget(bnStartACQ, rowID, 6);
+    layout->addWidget(bnStopACQ, rowID, 7);
 
+    //------------------------------------------
     rowID ++;
     QLabel * lbComment = new QLabel("Run Comment : ", this);
     lbComment->setAlignment(Qt::AlignRight | Qt::AlignCenter);
@@ -95,21 +115,22 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     leComment = new QLineEdit(this);
     leComment->setEnabled(false);
 
-    bnStartACQ = new QPushButton("Start ACQ", this);
-    connect( bnStartACQ, &QPushButton::clicked, this, &MainWindow::StartACQ);
-    bnStopACQ = new QPushButton("Stop ACQ", this);
-    connect( bnStopACQ, &QPushButton::clicked, this, &MainWindow::StopACQ);
+    bnOpenScaler = new QPushButton("Scalar", this);
+    connect(bnOpenScaler, &QPushButton::clicked, this, &MainWindow::OpenScalar);
 
     layout->addWidget(lbComment, rowID, 0);
-    layout->addWidget(leComment, rowID, 1, 1, 2);
-    layout->addWidget(bnStartACQ, rowID, 3);
-    layout->addWidget(bnStopACQ, rowID, 4);
+    layout->addWidget(leComment, rowID, 1, 1, 6);
+
+    layout->addWidget(bnOpenScaler, rowID, 7);
 
     layout->setColumnStretch(0, 1);
     layout->setColumnStretch(1, 2);
     layout->setColumnStretch(2, 1);
-    layout->setColumnStretch(3, 3);
-    layout->setColumnStretch(4, 3);
+    layout->setColumnStretch(3, 1);
+    layout->setColumnStretch(4, 1);
+    layout->setColumnStretch(5, 1);
+    layout->setColumnStretch(6, 3);
+    layout->setColumnStretch(7, 3);
 
   }
 
@@ -161,8 +182,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     lbLastUpdateTime = nullptr;
     lbScalarACQStatus = nullptr;
 
-    nScalarBuilt = 0;
-
     scalarThread = new ScalarThread();
     //connect(scalarThread, &ScalarThread::updataScalar, this, &MainWindow::UpdateScalar);
 
@@ -173,6 +192,8 @@ MainWindow::~MainWindow(){
 
   if( digi ) CloseDigitizers();
   SaveProgramSettings();
+
+  if( scope ) delete scope;
 
 }
 
@@ -216,6 +237,18 @@ void MainWindow::LoadProgramSettings(){
 
     //looking for the lastRun.sh for 
     leDataPath->setText(rawDataPath);
+
+    //check is rawDataPath exist, if not, create one
+    QDir rawDataDir;
+    if( !rawDataDir.exists(rawDataPath ) ) {
+      if( rawDataDir.mkdir(rawDataPath) ){
+          LogMsg("Created folder <b>" + rawDataPath + "</b> for storing root files.");
+      }else{
+          LogMsg("<font style=\"color:red;\"><b>" + rawDataPath + "</b> cannot be created. Access right problem? </font>" );
+      }
+      }else{
+        LogMsg("<b>" + rawDataPath + "</b> already exist." );
+    }
     LoadLastRunFile();
   }
 
@@ -340,6 +373,8 @@ void MainWindow::CloseDigitizers(){
 
   CleanUpScalar();
 
+  if( digi == nullptr ) return;
+
   for(unsigned int i = 0; i < nDigi; i ++){
     digi[i]->CloseDigitizer();
     delete digi[i];
@@ -379,50 +414,46 @@ void MainWindow::SetupScalar(){
   scalarLayout->addWidget(lbScalarACQStatus, 1, 1, 1, 1 + nDigi);
 
   int rowID = 3;
-  if( nScalarBuilt == 0 ){
-    ///==== create the header row
-    for( int ch = 0; ch < MaxNChannels; ch++){
+  ///==== create the header row
+  for( int ch = 0; ch < MaxNChannels; ch++){
 
-      if( ch == 0 ){
-        QLabel * lbCH_H = new QLabel("Ch", scalar); 
-        scalarLayout->addWidget(lbCH_H, rowID, 0);
-      }  
+    if( ch == 0 ){
+      QLabel * lbCH_H = new QLabel("Ch", scalar); 
+      scalarLayout->addWidget(lbCH_H, rowID, 0);
+    }  
 
-      rowID ++;
-      QLabel * lbCH = new QLabel(QString::number(ch), scalar);
-      lbCH->setAlignment(Qt::AlignCenter);
-      scalarLayout->addWidget(lbCH, rowID, 0);
-    }
+    rowID ++;
+    QLabel * lbCH = new QLabel(QString::number(ch), scalar);
+    lbCH->setAlignment(Qt::AlignCenter);
+    scalarLayout->addWidget(lbCH, rowID, 0);
   }
 
   ///===== create the trigger and accept
   leTrigger = new QLineEdit**[nDigi];
   leAccept = new QLineEdit**[nDigi];
-  lbDigi    = new QLabel * [nDigi];
-  lbTrigger = new QLabel * [nDigi];
-  lbAccept  = new QLabel * [nDigi];
   for( unsigned int iDigi = 0; iDigi < nDigi; iDigi++){
     rowID = 2;
     leTrigger[iDigi] = new QLineEdit *[digi[iDigi]->GetNChannels()];
     leAccept[iDigi] = new QLineEdit *[digi[iDigi]->GetNChannels()];
-
-    lbDigi[iDigi] = new QLabel("Digi-" + QString::number(digi[iDigi]->GetSerialNumber()), scalar); 
-    lbDigi[iDigi]->setAlignment(Qt::AlignCenter);
-    scalarLayout->addWidget(lbDigi[iDigi], rowID, 2*iDigi+1, 1, 2);
-
-    rowID ++;
-
-    lbTrigger[iDigi] = new QLabel("Trig. [Hz]", scalar);
-    lbTrigger[iDigi]->setAlignment(Qt::AlignCenter);
-    scalarLayout->addWidget(lbTrigger[iDigi], rowID, 2*iDigi+1);
-    lbAccept[iDigi] = new QLabel("Accp. [Hz]", scalar);
-    lbAccept[iDigi]->setAlignment(Qt::AlignCenter);
-    scalarLayout->addWidget(lbAccept[iDigi], rowID, 2*iDigi+2);
-
     for( int ch = 0; ch < MaxNChannels; ch++){
-   
-      rowID ++;
 
+      if( ch == 0 ){
+          QLabel * lbDigi = new QLabel("Digi-" + QString::number(digi[iDigi]->GetSerialNumber()), scalar); 
+          lbDigi->setAlignment(Qt::AlignCenter);
+          scalarLayout->addWidget(lbDigi, rowID, 2*iDigi+1, 1, 2);
+
+          rowID ++;
+
+          QLabel * lbA = new QLabel("Trig. [Hz]", scalar);
+          lbA->setAlignment(Qt::AlignCenter);
+          scalarLayout->addWidget(lbA, rowID, 2*iDigi+1);
+          QLabel * lbB = new QLabel("Accp. [Hz]", scalar);
+          lbB->setAlignment(Qt::AlignCenter);
+          scalarLayout->addWidget(lbB, rowID, 2*iDigi+2);
+      }
+    
+      rowID ++;
+      
       leTrigger[iDigi][ch] = new QLineEdit(scalar);
       leTrigger[iDigi][ch]->setReadOnly(true);
       leTrigger[iDigi][ch]->setAlignment(Qt::AlignRight);
@@ -435,7 +466,6 @@ void MainWindow::SetupScalar(){
       scalarLayout->addWidget(leAccept[iDigi][ch], rowID, 2*iDigi+2);
     }
   }
-
 }
 
 void MainWindow::CleanUpScalar(){
@@ -452,25 +482,14 @@ void MainWindow::CleanUpScalar(){
     delete [] leTrigger[i];
     delete [] leAccept[i];
 
-    delete lbDigi[i];
-    delete lbTrigger[i];
-    delete lbAccept[i];
   }
   delete [] leTrigger;
-  delete [] lbDigi;
-  delete [] lbTrigger;
-  delete [] lbAccept;
   leTrigger = nullptr;
   leAccept = nullptr;
-  lbDigi = nullptr;
-  lbTrigger = nullptr;
-  lbAccept = nullptr;
 
-  delete lbLastUpdateTime;
-  delete lbScalarACQStatus;
-
-  lbLastUpdateTime = nullptr;
-  lbScalarACQStatus = nullptr;
+  //Clean up QLabel
+  QList<QLabel *> labelChildren = scalar->findChildren<QLabel *>();
+  for( int i = 0; i < labelChildren.size(); i++) delete labelChildren[i];
 
   printf("---- end of %s \n", __func__);
 
@@ -491,6 +510,8 @@ void MainWindow::UpdateScalar(){
 void MainWindow::StartACQ(){
   if( digi == nullptr ) return;
 
+  if( CommentDialog(true) == false) return;
+
   for( unsigned int i = 0; i < nDigi ; i++){
     digi[i]->GetData()->OpenSaveFile((rawDataPath + "/" + prefix).toStdString());
     digi[i]->StartACQ();
@@ -505,6 +526,8 @@ void MainWindow::StartACQ(){
 void MainWindow::StopACQ(){
   if( digi == nullptr ) return;
 
+  if( CommentDialog(false) == false) return;
+
   for( unsigned int i = 0; i < nDigi; i++){
     digi[i]->StopACQ();
     digi[i]->GetData()->CloseSaveFile();
@@ -516,6 +539,120 @@ void MainWindow::StopACQ(){
   }
   
 }
+
+void MainWindow::AutoRun(){
+
+}
+
+bool MainWindow::CommentDialog(bool isStartRun){
+
+  if( isStartRun ) runID ++;
+  QString runIDStr = QString::number(runID).rightJustified(3, '0');
+
+  QDialog * dOpen = new QDialog(this);
+  if( isStartRun ) {
+    dOpen->setWindowTitle("Start Run Comment");
+  }else{
+    dOpen->setWindowTitle("Stop Run Comment");
+  }
+  dOpen->setWindowFlags(Qt::Dialog | Qt::WindowTitleHint | Qt::CustomizeWindowHint);
+  dOpen->setMinimumWidth(600);
+  connect(dOpen, &QDialog::finished, dOpen, &QDialog::deleteLater);
+
+  QGridLayout * vlayout = new QGridLayout(dOpen);
+  QLabel *label = new QLabel("Enter Run comment for <font style=\"color : red;\">Run-" +  runIDStr + "</font> : ", dOpen);
+  QLineEdit *lineEdit = new QLineEdit(dOpen);
+  QPushButton *button1 = new QPushButton("OK", dOpen);
+  QPushButton *button2 = new QPushButton("Cancel", dOpen);
+
+  vlayout->addWidget(label, 0, 0, 1, 2);
+  vlayout->addWidget(lineEdit, 1, 0, 1, 2);
+  vlayout->addWidget(button1, 2, 0);
+  vlayout->addWidget(button2, 2, 1);
+
+  connect(button1, &QPushButton::clicked, dOpen, &QDialog::accept);
+  connect(button2, &QPushButton::clicked, dOpen, &QDialog::reject);
+  int result = dOpen->exec();
+
+  if(result == QDialog::Accepted ){
+
+    if( isStartRun ){
+      startComment = lineEdit->text();
+      if( startComment == "") startComment = "No commet was typed.";
+      startComment = "Start Comment: " + startComment;
+      leComment->setText(startComment);
+    }else{
+      stopComment = lineEdit->text();
+      if( stopComment == "") stopComment = "No commet was typed.";
+      stopComment = "Stop Comment: " + stopComment;
+      leComment->setText(stopComment);
+    }
+    
+  }else{
+
+    if( isStartRun ){
+      LogMsg("Start Run aborted. ");
+      runID --;
+      leRunID->setText(QString::number(runID));
+    }else{
+      LogMsg("Stop Run cancelled. ");
+    }
+    return false;
+
+  }
+
+  return true;
+
+}
+
+void MainWindow::WriteRunTimestamp(bool isStartRun){
+
+  QFile file(rawDataPath + "/RunTimeStamp.dat");
+  
+  QString dateTime = QDateTime::currentDateTime().toString("yyyy.MM.dd hh:mm:ss");
+  if( file.open(QIODevice::Text | QIODevice::WriteOnly | QIODevice::Append) ){
+
+    if( isStartRun ){
+      file.write(("Start Run | " + QString::number(runID) + " | " + dateTime + " | " + startComment + "\n").toStdString().c_str());
+    }else{
+      file.write((" Stop Run | " + QString::number(runID) + " | " + dateTime + " | " + stopComment + "\n").toStdString().c_str());
+    }
+    
+    file.close();
+  }
+
+
+  QFile fileCSV(rawDataPath +  "/RunTimeStamp.csv");
+
+  if( fileCSV.open(QIODevice::Text | QIODevice::WriteOnly | QIODevice::Append) ){
+
+    QTextStream out(&fileCSV);
+
+    if( isStartRun){
+      out << QString::number(runID) + "," + dateTime + "," + startComment;
+    }else{
+      out << "," + dateTime + "," + stopComment + "\n";
+    }
+
+    fileCSV.close();
+  }
+
+}
+
+//***************************************************************
+//***************************************************************
+void MainWindow::OpenScope(){
+
+  if( scope == nullptr ) {
+    scope = new Scope(digi, nDigi, readDataThread);
+    scope->show();
+  }else{
+    scope->show();
+  }
+
+}
+
+
 
 //***************************************************************
 //***************************************************************

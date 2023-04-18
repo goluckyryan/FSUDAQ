@@ -7,6 +7,9 @@
 #define MaxRecordLength 0x3fff * 8 
 #define MaxSaveFileSize  1024 * 1024 * 1024 * 2
 
+#define MaxDisplayTraceDataLength 2000 //data point, 
+#define MaxNumberOfTrace  4   // in an event
+
 #define SETTINGSIZE 2048
 
 #include <sys/time.h> /** struct timeval, select() */

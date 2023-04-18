@@ -18,7 +18,9 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "/usr/include/x86_64-linux-gnu/qt6/**",
-                "/home/splitpole/cern/root/include/**"
+                "/home/splitpole/cern/root/include/**",
+                "/usr/include/x86_64-linux-gnu/qt6/QtWidgets",
+                "/usr/include/x86_64-linux-gnu/qt6/QtCore"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
