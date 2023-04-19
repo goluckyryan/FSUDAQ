@@ -46,7 +46,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
 
     bnOpenScope = new QPushButton("Open Scope", this);
     layout->addWidget(bnOpenScope, 1, 0);
-    //connect(bnDigiSettings, &QPushButton::clicked, this, &MainWindow::OpenDigiSettings);
+    connect(bnOpenScope, &QPushButton::clicked, this, &MainWindow::OpenScope);
 
     bnDigiSettings = new QPushButton("Digitizers Settings", this);
     layout->addWidget(bnDigiSettings, 1, 1);
@@ -186,6 +186,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     //connect(scalarThread, &ScalarThread::updataScalar, this, &MainWindow::UpdateScalar);
 
   }
+
+  //=========== disable widget
+  WaitForDigitizersOpen(true);
+
 }
 
 MainWindow::~MainWindow(){
@@ -194,6 +198,7 @@ MainWindow::~MainWindow(){
   SaveProgramSettings();
 
   if( scope ) delete scope;
+  
 
 }
 
@@ -335,19 +340,19 @@ void MainWindow::OpenDigitizers(){
   logMsgHTMLMode = false;
   nDigi = 0;
   std::vector<std::pair<int, int>> portList; //boardID, portID
-  Digitizer dig;
   for(int port = 0; port < MaxNPorts; port++){
     for( int board = 0; board < MaxNBoards; board ++){ /// max number of iasy chain
+      Digitizer dig;
       dig.OpenDigitizer(board, port);
       if( dig.IsConnected() ){
         nDigi++;
         portList.push_back(std::pair(board, port));
         LogMsg(QString("... Found at port: %1, board: %2. SN: %3 %4").arg(port).arg(board).arg(dig.GetSerialNumber(), 3, 10, QChar(' ')).arg(dig.GetDPPString().c_str()));
-        dig.CloseDigitizer();
-        QCoreApplication::processEvents(); //to prevent Qt said application not responding.
       }//else{
         //LogMsg(QString("... Nothing at port: %1, board: %2.").arg(port).arg(board));
       //}
+      dig.CloseDigitizer();
+      QCoreApplication::processEvents(); //to prevent Qt said application not responding.
     }
   }
   LogMsg(QString("Done seraching. Found %1 digitizer(s). Opening digitizer(s)....").arg(nDigi));
@@ -362,6 +367,8 @@ void MainWindow::OpenDigitizers(){
   }
 
   LogMsg(QString("Done. Opened %1 digitizer(s).").arg(nDigi));
+
+  WaitForDigitizersOpen(false);
 
   SetupScalar();
 
@@ -390,6 +397,21 @@ void MainWindow::CloseDigitizers(){
 
   LogMsg("Done. Closed " + QString::number(nDigi) + " Digitizer(s).");
   nDigi = 0;
+
+  WaitForDigitizersOpen(true);
+
+}
+
+void MainWindow::WaitForDigitizersOpen(bool onOff){
+
+  bnOpenDigitizers->setEnabled(onOff);
+  bnCloseDigitizers->setEnabled(!onOff);
+  bnOpenScope->setEnabled(!onOff);
+  bnDigiSettings->setEnabled(!onOff);
+  bnOpenScaler->setEnabled(!onOff);
+  bnStartACQ->setEnabled(!onOff);
+  bnStopACQ->setEnabled(!onOff);
+  chkSaveData->setEnabled(!onOff);
 
 
 }

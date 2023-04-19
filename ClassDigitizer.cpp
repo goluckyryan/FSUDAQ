@@ -462,7 +462,7 @@ void Digitizer::PrintACQStatue(){
 //===========================================================
 //===========================================================
 //===========================================================
-void Digitizer::WriteRegister (Reg registerAddress, uint32_t value, int ch, bool isSave2MemAndFile){
+void Digitizer::WriteRegister (Register::Reg registerAddress, uint32_t value, int ch, bool isSave2MemAndFile){
   
   printf("%30s[0x%04X](ch-%02d) [0x%04X]: 0x%08X \n", registerAddress.GetNameChar(), registerAddress.GetAddress(),ch, registerAddress.ActualAddress(ch), value);
 
@@ -472,10 +472,10 @@ void Digitizer::WriteRegister (Reg registerAddress, uint32_t value, int ch, bool
     return;
   }
   
-  if( registerAddress.GetType() == RW::ReadONLY ) return;
+  if( registerAddress.GetType() == Register::RW::ReadONLY ) return;
   
   ret = CAEN_DGTZ_WriteRegister(handle, registerAddress.ActualAddress(ch), value);
-  if( ret == 0 && isSave2MemAndFile && registerAddress.GetType() == RW::ReadWrite) {
+  if( ret == 0 && isSave2MemAndFile && registerAddress.GetType() == Register::RW::ReadWrite) {
     SetSettingToMemory(registerAddress, value, ch);
     SaveSettingToFile(registerAddress, value, ch);
   }
@@ -483,21 +483,20 @@ void Digitizer::WriteRegister (Reg registerAddress, uint32_t value, int ch, bool
   ErrorMsg("WriteRegister:" + std::to_string(registerAddress));
 }
 
-uint32_t Digitizer::ReadRegister(Reg registerAddress, unsigned short ch, bool isSave2MemAndFile, std::string str ){
+uint32_t Digitizer::ReadRegister(Register::Reg registerAddress, unsigned short ch, bool isSave2MemAndFile, std::string str ){
   if( !isConnected )  return 0;
-  if( registerAddress.GetType() == RW::WriteONLY ) return 0;
+  if( registerAddress.GetType() == Register::RW::WriteONLY ) return 0;
 
-  uint32_t data[1];
-  ret = CAEN_DGTZ_ReadRegister(handle, registerAddress.ActualAddress(ch), data);
+  ret = CAEN_DGTZ_ReadRegister(handle, registerAddress.ActualAddress(ch), &returnData);
   
   if( ret == 0 && isSave2MemAndFile) {
-    SetSettingToMemory(registerAddress, data[0], ch);
-    SaveSettingToFile(registerAddress, data[0], ch);
+    SetSettingToMemory(registerAddress, returnData, ch);
+    SaveSettingToFile(registerAddress, returnData, ch);
   }
   ErrorMsg("ReadRegister:" + std::to_string(registerAddress));
   if( str != "" ) printf("%s : 0x%04X(0x%04X) is 0x%08X \n", str.c_str(), 
-                             registerAddress.ActualAddress(ch), registerAddress.GetAddress(), data[0]);
-  return data[0];
+                             registerAddress.ActualAddress(ch), registerAddress.GetAddress(), returnData);
+  return returnData;
 }
 
 uint32_t Digitizer::PrintRegister(uint32_t address, std::string msg){
@@ -518,9 +517,9 @@ uint32_t Digitizer::PrintRegister(uint32_t address, std::string msg){
 }
 
 //========================================== setting file IO
-Reg Digitizer::FindRegister(uint32_t address){
+Register::Reg Digitizer::FindRegister(uint32_t address){
   
-  Reg tempReg;  
+  Register::Reg tempReg;  
   ///========= Find Match Register
   for( int p = 0; p < (int) RegisterDPPList[p]; p++){
     if( address == RegisterDPPList[p].GetAddress() ) {
@@ -558,8 +557,8 @@ void Digitizer::ReadAllSettingsFromBoard(bool force){
   printf("===== %s \n", __func__);
 
   /// board setting
-  for( int p = 0; p < (int) RegisterDPPList[p]; p++){
-    if( RegisterDPPList[p].GetType() == RW::WriteONLY) continue;
+  for( int p = 0; p < (int) RegisterDPPList.size(); p++){
+    if( RegisterDPPList[p].GetType() == Register::RW::WriteONLY) continue;
     ReadRegister(RegisterDPPList[p]); 
   }
   
@@ -568,14 +567,14 @@ void Digitizer::ReadAllSettingsFromBoard(bool force){
   /// Channels Setting
   for( int ch = 0; ch < NChannel; ch ++){
     if( DPPType == V1730_DPP_PHA_CODE ){
-      for( int p = 0; p < (int) RegisterPHAList[p]; p++){
-        if( RegisterPHAList[p].GetType() == RW::WriteONLY) continue;
+      for( int p = 0; p < (int) RegisterPHAList.size(); p++){
+        if( RegisterPHAList[p].GetType() == Register::RW::WriteONLY) continue;
         ReadRegister(RegisterPHAList[p], ch); 
       }
     }
     if( DPPType == V1730_DPP_PSD_CODE ){
-      for( int p = 0; p < (int) RegisterPSDList[p]; p++){
-        if( RegisterPSDList[p].GetType() == RW::WriteONLY) continue;
+      for( int p = 0; p < (int) RegisterPSDList.size(); p++){
+        if( RegisterPSDList[p].GetType() == Register::RW::WriteONLY) continue;
         ReadRegister(RegisterPSDList[p], ch); 
       }
     }
@@ -587,11 +586,11 @@ void Digitizer::ProgramSettingsToBoard(){
   if( !isConnected ) return;
   if( isDummy ) return;
   
-  Reg haha;
+  Register::Reg haha;
   
   /// board setting
   for( int p = 0; p < (int) RegisterDPPList[p]; p++){
-    if( RegisterDPPList[p].GetType() == RW::ReadONLY) continue;
+    if( RegisterDPPList[p].GetType() == Register::RW::ReadONLY) continue;
     haha = RegisterDPPList[p];
     WriteRegister(haha, GetSettingFromMemory(haha), -1, false); 
     usleep(100 * 1000);
@@ -600,7 +599,7 @@ void Digitizer::ProgramSettingsToBoard(){
   for( int ch = 0; ch < NChannel; ch ++){
     if( DPPType == V1730_DPP_PHA_CODE ){
       for( int p = 0; p < (int) RegisterPHAList[p]; p++){
-        if( RegisterPHAList[p].GetType() == RW::ReadONLY) continue;
+        if( RegisterPHAList[p].GetType() == Register::RW::ReadONLY) continue;
         haha = RegisterPHAList[p];
         WriteRegister(haha, GetSettingFromMemory(haha, ch), ch, false); 
         usleep(100 * 1000);
@@ -608,7 +607,7 @@ void Digitizer::ProgramSettingsToBoard(){
     }
     if( DPPType == V1730_DPP_PSD_CODE ){
       for( int p = 0; p < (int) RegisterPSDList[p]; p++){
-        if( RegisterPSDList[p].GetType() == RW::ReadONLY) continue;
+        if( RegisterPSDList[p].GetType() == Register::RW::ReadONLY) continue;
         haha = RegisterPHAList[p];
         WriteRegister(haha, GetSettingFromMemory(haha, ch), ch, false); 
         usleep(100 * 1000);
@@ -617,13 +616,13 @@ void Digitizer::ProgramSettingsToBoard(){
   } 
 }
 
-void Digitizer::SetSettingToMemory(Reg registerAddress,  unsigned int value, unsigned short ch ){
+void Digitizer::SetSettingToMemory(Register::Reg registerAddress,  unsigned int value, unsigned short ch ){
   unsigned short index = registerAddress.Index(ch);
   if( index > SETTINGSIZE ) return;
   setting[index] = value;
 }
 
-unsigned int Digitizer::GetSettingFromMemory(Reg registerAddress, unsigned short ch ){
+unsigned int Digitizer::GetSettingFromMemory(Register::Reg registerAddress, unsigned short ch ){
   unsigned short index = registerAddress.Index(ch);
   if( index > SETTINGSIZE ) return 0xFFFF;
   return setting[index] ;
@@ -697,7 +696,7 @@ int Digitizer::LoadSettingBinaryToMemory(std::string fileName){
   }
 }
     
-unsigned int Digitizer::ReadSettingFromFile(Reg registerAddress, unsigned short ch){
+unsigned int Digitizer::ReadSettingFromFile(Register::Reg registerAddress, unsigned short ch){
   if ( !settingFileExist ) return -1;
   
   unsigned short index = registerAddress.Index(ch);
@@ -717,7 +716,7 @@ unsigned int Digitizer::ReadSettingFromFile(Reg registerAddress, unsigned short 
    
 }
 
-void Digitizer::SaveSettingToFile(Reg registerAddress, unsigned int value, unsigned short ch){
+void Digitizer::SaveSettingToFile(Register::Reg registerAddress, unsigned int value, unsigned short ch){
   if ( !settingFileExist ) return ;
   
   unsigned short index = registerAddress.Index(ch);
@@ -757,7 +756,7 @@ void Digitizer::SaveAllSettingsAsText(std::string fileName){
     return;
   }
 
-  Reg haha;
+  Register::Reg haha;
   
   for( unsigned int i = 0; i < SETTINGSIZE ; i++){
     haha.SetName("");
@@ -779,9 +778,9 @@ void Digitizer::SaveAllSettingsAsText(std::string fileName){
     }
     if( haha.GetName() != "" )  {
       std::string typeStr ;
-      if( haha.GetType() == RW::ReadWrite ) typeStr = "R/W";
-      if( haha.GetType() == RW::ReadONLY  ) typeStr = "R  ";
-      if( haha.GetType() == RW::WriteONLY ) typeStr = "  W";
+      if( haha.GetType() == Register::RW::ReadWrite ) typeStr = "R/W";
+      if( haha.GetType() == Register::RW::ReadONLY  ) typeStr = "R  ";
+      if( haha.GetType() == Register::RW::WriteONLY ) typeStr = "  W";
       fprintf( txtFile, "0x%04X %30s   0x%08X  %s  %u\n", actualAddress, 
                                                           haha.GetNameChar(), 
                                                           setting[i], 

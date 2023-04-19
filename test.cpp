@@ -24,12 +24,9 @@ int keyboardhit();
 int getch(void);
 
 //^======================================
-
 int main(int argc, char* argv[]){
 
-  /**///#####################  Demo with 2 digitizers
-
-  const int nBoard = 2;
+  const int nBoard = 1;
   Digitizer **dig = new Digitizer *[nBoard];
   
   for( int i = 0 ; i < nBoard; i++){
@@ -37,8 +34,25 @@ int main(int argc, char* argv[]){
     int port = i/3;
     dig[i] = new Digitizer(board, port, false, true);
   }
+
+  const float ch2ns = dig[0]->GetCh2ns();
+
+  Data * data =  dig[0]->GetData();
+  data->Allocate80MBMemory();
+
+  dig[0]->StartACQ();
+
+  sleep(3);
+
+  dig[0]->ReadData();
+
+  data->SaveBuffer("test");
+
+
   
-  /******
+  
+
+  /*  
   TApplication * app = new TApplication("app", &argc, argv);
   TCanvas * canvas = new TCanvas("c", "haha", 1200, 400);
   canvas->Divide(3, 1);
@@ -53,7 +67,7 @@ int main(int argc, char* argv[]){
   canvas->cd(3); g1->Draw("AP");
   
   Data * data =  dig[0]->GetData();
-  data->AllocateMemory();
+  data->Allocate80MBMemory();
   
   remove("test.bin");
   
@@ -65,13 +79,15 @@ int main(int argc, char* argv[]){
   uint32_t CurrentTime = 0;
   uint32_t ElapsedTime = 0;
 
+  int waveFormLength = dig[0]->ReadRegister(Register::DPP::RecordLength_G);
+
   while(true){
    
     if(keyboardhit()) {
       break;
     }
     
-    usleep(50000);
+    usleep(1000);
     dig[0]->ReadData();
     
     if( data->nByte > 0 ){
@@ -119,9 +135,7 @@ int main(int argc, char* argv[]){
    
   }
   app->Run();
-
-  ***********/
-
+  */
 
   printf("Closing digitizers..............\n");
   for( int i = 0; i < nBoard; i++){

@@ -19,13 +19,13 @@
 class Data{
 
   public:
+    char *buffer;                     /// readout buffer
     int DPPType;
     std::string DPPTypeStr;
     unsigned short boardSN;
     float ch2ns;
     
     unsigned int nByte;               /// number of byte from read buffer
-    char *buffer;                     /// readout buffer
     uint32_t AllocatedSize;      
     
     double TriggerRate[MaxNChannels]; /// Hz
@@ -81,18 +81,19 @@ class Data{
     unsigned int nw;
     bool SaveWaveToMemory;
 
-    unsigned int outFileIndex;
-    std::string outFilePrefix;
-    std::string outFileName;
-    FILE * outFile;
-    unsigned int outFileSize; // should be max at 2 GB
-    uint64_t FinishedOutFilesSize; // sum of files size.
-    
     ///for temperary
     std::vector<unsigned short> tempWaveform1; 
     std::vector<unsigned short> tempWaveform2; 
     std::vector<bool> tempDigiWaveform1;
     std::vector<bool> tempDigiWaveform2;
+
+    FILE * outFile;
+    uint64_t FinishedOutFilesSize; // sum of files size.
+    unsigned int outFileIndex;
+    std::string outFilePrefix;
+    std::string outFileName;
+    unsigned int outFileSize; // should be max at 2 GB
+    
   
     unsigned int ReadBuffer(unsigned int nWord, int verbose = 0);
 

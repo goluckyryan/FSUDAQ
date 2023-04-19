@@ -36,12 +36,17 @@ private slots:
   void StartScope();
   void StopScope();
 
+  void SetUpComboBox(RComboBox * &cb, QString str, QGridLayout * layout, int row, int col, const Register::Reg para);
+  void SetUpSpinBox(RSpinBox * &sb, QString str, QGridLayout * layout, int row, int col, const Register::Reg para);
+
 signals:
 
 private:
 
   Digitizer ** digi;
   unsigned short nDigi;
+  unsigned short ID; // the id of digi, index of cbScopeDigi
+  int ch2ns;
 
   ReadDataThread ** readDataThread;   
   UpdateTraceThread * updateTraceThread;
@@ -54,11 +59,15 @@ private:
   RComboBox * cbScopeDigi;
   RComboBox * cbScopeCh;
 
-
   QPushButton * bnScopeStart;
   QPushButton * bnScopeStop;
 
   QLineEdit * leTriggerRate;
+
+  RSpinBox * sbReordLength;
+  //RSpinBox * sbPreTrigger;
+
+  //RComboBox * cbDynamicRange;
 
 };
 

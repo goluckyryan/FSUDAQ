@@ -56,6 +56,8 @@ class Digitizer{
     //^-------- other protected functions
     void         ErrorMsg(std::string header = "");
 
+    uint32_t     returnData;
+
   public:
     Digitizer(); /// no digitizer open
     Digitizer(int boardID, int portID = 0, bool program = false, bool verbose = false); 
@@ -90,10 +92,10 @@ class Digitizer{
     /// write value to digitizer, memory, and settingFile (if exist)
     /// ONLY WriteRegister can have ch = -1, for writting all channels
     /// for board setting, ignore ch
-    void WriteRegister (Reg registerAddress, uint32_t value, int ch = -1, bool isSave2MemAndFile = true); 
+    void WriteRegister (Register::Reg registerAddress, uint32_t value, int ch = -1, bool isSave2MemAndFile = true); 
     /// read value from digitizer and memory, and save to memory, and settingFile(if exist), 
     /// for board setting, ignore ch
-    uint32_t ReadRegister (Reg registerAddress, unsigned short ch = 0, bool isSave2MemAndFile = true, std::string str = "" ); 
+    uint32_t ReadRegister (Register::Reg registerAddress, unsigned short ch = 0, bool isSave2MemAndFile = true, std::string str = "" ); 
     uint32_t PrintRegister(uint32_t address, std::string msg);
     
     //^================ Get Board info
@@ -112,14 +114,14 @@ class Digitizer{
     CAEN_DGTZ_ConnectionType   GetLinkType() const {return LinkType;}
     
     //^================ Setting 
-    Reg FindRegister(uint32_t address);
+    Register::Reg FindRegister(uint32_t address);
     /// board <--> memory functions
     void           ReadAllSettingsFromBoard  (bool force = false);
     void           ProgramSettingsToBoard    ();
 
     /// simply read settings from memory
-    void           SetSettingToMemory        (Reg registerAddress, unsigned int value, unsigned short ch = 0);
-    unsigned int   GetSettingFromMemory      (Reg registerAddress, unsigned short ch = 0);
+    void           SetSettingToMemory        (Register::Reg registerAddress, unsigned int value, unsigned short ch = 0);
+    unsigned int   GetSettingFromMemory      (Register::Reg registerAddress, unsigned short ch = 0);
     void           PrintSettingFromMemory    ();
     unsigned int * GetSettings()              {return setting;};    
 
@@ -133,8 +135,8 @@ class Digitizer{
     /// load setting file to memory
     /// if problem, return -1; load without problem, return 0;
     int          LoadSettingBinaryToMemory   (std::string fileName); 
-    void         SaveSettingToFile           (Reg registerAddress, unsigned int value,  unsigned short ch = 0); /// also save to memory
-    unsigned int ReadSettingFromFile         (Reg registerAddress, unsigned short ch = 0); /// read from setting binary
+    void         SaveSettingToFile           (Register::Reg registerAddress, unsigned int value,  unsigned short ch = 0); /// also save to memory
+    unsigned int ReadSettingFromFile         (Register::Reg registerAddress, unsigned short ch = 0); /// read from setting binary
 
 };
 

@@ -22,6 +22,10 @@ public:
   MainWindow(QWidget *parent = nullptr);
   ~MainWindow();
 
+  void closeEvent(QCloseEvent * event){
+    if( scope ) scope->close();
+    event->accept();
+  }
 
 private slots:
 
@@ -33,6 +37,7 @@ private slots:
 
   void OpenDigitizers();
   void CloseDigitizers();
+  void WaitForDigitizersOpen(bool onOff);
 
   void SetupScalar();
   void CleanUpScalar();
