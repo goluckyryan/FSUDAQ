@@ -75,26 +75,33 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   for( int i = 0; i < digi[0]->GetNChannels(); i++) cbScopeCh->addItem("Ch-" + QString::number(i));
   ch2ns = digi[ID]->GetCh2ns();
 
-  connect(cbScopeCh, &RComboBox::currentIndexChanged, this, [=](int index){
+  connect(cbScopeDigi, &RComboBox::currentIndexChanged, this, [=](int index){
     if( !enableSignalSlot ) return;
     ID = index;
     ch2ns = digi[ID]->GetCh2ns();
     //---setup cbScopeCh
     cbScopeCh->clear();
     for( int i = 0; i < digi[ID]->GetNChannels(); i++) cbScopeCh->addItem("Ch-" + QString::number(i));
+
+    //---Setup SettingGroup
+    if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) {
+      SetUpPHAPanel();
+    }else{
+      CleanUpSettingsGroupBox();
+    }
+
   });
 
   //================ Trace settings
   rowID ++;
   {
-    QGroupBox * settingGroup = new QGroupBox("Trace Settings",this);
+    settingGroup = new QGroupBox("Trace Settings",this);
     layout->addWidget(settingGroup, rowID, 0, 1, 6);
 
-    QGridLayout * bLayout = new QGridLayout(settingGroup);
-    bLayout->setSpacing(0);
+    settingLayout = new QGridLayout(settingGroup);
+    settingLayout->setSpacing(0);
 
-    SetUpSpinBox(sbReordLength, "Record Length", bLayout, 0, 0, Register::DPP::RecordLength_G);
-
+    if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) SetUpPHAPanel();
 
   }
   //================ Plot view
@@ -178,28 +185,29 @@ void Scope::StopScope(){
 
 //*=======================================================
 //*=======================================================
-void Scope::SetUpComboBox(RComboBox * &cb, QString str, QGridLayout * layout, int row, int col, const Register::Reg para){
-  QLabel * lb = new QLabel(str, this);
+void Scope::SetUpComboBox(RComboBox * &cb, QString str, int row, int col, const Register::Reg para){
+  QLabel * lb = new QLabel(str, settingGroup);
   lb->setAlignment(Qt::AlignRight | Qt::AlignCenter);
-  layout->addWidget(lb, row, col);
+  settingLayout->addWidget(lb, row, col);
 
-  cb = new RComboBox(this);
-  layout->addWidget(cb, row, col + 1);
+  cb = new RComboBox(settingGroup);
+  settingLayout->addWidget(cb, row, col + 1);
 }
 
-void Scope::SetUpSpinBox(RSpinBox * &sb, QString str, QGridLayout * layout, int row, int col, const Register::Reg para){
-  QLabel * lb = new QLabel(str, this);
+void Scope::SetUpSpinBox(RSpinBox * &sb, QString str, int row, int col, const Register::Reg para){
+  QLabel * lb = new QLabel(str, settingGroup);
   lb->setAlignment(Qt::AlignRight | Qt::AlignCenter);
-  layout->addWidget(lb, row, col);
+  settingLayout->addWidget(lb, row, col);
 
-  sb = new RSpinBox(this);
+  sb = new RSpinBox(settingGroup);
   if( para.GetPartialStep() != 0 ){
     sb->setMinimum(0);
     sb->setMaximum(para.GetMax() * para.GetPartialStep() * ch2ns);
     if( para.GetPartialStep() > 0 ) sb->setSingleStep(para.GetPartialStep() * ch2ns);
     if( para.GetPartialStep() == -1 ) sb->setSingleStep(1);
   }
-  layout->addWidget(sb, row, col + 1);
+  settingLayout->addWidget(sb, row, col + 1);
+
   connect(sb, &RSpinBox::valueChanged, this, [=](){
     if( !enableSignalSlot ) return;
     sb->setStyleSheet("color:blue");
@@ -229,5 +237,42 @@ void Scope::SetUpSpinBox(RSpinBox * &sb, QString str, QGridLayout * layout, int 
     //   sb->setStyleSheet("color:red;");
     // }
   });  
+}
+
+void Scope::CleanUpSettingsGroupBox(){
+
+  printf("-- %s\n", __func__);
+
+  QList<QLabel *> labelChildren1 = settingGroup->findChildren<QLabel *>();
+  for( int i = 0; i < labelChildren1.size(); i++) delete labelChildren1[i];
+  
+  QList<RComboBox *> labelChildren2 = settingGroup->findChildren<RComboBox *>();
+  for( int i = 0; i < labelChildren2.size(); i++) delete labelChildren2[i];
+
+  QList<RSpinBox *> labelChildren3 = settingGroup->findChildren<RSpinBox *>();
+  for( int i = 0; i < labelChildren3.size(); i++) delete labelChildren3[i];
 
 }
+void Scope::SetUpPHAPanel(){
+
+  CleanUpSettingsGroupBox();
+
+  printf("-- %s\n", __func__);
+
+  SetUpSpinBox(sbReordLength, "Record Length [ns]",  0, 0, Register::DPP::RecordLength_G);
+  SetUpSpinBox(sbPreTrigger,  "Pre Trigger [ns]", 0, 2, Register::DPP::PreTrigger);
+
+  SetUpSpinBox(sbDCOffset, "DC offset", 0, 4, Register::DPP::ChannelDCOffset);
+
+  SetUpSpinBox(sbInputRiseTime, "Input Rise Time [ns]", 1, 0, Register::DPP::PHA::InputRiseTime);
+  SetUpSpinBox(sbThreshold,          "Threshold [LSB]", 1, 2, Register::DPP::PHA::TriggerThreshold);
+  SetUpSpinBox(sbThreshold,     "Trigger HoldOff [ns]", 1, 4, Register::DPP::PHA::TriggerHoldOffWidth);
+  
+  SetUpSpinBox(sbTrapRiseTime, "Trap. Rise Time [ns]", 2, 0, Register::DPP::PHA::TrapezoidRiseTime);
+  SetUpSpinBox(sbTrapFlatTop,    "Trap. FlatTop [ns]", 2, 2, Register::DPP::PHA::TrapezoidFlatTop);
+  SetUpSpinBox(sbDecayTime,         "Decay Time [ns]", 2, 4, Register::DPP::PHA::DecayTime);
+  SetUpSpinBox(sbPeakingTime,     "Peaking Time [ns]", 2, 6, Register::DPP::PHA::PeakingTime);
+
+
+}
+

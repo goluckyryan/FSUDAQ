@@ -11,6 +11,7 @@
 #include <QLineEdit>
 #include <QComboBox>
 #include <QGridLayout>
+#include <QGroupBox>
 #include <QLineSeries>
 #include <QRubberBand>
 #include <QMouseEvent>
@@ -36,8 +37,11 @@ private slots:
   void StartScope();
   void StopScope();
 
-  void SetUpComboBox(RComboBox * &cb, QString str, QGridLayout * layout, int row, int col, const Register::Reg para);
-  void SetUpSpinBox(RSpinBox * &sb, QString str, QGridLayout * layout, int row, int col, const Register::Reg para);
+  void SetUpComboBox(RComboBox * &cb, QString str, int row, int col, const Register::Reg para);
+  void SetUpSpinBox(RSpinBox * &sb, QString str, int row, int col, const Register::Reg para);
+
+  void CleanUpSettingsGroupBox();
+  void SetUpPHAPanel();
 
 signals:
 
@@ -64,10 +68,28 @@ private:
 
   QLineEdit * leTriggerRate;
 
-  RSpinBox * sbReordLength;
-  //RSpinBox * sbPreTrigger;
+  QGroupBox * settingGroup;
+  QGridLayout * settingLayout;
 
+  /// common to PSD and PHA
+  RSpinBox * sbReordLength;
+  RSpinBox * sbPreTrigger;
+
+  RSpinBox * sbDCOffset;
   //RComboBox * cbDynamicRange;
+
+  /// PHA
+  RSpinBox * sbInputRiseTime;
+  RSpinBox * sbTriggerHoldOff;
+  RSpinBox * sbThreshold;
+  //RComboBox * cbSmoothingFactor;
+
+  RSpinBox * sbTrapRiseTime;
+  RSpinBox * sbTrapFlatTop;
+  RSpinBox * sbDecayTime;
+  RSpinBox * sbPeakingTime;
+
+
 
 };
 
