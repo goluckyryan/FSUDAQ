@@ -182,8 +182,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     lbLastUpdateTime = nullptr;
     lbScalarACQStatus = nullptr;
 
-    scalarThread = new ScalarThread();
-    //connect(scalarThread, &ScalarThread::updataScalar, this, &MainWindow::UpdateScalar);
+    scalarThread = new TimingThread();
+    connect(scalarThread, &TimingThread::updataScalar, this, &MainWindow::UpdateScalar);
 
   }
 
@@ -198,6 +198,14 @@ MainWindow::~MainWindow(){
   SaveProgramSettings();
 
   if( scope ) delete scope;
+
+  if( scalar ) {
+    CleanUpScalar();
+    scalarThread->Stop();
+    scalarThread->quit();
+    scalarThread->exit();
+    delete scalarThread;
+  }
   
 
 }
@@ -522,7 +530,18 @@ void MainWindow::OpenScalar(){
 }
 
 void MainWindow::UpdateScalar(){
+  if( digi == nullptr ) return;
+  
+  lbLastUpdateTime->setText("Last update: " + QDateTime::currentDateTime().toString("MM.dd hh:mm:ss"));
 
+  for( unsigned int iDigi = 0; iDigi < nDigi; iDigi++){
+    Data * data = digi[iDigi]->GetData();
+
+    for( int i = 0; i < digi[iDigi]->GetNChannels(); i++){
+      leTrigger[iDigi][i]->setText(QString::number(data->TriggerRate[i]));
+      leAccept[iDigi][i]->setText(QString::number(data->NonPileUpRate[i]));
+    }
+  }
 
 }
 
@@ -532,34 +551,52 @@ void MainWindow::UpdateScalar(){
 void MainWindow::StartACQ(){
   if( digi == nullptr ) return;
 
-  if( CommentDialog(true) == false) return;
+  bool commentResult = true;
+  if( chkSaveData->isChecked() ) commentResult = CommentDialog(true);
+  if( commentResult == false) return;
 
   for( unsigned int i = 0; i < nDigi ; i++){
     digi[i]->GetData()->OpenSaveFile((rawDataPath + "/" + prefix).toStdString());
     digi[i]->StartACQ();
-    readDataThread[i]->SetSaveData(true);
+    readDataThread[i]->SetSaveData(chkSaveData->isChecked());
     readDataThread[i]->start();
   }
+  if( chkSaveData->isChecked() ) SaveLastRunFile();
+  scalarThread->start();
 
-  SaveLastRunFile();
+  if( !scalar->isVisible() ) {
+    scalar->show();
+  }else{
+    scalar->activateWindow();
+  }
+  lbScalarACQStatus->setText("<font style=\"color: green;\"><b>ACQ On</b></font>");
 
 }
 
 void MainWindow::StopACQ(){
   if( digi == nullptr ) return;
 
-  if( CommentDialog(false) == false) return;
+  bool commentResult = true;
+  if( chkSaveData->isChecked() ) commentResult = CommentDialog(true);
+  if( commentResult == false) return;
 
   for( unsigned int i = 0; i < nDigi; i++){
     digi[i]->StopACQ();
-    digi[i]->GetData()->CloseSaveFile();
+    if( chkSaveData->isChecked() ) digi[i]->GetData()->CloseSaveFile();
 
     if( readDataThread[i]->isRunning() ) {
       readDataThread[i]->quit();
       readDataThread[i]->wait();
     }
   }
+
+  if( scalarThread->isRunning()){
+    scalarThread->Stop();
+    scalarThread->quit();
+    scalarThread->wait();
+  }
   
+  lbScalarACQStatus->setText("<font style=\"color: red;\"><b>ACQ Off</b></font>");
 }
 
 void MainWindow::AutoRun(){

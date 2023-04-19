@@ -53,7 +53,7 @@ private:
   int ch2ns;
 
   ReadDataThread ** readDataThread;   
-  UpdateTraceThread * updateTraceThread;
+  TimingThread * updateTraceThread;
 
   bool enableSignalSlot;
 

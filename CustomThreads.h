@@ -17,8 +17,10 @@ public:
     this->digi = dig;
     this->ID = digiID;
     isSaveData = false;
+    isScope = false;
   }
-  void SetSaveData(bool onOff) {this->isSaveData = onOff;}
+  void SetSaveData(bool onOff)  {this->isSaveData = onOff;}
+  void SetScopeMode(bool onOff) {this->isScope = onOff;}
   void run(){
     clock_gettime(CLOCK_REALTIME, &ta);
     while(true){
@@ -28,15 +30,12 @@ public:
 
       if( ret == CAEN_DGTZ_Success ){
         digiMTX[ID].lock();
-        if( isSaveData ) {
-          digi->GetData()->SaveData();
-        }else{
-          digi->GetData()->DecodeBuffer(false);
-        }
+        digi->GetData()->DecodeBuffer(!isScope);
+        if( isSaveData ) digi->GetData()->SaveData();
         digiMTX[ID].unlock();
 
       }else{
-        printf("%s------------ ret : %d \n", __func__, ret);
+        printf("ReadDataThread::%s------------ ret : %d \n", __func__, ret);
         if( ret == CAEN_DGTZ_WrongAcqMode) break;
       }
 
@@ -72,47 +71,19 @@ private:
   int ID;
   timespec ta, tb;
   bool isSaveData;
+  bool isScope;
 };
 
-//^#===================================================== UpdateTrace Thread
-class UpdateTraceThread : public QThread {
+//^#======================================================= Timing Thread
+class TimingThread : public QThread {
   Q_OBJECT
 public:
-  UpdateTraceThread(QObject * parent = 0) : QThread(parent){
-    waitTime = 2;
-    stop = false;
-  }
-  unsigned int GetWaitTimeSec() const {return waitTime;}
-  void SetWaitTimeSec(unsigned sec) {waitTime = sec;}
-  void Stop() {this->stop = true;}
-  void run(){
-    unsigned int count = 0;
-    stop = false;
-    do{
-      usleep(100000);
-      count ++;
-      if( count % waitTime == 0){
-        emit updateTrace();
-      }
-    }while(!stop);
-  }
-signals:
-  void updateTrace();
-
-private:
-  bool stop;
-  unsigned int waitTime; //100 of milisec
-};
-
-//^#======================================================= Scalar Thread
-class ScalarThread : public QThread {
-  Q_OBJECT
-public:
-  ScalarThread(QObject * parent = 0 ) : QThread(parent){
+  TimingThread(QObject * parent = 0 ) : QThread(parent){
     waitTime = 20; // 10 x 100 milisec
     stop = false;
   }
   void Stop() { this->stop = true;}
+  void SetWaitTimeinSec(float sec) {waitTime = sec * 10 ;}
   unsigned int GetWaitTimeinSec() const {return waitTime/10;}
   void run(){
     unsigned int count  = 0;

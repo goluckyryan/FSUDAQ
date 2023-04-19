@@ -29,12 +29,14 @@ class Data{
     uint32_t AllocatedSize;      
     
     double TriggerRate[MaxNChannels]; /// Hz
+    double NonPileUpRate[MaxNChannels]; /// Hz
     unsigned long TotNumEvents[MaxNChannels];
-    unsigned short NumEventsDecoded[MaxNChannels];
+    unsigned short NumEventsDecoded[MaxNChannels];  /// reset at every decode
+    unsigned short NumNonPileUpDecoded[MaxNChannels]; /// reset at every decode
 
-    /// store a single Raw event
+    /// store data for event building
     bool IsNotRollOverFakeAgg;
-    unsigned short     NumEvents[MaxNChannels];
+    unsigned short     NumEvents[MaxNChannels];  /// max 65535, reset only clear Data
     unsigned long long Timestamp[MaxNChannels][MaxNData]; /// 47 bit
     unsigned short     fineTime[MaxNChannels][MaxNData];  /// 10 bits, in unit of ch2ns / 1000 = ps
     unsigned short     Energy[MaxNChannels][MaxNData];   /// 15 bit
@@ -144,7 +146,9 @@ inline void Data::Allocate80MBMemory(){
 inline void Data::ClearTriggerRate(){ 
   for( int i = 0 ; i < MaxNChannels; i++) {
     TriggerRate[i] = 0.0; 
+    NonPileUpRate[i] = 0.0;
     NumEventsDecoded[i] = 0;
+    NumNonPileUpDecoded[i] = 0;
   }
 }
 
@@ -340,6 +344,7 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
     double sec =  dTime * ch2ns / 1e9;
     if( sec != 0 && NumEventsDecoded[ch] > 1 ){
       TriggerRate[ch] = NumEventsDecoded[ch]/sec;
+      NonPileUpRate[ch] = NumNonPileUpDecoded[ch]/sec;
     }
   }
   
@@ -532,14 +537,21 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
       printf(" trapezoid sat. : %d \n", ((extra >> 10) & 0x1) );
     }
 
-    if( rollOver == 0 ) {
+
+    if( rollOver == 0 ) { // non-time roll over fake event
       Energy[channel][NumEvents[channel]] = energy;
       Timestamp[channel][NumEvents[channel]] = timeStamp;
       if(extra2Option == 0 || extra2Option == 2 ) fineTime[channel][NumEvents[channel]] = (extra2 & 0x07FF );
       NumEvents[channel] ++; 
       NumEventsDecoded[channel] ++; 
       TotNumEvents[channel] ++;
+
+      if( !pileUp ) {
+        NumNonPileUpDecoded[channel] ++;
+      }
     }
+
+    if( NumEvents[channel] >= MaxNData ) ClearData();
     
     if( verbose >= 1 ) printf("%4d | ch : %2d, PileUp : %d , energy : %5d, rollOver: %d,  timestamp : %10llu, triggerAt : %d, nSample : %d, %f sec\n", 
                                 NumEvents[channel], channel, pileUp, energy, rollOver, timeStamp, triggerAtSample, nSample , timeStamp * 4. / 1e9);
@@ -710,8 +722,11 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
       NumEvents[channel] ++; 
       NumEventsDecoded[channel] ++; 
       TotNumEvents[channel] ++;
+
     }
-    
+
+    if( NumEvents[channel] >= MaxNData ) ClearData();
+     
     if( verbose >= 2 ) printf("extra : 0x%08x, Qshort : %d, Qlong : %d \n", extra, Qshort, Qlong);
     
     if( verbose >= 1 ) printf("ch : %2d, Qshort : %d, Qlong : %d, timestamp : %llu\n", 
