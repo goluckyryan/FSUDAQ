@@ -84,7 +84,7 @@ public:
   }
   void Stop() { this->stop = true;}
   void SetWaitTimeinSec(float sec) {waitTime = sec * 10 ;}
-  unsigned int GetWaitTimeinSec() const {return waitTime/10;}
+  float GetWaitTimeinSec() const {return waitTime/10.;}
   void run(){
     unsigned int count  = 0;
     stop = false;
@@ -92,12 +92,12 @@ public:
       usleep(100000);
       count ++;
       if( count % waitTime == 0){
-        emit updataScalar();
+        emit timeUp();
       }
     }while(!stop);
   }
 signals:
-  void updataScalar();
+  void timeUp();
 private:
   bool stop;
   unsigned int waitTime;

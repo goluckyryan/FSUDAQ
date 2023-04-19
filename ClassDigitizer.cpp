@@ -288,7 +288,7 @@ int Digitizer::ProgramPHABoard(){
   printf("======== program board PHA\n");
 
   ret = CAEN_DGTZ_WriteRegister(handle, Register::DPP::RecordLength_G + 0x7000, 62);  
-  ret = CAEN_DGTZ_WriteRegister(handle, Register::DPP::BoardConfiguration, 0x0F8915);  /// has Extra2
+  ret = CAEN_DGTZ_WriteRegister(handle, Register::DPP::BoardConfiguration, 0x0F8915);  /// has Extra2, dual trace, input and trap-baseline
   ///ret = CAEN_DGTZ_WriteRegister(handle, Register::DPP::BoardConfiguration, 0x0D8115);  /// diable Extra2
   
   //TODO change to write register
@@ -369,6 +369,7 @@ void Digitizer::StopACQ(){
   printf("\n\e[1m\e[33m====== Acquisition STOPPED for Board %d\e[0m\n", boardID);
   AcqRun = false;
   data->ClearTriggerRate();
+  data->ClearBuffer();
 }
 
 unsigned int Digitizer::CalByteForBuffer(){
@@ -906,6 +907,7 @@ void Digitizer::SetPreTriggerDuration(unsigned int ns, int ch)                  
 void Digitizer::SetDCOffset(float offsetPrecentage, int ch)                     { WriteRegister( Register::DPP::ChannelDCOffset, uint( 0xFFFF * (1.0-offsetPrecentage)), ch ); ErrorMsg(__func__);}
 void Digitizer::SetVetoWidth(uint32_t bit, int ch)                              { WriteRegister( Register::DPP::VetoWidth,                      bit, ch);      ErrorMsg(__func__);}
 
+
 void Digitizer::SetTriggerPolarity(bool RiseingIsZero, int ch ){
   if( !isConnected ) return;
   if ( DPPType >= 128 ) return; /// do thing for DPP firmware
@@ -926,7 +928,7 @@ void Digitizer::SetDPPAlgorithmControl(uint32_t bit, int ch){
   if( ret != 0 ) ErrorMsg(__func__);
 }
 
-unsigned int Digitizer::ReadBits(Reg address, unsigned int bitLength, unsigned int bitSmallestPos, int ch ){
+unsigned int Digitizer::ReadBits(Register::Reg address, unsigned int bitLength, unsigned int bitSmallestPos, int ch ){
   int tempCh = ch;
   if (ch < 0 && address < 0x8000 ) tempCh = 0; /// take ch-0 
   uint32_t bit = ReadRegister(address, tempCh);
@@ -934,7 +936,7 @@ unsigned int Digitizer::ReadBits(Reg address, unsigned int bitLength, unsigned i
   return bit;
 }
 
-void Digitizer::SetBits(Reg address, unsigned int bitValue, unsigned int bitLength, unsigned int bitSmallestPos, int ch){
+void Digitizer::SetBits(Register::Reg address, unsigned int bitValue, unsigned int bitLength, unsigned int bitSmallestPos, int ch){
   ///printf("address : 0x%X, value : 0x%X, len : %d, pos : %d, ch : %d \n", address, bitValue, bitLength, bitSmallestPos, ch);
   uint32_t bit ;
   uint32_t bitmask = (uint(pow(2, bitLength)-1) << bitSmallestPos);  

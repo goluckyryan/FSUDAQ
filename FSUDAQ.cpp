@@ -183,7 +183,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     lbScalarACQStatus = nullptr;
 
     scalarThread = new TimingThread();
-    connect(scalarThread, &TimingThread::updataScalar, this, &MainWindow::UpdateScalar);
+    connect(scalarThread, &TimingThread::timeUp, this, &MainWindow::UpdateScalar);
 
   }
 
@@ -370,9 +370,14 @@ void MainWindow::OpenDigitizers(){
   readDataThread = new ReadDataThread * [nDigi];
   for( unsigned int i = 0; i < nDigi; i++){
     digi[i] = new Digitizer(portList[i].first, portList[i].second);
+    //TODO === load settings 
+    digi[i]->Reset();
+    digi[i]->ProgramPHABoard();
     readDataThread[i] = new ReadDataThread(digi[i], i);
     connect(readDataThread[i], &ReadDataThread::sendMsg, this, &MainWindow::LogMsg);
   }
+
+  digi[0]->SaveAllSettingsAsText("setting.txt");
 
   LogMsg(QString("Done. Opened %1 digitizer(s).").arg(nDigi));
 
@@ -571,6 +576,9 @@ void MainWindow::StartACQ(){
   }
   lbScalarACQStatus->setText("<font style=\"color: green;\"><b>ACQ On</b></font>");
 
+  bnStartACQ->setEnabled(false);
+  bnStopACQ->setEnabled(true);
+
 }
 
 void MainWindow::StopACQ(){
@@ -597,6 +605,9 @@ void MainWindow::StopACQ(){
   }
   
   lbScalarACQStatus->setText("<font style=\"color: red;\"><b>ACQ Off</b></font>");
+
+  bnStartACQ->setEnabled(true);
+  bnStopACQ->setEnabled(false);
 }
 
 void MainWindow::AutoRun(){
@@ -707,6 +718,7 @@ void MainWindow::OpenScope(){
     scope->show();
   }else{
     scope->show();
+    scope->activateWindow();
   }
 
 }

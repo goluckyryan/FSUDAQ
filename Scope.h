@@ -31,21 +31,22 @@ public:
   Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataThread, QMainWindow * parent = nullptr);
   ~Scope();
 
-public slots:
-
 private slots:
   void StartScope();
   void StopScope();
+  void UpdateScope();
+
+signals:
+
+private:
+
 
   void SetUpComboBox(RComboBox * &cb, QString str, int row, int col, const Register::Reg para);
   void SetUpSpinBox(RSpinBox * &sb, QString str, int row, int col, const Register::Reg para);
 
   void CleanUpSettingsGroupBox();
   void SetUpPHAPanel();
-
-signals:
-
-private:
+  void SetUpPSDPanel();
 
   Digitizer ** digi;
   unsigned short nDigi;

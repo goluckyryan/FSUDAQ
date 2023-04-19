@@ -50,8 +50,7 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
 
   updateTraceThread = new TimingThread();
   updateTraceThread->SetWaitTimeinSec(0.5);
-
-  //connect(updateTraceThread, &UpdateTraceThread::updateTrace, this, &Scope::UpdateScope);
+  connect(updateTraceThread, &TimingThread::timeUp, this, &Scope::UpdateScope);
 
   //*================================== UI
   int rowID = -1;
@@ -86,11 +85,9 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
     for( int i = 0; i < digi[ID]->GetNChannels(); i++) cbScopeCh->addItem("Ch-" + QString::number(i));
 
     //---Setup SettingGroup
-    if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) {
-      SetUpPHAPanel();
-    }else{
-      CleanUpSettingsGroupBox();
-    }
+    CleanUpSettingsGroupBox();
+    if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) SetUpPHAPanel();
+    if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) SetUpPSDPanel();
 
   });
 
@@ -130,7 +127,6 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   rowID ++;
   bnScopeStart = new QPushButton("Start", this);
   layout->addWidget(bnScopeStart, rowID, 0);
-  bnScopeStart->setEnabled(false);
   connect(bnScopeStart, &QPushButton::clicked, this, [=](){this->StartScope();});
 
   bnScopeStop = new QPushButton("Stop", this);
@@ -150,8 +146,6 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   layout->addWidget(bnClose, rowID, 5);
   connect(bnClose, &QPushButton::clicked, this, &Scope::close);
 
-
-
   layout->setColumnStretch(0, 1);
   layout->setColumnStretch(1, 1);
   layout->setColumnStretch(2, 1);
@@ -160,6 +154,9 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   layout->setColumnStretch(5, 1);
 
   enableSignalSlot = true;
+
+  bnScopeStart->setEnabled(true);
+  bnScopeStop->setEnabled(false);
 
 }
 
@@ -177,11 +174,91 @@ Scope::~Scope(){
 //*=======================================================
 //*=======================================================
 void Scope::StartScope(){
+  if( !digi ) return;
 
+  for( unsigned int iDigi = 0; iDigi < nDigi; iDigi ++){
+
+    digi[iDigi]->GetData()->SetSaveWaveToMemory(true);
+
+    digi[iDigi]->StartACQ();
+
+    readDataThread[iDigi]->SetScopeMode(true);
+    readDataThread[iDigi]->SetSaveData(false);
+
+    readDataThread[iDigi]->start();
+
+  }
+
+  updateTraceThread->start();
+
+  bnScopeStart->setEnabled(false);
+  bnScopeStop->setEnabled(true);
 
 }
 
 void Scope::StopScope(){
+  if( !digi ) return;
+
+  updateTraceThread->Stop();
+  updateTraceThread->quit();
+  updateTraceThread->exit();
+
+
+  for( unsigned int iDigi = 0; iDigi < nDigi; iDigi ++){
+
+    digi[iDigi]->StopACQ();
+
+    readDataThread[iDigi]->quit();
+    readDataThread[iDigi]->wait();
+  }
+
+  bnScopeStart->setEnabled(true);
+  bnScopeStop->setEnabled(false);
+
+}
+
+void Scope::UpdateScope(){
+
+  printf("---- %s \n", __func__);
+
+  if( !digi ) return;
+
+  int ID = cbScopeDigi->currentIndex();
+  int ch = cbScopeCh->currentIndex();
+  int ch2ns = digi[ID]->GetCh2ns();
+
+  Data * data = digi[ID]->GetData();
+
+  digiMTX[ID].lock();
+  leTriggerRate->setText(QString::number(data->TriggerRate[ch]));
+
+  unsigned short index = data->NumEvents[ch];
+  unsigned short traceLength = data->Waveform1[ch][index].size();
+
+  if( data->TriggerRate[ch] > 0 ){
+
+    printf("--- %d | %d \n", index, traceLength );
+
+    QVector<QPointF> points;
+    for( int i = 0; i < (int) (data->Waveform1[ch][index]).size() ; i++ ) points.append(QPointF(ch2ns * i, (data->Waveform1[ch][index])[i])); 
+    dataTrace[0]->replace(points);
+
+    points.clear();
+    for( int i = 0; i < (int) (data->Waveform2[ch][index]).size() ; i++ ) points.append(QPointF(ch2ns * i, (data->Waveform2[ch][index])[i]));
+    dataTrace[1]->replace(points);
+
+    points.clear();
+    for( int i = 0; i < (int) (data->DigiWaveform1[ch][index]).size() ; i++ ) points.append(QPointF(ch2ns * i, (data->DigiWaveform1[ch][index])[i] * 1000));
+    dataTrace[2]->replace(points);
+
+    points.clear();
+    for( int i = 0; i < (int) (data->DigiWaveform2[ch][index]).size() ; i++ ) points.append(QPointF(ch2ns * i, (data->DigiWaveform2[ch][index])[i] * 1000));
+    dataTrace[3]->replace(points);
+
+  }
+  digiMTX[ID].unlock();
+
+  plot->axes(Qt::Horizontal).first()->setRange(0, ch2ns * traceLength);
 
 }
 
@@ -243,8 +320,6 @@ void Scope::SetUpSpinBox(RSpinBox * &sb, QString str, int row, int col, const Re
 
 void Scope::CleanUpSettingsGroupBox(){
 
-  printf("-- %s\n", __func__);
-
   QList<QLabel *> labelChildren1 = settingGroup->findChildren<QLabel *>();
   for( int i = 0; i < labelChildren1.size(); i++) delete labelChildren1[i];
   
@@ -255,11 +330,8 @@ void Scope::CleanUpSettingsGroupBox(){
   for( int i = 0; i < labelChildren3.size(); i++) delete labelChildren3[i];
 
 }
+
 void Scope::SetUpPHAPanel(){
-
-  CleanUpSettingsGroupBox();
-
-  printf("-- %s\n", __func__);
 
   SetUpSpinBox(sbReordLength, "Record Length [ns]",  0, 0, Register::DPP::RecordLength_G);
   SetUpSpinBox(sbPreTrigger,  "Pre Trigger [ns]", 0, 2, Register::DPP::PreTrigger);
@@ -275,6 +347,10 @@ void Scope::SetUpPHAPanel(){
   SetUpSpinBox(sbDecayTime,         "Decay Time [ns]", 2, 4, Register::DPP::PHA::DecayTime);
   SetUpSpinBox(sbPeakingTime,     "Peaking Time [ns]", 2, 6, Register::DPP::PHA::PeakingTime);
 
-
 }
 
+void Scope::SetUpPSDPanel(){
+
+  SetUpSpinBox(sbReordLength, "Record Length [ns]",  0, 0, Register::DPP::RecordLength_G);
+  SetUpSpinBox(sbPreTrigger,  "Pre Trigger [ns]", 0, 2, Register::DPP::PreTrigger);
+}

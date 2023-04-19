@@ -8,6 +8,8 @@ programSettings.txt
 
 data
 
+*.txt
+
 *~
 *.autosave
 moc_*

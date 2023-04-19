@@ -34,7 +34,8 @@ class Data{
     unsigned short NumEventsDecoded[MaxNChannels];  /// reset at every decode
     unsigned short NumNonPileUpDecoded[MaxNChannels]; /// reset at every decode
 
-    /// store data for event building
+    /// store data for event building and deduce the trigger rate.
+    //TODO... make it a circular memory
     bool IsNotRollOverFakeAgg;
     unsigned short     NumEvents[MaxNChannels];  /// max 65535, reset only clear Data
     unsigned long long Timestamp[MaxNChannels][MaxNData]; /// 47 bit
@@ -68,7 +69,7 @@ class Data{
   
     void PrintStat() const;
 
-    void PrintData() const;
+    void PrintAllData() const;
 
     //^================= Saving data
     void OpenSaveFile(std::string fileNamePrefix);
@@ -178,6 +179,7 @@ inline void Data::ClearData(){
 
 inline void Data::ClearBuffer(){
   delete buffer;
+  buffer = nullptr;
   AllocatedSize = 0;
   nByte = 0;
 }
@@ -245,7 +247,7 @@ inline void Data::PrintBuffer() const{
   }
 }
 
-inline void Data::PrintData() const{
+inline void Data::PrintAllData() const{
   printf("============================= Print Data\n");
   for( int ch = 0; ch < MaxNChannels ; ch++){
     if( NumEvents[ch] == 0 ) continue;
@@ -280,12 +282,8 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
     return;
   } 
 
-  if( nByte == 0 ) {
-    return;
-  } 
-
+  if( nByte == 0 ) return;
   nw = 0;
-  
   ClearTriggerRate();
   
   do{
@@ -722,7 +720,6 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
       NumEvents[channel] ++; 
       NumEventsDecoded[channel] ++; 
       TotNumEvents[channel] ++;
-
     }
 
     if( NumEvents[channel] >= MaxNData ) ClearData();

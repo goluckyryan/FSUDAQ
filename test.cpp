@@ -38,18 +38,19 @@ int main(int argc, char* argv[]){
   const float ch2ns = dig[0]->GetCh2ns();
 
   Data * data =  dig[0]->GetData();
-  data->Allocate80MBMemory();
 
   dig[0]->StartACQ();
 
-  sleep(3);
+  for( int i = 0; i < 5; i ++ ){
+    sleep(1);
+    dig[0]->ReadData();
+    data->DecodeBuffer(false, true);
+  }
 
-  dig[0]->ReadData();
+  dig[0]->StopACQ();
 
-  data->SaveBuffer("test");
+  data->PrintAllData();
 
-
-  
   
 
   /*  

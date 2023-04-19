@@ -76,7 +76,7 @@ class Digitizer{
     
     void         PrintBoard()      ;    
     virtual int  ProgramBoard()    ; /// program a generic board, no program channel
-    int          ProgramPHABoard() ; /// program a default PHA board
+    int          ProgramPHABoard() ; /// program a default PHA board with dual trace
     
     //^================ ACQ control
     void   StopACQ();
@@ -137,6 +137,12 @@ class Digitizer{
     int          LoadSettingBinaryToMemory   (std::string fileName); 
     void         SaveSettingToFile           (Register::Reg registerAddress, unsigned int value,  unsigned short ch = 0); /// also save to memory
     unsigned int ReadSettingFromFile         (Register::Reg registerAddress, unsigned short ch = 0); /// read from setting binary
+
+    //============ old methods, that only manipulate digitizer register, not setting in memory
+    // void SetTriggerPolarity(bool RiseingIsZero, int ch );
+    // void SetDPPAlgorithmControl(uint32_t bit, int ch);
+    // unsigned int ReadBits(Register::Reg address, unsigned int bitLength, unsigned int bitSmallestPos, int ch );
+    // void SetBits(Register::Reg address, unsigned int bitValue, unsigned int bitLength, unsigned int bitSmallestPos, int ch);
 
 };
 
