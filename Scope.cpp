@@ -23,7 +23,7 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   for( int i = 0; i < MaxNumberOfTrace; i++) {
     dataTrace[i] = new QLineSeries();
     dataTrace[i]->setName("Trace " + QString::number(i));
-    for(int j = 0; j < 100; j ++) dataTrace[i]->append(40*j, QRandomGenerator::global()->bounded(8000) + 8000);
+    for(int j = 0; j < 100; j ++) dataTrace[i]->append(40*j, QRandomGenerator::global()->bounded(8000));
     plot->addSeries(dataTrace[i]);
   }
 
@@ -39,8 +39,8 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   QValueAxis * yaxis = qobject_cast<QValueAxis*> (plot->axes(Qt::Vertical).first());
   QValueAxis * xaxis = qobject_cast<QValueAxis*> (plot->axes(Qt::Horizontal).first());
   yaxis->setTickCount(6);
-  yaxis->setTickInterval(16384);
-  yaxis->setRange(-16384, 65536);
+  yaxis->setTickInterval((0x1FFF)/4);
+  yaxis->setRange(-(0x1FFF), 0x1FFF);
   yaxis->setLabelFormat("%.0f");
 
   xaxis->setRange(0, 5000);
@@ -105,7 +105,7 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   }
   //================ Plot view
   rowID ++;
-  TraceView * plotView = new TraceView(plot);
+  plotView = new TraceView(plot, this);
   plotView->setRenderHints(QPainter::Antialiasing);
   layout->addWidget(plotView, rowID, 0, 1, 6);
 
@@ -219,7 +219,7 @@ void Scope::StopScope(){
 
 void Scope::UpdateScope(){
 
-  printf("---- %s \n", __func__);
+  //printf("---- %s \n", __func__);
 
   if( !digi ) return;
 
@@ -232,12 +232,12 @@ void Scope::UpdateScope(){
   digiMTX[ID].lock();
   leTriggerRate->setText(QString::number(data->TriggerRate[ch]));
 
-  unsigned short index = data->NumEvents[ch];
+  unsigned short index = data->NumEvents[ch] - 1;
   unsigned short traceLength = data->Waveform1[ch][index].size();
 
   if( data->TriggerRate[ch] > 0 ){
 
-    printf("--- %d | %d \n", index, traceLength );
+    //printf("--- %d | %d \n", index, traceLength );
 
     QVector<QPointF> points;
     for( int i = 0; i < (int) (data->Waveform1[ch][index]).size() ; i++ ) points.append(QPointF(ch2ns * i, (data->Waveform1[ch][index])[i])); 
@@ -259,6 +259,7 @@ void Scope::UpdateScope(){
   digiMTX[ID].unlock();
 
   plot->axes(Qt::Horizontal).first()->setRange(0, ch2ns * traceLength);
+  //plotView->SetHRange(0, ch2ns * traceLength);
 
 }
 

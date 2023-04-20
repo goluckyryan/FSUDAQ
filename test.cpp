@@ -41,15 +41,21 @@ int main(int argc, char* argv[]){
 
   dig[0]->StartACQ();
 
-  for( int i = 0; i < 5; i ++ ){
-    sleep(1);
+  for( int i = 0; i < 50; i ++ ){
+    usleep(100*1000);
     dig[0]->ReadData();
-    data->DecodeBuffer(false, true);
+    data->DecodeBuffer(false, 5);
+    data->PrintStat();
+
+    int index = data->NumEventsDecoded[0];
+    printf("-------------- %ld \n", data->Waveform1[0][index].size());
+
   }
 
   dig[0]->StopACQ();
 
-  data->PrintAllData();
+
+  //data->PrintAllData();
 
   
 

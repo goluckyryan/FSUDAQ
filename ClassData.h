@@ -43,8 +43,8 @@ class Data{
     unsigned short     Energy[MaxNChannels][MaxNData];   /// 15 bit
     unsigned short     Energy2[MaxNChannels][MaxNData];  /// 15 bit, in PSD, Energy = Qshort, Energy2 = Qlong
     
-    std::vector<unsigned short> Waveform1[MaxNChannels][MaxNData];
-    std::vector<unsigned short> Waveform2[MaxNChannels][MaxNData];
+    std::vector<short> Waveform1[MaxNChannels][MaxNData];
+    std::vector<short> Waveform2[MaxNChannels][MaxNData];
     std::vector<bool>           DigiWaveform1[MaxNChannels][MaxNData];
     std::vector<bool>           DigiWaveform2[MaxNChannels][MaxNData];
 
@@ -85,8 +85,8 @@ class Data{
     bool SaveWaveToMemory;
 
     ///for temperary
-    std::vector<unsigned short> tempWaveform1; 
-    std::vector<unsigned short> tempWaveform2; 
+    std::vector<short> tempWaveform1; 
+    std::vector<short> tempWaveform2; 
     std::vector<bool> tempDigiWaveform1;
     std::vector<bool> tempDigiWaveform2;
 
@@ -337,6 +337,7 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
   
   ///Calculate trigger rate and first and last Timestamp
   for(int ch = 0; ch < MaxNChannels; ch++){
+    //TODO ====== when NumEventsDecoded is too small, the trigger rate is not reliable?
     if( NumEventsDecoded[ch] > 0 ) IsNotRollOverFakeAgg = true;
     unsigned long long dTime = Timestamp[ch][NumEvents[ch]-1] - Timestamp[ch][NumEvents[ch] - NumEventsDecoded[ch]]; 
     double sec =  dTime * ch2ns / 1e9;
@@ -427,7 +428,7 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
       }
     }
     nEvents = (aggSize - 2) / (nSample/2 + 2 + hasExtra2 );
-    if( verbose >= 2 ) printf("-------------------nEvents : %d \n", nEvents);
+    if( verbose >= 2 ) printf("----------------- nEvents : %d, fast decode : %d\n", nEvents, fastDecode);
   }else{
     if( verbose >= 2 ) printf("does not has format info. unable to read buffer.\n");
     return 0;
@@ -460,33 +461,49 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
         bool isTrigger1 = (( word >> 31 ) & 0x1 );
         bool dp1 = (( word >> 30 ) & 0x1 );
         unsigned short wave1 = (( word >> 16) & 0x3FFF);
+        short trace1 = 0;
+        if( wave1 & 0x2000){
+          trace1 = static_cast<short>(~wave1 + 1 + 0x3FFF);
+          trace1 = - trace1;
+        }else{
+          trace1 = static_cast<short>(wave1);
+        }
+        
         ///The CAEN manual is wrong, the bit [31:16] is anaprobe 2
         bool isTrigger0 = (( word >> 15 ) & 0x1 );
         bool dp0 = (( word >> 14 ) & 0x1 );
         unsigned short wave0 = ( word & 0x3FFF);
+        short trace0 = 0;
+        if( wave0 & 0x2000){
+          trace0 = static_cast<short>(~wave0 + 1 + 0x3FFF);
+          trace0 = - trace0;
+        }else{
+          trace0 = static_cast<short>(wave0);
+        }
         
         if( SaveWaveToMemory){
           if( hasDualTrace ){
-            tempWaveform1.push_back(wave1);
-            tempWaveform2.push_back(wave0);
-            tempDigiWaveform1.push_back(dp0);
-          }else{
-            tempWaveform1.push_back(wave1);          
-            tempWaveform1.push_back(wave0);
-            tempDigiWaveform1.push_back(dp0);
+            tempWaveform1.push_back(trace1);
+            tempWaveform2.push_back(trace0);
             tempDigiWaveform1.push_back(dp1);
+            tempDigiWaveform2.push_back(dp0);
+          }else{
+            tempWaveform1.push_back(trace1);          
+            tempWaveform1.push_back(trace0);
+            tempDigiWaveform1.push_back(dp1);
+            tempDigiWaveform1.push_back(dp0);
           }
         }
 
         if( isTrigger0 == 1 ) triggerAtSample = 2*wi ;      
         if( isTrigger1 == 1 ) triggerAtSample = 2*wi + 1;
         
-        if( verbose >= 4 && ev == 0 ){
+        if( verbose >= 4 ){
           if( !hasDualTrace ){ 
-            printf("%4d| %5d, %d, %d \n",   2*wi, wave0, dp0, isTrigger0);
-            printf("%4d| %5d, %d, %d \n", 2*wi+1, wave1, dp1, isTrigger1);
+            printf("%4d| %5d, %d, %d \n",   2*wi, trace0, dp0, isTrigger0);
+            printf("%4d| %5d, %d, %d \n", 2*wi+1, trace1, dp1, isTrigger1);
           }else{
-            printf("%4d| %5d, %5d | %d, %d | %d  %d\n",   wi, wave0, wave1, dp0, dp1, isTrigger0, isTrigger1);
+            printf("%4d| %5d, %5d | %d, %d | %d  %d\n",   wi, trace0, trace1, dp0, dp1, isTrigger0, isTrigger1);
           }
         }
       }
@@ -524,7 +541,7 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
       printf("PileUp or RollOver : %d\n", pileUpOrRollOver);
       printf("PileUp : %d , extra : 0x%03x, energy : %d \n", pileUp, extra, energy);      
       printf("     lost event : %d \n", ((extra >>  0) & 0x1) );
-      printf("      roll-over : %d (fake event)\n", ((extra >>  1) & 0x1) );
+      printf("      roll-over : %d (is fake event)\n", ((extra >>  1) & 0x1) );
       printf("     fake-event : %d \n", ((extra >>  3) & 0x1) );
       printf("     input sat. : %d \n", ((extra >>  4) & 0x1) );
       printf("       lost trg : %d \n", ((extra >>  5) & 0x1) );
@@ -641,7 +658,7 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
   }
   
   nEvents = (aggSize -2) / (nSample/2 + 2 + hasExtra );
-  if( verbose >= 2 ) printf("----------------- nEvents : %d \n", nEvents);
+  if( verbose >= 2 ) printf("----------------- nEvents : %d, fast decode : %d\n", nEvents, fastDecode);
 
   ///========= Decode an event
   for( unsigned int ev = 0; ev < nEvents ; ev++){
@@ -687,7 +704,7 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
           tempDigiWaveform2.push_back(dp2b);
         }
         
-        if( verbose >= 3 && ev == 0 ){
+        if( verbose >= 3 ){
           printf("%4d| %5d, %d, %d \n",   2*wi, wavea, dp1a, dp2a);
           printf("%4d| %5d, %d, %d \n", 2*wi+1, waveb, dp1b, dp2b);
         }

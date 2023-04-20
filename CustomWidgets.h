@@ -9,6 +9,7 @@
 
 #include <QChart>
 #include <QChartView>
+#include <QValueAxis>
 #include <QRubberBand>
 #include <QMouseEvent>
 #include <QGestureEvent>
@@ -102,6 +103,11 @@ public:
     setMouseTracking(true);
   }
 
+  void SetHRange(int min, int max) {
+    this->hRangeMin = min;
+    this->hRangeMax = max;
+  }
+
 protected:
   bool viewportEvent(QEvent *event) override{
     if (event->type() == QEvent::TouchBegin) {
@@ -142,13 +148,18 @@ protected:
       case Qt::Key_Right: chart()->scroll(10, 0); break;
       case Qt::Key_Up: chart()->scroll(0, 10); break;
       case Qt::Key_Down: chart()->scroll(0, -10);  break;
-      case Qt::Key_R : chart()->axes(Qt::Vertical).first()->setRange(-16384, 65536); break;
+      case Qt::Key_R : 
+        chart()->axes(Qt::Vertical).first()->setRange(-(0x1FFF), 0x1FFF);
+        //chart()->axes(Qt::Horizontal).first()->setRange(hRangeMin, hRangeMax);
+        break;
       default: QGraphicsView::keyPressEvent(event); break;
     }
   }
   
 private:
   bool m_isTouching;
+  int hRangeMin;
+  int hRangeMax;
   QLabel * m_coordinateLabel;
 };
 

@@ -1,8 +1,8 @@
 #ifndef MACRO_H
 #define MACRO_H
 
-#define MaxNPorts 4
-#define MaxNBoards 6
+#define MaxNPorts 1
+#define MaxNBoards 1
 #define MaxNChannels 16
 #define MaxRecordLength 0x3fff * 8 
 #define MaxSaveFileSize  1024 * 1024 * 1024 * 2
