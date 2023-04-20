@@ -44,7 +44,7 @@ int main(int argc, char* argv[]){
   for( int i = 0; i < 50; i ++ ){
     usleep(100*1000);
     dig[0]->ReadData();
-    data->DecodeBuffer(false, 5);
+    data->DecodeBuffer(false);
     data->PrintStat();
 
     int index = data->NumEventsDecoded[0];

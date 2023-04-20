@@ -30,6 +30,7 @@ class Data{
     
     double TriggerRate[MaxNChannels]; /// Hz
     double NonPileUpRate[MaxNChannels]; /// Hz
+    short calIndexes[MaxNChannels][2]; /// the index for trigger rate calculation
     unsigned long TotNumEvents[MaxNChannels];
     unsigned short NumEventsDecoded[MaxNChannels];  /// reset at every decode
     unsigned short NumNonPileUpDecoded[MaxNChannels]; /// reset at every decode
@@ -42,6 +43,7 @@ class Data{
     unsigned short     fineTime[MaxNChannels][MaxNData];  /// 10 bits, in unit of ch2ns / 1000 = ps
     unsigned short     Energy[MaxNChannels][MaxNData];   /// 15 bit
     unsigned short     Energy2[MaxNChannels][MaxNData];  /// 15 bit, in PSD, Energy = Qshort, Energy2 = Qlong
+    bool               PileUp[MaxNChannels][MaxNData];   /// pile up flag
     
     std::vector<short> Waveform1[MaxNChannels][MaxNData];
     std::vector<short> Waveform2[MaxNChannels][MaxNData];
@@ -169,6 +171,9 @@ inline void Data::ClearData(){
       DigiWaveform1[i][j].clear();
       DigiWaveform2[i][j].clear();
     }
+
+    calIndexes[i][0] = -1;
+    calIndexes[i][1] = -1;
   }
   
   tempWaveform1.clear();
@@ -232,12 +237,12 @@ inline void Data::PrintStat() const{
     printf(" this is roll-over fake event or no events.\n");
     return;
   }
-  printf("%2s | %6s | %9s | %6s\n", "ch", "# Evt.", "Rate [Hz]", "Tot. Evt.");
-  printf("---+--------+-----------+----------\n");
+  printf("%2s | %6s | %9s | %9s | %6s\n", "ch", "# Evt.", "Rate [Hz]", "N-PileUp", "Tot. Evt.");
+  printf("---+--------+-----------+-----------+----------\n");
   for(int ch = 0; ch < MaxNChannels; ch++){
-    printf("%2d | %6d | %9.2f | %6lu\n", ch, NumEventsDecoded[ch], TriggerRate[ch], TotNumEvents[ch]);
+    printf("%2d | %6d | %9.2f | %9.2f | %6lu\n", ch, NumEventsDecoded[ch], TriggerRate[ch], NonPileUpRate[ch], TotNumEvents[ch]);
   }
-  printf("---+--------+-----------+----------\n");
+  printf("---+--------+-----------+-----------+----------\n");
 }
 
 inline void Data::PrintBuffer() const{
@@ -284,7 +289,7 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
 
   if( nByte == 0 ) return;
   nw = 0;
-  ClearTriggerRate();
+  //ClearTriggerRate();
   
   do{
     if( verbose >= 1 ) printf("Data::DecodeBuffer ######################################### Board Agg.\n");
@@ -337,14 +342,46 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
   
   ///Calculate trigger rate and first and last Timestamp
   for(int ch = 0; ch < MaxNChannels; ch++){
-    //TODO ====== when NumEventsDecoded is too small, the trigger rate is not reliable?
     if( NumEventsDecoded[ch] > 0 ) IsNotRollOverFakeAgg = true;
-    unsigned long long dTime = Timestamp[ch][NumEvents[ch]-1] - Timestamp[ch][NumEvents[ch] - NumEventsDecoded[ch]]; 
-    double sec =  dTime * ch2ns / 1e9;
-    if( sec != 0 && NumEventsDecoded[ch] > 1 ){
-      TriggerRate[ch] = NumEventsDecoded[ch]/sec;
-      NonPileUpRate[ch] = NumNonPileUpDecoded[ch]/sec;
+    
+    //TODO ====== when NumEventsDecoded is too small, the trigger rate is not reliable?
+    // unsigned long long dTime = Timestamp[ch][NumEvents[ch]-1] - Timestamp[ch][NumEvents[ch] - NumEventsDecoded[ch]]; 
+    // double sec =  dTime * ch2ns / 1e9;
+    // if( sec != 0 && NumEventsDecoded[ch] > 1 ){
+      // TriggerRate[ch] = NumEventsDecoded[ch]/sec;
+      // NonPileUpRate[ch] = NumNonPileUpDecoded[ch]/sec;
+    // }
+
+    if( calIndexes[ch][0] == -1 ) calIndexes[ch][0] = 0;
+    if( calIndexes[ch][0] > -1 && calIndexes[ch][1] == -1 ) calIndexes[ch][1] = NumEvents[ch]-1;
+
+    short nEvent = calIndexes[ch][1] - calIndexes[ch][0];
+    //printf("ch %2d ----- %d %d | %d \n", ch, calIndexes[ch][0], calIndexes[ch][1], nEvent);
+    
+    if( calIndexes[ch][0] > -1 && calIndexes[ch][1] > -1 && nEvent > 10 ){
+        unsigned long long dTime = Timestamp[ch][calIndexes[ch][1]] - Timestamp[ch][calIndexes[ch][0]];
+        double sec = dTime * ch2ns / 1e9;
+      
+        //printf(" %10llu  %10llu, %f = %f sec, rate = %f \n", Timestamp[ch][calIndexes[ch][0]], Timestamp[ch][calIndexes[ch][1]], ch2ns, sec, nEvent / sec);
+
+        if( sec > 0.1 ){ /// at least 100 msec
+          TriggerRate[ch] = nEvent / sec;
+
+          short pileUpCount = 0;
+          for( int i = calIndexes[ch][0] ; i <= calIndexes[ch][1]; i++ ) {
+            if( PileUp[ch][i] ) pileUpCount ++;
+          }
+
+          NonPileUpRate[ch] = (nEvent - pileUpCount)/sec;
+
+          calIndexes[ch][0] = calIndexes[ch][1];
+          calIndexes[ch][1] = -1;
+
+        }
+    }else{
+      calIndexes[ch][1] = -1;
     }
+
   }
   
 }
@@ -557,6 +594,7 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
       Energy[channel][NumEvents[channel]] = energy;
       Timestamp[channel][NumEvents[channel]] = timeStamp;
       if(extra2Option == 0 || extra2Option == 2 ) fineTime[channel][NumEvents[channel]] = (extra2 & 0x07FF );
+      PileUp[channel][NumEvents[channel]] = pileUp;
       NumEvents[channel] ++; 
       NumEventsDecoded[channel] ++; 
       TotNumEvents[channel] ++;

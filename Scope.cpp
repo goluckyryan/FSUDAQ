@@ -23,7 +23,7 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   for( int i = 0; i < MaxNumberOfTrace; i++) {
     dataTrace[i] = new QLineSeries();
     dataTrace[i]->setName("Trace " + QString::number(i));
-    for(int j = 0; j < 100; j ++) dataTrace[i]->append(40*j, QRandomGenerator::global()->bounded(8000));
+    for(int j = 0; j < 100; j ++) dataTrace[i]->append(40*j, QRandomGenerator::global()->bounded(8000) - 4000);
     plot->addSeries(dataTrace[i]);
   }
 
@@ -230,6 +230,7 @@ void Scope::UpdateScope(){
   Data * data = digi[ID]->GetData();
 
   digiMTX[ID].lock();
+  //leTriggerRate->setText(QString::number(data->TriggerRate[ch]) + " [" + QString::number(data->NumEventsDecoded[ch]) + "]");
   leTriggerRate->setText(QString::number(data->TriggerRate[ch]));
 
   unsigned short index = data->NumEvents[ch] - 1;
