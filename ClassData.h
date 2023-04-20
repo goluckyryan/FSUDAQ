@@ -289,6 +289,7 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
 
   if( nByte == 0 ) return;
   nw = 0;
+  //TODO === wen very fast rate, can ClearTriggerRate, but is it nesscary?
   //ClearTriggerRate();
   
   do{
@@ -342,9 +343,21 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
   
   ///Calculate trigger rate and first and last Timestamp
   for(int ch = 0; ch < MaxNChannels; ch++){
-    if( NumEventsDecoded[ch] > 0 ) IsNotRollOverFakeAgg = true;
+    if( NumEventsDecoded[ch] > 0 ) {
+      IsNotRollOverFakeAgg = true;
+    }else{
+      continue;
+    }
+
+    if( NumEvents[ch] == 0 ){
+      TriggerRate[ch] = 0;
+      NonPileUpRate[ch] = 0;
+      continue;
+    }
     
     //TODO ====== when NumEventsDecoded is too small, the trigger rate is not reliable?
+    
+    //TODO ===== for very high rate, use a simpler code.
     // unsigned long long dTime = Timestamp[ch][NumEvents[ch]-1] - Timestamp[ch][NumEvents[ch] - NumEventsDecoded[ch]]; 
     // double sec =  dTime * ch2ns / 1e9;
     // if( sec != 0 && NumEventsDecoded[ch] > 1 ){

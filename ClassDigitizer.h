@@ -112,6 +112,7 @@ class Digitizer{
     std::string GetROCVersion()              const {return BoardInfo.ROC_FirmwareRel;}
     std::string GetAMCVersion()              const {return BoardInfo.AMC_FirmwareRel;}
     CAEN_DGTZ_ConnectionType   GetLinkType() const {return LinkType;}
+    int         GetErrorCode()               const {return ret;}
     
     //^================ Setting 
     Register::Reg FindRegister(uint32_t address);
@@ -143,6 +144,22 @@ class Digitizer{
     // void SetDPPAlgorithmControl(uint32_t bit, int ch);
     // unsigned int ReadBits(Register::Reg address, unsigned int bitLength, unsigned int bitSmallestPos, int ch );
     // void SetBits(Register::Reg address, unsigned int bitValue, unsigned int bitLength, unsigned int bitSmallestPos, int ch);
+
+    //====== Board Config breakDown
+    bool IsEnabledAutoDataFlush()   {return (  GetSettingFromMemory(Register::DPP::BoardConfiguration) & 0x1 );}
+    bool IsDecimateTrace()          {return ( (GetSettingFromMemory(Register::DPP::BoardConfiguration) >>  1) & 0x1 );}
+    bool IsTriggerPropagate()       {return ( (GetSettingFromMemory(Register::DPP::BoardConfiguration) >>  2) & 0x1 );}
+    bool IsDualTrace()              {return ( (GetSettingFromMemory(Register::DPP::BoardConfiguration) >> 11) & 0x1 );}
+    unsigned short AnaProbe1Type()  {return ( (GetSettingFromMemory(Register::DPP::BoardConfiguration) >> 12) & 0x3 );}
+    unsigned short AnaProbe2Type()  {return ( (GetSettingFromMemory(Register::DPP::BoardConfiguration) >> 14) & 0x3 );}
+    bool IsRecordTrace()            {return ( (GetSettingFromMemory(Register::DPP::BoardConfiguration) >> 16) & 0x1 );}
+    bool IsEnabledExtra2()          {return ( (GetSettingFromMemory(Register::DPP::BoardConfiguration) >> 17) & 0x1 );}
+    bool IsRecordTimeStamp()        {return ( (GetSettingFromMemory(Register::DPP::BoardConfiguration) >> 18) & 0x1 );}
+    bool IsRecordEnergy()           {return ( (GetSettingFromMemory(Register::DPP::BoardConfiguration) >> 19) & 0x1 );}
+    unsigned short DigiProbe1Type() {return ( (GetSettingFromMemory(Register::DPP::BoardConfiguration) >> 20) & 0xF );}
+    unsigned short DigiProbe2Type() {return ( (GetSettingFromMemory(Register::DPP::BoardConfiguration) >> 26) & 0x7 );}
+
+
 
 };
 

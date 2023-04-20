@@ -38,12 +38,12 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   /// this must be after createDefaultAxes();
   QValueAxis * yaxis = qobject_cast<QValueAxis*> (plot->axes(Qt::Vertical).first());
   QValueAxis * xaxis = qobject_cast<QValueAxis*> (plot->axes(Qt::Horizontal).first());
-  yaxis->setTickCount(6);
+  yaxis->setTickCount(7);
   yaxis->setTickInterval((0x1FFF)/4);
   yaxis->setRange(-(0x1FFF), 0x1FFF);
   yaxis->setLabelFormat("%.0f");
 
-  xaxis->setRange(0, 5000);
+  xaxis->setRange(0, 4000);
   xaxis->setTickCount(11);
   xaxis->setLabelFormat("%.0f");
   xaxis->setTitleText("Time [ns]");
@@ -114,7 +114,7 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   QLabel * lbhints = new QLabel("Type 'r' to restore view, '+/-' Zoom in/out, arrow key to pan.", this);
   layout->addWidget(lbhints, rowID, 0, 1, 4);
   
-  QLabel * lbinfo = new QLabel("Trace update every " + QString::number(updateTraceThread->GetWaitTimeinSec()) + " sec.", this);
+  QLabel * lbinfo = new QLabel("Trace updates every " + QString::number(updateTraceThread->GetWaitTimeinSec()) + " sec.", this);
   lbinfo->setAlignment(Qt::AlignRight);
   layout->addWidget(lbinfo, rowID, 5);
 
@@ -153,10 +153,12 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   layout->setColumnStretch(4, 1);
   layout->setColumnStretch(5, 1);
 
-  enableSignalSlot = true;
+  UpdatePanelFromMomeory();
 
   bnScopeStart->setEnabled(true);
   bnScopeStop->setEnabled(false);
+
+  enableSignalSlot = true;
 
 }
 
@@ -175,6 +177,8 @@ Scope::~Scope(){
 //*=======================================================
 void Scope::StartScope(){
   if( !digi ) return;
+
+  //TODO set other channel to be no trace;
 
   for( unsigned int iDigi = 0; iDigi < nDigi; iDigi ++){
 
@@ -223,7 +227,6 @@ void Scope::UpdateScope(){
 
   if( !digi ) return;
 
-  int ID = cbScopeDigi->currentIndex();
   int ch = cbScopeCh->currentIndex();
   int ch2ns = digi[ID]->GetCh2ns();
 
@@ -240,22 +243,17 @@ void Scope::UpdateScope(){
 
     //printf("--- %d | %d \n", index, traceLength );
 
-    QVector<QPointF> points;
-    for( int i = 0; i < (int) (data->Waveform1[ch][index]).size() ; i++ ) points.append(QPointF(ch2ns * i, (data->Waveform1[ch][index])[i])); 
-    dataTrace[0]->replace(points);
-
-    points.clear();
-    for( int i = 0; i < (int) (data->Waveform2[ch][index]).size() ; i++ ) points.append(QPointF(ch2ns * i, (data->Waveform2[ch][index])[i]));
-    dataTrace[1]->replace(points);
-
-    points.clear();
-    for( int i = 0; i < (int) (data->DigiWaveform1[ch][index]).size() ; i++ ) points.append(QPointF(ch2ns * i, (data->DigiWaveform1[ch][index])[i] * 1000));
-    dataTrace[2]->replace(points);
-
-    points.clear();
-    for( int i = 0; i < (int) (data->DigiWaveform2[ch][index]).size() ; i++ ) points.append(QPointF(ch2ns * i, (data->DigiWaveform2[ch][index])[i] * 1000));
-    dataTrace[3]->replace(points);
-
+    QVector<QPointF> points[4];
+    for( int i = 0; i < (int) (data->Waveform1[ch][index]).size() ; i++ ) {
+      points[0].append(QPointF(ch2ns * i, (data->Waveform1[ch][index])[i])); 
+      if( i < (int) data->Waveform2[ch][index].size() )  points[1].append(QPointF(ch2ns * i, (data->Waveform2[ch][index])[i]));
+      if( i < (int) data->DigiWaveform1[ch][index].size() )  points[2].append(QPointF(ch2ns * i, (data->DigiWaveform1[ch][index])[i] * 1000));
+      if( i < (int) data->DigiWaveform2[ch][index].size() )  points[3].append(QPointF(ch2ns * i, (data->DigiWaveform2[ch][index])[i] * 1000 + 500));
+    }
+    dataTrace[0]->replace(points[0]);
+    dataTrace[1]->replace(points[1]);
+    dataTrace[2]->replace(points[2]);
+    dataTrace[3]->replace(points[3]);
   }
   digiMTX[ID].unlock();
 
@@ -296,27 +294,35 @@ void Scope::SetUpSpinBox(RSpinBox * &sb, QString str, int row, int col, const Re
 
   connect(sb, &RSpinBox::returnPressed, this, [=](){
     if( !enableSignalSlot ) return;
-    //int iDigi = cbScopeDigi->currentIndex();
     if( sb->decimals() == 0 && sb->singleStep() != 1) {
       double step = sb->singleStep();
       double value = sb->value();
       sb->setValue( (std::round(value/step)*step));
     }
 
-    //int ch = cbScopeCh->currentIndex();
+    int ch = cbScopeCh->currentIndex();
     //if( chkSetAllChannel->isChecked() ) ch = -1;
-    // QString msg;
-    // msg = QString::fromStdString(digPara.GetPara()) + "|DIG:"+ QString::number(digi[iDigi]->GetSerialNumber()) + ",CH:" + (ch == -1 ? "All" : QString::number(ch));
-    // msg += " = " + QString::number(sb->value());
-    // if( digi[iDigi]->WriteValue(digPara, std::to_string(sb->value()), ch)){
-    //   SendLogMsg(msg + "|OK.");
-    //   sb->setStyleSheet("");
-    //   UpdateSettingsFromMemeory();
-    //   UpdateOtherPanels();
-    // }else{
-    //   SendLogMsg(msg + "|Fail.");
-    //   sb->setStyleSheet("color:red;");
-    // }
+    QString msg;
+    msg = QString::fromStdString(para.GetName()) + "|DIG:"+ QString::number(digi[ID]->GetSerialNumber()) + ",CH:" + (ch == -1 ? "All" : QString::number(ch));
+    msg += " = " + QString::number(sb->value());
+
+    uint32_t value = sb->value() / ch2ns / para.GetPartialStep();
+
+    if( para.GetName() == "RecordLength_G" || para.GetName() == "PreTrigger"){
+      int factor = digi[ID]->IsDualTrace() ? 2 : 1;
+      value = value * factor;
+    }
+
+    digiMTX[ID].lock();
+    digi[ID]->WriteRegister(para, value, ch);
+    digiMTX[ID].unlock();
+    if( digi[ID]->GetErrorCode() == CAEN_DGTZ_Success ){
+      SendLogMsg(msg + "|OK.");
+      sb->setStyleSheet("");
+    }else{
+      SendLogMsg(msg + "|Fail.");
+      sb->setStyleSheet("color:red;");
+    }
   });  
 }
 
@@ -336,13 +342,15 @@ void Scope::CleanUpSettingsGroupBox(){
 void Scope::SetUpPHAPanel(){
 
   SetUpSpinBox(sbReordLength, "Record Length [ns]",  0, 0, Register::DPP::RecordLength_G);
+
   SetUpSpinBox(sbPreTrigger,  "Pre Trigger [ns]", 0, 2, Register::DPP::PreTrigger);
 
-  SetUpSpinBox(sbDCOffset, "DC offset", 0, 4, Register::DPP::ChannelDCOffset);
+  SetUpSpinBox(sbDCOffset, "DC offset [%]", 0, 4, Register::DPP::ChannelDCOffset);
+  sbDCOffset->setDecimals(2);
 
   SetUpSpinBox(sbInputRiseTime, "Input Rise Time [ns]", 1, 0, Register::DPP::PHA::InputRiseTime);
   SetUpSpinBox(sbThreshold,          "Threshold [LSB]", 1, 2, Register::DPP::PHA::TriggerThreshold);
-  SetUpSpinBox(sbThreshold,     "Trigger HoldOff [ns]", 1, 4, Register::DPP::PHA::TriggerHoldOffWidth);
+  SetUpSpinBox(sbTriggerHoldOff,"Trigger HoldOff [ns]", 1, 4, Register::DPP::PHA::TriggerHoldOffWidth);
   
   SetUpSpinBox(sbTrapRiseTime, "Trap. Rise Time [ns]", 2, 0, Register::DPP::PHA::TrapezoidRiseTime);
   SetUpSpinBox(sbTrapFlatTop,    "Trap. FlatTop [ns]", 2, 2, Register::DPP::PHA::TrapezoidFlatTop);
@@ -355,4 +363,44 @@ void Scope::SetUpPSDPanel(){
 
   SetUpSpinBox(sbReordLength, "Record Length [ns]",  0, 0, Register::DPP::RecordLength_G);
   SetUpSpinBox(sbPreTrigger,  "Pre Trigger [ns]", 0, 2, Register::DPP::PreTrigger);
+}
+
+//*=======================================================
+//*=======================================================
+
+void Scope::UpdateSpinBox(RSpinBox * &sb, const Register::Reg para){
+  int ch = cbScopeCh->currentIndex();
+
+  unsigned int haha = digi[ID]->GetSettingFromMemory(para, ch);
+  if( para.GetPartialStep() >   0 ) sb->setValue(haha * para.GetPartialStep() * ch2ns);
+  if( para.GetPartialStep() == -1 ) sb->setValue(haha);
+
+}
+
+
+void Scope::UpdatePanelFromMomeory(){
+
+  int ch = cbScopeCh->currentIndex();
+
+  int factor = digi[ID]->IsDualTrace() ? 2 : 1; // if dual trace, 
+
+  unsigned int haha = digi[ID]->GetSettingFromMemory(Register::DPP::RecordLength_G, ch);
+  sbReordLength->setValue(haha * Register::DPP::RecordLength_G.GetPartialStep() * ch2ns / factor);
+
+  haha = digi[ID]->GetSettingFromMemory(Register::DPP::PreTrigger, ch);
+  sbPreTrigger->setValue(haha * Register::DPP::PreTrigger.GetPartialStep() * ch2ns / factor);
+
+  haha = digi[ID]->GetSettingFromMemory(Register::DPP::ChannelDCOffset, ch);
+  sbDCOffset->setValue((1.0 - haha * 1.0 / 0xFFFF) * 100 );
+
+  UpdateSpinBox(sbInputRiseTime,  Register::DPP::PHA::InputRiseTime);
+  UpdateSpinBox(sbThreshold,      Register::DPP::PHA::TriggerThreshold);
+  UpdateSpinBox(sbTriggerHoldOff, Register::DPP::PHA::TriggerHoldOffWidth);
+
+  UpdateSpinBox(sbTrapRiseTime, Register::DPP::PHA::TrapezoidRiseTime);
+  UpdateSpinBox(sbTrapFlatTop,  Register::DPP::PHA::TrapezoidFlatTop);
+  UpdateSpinBox(sbDecayTime,    Register::DPP::PHA::DecayTime);
+  UpdateSpinBox(sbPeakingTime,  Register::DPP::PHA::PeakingTime);
+
+
 }

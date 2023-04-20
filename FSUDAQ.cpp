@@ -715,6 +715,7 @@ void MainWindow::OpenScope(){
 
   if( scope == nullptr ) {
     scope = new Scope(digi, nDigi, readDataThread);
+    connect(scope, &Scope::SendLogMsg, this, &MainWindow::LogMsg);
     scope->show();
   }else{
     scope->show();

@@ -38,8 +38,9 @@ private slots:
 
 signals:
 
-private:
+  void SendLogMsg(const QString &msg);
 
+private:
 
   void SetUpComboBox(RComboBox * &cb, QString str, int row, int col, const Register::Reg para);
   void SetUpSpinBox(RSpinBox * &sb, QString str, int row, int col, const Register::Reg para);
@@ -47,6 +48,9 @@ private:
   void CleanUpSettingsGroupBox();
   void SetUpPHAPanel();
   void SetUpPSDPanel();
+
+  void UpdateSpinBox(RSpinBox * &sb, const Register::Reg para);
+  void UpdatePanelFromMomeory();
 
   Digitizer ** digi;
   unsigned short nDigi;
