@@ -52,6 +52,28 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   updateTraceThread->SetWaitTimeinSec(0.5);
   connect(updateTraceThread, &TimingThread::timeUp, this, &Scope::UpdateScope);
 
+
+  sbReordLength = nullptr;
+  sbPreTrigger = nullptr;
+  sbDCOffset = nullptr;
+  cbDynamicRange = nullptr;
+  cbPolarity = nullptr;
+
+  ///---- PHA
+  sbInputRiseTime = nullptr;
+  sbTriggerHoldOff = nullptr;
+  sbThreshold = nullptr;
+  cbSmoothingFactor = nullptr;
+
+  sbTrapRiseTime = nullptr;
+  sbTrapFlatTop = nullptr;
+  sbDecayTime = nullptr;
+  sbPeakingTime = nullptr;
+  sbPeakHoldOff = nullptr;
+
+  cbPeakAvg = nullptr;
+  cbBaselineAvg = nullptr;
+
   //*================================== UI
   int rowID = -1;
 
@@ -86,10 +108,15 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
 
     //---Setup SettingGroup
     CleanUpSettingsGroupBox();
+    SetUpGeneralPanel();
     if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) SetUpPHAPanel();
     if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) SetUpPSDPanel();
 
   });
+
+  bnReadSettingsFromBoard = new QPushButton("Refresh Settings", this);
+  layout->addWidget(bnReadSettingsFromBoard, rowID, 2);
+  connect(bnReadSettingsFromBoard, &QPushButton::clicked, this, &Scope::ReadSettingsFromBoard);
 
   //================ Trace settings
   rowID ++;
@@ -100,6 +127,7 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
     settingLayout = new QGridLayout(settingGroup);
     settingLayout->setSpacing(0);
 
+    SetUpGeneralPanel();
     if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) SetUpPHAPanel();
 
   }
@@ -198,6 +226,8 @@ void Scope::StartScope(){
   bnScopeStart->setEnabled(false);
   bnScopeStop->setEnabled(true);
 
+  EnableControl(false);
+
 }
 
 void Scope::StopScope(){
@@ -218,6 +248,8 @@ void Scope::StopScope(){
 
   bnScopeStart->setEnabled(true);
   bnScopeStop->setEnabled(false);
+
+  EnableControl(true);
 
 }
 
@@ -264,13 +296,47 @@ void Scope::UpdateScope(){
 
 //*=======================================================
 //*=======================================================
-void Scope::SetUpComboBox(RComboBox * &cb, QString str, int row, int col, const Register::Reg para){
+void Scope::SetUpComboBoxSimple(RComboBox * &cb, QString str, int row, int col){
   QLabel * lb = new QLabel(str, settingGroup);
   lb->setAlignment(Qt::AlignRight | Qt::AlignCenter);
   settingLayout->addWidget(lb, row, col);
 
   cb = new RComboBox(settingGroup);
   settingLayout->addWidget(cb, row, col + 1);
+  
+}
+
+void Scope::SetUpComboBox(RComboBox * &cb, QString str, int row, int col, const Register::Reg para){
+  
+  SetUpComboBoxSimple(cb, str, row, col);
+
+  for( int i = 0; i < (int) para.GetComboList().size(); i++){
+    cb->addItem(QString::fromStdString(para.GetComboList()[i].first), para.GetComboList()[i].second);
+  }
+
+  connect(cb, &RComboBox::currentIndexChanged, this , [=](){
+    if( ! enableSignalSlot ) return;
+
+    int ch = cbScopeCh->currentIndex();
+    int value = cb->currentData().toInt();
+    digiMTX[ID].lock();
+    digi[ID]->WriteRegister(para, value, ch);
+    digiMTX[ID].unlock();
+
+    QString msg;
+    msg = QString::fromStdString(para.GetName()) ;
+    msg += "|DIG:"+ QString::number(digi[ID]->GetSerialNumber()) + ",CH:" + (ch == -1 ? "All" : QString::number(ch));
+    msg += " = " + cb->currentText();
+    if( digi[ID]->GetErrorCode() == CAEN_DGTZ_Success ){
+      SendLogMsg(msg + " | OK.");
+      cb->setStyleSheet("");
+    }else{
+      SendLogMsg(msg + " | Fail.");
+      cb->setStyleSheet("color:red;");
+    }
+
+  });
+
 }
 
 void Scope::SetUpSpinBox(RSpinBox * &sb, QString str, int row, int col, const Register::Reg para){
@@ -306,21 +372,27 @@ void Scope::SetUpSpinBox(RSpinBox * &sb, QString str, int row, int col, const Re
     msg = QString::fromStdString(para.GetName()) + "|DIG:"+ QString::number(digi[ID]->GetSerialNumber()) + ",CH:" + (ch == -1 ? "All" : QString::number(ch));
     msg += " = " + QString::number(sb->value());
 
-    uint32_t value = sb->value() / ch2ns / para.GetPartialStep();
+    uint32_t value = sb->value() / ch2ns / abs(para.GetPartialStep());
 
-    if( para.GetName() == "RecordLength_G" || para.GetName() == "PreTrigger"){
+    if( para == Register::DPP::RecordLength_G || para == Register::DPP::PreTrigger){
       int factor = digi[ID]->IsDualTrace() ? 2 : 1;
       value = value * factor;
     }
+
+    if( para == Register::DPP::ChannelDCOffset ){
+      value = uint16_t((1.0 - sb->value()/100.) * 0xFFFF);
+    }
+
+    msg += " | 0x" + QString::number(value, 16); 
 
     digiMTX[ID].lock();
     digi[ID]->WriteRegister(para, value, ch);
     digiMTX[ID].unlock();
     if( digi[ID]->GetErrorCode() == CAEN_DGTZ_Success ){
-      SendLogMsg(msg + "|OK.");
+      SendLogMsg(msg + " | OK.");
       sb->setStyleSheet("");
     }else{
-      SendLogMsg(msg + "|Fail.");
+      SendLogMsg(msg + " | Fail.");
       sb->setStyleSheet("color:red;");
     }
   });  
@@ -339,42 +411,103 @@ void Scope::CleanUpSettingsGroupBox(){
 
 }
 
+void Scope::SetUpGeneralPanel(){
+
+  printf("--- %s \n", __func__);
+
+  SetUpSpinBox(sbReordLength,     "Record Length [ns]", 0, 0, Register::DPP::RecordLength_G);
+  SetUpSpinBox(sbPreTrigger,        "Pre Trigger [ns]", 0, 2, Register::DPP::PreTrigger);
+  SetUpSpinBox(sbDCOffset,             "DC offset [%]", 0, 4, Register::DPP::ChannelDCOffset);
+  sbDCOffset->setDecimals(2);    
+  SetUpComboBox(cbDynamicRange,        "Dynamic Range", 0, 6, Register::DPP::InputDynamicRange);
+
+
+  SetUpComboBoxSimple(cbPolarity, "Polarity ", 1, 0);
+  cbPolarity->addItem("Positive", 0);
+  cbPolarity->addItem("Negative", 1);
+
+
+}
+
 void Scope::SetUpPHAPanel(){
+  printf("--- %s \n", __func__);
 
-  SetUpSpinBox(sbReordLength, "Record Length [ns]",  0, 0, Register::DPP::RecordLength_G);
-
-  SetUpSpinBox(sbPreTrigger,  "Pre Trigger [ns]", 0, 2, Register::DPP::PreTrigger);
-
-  SetUpSpinBox(sbDCOffset, "DC offset [%]", 0, 4, Register::DPP::ChannelDCOffset);
-  sbDCOffset->setDecimals(2);
-
-  SetUpSpinBox(sbInputRiseTime, "Input Rise Time [ns]", 1, 0, Register::DPP::PHA::InputRiseTime);
-  SetUpSpinBox(sbThreshold,          "Threshold [LSB]", 1, 2, Register::DPP::PHA::TriggerThreshold);
-  SetUpSpinBox(sbTriggerHoldOff,"Trigger HoldOff [ns]", 1, 4, Register::DPP::PHA::TriggerHoldOffWidth);
+  SetUpSpinBox(sbInputRiseTime, "Input Rise Time [ns]", 2, 0, Register::DPP::PHA::InputRiseTime);
+  SetUpSpinBox(sbThreshold,          "Threshold [LSB]", 2, 2, Register::DPP::PHA::TriggerThreshold);
+  SetUpSpinBox(sbTriggerHoldOff,"Trigger HoldOff [ns]", 2, 4, Register::DPP::PHA::TriggerHoldOffWidth);
+  SetUpComboBox(cbSmoothingFactor,     "Smooth Factor", 2, 6, Register::DPP::PHA::RCCR2SmoothingFactor);
   
-  SetUpSpinBox(sbTrapRiseTime, "Trap. Rise Time [ns]", 2, 0, Register::DPP::PHA::TrapezoidRiseTime);
-  SetUpSpinBox(sbTrapFlatTop,    "Trap. FlatTop [ns]", 2, 2, Register::DPP::PHA::TrapezoidFlatTop);
-  SetUpSpinBox(sbDecayTime,         "Decay Time [ns]", 2, 4, Register::DPP::PHA::DecayTime);
-  SetUpSpinBox(sbPeakingTime,     "Peaking Time [ns]", 2, 6, Register::DPP::PHA::PeakingTime);
+  SetUpSpinBox(sbTrapRiseTime,  "Trap. Rise Time [ns]", 3, 0, Register::DPP::PHA::TrapezoidRiseTime);
+  SetUpSpinBox(sbTrapFlatTop,     "Trap. FlatTop [ns]", 3, 2, Register::DPP::PHA::TrapezoidFlatTop);
+  SetUpSpinBox(sbDecayTime,          "Decay Time [ns]", 3, 4, Register::DPP::PHA::DecayTime);
+  SetUpSpinBox(sbPeakingTime,      "Peaking Time [ns]", 3, 6, Register::DPP::PHA::PeakingTime);
+
+  SetUpSpinBox(sbPeakHoldOff,      "Peak HoldOff [ns]", 4, 6, Register::DPP::PHA::PeakHoldOff);
+
+  SetUpComboBoxSimple(cbPeakAvg, "Peak Avg.", 4, 4);
+  cbPeakAvg->addItem("1 sample", 0);
+  cbPeakAvg->addItem("4 sample", 1);
+  cbPeakAvg->addItem("16 sample", 2);
+  cbPeakAvg->addItem("64 sample", 3);
+
+  SetUpComboBoxSimple(cbBaselineAvg, "Baseline Avg.", 4, 2);
+  cbBaselineAvg->addItem("Not evaluated", 0);
+  cbBaselineAvg->addItem("16 sample", 1);
+  cbBaselineAvg->addItem("64 sample", 2);
+  cbBaselineAvg->addItem("256 sample", 3);
+  cbBaselineAvg->addItem("1024 sample", 4);
+  cbBaselineAvg->addItem("4096 sample", 5);
+  cbBaselineAvg->addItem("16384 sample", 6);
 
 }
 
 void Scope::SetUpPSDPanel(){
 
-  SetUpSpinBox(sbReordLength, "Record Length [ns]",  0, 0, Register::DPP::RecordLength_G);
-  SetUpSpinBox(sbPreTrigger,  "Pre Trigger [ns]", 0, 2, Register::DPP::PreTrigger);
+}
+
+void Scope::EnableControl(bool enable){
+
+  if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ){
+
+    sbPreTrigger->setEnabled(enable);
+    sbTrapRiseTime->setEnabled(enable);
+    sbTrapFlatTop->setEnabled(enable);
+    sbDecayTime->setEnabled(enable);
+
+    sbInputRiseTime->setEnabled(enable);
+
+  }
+
 }
 
 //*=======================================================
 //*=======================================================
 
+void Scope::UpdateComobox(RComboBox * &cb, const Register::Reg para){
+  int ch = cbScopeCh->currentIndex();
+
+  enableSignalSlot = false;
+  int haha = digi[ID]->GetSettingFromMemory(para, ch);
+
+  for( int i = 0; i < cb->count(); i++){
+    int kaka = cb->itemData(i).toInt();
+    if( kaka == haha ){
+      cb->setCurrentIndex(i);
+      break;
+    }
+  }
+
+  enableSignalSlot = true;
+}
+
 void Scope::UpdateSpinBox(RSpinBox * &sb, const Register::Reg para){
   int ch = cbScopeCh->currentIndex();
 
+  enableSignalSlot = false;
   unsigned int haha = digi[ID]->GetSettingFromMemory(para, ch);
   if( para.GetPartialStep() >   0 ) sb->setValue(haha * para.GetPartialStep() * ch2ns);
   if( para.GetPartialStep() == -1 ) sb->setValue(haha);
-
+  enableSignalSlot = true;
 }
 
 
@@ -393,14 +526,47 @@ void Scope::UpdatePanelFromMomeory(){
   haha = digi[ID]->GetSettingFromMemory(Register::DPP::ChannelDCOffset, ch);
   sbDCOffset->setValue((1.0 - haha * 1.0 / 0xFFFF) * 100 );
 
-  UpdateSpinBox(sbInputRiseTime,  Register::DPP::PHA::InputRiseTime);
-  UpdateSpinBox(sbThreshold,      Register::DPP::PHA::TriggerThreshold);
-  UpdateSpinBox(sbTriggerHoldOff, Register::DPP::PHA::TriggerHoldOffWidth);
+  UpdateComobox(cbDynamicRange, Register::DPP::InputDynamicRange);
 
-  UpdateSpinBox(sbTrapRiseTime, Register::DPP::PHA::TrapezoidRiseTime);
-  UpdateSpinBox(sbTrapFlatTop,  Register::DPP::PHA::TrapezoidFlatTop);
-  UpdateSpinBox(sbDecayTime,    Register::DPP::PHA::DecayTime);
-  UpdateSpinBox(sbPeakingTime,  Register::DPP::PHA::PeakingTime);
+  if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ){
+    UpdateSpinBox(sbInputRiseTime,  Register::DPP::PHA::InputRiseTime);
+    UpdateSpinBox(sbThreshold,      Register::DPP::PHA::TriggerThreshold);
+    UpdateSpinBox(sbTriggerHoldOff, Register::DPP::PHA::TriggerHoldOffWidth);
 
+    UpdateSpinBox(sbTrapRiseTime, Register::DPP::PHA::TrapezoidRiseTime);
+    UpdateSpinBox(sbTrapFlatTop,  Register::DPP::PHA::TrapezoidFlatTop);
+    UpdateSpinBox(sbDecayTime,    Register::DPP::PHA::DecayTime);
+    UpdateSpinBox(sbPeakingTime,  Register::DPP::PHA::PeakingTime);
+
+    UpdateComobox(cbSmoothingFactor, Register::DPP::PHA::RCCR2SmoothingFactor);
+
+  }
 
 }
+
+void Scope::ReadSettingsFromBoard(){
+
+  int ch = cbScopeCh->currentIndex();
+
+  digi[ID]->ReadRegister(Register::DPP::RecordLength_G, ch);
+  digi[ID]->ReadRegister(Register::DPP::PreTrigger, ch);
+  digi[ID]->ReadRegister(Register::DPP::ChannelDCOffset, ch);
+  digi[ID]->ReadRegister(Register::DPP::InputDynamicRange, ch);
+
+  if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ){
+
+    digi[ID]->ReadRegister(Register::DPP::PHA::InputRiseTime, ch);
+    digi[ID]->ReadRegister(Register::DPP::PHA::TriggerThreshold, ch);
+    digi[ID]->ReadRegister(Register::DPP::PHA::TriggerHoldOffWidth, ch);
+    digi[ID]->ReadRegister(Register::DPP::PHA::TrapezoidRiseTime, ch);
+    digi[ID]->ReadRegister(Register::DPP::PHA::TrapezoidFlatTop, ch);
+    digi[ID]->ReadRegister(Register::DPP::PHA::DecayTime, ch);
+    digi[ID]->ReadRegister(Register::DPP::PHA::PeakingTime, ch);
+
+  }
+
+  UpdatePanelFromMomeory();
+
+}
+
+

@@ -35,6 +35,7 @@ private slots:
   void StartScope();
   void StopScope();
   void UpdateScope();
+  void ReadSettingsFromBoard();
 
 signals:
 
@@ -42,13 +43,18 @@ signals:
 
 private:
 
+
+  void SetUpComboBoxSimple(RComboBox * &cb, QString str, int row, int col);
   void SetUpComboBox(RComboBox * &cb, QString str, int row, int col, const Register::Reg para);
   void SetUpSpinBox(RSpinBox * &sb, QString str, int row, int col, const Register::Reg para);
 
   void CleanUpSettingsGroupBox();
+  void SetUpGeneralPanel();
   void SetUpPHAPanel();
   void SetUpPSDPanel();
+  void EnableControl(bool enable);
 
+  void UpdateComobox(RComboBox * &cb, const Register::Reg para);
   void UpdateSpinBox(RSpinBox * &sb, const Register::Reg para);
   void UpdatePanelFromMomeory();
 
@@ -71,6 +77,7 @@ private:
 
   QPushButton * bnScopeStart;
   QPushButton * bnScopeStop;
+  QPushButton * bnReadSettingsFromBoard;
 
   QLineEdit * leTriggerRate;
 
@@ -82,20 +89,23 @@ private:
   RSpinBox * sbPreTrigger;
 
   RSpinBox * sbDCOffset;
-  //RComboBox * cbDynamicRange;
+  RComboBox * cbDynamicRange;
+
+  RComboBox * cbPolarity;
 
   /// PHA
   RSpinBox * sbInputRiseTime;
   RSpinBox * sbTriggerHoldOff;
   RSpinBox * sbThreshold;
-  //RComboBox * cbSmoothingFactor;
+  RComboBox * cbSmoothingFactor;
 
   RSpinBox * sbTrapRiseTime;
   RSpinBox * sbTrapFlatTop;
   RSpinBox * sbDecayTime;
   RSpinBox * sbPeakingTime;
-
-
+  RSpinBox * sbPeakHoldOff;
+  RComboBox * cbPeakAvg;
+  RComboBox * cbBaselineAvg;
 
 };
 

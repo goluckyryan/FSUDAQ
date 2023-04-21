@@ -159,7 +159,30 @@ class Digitizer{
     unsigned short DigiProbe1Type() {return ( (GetSettingFromMemory(Register::DPP::BoardConfiguration) >> 20) & 0xF );}
     unsigned short DigiProbe2Type() {return ( (GetSettingFromMemory(Register::DPP::BoardConfiguration) >> 26) & 0x7 );}
 
+    //====== DPP Algorithm Contol breakdown
+    unsigned short TrapReScaling(int ch)       {return ( (GetSettingFromMemory(Register::DPP::DPPAlgorithmControl, ch) >>  0) & 0x1F );}
+    unsigned short TraceDecimation(int ch)     {return ( (GetSettingFromMemory(Register::DPP::DPPAlgorithmControl, ch) >>  8) & 0x3 );}
+    unsigned short TraceDecimationGain(int ch) {return ( (GetSettingFromMemory(Register::DPP::DPPAlgorithmControl, ch) >> 10) & 0x3 );}
+    unsigned short PeakMean(int ch)            {return ( (GetSettingFromMemory(Register::DPP::DPPAlgorithmControl, ch) >> 12) & 0x3 );}
+    unsigned short Polarity(int ch)            {return ( (GetSettingFromMemory(Register::DPP::DPPAlgorithmControl, ch) >> 16) & 0x1 );}
+    unsigned short TriggerMode(int ch)         {return ( (GetSettingFromMemory(Register::DPP::DPPAlgorithmControl, ch) >> 18) & 0x3 );}
+    unsigned short BaseLineAvg(int ch)         {return ( (GetSettingFromMemory(Register::DPP::DPPAlgorithmControl, ch) >> 18) & 0x7 );}
+    unsigned short DisableSelfTrigger(int ch)  {return ( (GetSettingFromMemory(Register::DPP::DPPAlgorithmControl, ch) >> 24) & 0x1 );}
+    unsigned short EnableRollOverFlag(int ch)  {return ( (GetSettingFromMemory(Register::DPP::DPPAlgorithmControl, ch) >> 26) & 0x1 );}
+    unsigned short EnablePileUpFlag(int ch)    {return ( (GetSettingFromMemory(Register::DPP::DPPAlgorithmControl, ch) >> 27) & 0x1 );}
 
+    //====== DPP Algorithm Contol 2 breakdown
+    unsigned short LocalShapeMode(int ch)       {return ( (GetSettingFromMemory(Register::DPP::PHA::DPPAlgorithmControl2_G, ch) >>  0) & 0x7 );}
+    unsigned short LocalTrigValidMode(int ch)   {return ( (GetSettingFromMemory(Register::DPP::PHA::DPPAlgorithmControl2_G, ch) >>  4) & 0x7 );}
+    unsigned short Extra2Option(int ch)         {return ( (GetSettingFromMemory(Register::DPP::PHA::DPPAlgorithmControl2_G, ch) >>  8) & 0x3 );}
+    unsigned short VetoSource(int ch)           {return ( (GetSettingFromMemory(Register::DPP::PHA::DPPAlgorithmControl2_G, ch) >>  14) & 0x3 );}
+    unsigned short TrigCounter(int ch)          {return ( (GetSettingFromMemory(Register::DPP::PHA::DPPAlgorithmControl2_G, ch) >>  16) & 0x3 );}
+    unsigned short ActiveBaseLineCal(int ch)    {return ( (GetSettingFromMemory(Register::DPP::PHA::DPPAlgorithmControl2_G, ch) >>  18) & 0x1 );}
+    unsigned short TagCorrelatedEvents(int ch)  {return ( (GetSettingFromMemory(Register::DPP::PHA::DPPAlgorithmControl2_G, ch) >>  19) & 0x1 );}
+    unsigned short OptimizeBaseLineRestorer(int ch)  {return ( (GetSettingFromMemory(Register::DPP::PHA::DPPAlgorithmControl2_G, ch) >>  29) & 0x1 );}
+
+    //====== Acquistion Control vreakdown
+    
 
 };
 
