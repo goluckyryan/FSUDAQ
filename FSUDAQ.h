@@ -14,6 +14,7 @@
 #include "ClassDigitizer.h"
 #include "CustomThreads.h"
 #include "Scope.h"
+#include "DigiSettings.h"
 
 //^#===================================================== MainWindow
 class MainWindow : public QMainWindow{
@@ -24,6 +25,7 @@ public:
 
   void closeEvent(QCloseEvent * event){
     if( scope ) scope->close();
+    if( digiSettings ) digiSettings->close();
     event->accept();
   }
 
@@ -51,6 +53,8 @@ private slots:
   void WriteRunTimestamp(bool isStartRun);
 
   void OpenScope();
+
+  void OpenDigiSettings();
 
 private:
 
@@ -103,6 +107,9 @@ private:
 
   //@----- Scope
   Scope * scope;
+
+  //@----- DigiSettings
+  DigiSettings * digiSettings;
 
 };
 

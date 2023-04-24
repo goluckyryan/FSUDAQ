@@ -74,6 +74,11 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   cbPeakAvg = nullptr;
   cbBaselineAvg = nullptr;
 
+  cbAnaProbe1 = nullptr;
+  cbAnaProbe2 = nullptr;
+  cbDigiProbe1 = nullptr;
+  cbDigiProbe2 = nullptr;
+
   //*================================== UI
   int rowID = -1;
 
@@ -687,6 +692,8 @@ void Scope::ReadSettingsFromBoard(){
   digi[ID]->ReadRegister(Register::DPP::PreTrigger, ch);
   digi[ID]->ReadRegister(Register::DPP::ChannelDCOffset, ch);
   digi[ID]->ReadRegister(Register::DPP::InputDynamicRange, ch);
+  digi[ID]->ReadRegister(Register::DPP::BoardConfiguration, ch);
+  digi[ID]->ReadRegister(Register::DPP::DPPAlgorithmControl, ch);
 
   if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ){
 

@@ -25,6 +25,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
   nDigi = 0;
 
   scope = nullptr;
+  digiSettings = nullptr;
 
   QWidget * mainLayoutWidget = new QWidget(this);
   setCentralWidget(mainLayoutWidget);
@@ -50,7 +51,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
 
     bnDigiSettings = new QPushButton("Digitizers Settings", this);
     layout->addWidget(bnDigiSettings, 1, 1);
-    //connect(bnDigiSettings, &QPushButton::clicked, this, &MainWindow::OpenDigiSettings);
+    connect(bnDigiSettings, &QPushButton::clicked, this, &MainWindow::OpenDigiSettings);
 
   }
 
@@ -198,6 +199,8 @@ MainWindow::~MainWindow(){
   SaveProgramSettings();
 
   if( scope ) delete scope;
+
+  if( digiSettings ) delete digiSettings;
 
   if( scalar ) {
     CleanUpScalar();
@@ -392,6 +395,18 @@ void MainWindow::CloseDigitizers(){
   LogMsg("Closing Digitizer(s)....");
 
   CleanUpScalar();
+
+  if( scope ) {
+    scope->close();
+    delete scope;
+    scope = nullptr;
+  }
+
+  if( digiSettings ){
+    digiSettings->close();
+    delete digiSettings;
+    digiSettings = nullptr;
+  }
 
   if( digi == nullptr ) return;
 
@@ -724,7 +739,20 @@ void MainWindow::OpenScope(){
 
 }
 
+//***************************************************************
+//***************************************************************
+void MainWindow::OpenDigiSettings(){
 
+  if( digiSettings == nullptr ) {
+    digiSettings = new DigiSettings(digi, nDigi);
+    //connect(scope, &Scope::SendLogMsg, this, &MainWindow::LogMsg);
+    digiSettings->show();
+  }else{
+    digiSettings->show();
+    digiSettings->activateWindow();
+  }
+
+}
 
 //***************************************************************
 //***************************************************************
