@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+#include <utility>
 
 ///======= 
 /// All 0x1XXX registers are either indiviual or Group
@@ -197,7 +198,33 @@ inline uint32_t Reg::CalAddress(unsigned int index){
   
   ///====== Common for PHA and PSD
   namespace DPP {
+
+    namespace BoardConfigBit{
+      const std::pair<unsigned short, unsigned short> EnableAutoDataFlush = {1, 0} ; /// length, smallest pos
+      const std::pair<unsigned short, unsigned short> DecimateTrace = {1, 1} ; 
+      const std::pair<unsigned short, unsigned short> TrigPropagation = {1, 2} ; 
+      const std::pair<unsigned short, unsigned short> DualTrace = {1, 11} ; 
+      const std::pair<unsigned short, unsigned short> AnalogProbe1 = {2, 12} ; 
+      const std::pair<unsigned short, unsigned short> AnalogProbe2 = {2, 14} ; 
+      const std::pair<unsigned short, unsigned short> RecordTrace = {1, 16} ; 
+      const std::pair<unsigned short, unsigned short> EnableExtra2 = {1, 17} ; 
+      const std::pair<unsigned short, unsigned short> DigiProbel1 = {4, 20} ; 
+      const std::pair<unsigned short, unsigned short> DigiProbel2 = {3, 26} ; 
+    }
     
+    namespace DPPAlgorithmControlBit {
+      const std::pair<unsigned short, unsigned short> TrapRescaling = {6, 0} ; /// length, smallest pos
+      const std::pair<unsigned short, unsigned short> TraceDecimation = {2, 8};
+      const std::pair<unsigned short, unsigned short> TraceDeciGain = {2, 10,};
+      const std::pair<unsigned short, unsigned short> PeakMean = {2, 12};
+      const std::pair<unsigned short, unsigned short> Polarity = {1, 16};
+      const std::pair<unsigned short, unsigned short> TriggerMode = {2, 18};
+      const std::pair<unsigned short, unsigned short> BaselineAvg = {3, 20};
+      const std::pair<unsigned short, unsigned short> DisableSelfTrigger = {1, 24};
+      const std::pair<unsigned short, unsigned short> EnableRollOverFlag = {1, 26};
+      const std::pair<unsigned short, unsigned short> EnablePileUpFlag = {1, 27};
+    }
+
     const Reg RecordLength_G              ("RecordLength_G"              , 0x1020, RW::ReadWrite,  true, 0x3FFF,  8); /// R/W
     const Reg InputDynamicRange           ("InputDynamicRange"           , 0x1028, RW::ReadWrite, false, {{"2 Vpp", 0},{"0.5 Vpp", 1}}); /// R/W
     const Reg NumberEventsPerAggregate_G  ("NumberEventsPerAggregate_G"  , 0x1034, RW::ReadWrite,  true,  0x3FF, -1); /// R/W

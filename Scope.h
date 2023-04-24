@@ -43,13 +43,11 @@ signals:
 
 private:
 
-
   void SetUpComboBoxSimple(RComboBox * &cb, QString str, int row, int col);
   void SetUpComboBox(RComboBox * &cb, QString str, int row, int col, const Register::Reg para);
   void SetUpSpinBox(RSpinBox * &sb, QString str, int row, int col, const Register::Reg para);
 
   void CleanUpSettingsGroupBox();
-  void SetUpGeneralPanel();
   void SetUpPHAPanel();
   void SetUpPSDPanel();
   void EnableControl(bool enable);
@@ -106,6 +104,11 @@ private:
   RSpinBox * sbPeakHoldOff;
   RComboBox * cbPeakAvg;
   RComboBox * cbBaselineAvg;
+
+  RComboBox * cbAnaProbe1;
+  RComboBox * cbAnaProbe2;
+  RComboBox * cbDigiProbe1;
+  RComboBox * cbDigiProbe2;
 
 };
 

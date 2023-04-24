@@ -140,10 +140,10 @@ class Digitizer{
     unsigned int ReadSettingFromFile         (Register::Reg registerAddress, unsigned short ch = 0); /// read from setting binary
 
     //============ old methods, that only manipulate digitizer register, not setting in memory
-    // void SetTriggerPolarity(bool RiseingIsZero, int ch );
-    // void SetDPPAlgorithmControl(uint32_t bit, int ch);
-    // unsigned int ReadBits(Register::Reg address, unsigned int bitLength, unsigned int bitSmallestPos, int ch );
-    // void SetBits(Register::Reg address, unsigned int bitValue, unsigned int bitLength, unsigned int bitSmallestPos, int ch);
+    void SetDPPAlgorithmControl(uint32_t bit, int ch);
+    unsigned int ReadBits(Register::Reg address, unsigned int bitLength, unsigned int bitSmallestPos, int ch );
+    void SetBits(Register::Reg address, unsigned int bitValue, unsigned int bitLength, unsigned int bitSmallestPos, int ch);
+    void SetBits(Register::Reg address, std::pair<unsigned short, unsigned short> bit, unsigned int bitValue, int ch){ SetBits(address, bitValue, bit.first, bit.second, ch);}
 
     //====== Board Config breakDown
     bool IsEnabledAutoDataFlush()   {return (  GetSettingFromMemory(Register::DPP::BoardConfiguration) & 0x1 );}
@@ -182,7 +182,7 @@ class Digitizer{
     unsigned short OptimizeBaseLineRestorer(int ch)  {return ( (GetSettingFromMemory(Register::DPP::PHA::DPPAlgorithmControl2_G, ch) >>  29) & 0x1 );}
 
     //====== Acquistion Control vreakdown
-    
+
 
 };
 

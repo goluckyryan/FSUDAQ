@@ -851,77 +851,6 @@ void Digitizer::ErrorMsg(std::string header){
   
 }
 
-/**
-void Digitizer::SetRecordLength(unsigned int ns, int ch){ 
-  WriteRegister( Register::DPP::RecordLength_G,  ns / ch2ns / 8 , ch); 
-  if( ch >= 0 ) WriteRegister( Register::DPP::RecordLength_G, ns / ch2ns / 8 , ch + int(pow(-1, ch)));     
-  ErrorMsg(__func__); 
-}
-
-void Digitizer::SetAggregateOrganization(unsigned int bit){ 
-  WriteRegister(Register::DPP::AggregateOrganization, bit & 0x7); 
-  ErrorMsg(__func__);
-}
-
-  
-void Digitizer::SetEventAggregation(unsigned int numEvent, int ch){ 
-  WriteRegister( Register::DPP::NumberEventsPerAggregate_G,numEvent, ch); 
-  if( ch >= 0 ) WriteRegister( Register::DPP::NumberEventsPerAggregate_G,numEvent, ch + int(pow(-1, ch))); 
-  ErrorMsg(__func__); 
-}
-
-void Digitizer::SetMaxAggregatePerBlockTransfer(unsigned int numEvent){
-  WriteRegister( Register::DPP::MaxAggregatePerBlockTransfer,numEvent);
-  ErrorMsg(__func__);
-}
-
-
-void Digitizer::SetACQControl(uint32_t bit){
-  WriteRegister( Register::DPP::AcquisitionControl, bit);
-  ErrorMsg(__func__);
-}
-
-void Digitizer::SetGlobalTriggerMask(uint32_t bit){
-  WriteRegister( Register::DPP::GlobalTriggerMask, bit);
-  ErrorMsg(__func__);  
-}
-
-void Digitizer::SetFrontPanelTRGOUTMask(uint32_t bit){
-  WriteRegister( Register::DPP::FrontPanelTRGOUTEnableMask, bit);
-  ErrorMsg(__func__);  
-}
-
-void Digitizer::SetFrontPanelIOControl(uint32_t bit){
-  WriteRegister( Register::DPP::FrontPanelIOControl, bit);
-  ErrorMsg(__func__);  
-}
-
-void Digitizer::SetTriggerValidationMask(uint32_t bit){
-  WriteRegister( Register::DPP::TriggerValidationMask_G, bit);
-  ErrorMsg(__func__);  
-}
-
-void Digitizer::SetInputDynamicRange(unsigned int TwoVol_0_or_halfVol_1, int ch){ WriteRegister( Register::DPP::InputDynamicRange, TwoVol_0_or_halfVol_1, ch); ErrorMsg(__func__);}
-void Digitizer::SetPreTriggerSample(unsigned int nSample, int ch)               { WriteRegister( Register::DPP::PreTrigger,             nSample / 4, ch);      ErrorMsg(__func__);}
-void Digitizer::SetPreTriggerDuration(unsigned int ns, int ch)                  { WriteRegister( Register::DPP::PreTrigger,          ns / ch2ns / 4, ch);      ErrorMsg(__func__);}
-void Digitizer::SetDCOffset(float offsetPrecentage, int ch)                     { WriteRegister( Register::DPP::ChannelDCOffset, uint( 0xFFFF * (1.0-offsetPrecentage)), ch ); ErrorMsg(__func__);}
-void Digitizer::SetVetoWidth(uint32_t bit, int ch)                              { WriteRegister( Register::DPP::VetoWidth,                      bit, ch);      ErrorMsg(__func__);}
-
-
-void Digitizer::SetTriggerPolarity(bool RiseingIsZero, int ch ){
-  if( !isConnected ) return;
-  if ( DPPType >= 128 ) return; /// do thing for DPP firmware
-  if( ch < 0 ) {
-    ret = 0;
-    for (int i = 0; i < NChannel; i++){
-      ret |= CAEN_DGTZ_SetTriggerPolarity(handle, i, CAEN_DGTZ_TriggerPolarity_t(RiseingIsZero));  
-    }
-  }else{
-    ret = CAEN_DGTZ_SetTriggerPolarity(handle, ch, CAEN_DGTZ_TriggerPolarity_t(RiseingIsZero));
-  }
-  if( ret != 0 ) ErrorMsg(__func__);
-}
-
 //============================== DPP-Alpgorthm Control 
 void Digitizer::SetDPPAlgorithmControl(uint32_t bit, int ch){
   WriteRegister( Register::DPP::DPPAlgorithmControl, bit, ch);    
@@ -950,17 +879,3 @@ void Digitizer::SetBits(Register::Reg address, unsigned int bitValue, unsigned i
   if( ret != 0 ) ErrorMsg(__func__);  
 }
 
-int Digitizer::GetChTemperature(int ch){
-  if( !isConnected ) return -404;
-  if( BoardInfo.Model != CAEN_DGTZ_V1730 &&
-      BoardInfo.Model != CAEN_DGTZ_V1725 &&
-      BoardInfo.Model != CAEN_DGTZ_V1751 ) return -404;
-  
-  uint32_t * temp;
-  ret |= CAEN_DGTZ_ReadTemperature(handle, ch, temp);
-  if( ret != 0 ) ErrorMsg(__func__);
-  return temp[0];
-}
-
-
-*/
