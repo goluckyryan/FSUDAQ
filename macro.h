@@ -3,6 +3,9 @@
 
 #define MaxNPorts 1
 #define MaxNBoards 1
+
+#define MaxNDigitizer MaxNPorts * MaxNBoards
+
 #define MaxNChannels 16
 #define MaxRecordLength 0x3fff * 8 
 #define MaxSaveFileSize  1024 * 1024 * 1024 * 2

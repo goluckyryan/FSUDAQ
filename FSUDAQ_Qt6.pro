@@ -23,13 +23,13 @@ HEADERS += ClassData.h \
            ClassDigitizer.h \
            CustomThreads.h \
            CustomWidgets.h \
-           DigiSettings.h \
+           DigiSettingsPanel.h \
            FSUDAQ.h \
            macro.h \
            RegisterAddress.h \
            Scope.h
 SOURCES += ClassDigitizer.cpp \
-           DigiSettings.cpp \
+           DigiSettingsPanel.cpp \
            FSUDAQ.cpp \
            main.cpp \
            Scope.cpp

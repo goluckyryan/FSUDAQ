@@ -14,7 +14,7 @@
 #include "ClassDigitizer.h"
 #include "CustomThreads.h"
 #include "Scope.h"
-#include "DigiSettings.h"
+#include "DigiSettingsPanel.h"
 
 //^#===================================================== MainWindow
 class MainWindow : public QMainWindow{
@@ -109,7 +109,7 @@ private:
   Scope * scope;
 
   //@----- DigiSettings
-  DigiSettings * digiSettings;
+  DigiSettingsPanel * digiSettings;
 
 };
 

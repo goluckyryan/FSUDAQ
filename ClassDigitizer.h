@@ -99,6 +99,7 @@ class Digitizer{
     uint32_t PrintRegister(uint32_t address, std::string msg);
     
     //^================ Get Board info
+    CAEN_DGTZ_BoardInfo_t GetBoardInfo()     const {return BoardInfo;}
     std::string GetModelName()               const {return BoardInfo.ModelName;}
     int         GetSerialNumber()            const {return BoardInfo.SerialNumber;}
     int         GetChannelMask()             const {return channelMask;}
