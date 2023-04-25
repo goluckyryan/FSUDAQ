@@ -199,7 +199,7 @@ inline uint32_t Reg::CalAddress(unsigned int index){
   ///====== Common for PHA and PSD
   namespace DPP {
 
-    namespace BoardConfigBit{
+    namespace Bit_BoardConfig{
       const std::pair<unsigned short, unsigned short> EnableAutoDataFlush = {1, 0} ; /// length, smallest pos
       const std::pair<unsigned short, unsigned short> DecimateTrace = {1, 1} ; 
       const std::pair<unsigned short, unsigned short> TrigPropagation = {1, 2} ; 
@@ -212,7 +212,7 @@ inline uint32_t Reg::CalAddress(unsigned int index){
       const std::pair<unsigned short, unsigned short> DigiProbel2 = {3, 26} ; 
     }
     
-    namespace DPPAlgorithmControlBit {
+    namespace Bit_DPPAlgorithmControl {
       const std::pair<unsigned short, unsigned short> TrapRescaling = {6, 0} ; /// length, smallest pos
       const std::pair<unsigned short, unsigned short> TraceDecimation = {2, 8};
       const std::pair<unsigned short, unsigned short> TraceDeciGain = {2, 10,};
@@ -223,6 +223,27 @@ inline uint32_t Reg::CalAddress(unsigned int index){
       const std::pair<unsigned short, unsigned short> DisableSelfTrigger = {1, 24};
       const std::pair<unsigned short, unsigned short> EnableRollOverFlag = {1, 26};
       const std::pair<unsigned short, unsigned short> EnablePileUpFlag = {1, 27};
+    }
+
+    namespace Bit_AcquistionControl {
+      const std::pair<unsigned short, unsigned short> StartStopMode = {2, 0} ;
+      const std::pair<unsigned short, unsigned short> ACQStartArm = {1, 2} ;
+      const std::pair<unsigned short, unsigned short> PLLRef = {1, 6} ;
+      const std::pair<unsigned short, unsigned short> LVDSBusyEnable = {1, 8} ;
+      const std::pair<unsigned short, unsigned short> LVDSVetoEnable = {1, 9} ;
+      const std::pair<unsigned short, unsigned short> VetoTRGOut = {1, 12} ;
+    }
+
+    namespace Bit_AcqStatus {
+      const std::pair<unsigned short, unsigned short> AcqStatus = {1, 2} ;
+      const std::pair<unsigned short, unsigned short> EventReady = {1, 3} ;
+      const std::pair<unsigned short, unsigned short> EventFull = {1, 4} ;
+      const std::pair<unsigned short, unsigned short> ClockSource = {1, 5} ;
+      const std::pair<unsigned short, unsigned short> PLLLock = {1, 7} ;
+      const std::pair<unsigned short, unsigned short> BoardReady = {1, 8} ;
+      const std::pair<unsigned short, unsigned short> SINStatus = {1, 15} ;
+      const std::pair<unsigned short, unsigned short> TRGINStatus = {1, 16} ;
+      const std::pair<unsigned short, unsigned short> ChannelsDown = {1, 19} ;
     }
 
     const Reg RecordLength_G              ("RecordLength_G"              , 0x1020, RW::ReadWrite,  true, 0x3FFF,  8); /// R/W

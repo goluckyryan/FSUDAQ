@@ -145,6 +145,7 @@ class Digitizer{
     unsigned int ReadBits(Register::Reg address, unsigned int bitLength, unsigned int bitSmallestPos, int ch );
     void SetBits(Register::Reg address, unsigned int bitValue, unsigned int bitLength, unsigned int bitSmallestPos, int ch);
     void SetBits(Register::Reg address, std::pair<unsigned short, unsigned short> bit, unsigned int bitValue, int ch){ SetBits(address, bitValue, bit.first, bit.second, ch);}
+    static unsigned int ExtractBits(uint32_t value, std::pair<unsigned short, unsigned short> bit){ return ((value >> bit.second) & uint(pow(2, bit.first)-1) ); }
 
     //====== Board Config breakDown
     bool IsEnabledAutoDataFlush()   {return (  GetSettingFromMemory(Register::DPP::BoardConfiguration) & 0x1 );}

@@ -449,7 +449,7 @@ void Scope::SetUpPHAPanel(){
   cbPolarity->addItem("Negative", 1);
   connect(cbPolarity, &RComboBox::currentIndexChanged, this, [=](){
     if( !enableSignalSlot ) return;
-    digi[ID]->SetBits(Register::DPP::DPPAlgorithmControl, Register::DPP::DPPAlgorithmControlBit::Polarity, cbPolarity->currentData().toInt(), cbScopeCh->currentIndex());
+    digi[ID]->SetBits(Register::DPP::DPPAlgorithmControl, Register::DPP::Bit_DPPAlgorithmControl::Polarity, cbPolarity->currentData().toInt(), cbScopeCh->currentIndex());
   });
 
   SetUpComboBoxSimple(cbBaselineAvg, "Baseline Avg. ", rowID, 2);
@@ -462,7 +462,7 @@ void Scope::SetUpPHAPanel(){
   cbBaselineAvg->addItem("16384 sample", 6);
   connect(cbBaselineAvg, &RComboBox::currentIndexChanged, this, [=](){
     if( !enableSignalSlot ) return;
-    digi[ID]->SetBits(Register::DPP::DPPAlgorithmControl, Register::DPP::DPPAlgorithmControlBit::BaselineAvg, cbBaselineAvg->currentData().toInt(), cbScopeCh->currentIndex());
+    digi[ID]->SetBits(Register::DPP::DPPAlgorithmControl, Register::DPP::Bit_DPPAlgorithmControl::BaselineAvg, cbBaselineAvg->currentData().toInt(), cbScopeCh->currentIndex());
   });
 
   SetUpComboBoxSimple(cbPeakAvg, "Peak Avg. ", rowID, 4);
@@ -472,7 +472,7 @@ void Scope::SetUpPHAPanel(){
   cbPeakAvg->addItem("64 sample", 3);
   connect(cbPeakAvg, &RComboBox::currentIndexChanged, this, [=](){
     if( !enableSignalSlot ) return;
-    digi[ID]->SetBits(Register::DPP::DPPAlgorithmControl, Register::DPP::DPPAlgorithmControlBit::PeakMean, cbPeakAvg->currentData().toInt(), cbScopeCh->currentIndex());
+    digi[ID]->SetBits(Register::DPP::DPPAlgorithmControl, Register::DPP::Bit_DPPAlgorithmControl::PeakMean, cbPeakAvg->currentData().toInt(), cbScopeCh->currentIndex());
   });
 
   SetUpSpinBox(sbPeakHoldOff,      "Peak HoldOff [ns] ", rowID, 6, Register::DPP::PHA::PeakHoldOff);
@@ -486,7 +486,7 @@ void Scope::SetUpPHAPanel(){
   cbAnaProbe1->addItem("Trap.", 3);
   connect(cbAnaProbe1, &RComboBox::currentIndexChanged, this, [=](){
     if( !enableSignalSlot ) return;
-    digi[ID]->SetBits(Register::DPP::BoardConfiguration, Register::DPP::BoardConfigBit::AnalogProbe1, cbAnaProbe1->currentData().toInt(), cbScopeCh->currentIndex());
+    digi[ID]->SetBits(Register::DPP::BoardConfiguration, Register::DPP::Bit_BoardConfig::AnalogProbe1, cbAnaProbe1->currentData().toInt(), cbScopeCh->currentIndex());
     dataTrace[0]->setName(cbAnaProbe1->currentText());
   });
 
@@ -497,7 +497,7 @@ void Scope::SetUpPHAPanel(){
   cbAnaProbe2->addItem("Baseline", 3);
   connect(cbAnaProbe2, &RComboBox::currentIndexChanged, this, [=](){
     if( !enableSignalSlot ) return;
-    digi[ID]->SetBits(Register::DPP::BoardConfiguration, Register::DPP::BoardConfigBit::AnalogProbe2, cbAnaProbe2->currentData().toInt(), cbScopeCh->currentIndex());
+    digi[ID]->SetBits(Register::DPP::BoardConfiguration, Register::DPP::Bit_BoardConfig::AnalogProbe2, cbAnaProbe2->currentData().toInt(), cbScopeCh->currentIndex());
     dataTrace[1]->setName(cbAnaProbe2->currentText());
   });
 
@@ -517,7 +517,7 @@ void Scope::SetUpPHAPanel(){
   cbDigiProbe1->addItem("Budy", 12);
   connect(cbDigiProbe1, &RComboBox::currentIndexChanged, this, [=](){
     if( !enableSignalSlot ) return;
-    digi[ID]->SetBits(Register::DPP::BoardConfiguration, Register::DPP::BoardConfigBit::DigiProbel1, cbDigiProbe1->currentData().toInt(), cbScopeCh->currentIndex());
+    digi[ID]->SetBits(Register::DPP::BoardConfiguration, Register::DPP::Bit_BoardConfig::DigiProbel1, cbDigiProbe1->currentData().toInt(), cbScopeCh->currentIndex());
     dataTrace[2]->setName(cbDigiProbe2->currentText());
   });
 
@@ -545,7 +545,7 @@ void Scope::SetUpPSDPanel(){
   cbPolarity->addItem("Negative", 1);
   connect(cbPolarity, &RComboBox::currentIndexChanged, this, [=](){
     if( !enableSignalSlot ) return;
-    digi[ID]->SetBits(Register::DPP::DPPAlgorithmControl, Register::DPP::DPPAlgorithmControlBit::Polarity, cbPolarity->currentData().toInt(), cbScopeCh->currentIndex());
+    digi[ID]->SetBits(Register::DPP::DPPAlgorithmControl, Register::DPP::Bit_DPPAlgorithmControl::Polarity, cbPolarity->currentData().toInt(), cbScopeCh->currentIndex());
   });
 }
 
@@ -615,7 +615,7 @@ void Scope::UpdatePanelFromMomeory(){
   UpdateComobox(cbDynamicRange, Register::DPP::InputDynamicRange);
 
   uint32_t DPPAlg = digi[ID]->GetSettingFromMemory(Register::DPP::DPPAlgorithmControl, ch);
-  if( (DPPAlg >> Register::DPP::DPPAlgorithmControlBit::Polarity.second) & 0x1 ){
+  if( Digitizer::ExtractBits(DPPAlg, Register::DPP::Bit_DPPAlgorithmControl::Polarity) ){
     cbPolarity->setCurrentIndex(1);
   }else{
     cbPolarity->setCurrentIndex(0);
@@ -633,7 +633,7 @@ void Scope::UpdatePanelFromMomeory(){
 
     UpdateComobox(cbSmoothingFactor, Register::DPP::PHA::RCCR2SmoothingFactor);
 
-    int temp = (DPPAlg >> Register::DPP::DPPAlgorithmControlBit::BaselineAvg.second) & 0x7;
+    int temp = Digitizer::ExtractBits(DPPAlg, Register::DPP::Bit_DPPAlgorithmControl::BaselineAvg);
     for(int i = 0; i < cbBaselineAvg->count(); i++){
       if( cbBaselineAvg->itemData(i).toInt() == temp) {
         cbBaselineAvg->setCurrentIndex(i);
@@ -641,7 +641,7 @@ void Scope::UpdatePanelFromMomeory(){
       }
     }
 
-    temp = (DPPAlg >> Register::DPP::DPPAlgorithmControlBit::PeakMean.second) & 0x3;
+    temp = Digitizer::ExtractBits(DPPAlg, Register::DPP::Bit_DPPAlgorithmControl::PeakMean);
     for(int i = 0; i < cbPeakAvg->count(); i++){
       if( cbPeakAvg->itemData(i).toInt() == temp) {
         cbPeakAvg->setCurrentIndex(i);
@@ -649,11 +649,9 @@ void Scope::UpdatePanelFromMomeory(){
       }
     }
 
-    uint32_t BdCfg = digi[ID]->GetSettingFromMemory(Register::DPP::BoardConfiguration, ch);
+    uint32_t BdCfg = digi[ID]->GetSettingFromMemory(Register::DPP::BoardConfiguration);
 
-    qDebug() << QString::number(BdCfg, 16);
-
-    temp = (BdCfg >> Register::DPP::BoardConfigBit::AnalogProbe1.second) & 0x3;
+    temp = Digitizer::ExtractBits(BdCfg, Register::DPP::Bit_BoardConfig::AnalogProbe1);
     for(int i = 0; i < cbAnaProbe1->count(); i++){
       if( cbAnaProbe1->itemData(i).toInt() == temp) {
         cbAnaProbe1->setCurrentIndex(i);
@@ -661,7 +659,7 @@ void Scope::UpdatePanelFromMomeory(){
         break;
       }
     }
-    temp = (BdCfg >> Register::DPP::BoardConfigBit::AnalogProbe2.second) & 0x3;
+    temp = Digitizer::ExtractBits(BdCfg, Register::DPP::Bit_BoardConfig::AnalogProbe2);
     for(int i = 0; i < cbAnaProbe2->count(); i++){
       if( cbAnaProbe2->itemData(i).toInt() == temp) {
         cbAnaProbe2->setCurrentIndex(i);
@@ -669,7 +667,7 @@ void Scope::UpdatePanelFromMomeory(){
         break;
       }
     }
-    temp = (BdCfg >> Register::DPP::BoardConfigBit::DigiProbel1.second) & 0x3;
+    temp = Digitizer::ExtractBits(BdCfg, Register::DPP::Bit_BoardConfig::DigiProbel1);
     for(int i = 0; i < cbDigiProbe1->count(); i++){
       if( cbDigiProbe1->itemData(i).toInt() == temp) {
         cbDigiProbe1->setCurrentIndex(i);
