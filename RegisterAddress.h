@@ -210,6 +210,30 @@ inline uint32_t Reg::CalAddress(unsigned int index){
       const std::pair<unsigned short, unsigned short> EnableExtra2 = {1, 17} ; 
       const std::pair<unsigned short, unsigned short> DigiProbel1 = {4, 20} ; 
       const std::pair<unsigned short, unsigned short> DigiProbel2 = {3, 26} ; 
+
+      const std::vector<std::pair<std::string, unsigned int>> ListAnaProbe1 = {{"Input", 0},
+                                                                               {"RC-CR", 1},
+                                                                               {"RC-CR2", 2},
+                                                                               {"Trapezoid", 3}};
+      const std::vector<std::pair<std::string, unsigned int>> ListAnaProbe2 = {{"Input", 0},
+                                                                    {"Threshold", 1},
+                                                                    {"Trap. - Baseline", 2},
+                                                                    {"Trap. Baseline", 3}};
+
+      const std::vector<std::pair<std::string, unsigned int>> ListDigiProbe1 = {{"Peaking", 0},
+                                                                      {"Armed", 1},
+                                                                      {"Peak Run", 2},
+                                                                      {"Pile Up", 3},
+                                                                      {"peaking", 4},
+                                                                      {"TRG Valid. Win", 5},
+                                                                      {"Baseline Freeze", 6},
+                                                                      {"TRG Holdoff", 7},
+                                                                      {"TRG Valid.", 8},
+                                                                      {"ACQ Busy", 9},
+                                                                      {"Zero Cross", 10},
+                                                                      {"Ext. TRG", 11},
+                                                                      {"Budy", 12}};
+
     }
     
     namespace Bit_DPPAlgorithmControl {
@@ -223,6 +247,7 @@ inline uint32_t Reg::CalAddress(unsigned int index){
       const std::pair<unsigned short, unsigned short> DisableSelfTrigger = {1, 24};
       const std::pair<unsigned short, unsigned short> EnableRollOverFlag = {1, 26};
       const std::pair<unsigned short, unsigned short> EnablePileUpFlag = {1, 27};
+
     }
 
     namespace Bit_AcquistionControl {
@@ -244,6 +269,18 @@ inline uint32_t Reg::CalAddress(unsigned int index){
       const std::pair<unsigned short, unsigned short> SINStatus = {1, 15} ;
       const std::pair<unsigned short, unsigned short> TRGINStatus = {1, 16} ;
       const std::pair<unsigned short, unsigned short> ChannelsDown = {1, 19} ;
+    }
+
+    namespace Bit_ReadoutControl {
+      const std::pair<unsigned short, unsigned short> VMEInterruptLevel = {3, 0} ;
+      const std::pair<unsigned short, unsigned short> EnableOpticalLinkInpt = {1, 3} ;
+      const std::pair<unsigned short, unsigned short> EnableEventAligned = {1, 4} ;
+      const std::pair<unsigned short, unsigned short> VMEAlign64Mode = {1, 5} ;
+      const std::pair<unsigned short, unsigned short> VMEBaseAddressReclocated = {1, 6} ;
+      const std::pair<unsigned short, unsigned short> InterrupReleaseMode = {1, 7} ;
+      const std::pair<unsigned short, unsigned short> EnableExtendedBlockTransfer = {1, 8} ;
+
+
     }
 
     const Reg RecordLength_G              ("RecordLength_G"              , 0x1020, RW::ReadWrite,  true, 0x3FFF,  8); /// R/W
@@ -295,12 +332,12 @@ inline uint32_t Reg::CalAddress(unsigned int index){
     const Reg EventSize_R                 ("EventSize_R"                 , 0x814C, RW::ReadONLY , false, {});  /// R
     const Reg TimeBombDowncounter_R       ("TimeBombDowncounter_R"       , 0x8158, RW::ReadONLY , false, {});  /// R
     const Reg FanSpeedControl             ("FanSpeedControl"             , 0x8168, RW::ReadWrite, false, {});  /// R/W
-    const Reg RunStartStopDelay           ("RunStartStopDelay"           , 0x8170, RW::ReadWrite, false, {});  /// R/W
+    const Reg RunStartStopDelay           ("RunStartStopDelay"           , 0x8170, RW::ReadWrite, false, 0xFF, 8);  /// R/W
     const Reg BoardFailureStatus_R        ("BoardFailureStatus_R"        , 0x8178, RW::ReadONLY , false, {});  /// R
     const Reg DisableExternalTrigger      ("DisableExternalTrigger"      , 0x817C, RW::ReadWrite, false, {});  /// R/W
     const Reg FrontPanelLVDSIONewFeatures ("FrontPanelLVDSIONewFeatures" , 0x81A0, RW::ReadWrite, false, {});  /// R/W
-    const Reg BufferOccupancyGain         ("BufferOccupancyGain"         , 0x81B4, RW::ReadWrite, false, {});  /// R/W
-    const Reg ExtendedVetoDelay           ("ExtendedVetoDelay"           , 0x81C4, RW::ReadWrite, false, {});  /// R/W
+    const Reg BufferOccupancyGain         ("BufferOccupancyGain"         , 0x81B4, RW::ReadWrite, false, 0xF, -1);  /// R/W
+    const Reg ExtendedVetoDelay           ("ExtendedVetoDelay"           , 0x81C4, RW::ReadWrite, false, 0xFFFF, 4);  /// R/W
     const Reg ReadoutControl              ("ReadoutControl"              , 0xEF00, RW::ReadWrite, false, {});  /// R/W
     const Reg ReadoutStatus_R             ("ReadoutStatus_R"             , 0xEF04, RW::ReadONLY , false, {});  /// R
     const Reg BoardID                     ("BoardID"                     , 0xEF08, RW::ReadWrite, false, {});  /// R/W 

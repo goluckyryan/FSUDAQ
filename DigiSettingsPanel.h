@@ -24,9 +24,6 @@ private slots:
   void UpdatePanelFromMemory();
   void ReadSettingsFromBoard();
 
-
-  void SetAutoDataFlush();
-
 signals:
   void SendLogMsg(const QString &msg);
 
@@ -35,7 +32,9 @@ private:
 
   void SetUpInfo(QString label, std::string value, QGridLayout *gLayout, int row, int col);
   void SetUpCheckBox(QCheckBox * &chkBox, QString label, QGridLayout *gLayout, int row, int col, Register::Reg para, std::pair<unsigned short, unsigned short> bit);
-  void SetUpComboBox(RComboBox * &cb, QString label, QGridLayout *gLayout, int row, int col, std::vector<std::pair<QString, int>> items);
+  void SetUpComboBoxBit(RComboBox * &cb, QString label, QGridLayout *gLayout, int row, int col, std::vector<std::pair<std::string, unsigned int>> items, Register::Reg para, std::pair<unsigned short, unsigned short> bit);
+  void SetUpComboBox(RComboBox * &cb, QString label, QGridLayout *gLayout, int row, int col, Register::Reg para);
+  void SetUpSpinBox(RSpinBox * &sb, QString label, QGridLayout *gLayout, int row, int col, Register::Reg para);
 
   void CleanUpGroupBox(QGroupBox * & gBox);
   void SetUpPHABoard();
@@ -53,6 +52,14 @@ private:
   QGridLayout * infoLayout[MaxNDigitizer];
 
   QPushButton * bnRefreshSetting; // read setting from board
+  QPushButton * bnProgramPreDefined;
+  QPushButton * bnClearBuffer;
+  
+  QPushButton * bnSendSoftwareTriggerSignal;
+  QPushButton * bnSendSoftwareClockSyncSignal;
+  QPushButton * bnSaveSettings;
+  QPushButton * bnLoadSettings;
+
 
   QGroupBox * boardSettingBox[MaxNDigitizer];
   QGridLayout * settingLayout[MaxNDigitizer];
@@ -69,7 +76,21 @@ private:
   RComboBox * cbDigiProbe1[MaxNDigitizer];
   RComboBox * cbDigiProbe2[MaxNDigitizer];
 
+  QPushButton * bnChEnableMask[MaxNDigitizer][MaxNChannels];
   RComboBox * cbAggOrg[MaxNDigitizer];
+  RSpinBox * sbAggNum[MaxNDigitizer];
+  QCheckBox * chkEnableExternalTrigger[MaxNDigitizer];
+  RSpinBox * sbRunDelay[MaxNDigitizer];
+  RComboBox * cbAnalogMonitorMode[MaxNDigitizer];
+  RSpinBox * sbBufferGain[MaxNDigitizer];
+
+  RComboBox * cbStartStopMode[MaxNDigitizer];
+  RComboBox * cbAcqStartArm[MaxNDigitizer];
+  RComboBox * cbPLLRefClock[MaxNDigitizer];
+
+  QPushButton * bnACQStatus[MaxNDigitizer][9];
+  QPushButton * bnBdFailStatus[MaxNDigitizer][3];
+  QPushButton * bnReadOutStatus[MaxNDigitizer][3];
 
 
 };
