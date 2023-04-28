@@ -211,16 +211,16 @@ inline uint32_t Reg::CalAddress(unsigned int index){
       const std::pair<unsigned short, unsigned short> DigiProbel1 = {4, 20} ; 
       const std::pair<unsigned short, unsigned short> DigiProbel2 = {3, 26} ; 
 
-      const std::vector<std::pair<std::string, unsigned int>> ListAnaProbe1 = {{"Input", 0},
+      const std::vector<std::pair<std::string, unsigned int>> ListAnaProbe1_PHA = {{"Input", 0},
                                                                                {"RC-CR", 1},
                                                                                {"RC-CR2", 2},
                                                                                {"Trapezoid", 3}};
-      const std::vector<std::pair<std::string, unsigned int>> ListAnaProbe2 = {{"Input", 0},
+      const std::vector<std::pair<std::string, unsigned int>> ListAnaProbe2_PHA = {{"Input", 0},
                                                                     {"Threshold", 1},
                                                                     {"Trap. - Baseline", 2},
                                                                     {"Trap. Baseline", 3}};
 
-      const std::vector<std::pair<std::string, unsigned int>> ListDigiProbe1 = {{"Peaking", 0},
+      const std::vector<std::pair<std::string, unsigned int>> ListDigiProbe1_PHA = {{"Peaking", 0},
                                                                       {"Armed", 1},
                                                                       {"Peak Run", 2},
                                                                       {"Pile Up", 3},
@@ -247,6 +247,36 @@ inline uint32_t Reg::CalAddress(unsigned int index){
       const std::pair<unsigned short, unsigned short> DisableSelfTrigger = {1, 24};
       const std::pair<unsigned short, unsigned short> EnableRollOverFlag = {1, 26};
       const std::pair<unsigned short, unsigned short> EnablePileUpFlag = {1, 27};
+
+      const std::vector<std::pair<std::string, unsigned int>> ListTraceDecimation = {{"Disabled", 0},
+                                                                                     {"2 samples", 1},
+                                                                                     {"4 samples", 2},
+                                                                                     {"8 samples", 3}};
+
+      const std::vector<std::pair<std::string, unsigned int>> ListDecimationGain = {{"x1", 0},
+                                                                                    {"x2", 1},
+                                                                                    {"x4", 2},
+                                                                                    {"x8", 3}};
+
+      const std::vector<std::pair<std::string, unsigned int>> ListPeakMean = {{"1 sample", 0},
+                                                                              {"4 sample", 1},
+                                                                              {"16 sample", 2},
+                                                                              {"64 sample", 3}};
+
+      const std::vector<std::pair<std::string, unsigned int>> ListPolarity = {{"Positive", 0},
+                                                                              {"Negative", 1}};
+
+      const std::vector<std::pair<std::string, unsigned int>> ListTrigMode = {{"Independent", 0},
+                                                                              {"Coincident (Shape Trig.)", 1},
+                                                                              {"Anti-Coincident (Shape Trig.)", 3}};
+
+      const std::vector<std::pair<std::string, unsigned int>> ListBaselineAvg = {{"Not Used", 0},
+                                                                                 {"16 samples", 1},
+                                                                                 {"64 samples", 2},
+                                                                                 {"256 samples", 3},
+                                                                                 {"1024 samples", 4},
+                                                                                 {"4096 samples", 5},
+                                                                                 {"16384 samples", 6}};
 
     }
 
@@ -434,6 +464,45 @@ inline uint32_t Reg::CalAddress(unsigned int index){
       const Reg ShapedTriggerWidth        ("ShapedTriggerWidth"       , 0x1084, RW::ReadWrite, false,  0x3FF,  4); /// R/W   not sure
       const Reg DPPAlgorithmControl2_G    ("DPPAlgorithmControl2_G"   , 0x10A0, RW::ReadWrite,  true, {}); /// R/W   OK
       const Reg FineGain                  ("FineGain"                 , 0x10C4, RW::ReadWrite, false, {}); /// R/W   OK
+
+      namespace Bit_DPPAlgorithmControl2 {
+        const std::pair<unsigned short, unsigned short> LocalShapeTriggerMode = {3, 0} ;
+        const std::pair<unsigned short, unsigned short> LocalTrigValidMode = {3, 4} ;
+        const std::pair<unsigned short, unsigned short> Extra2Option = {3, 8} ;
+        const std::pair<unsigned short, unsigned short> VetoSource = {2, 14} ;
+        const std::pair<unsigned short, unsigned short> TriggerCounterFlag = {2, 16} ;
+        const std::pair<unsigned short, unsigned short> ActivebaselineCalulation = {1, 18} ;
+        const std::pair<unsigned short, unsigned short> TagCorrelatedEvents = {1, 19} ;
+        const std::pair<unsigned short, unsigned short> EnableActiveBaselineRestoration = {1, 29} ;
+
+        const std::vector<std::pair<std::string, unsigned int>> ListLocalShapeTrigMode = {{"Disabled", 0},
+                                                                                          {"AND", 4},
+                                                                                          {"The even Channel", 5},
+                                                                                          {"The odd Channel", 6},
+                                                                                          {"OR", 7}};
+
+        const std::vector<std::pair<std::string, unsigned int>> ListLocalTrigValidMode = {{"Disabled", 0},
+                                                                                          {"Crossed", 4},
+                                                                                          {"Equal", 5},
+                                                                                          {"AND", 6},
+                                                                                          {"OR", 7}};
+
+        const std::vector<std::pair<std::string, unsigned int>> ListExtra2 = {{"Extended timeStamp +  baseline * 4", 0},
+                                                                              {"Extended timeStamp + Fine timestamp", 2},
+                                                                              {"Lost Trig. Count  + Total Trig. Count", 4},
+                                                                              {"Event Before 0-xing + After 0-xing", 5}};
+
+        const std::vector<std::pair<std::string, unsigned int>> ListVetoSource = {{"Disabled", 0},
+                                                                                  {"Common (Global Trig. Mask)", 1},
+                                                                                  {"Difference (Trig. Mask)", 2},
+                                                                                  {"Negative Saturation", 3}};
+
+        const std::vector<std::pair<std::string, unsigned int>> ListTrigCounter = {{"1024", 0},
+                                                                                  {"128", 1},
+                                                                                  {"8192", 2}};
+
+      }
+
     }
 
     namespace PSD  {

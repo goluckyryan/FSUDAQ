@@ -38,7 +38,10 @@ private:
 
   void CleanUpGroupBox(QGroupBox * & gBox);
   void SetUpPHABoard();
+  void SetUpPHAChannel();
+  
   void SetUpPSDBoard();
+
 
   Digitizer ** digi;
   unsigned int nDigi;
@@ -111,6 +114,8 @@ private:
   RComboBox * cbTRGOUTLogic[MaxNDigitizer];
   RComboBox * cbTRGOUTUseOtherTriggers[MaxNDigitizer]; // combine bit 30, 31
 
+  /// ============================ Channel
+  QWidget * chAllSetting;
 
   //QPushButton * bnTriggerValidMask[MaxNDigitizer][MaxNChannels/2];
 };
