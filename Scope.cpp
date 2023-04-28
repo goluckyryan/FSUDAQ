@@ -350,7 +350,7 @@ void Scope::SetUpSpinBox(RSpinBox * &sb, QString str, int row, int col, const Re
   sb = new RSpinBox(settingGroup);
   if( para.GetPartialStep() != 0 ){
     sb->setMinimum(0);
-    sb->setMaximum(para.GetMax() * para.GetPartialStep() * ch2ns);
+    sb->setMaximum(para.GetMaxBit() * para.GetPartialStep() * ch2ns);
     if( para.GetPartialStep() > 0 ) sb->setSingleStep(para.GetPartialStep() * ch2ns);
     if( para.GetPartialStep() == -1 ) sb->setSingleStep(1);
   }

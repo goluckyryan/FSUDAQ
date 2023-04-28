@@ -31,7 +31,7 @@ class Reg{
       address = 0;
       type = RW::ReadWrite;
       group = 0;
-      maxValue = 0;
+      maxBit = 0;
       partialStep = 0;
       comboList.clear();
     }
@@ -40,7 +40,7 @@ class Reg{
       this->address = address;
       this->type = type;
       this->group = group;
-      this->maxValue = max;
+      this->maxBit = max;
       this->partialStep = pStep;
       comboList.clear();
     };
@@ -50,7 +50,7 @@ class Reg{
       this->address = address;
       this->type = type;
       this->group = group;
-      this->maxValue = 0;
+      this->maxBit = 0;
       this->partialStep = 0;
       this->comboList = list;
     }
@@ -64,7 +64,7 @@ class Reg{
     uint32_t     GetAddress()      const {return address; }
     RW           GetType()         const {return type;}
     bool         GetGroup()        const {return group;}
-    unsigned int GetMax()          const {return maxValue;} 
+    unsigned int GetMaxBit()       const {return maxBit;} 
     int          GetPartialStep()  const {return partialStep;} /// step = partialStep * ch2ns, -1 : step = 1
     void         Print()           const ;
 
@@ -88,7 +88,7 @@ class Reg{
     uint32_t address; /// This is the table of register, the actual address should call ActualAddress();
     RW type; /// read/write = 0; read = 1; write = 2
     bool group;
-    unsigned int maxValue ;
+    unsigned int maxBit ;
     int partialStep;
     std::vector<std::pair<std::string, unsigned int>> comboList;
 };
@@ -98,7 +98,7 @@ inline void Reg::Print() const{
   printf(" Re.Address: 0x%04X\n", address);
   printf("       Type: %s\n", type == RW::ReadWrite ? "Read/Write" : (type == RW::ReadONLY ? "Read-Only" : "Write-Only") );
   printf("      Group: %s\n", group ? "True" : "False");
-  printf(" Max Value : 0x%X = %d \n", maxValue, maxValue);
+  printf(" Max Value : 0x%X = %d \n", maxBit, maxBit);
 }
 
 inline  unsigned short Reg::Index (unsigned short ch){
@@ -279,7 +279,40 @@ inline uint32_t Reg::CalAddress(unsigned int index){
       const std::pair<unsigned short, unsigned short> VMEBaseAddressReclocated = {1, 6} ;
       const std::pair<unsigned short, unsigned short> InterrupReleaseMode = {1, 7} ;
       const std::pair<unsigned short, unsigned short> EnableExtendedBlockTransfer = {1, 8} ;
+    }
 
+    namespace Bit_FrontPanelIOControl {
+      const std::pair<unsigned short, unsigned short> LEMOLevel = {1, 0} ;
+      const std::pair<unsigned short, unsigned short> DisableTrgOut = {1, 1} ;
+      const std::pair<unsigned short, unsigned short> LVDSDirection1 = {1, 2} ; // [3:0]
+      const std::pair<unsigned short, unsigned short> LVDSDirection2 = {1, 3} ; // [7:4]
+      const std::pair<unsigned short, unsigned short> LVDSDirection3 = {1, 4} ; // [11:8]
+      const std::pair<unsigned short, unsigned short> LVDSDirection4 = {1, 5} ; // [15:12]
+      const std::pair<unsigned short, unsigned short> LVDSConfiguration = {2, 6};
+      const std::pair<unsigned short, unsigned short> LVDSNewFeature = {1, 8};
+      const std::pair<unsigned short, unsigned short> LVDSLatchMode = {1, 9};
+      const std::pair<unsigned short, unsigned short> TRGINMode = {1, 10};
+      const std::pair<unsigned short, unsigned short> TRGINMezzanine = {1, 11};
+      const std::pair<unsigned short, unsigned short> TRGOUTConfig = {6, 14};
+      const std::pair<unsigned short, unsigned short> PatternConfig = {2, 21};
+
+      const std::vector<std::pair<std::string, unsigned int>> ListLEMOLevel = {{"NIM I/O", 0},
+                                                                               {"TTL I/O", 1}};
+      const std::vector<std::pair<std::string, unsigned int>> ListTRGIMode = {{"Edge of TRG-IN", 0},
+                                                                              {"Whole duration of TR-IN", 1}};
+      const std::vector<std::pair<std::string, unsigned int>> ListTRGIMezzanine = {{"Pocessed by Motherboard", 0},
+                                                                                   {"Skip Motherboard", 1}};
+
+      const std::vector<std::pair<std::string, unsigned int>> ListTRGOUTConfig = {{"Disable",            0x00002}, /// this is TRG_OUT high  imped. 0x811C bit[1]
+                                                                                  {"force TRG-OUT is 0", 0x08000},
+                                                                                  {"force TRG-OUT is 1", 0x0C000},
+                                                                                  {"Trigger (Mask)",     0x00000},
+                                                                                  {"Channel Probe",      0x20000},
+                                                                                  {"S-IN",               0x30000},
+                                                                                  {"RUN",                0x10000},
+                                                                                  {"Sync Clock",         0x50000},
+                                                                                  {"Clock Phase",        0x90000},
+                                                                                  {"BUSY/UNLOCK",        0xD0000}};
 
     }
 

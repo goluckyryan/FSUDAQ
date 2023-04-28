@@ -58,10 +58,10 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QMai
 
     {//^====================== Group of Digitizer Info
       infoBox[iDigi] = new QGroupBox("Board Info", tab);
-      //infoBox->setSizePolicy(sizePolicy);
-
-      infoLayout[iDigi] = new QGridLayout(infoBox[iDigi]);
       tabLayout_V1->addWidget(infoBox[iDigi]);
+      
+      infoLayout[iDigi] = new QGridLayout(infoBox[iDigi]);
+      infoLayout[iDigi]->setSpacing(2);
 
       SetUpInfo(    "Model ", digi[ID]->GetModelName(), infoLayout[ID], 0, 0);
       SetUpInfo( "DPP Type ", digi[ID]->GetDPPString(), infoLayout[ID], 0, 2);
@@ -137,31 +137,43 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QMai
       QWidget * buttonsWidget = new QWidget(tab);
       tabLayout_V1->addWidget(buttonsWidget);
       QGridLayout * buttonLayout = new QGridLayout(buttonsWidget);
+      buttonLayout->setSpacing(2);
 
+      int rowID = 0 ;
+      QLabel * lbSavePath = new QLabel("Save File Path : ", this);
+      buttonLayout->addWidget(lbSavePath, rowID, 0);
+      
+      leSaveFilePath = new QLineEdit(this);
+      leSaveFilePath->setReadOnly(true);
+      buttonLayout->addWidget(leSaveFilePath, rowID, 1, 1, 3);
+
+      rowID ++; //---------------------------
       bnRefreshSetting = new QPushButton("Refresh Settings", this);
-      buttonLayout->addWidget(bnRefreshSetting, 0, 0);
+      buttonLayout->addWidget(bnRefreshSetting, rowID, 0);
       connect(bnRefreshSetting, &QPushButton::clicked, this, &DigiSettingsPanel::ReadSettingsFromBoard);
 
       bnProgramPreDefined = new QPushButton("Clear Buffer/FIFO", this);
-      buttonLayout->addWidget(bnProgramPreDefined, 0, 1);
+      buttonLayout->addWidget(bnProgramPreDefined, rowID, 1);
       connect(bnProgramPreDefined, &QPushButton::clicked, this, [=](){ digi[ID]->ProgramPHABoard();}); //TODO for PSD
 
       bnClearBuffer = new QPushButton("Clear Buffer/FIFO", this);
-      buttonLayout->addWidget(bnClearBuffer, 0, 2);
+      buttonLayout->addWidget(bnClearBuffer, rowID, 2);
       connect(bnClearBuffer, &QPushButton::clicked, this, [=](){ digi[ID]->WriteRegister(Register::DPP::SoftwareClear_W, 1);});
 
+
+      rowID ++; //---------------------------
       bnSendSoftwareTriggerSignal = new QPushButton("Send SW Trigger Signal", this);
-      buttonLayout->addWidget(bnSendSoftwareTriggerSignal, 1, 0);
+      buttonLayout->addWidget(bnSendSoftwareTriggerSignal, rowID, 0);
       connect(bnSendSoftwareTriggerSignal, &QPushButton::clicked, this, [=](){ digi[ID]->WriteRegister(Register::DPP::SoftwareTrigger_W, 1);});
 
       bnSendSoftwareClockSyncSignal = new QPushButton("Send SW Clock-Sync Signal", this);
-      buttonLayout->addWidget(bnSendSoftwareClockSyncSignal, 1, 1);
+      buttonLayout->addWidget(bnSendSoftwareClockSyncSignal, rowID, 1);
       connect(bnSendSoftwareClockSyncSignal, &QPushButton::clicked, this, [=](){ digi[ID]->WriteRegister(Register::DPP::SoftwareClockSync_W, 1);});
 
       bnSaveSettings = new QPushButton("Save Settings", this);
-      buttonLayout->addWidget(bnSaveSettings, 1, 2);
+      buttonLayout->addWidget(bnSaveSettings, rowID, 2);
       bnLoadSettings = new QPushButton("Load Settings", this);
-      buttonLayout->addWidget(bnLoadSettings, 1, 3);
+      buttonLayout->addWidget(bnLoadSettings, rowID, 3);
 
     }
 
@@ -170,8 +182,100 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QMai
       tabLayout_V1->addWidget(boardSettingBox[iDigi]);
 
       settingLayout[iDigi] = new QGridLayout(boardSettingBox[iDigi]);
+      settingLayout[iDigi]->setSpacing(2);
 
       if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) SetUpPHABoard();
+
+      //--------------- trigger
+      QWidget * triggerBox = new QWidget(this);
+      int row = settingLayout[iDigi]->rowCount();
+      settingLayout[iDigi]->addWidget(triggerBox, row +1, 0, 3, 4);
+      triggerLayout[iDigi] = new QGridLayout(triggerBox);
+      triggerLayout[iDigi]->setAlignment(Qt::AlignLeft);
+      triggerLayout[iDigi]->setSpacing(2);
+
+      for( int i = 0; i < MaxNChannels/2; i++){
+
+        if( i % 2 == 0 ){
+          QLabel * chIDLabel = new QLabel(QString::number(2*i) + "-" + QString::number(2*i + 1), this);
+          chIDLabel->setAlignment(Qt::AlignLeft | Qt::AlignBottom);
+          triggerLayout[iDigi]->addWidget(chIDLabel, 0, 1 + i, 1, 2);
+        }
+
+        bnGlobalTriggerMask[ID][i] = new QPushButton(this);
+        bnGlobalTriggerMask[ID][i]->setFixedSize(QSize(20,20));
+        //bnGlobalTriggerMask[ID][i]->setToolTip("Ch-" + QString::number(2*i) + "," + QString::number(2*i+1));
+        bnGlobalTriggerMask[ID][i]->setToolTipDuration(-1);
+        triggerLayout[iDigi]->addWidget(bnGlobalTriggerMask[ID][i], 1, 1 + i );
+
+        bnTRGOUTMask[ID][i] = new QPushButton(this);
+        bnTRGOUTMask[ID][i]->setFixedSize(QSize(20,20));
+        bnTRGOUTMask[ID][i]->setToolTipDuration(-1);
+        triggerLayout[iDigi]->addWidget(bnTRGOUTMask[ID][i], 2, 1 + i );
+
+      }
+
+      QLabel * lbGlobalTrg = new QLabel("Global Trigger Mask : ", this);
+      lbGlobalTrg->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+      triggerLayout[iDigi]->addWidget(lbGlobalTrg, 1, 0);
+
+      QLabel * lbMajorCoinWin = new QLabel("Coin. Win [ns] : ", this);
+      triggerLayout[iDigi]->addWidget(lbMajorCoinWin, 1, 9);
+
+      sbGlbMajCoinWin[iDigi] = new RSpinBox(this);
+      sbGlbMajCoinWin[iDigi]->setMinimum(0);
+      sbGlbMajCoinWin[iDigi]->setMaximum(0xF * 4 * digi[iDigi]->GetCh2ns() );
+      sbGlbMajCoinWin[iDigi]->setSingleStep(1);
+      triggerLayout[iDigi]->addWidget(sbGlbMajCoinWin[iDigi], 1, 10);
+
+      QLabel * lbMajorLvl = new QLabel("Maj. Level", this);
+      lbMajorLvl->setAlignment(Qt::AlignBottom | Qt::AlignHCenter);
+      triggerLayout[iDigi]->addWidget(lbMajorLvl, 0, 11);
+
+      sbGlbMajLvl[iDigi] = new RSpinBox(this);
+      sbGlbMajLvl[iDigi]->setMinimum(0);
+      sbGlbMajLvl[iDigi]->setMaximum(16);
+      sbGlbMajLvl[iDigi]->setSingleStep(1);
+
+      QLabel * lbOtherTrigger = new QLabel("OR trigger", this);
+      lbOtherTrigger->setAlignment(Qt::AlignBottom | Qt::AlignHCenter);
+      triggerLayout[iDigi]->addWidget(lbOtherTrigger, 0, 12);
+
+      cbGlbUseOtherTriggers[iDigi] = new RComboBox(this);
+      cbGlbUseOtherTriggers[iDigi]->addItem("None", 0);
+      cbGlbUseOtherTriggers[iDigi]->addItem("TRG-IN", 1);
+      cbGlbUseOtherTriggers[iDigi]->addItem("SW", 2);
+      cbGlbUseOtherTriggers[iDigi]->addItem("TRG-IN OR SW", 3);
+      triggerLayout[iDigi]->addWidget(cbGlbUseOtherTriggers[iDigi], 1, 12);
+
+      QLabel * lbTrgOut = new QLabel("TRG-OUT Mask : ", this);
+      lbTrgOut->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+      triggerLayout[iDigi]->addWidget(lbTrgOut, 2, 0);
+
+      QLabel * lbTrgOutLogic = new QLabel("Logic : ", this);
+      lbTrgOutLogic->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+      triggerLayout[iDigi]->addWidget(lbTrgOutLogic, 2, 9);
+
+      cbTRGOUTLogic[iDigi] = new RComboBox(this);
+      cbTRGOUTLogic[iDigi]->addItem("OR", 0);
+      cbTRGOUTLogic[iDigi]->addItem("AND", 1);
+      cbTRGOUTLogic[iDigi]->addItem("Maj.", 3);
+      triggerLayout[iDigi]->addWidget(cbTRGOUTLogic[iDigi], 2, 10);
+      triggerLayout[iDigi]->addWidget(sbGlbMajLvl[iDigi], 1, 11);
+
+      sbTRGOUTMajLvl[iDigi] = new RSpinBox(this);
+      sbTRGOUTMajLvl[iDigi]->setMinimum(0);
+      sbTRGOUTMajLvl[iDigi]->setMaximum(16);
+      sbTRGOUTMajLvl[iDigi]->setSingleStep(1);
+      triggerLayout[iDigi]->addWidget(sbTRGOUTMajLvl[iDigi], 2, 11);
+
+      cbTRGOUTUseOtherTriggers[iDigi] = new RComboBox(this);
+      cbTRGOUTUseOtherTriggers[iDigi]->addItem("None", 0);
+      cbTRGOUTUseOtherTriggers[iDigi]->addItem("TRG-IN", 1);
+      cbTRGOUTUseOtherTriggers[iDigi]->addItem("SW", 2);
+      cbTRGOUTUseOtherTriggers[iDigi]->addItem("TRG-IN OR SW", 3);
+      triggerLayout[iDigi]->addWidget(cbTRGOUTUseOtherTriggers[iDigi], 2, 12);
+
 
     }
 
@@ -245,7 +349,6 @@ void DigiSettingsPanel::SetUpComboBoxBit(RComboBox * &cb, QString label, QGridLa
   cb = new RComboBox(this);
   gLayout->addWidget(cb, row, col + 1);
 
-
   for(int i = 0; i < (int) items.size(); i++){
     cb->addItem(QString::fromStdString(items[i].first), items[i].second);
   }
@@ -286,10 +389,11 @@ void DigiSettingsPanel::SetUpSpinBox(RSpinBox * &sb, QString label, QGridLayout 
   gLayout->addWidget(sb, row, col + 1);
 
   sb->setMinimum(0);
-  sb->setMaximum(para.GetMax());
   if( para.GetPartialStep() == -1 ) {
     sb->setSingleStep(1);
+    sb->setMaximum(para.GetMaxBit());
   }else{
+    sb->setMaximum(para.GetMaxBit() * para.GetPartialStep() * digi[ID]->GetCh2ns());
     sb->setSingleStep(para.GetPartialStep() * digi[ID]->GetCh2ns());
   }
 
@@ -407,6 +511,39 @@ void DigiSettingsPanel::SetUpPHABoard(){
   SetUpComboBox(cbAnalogMonitorMode[ID], "Analog Monitor Mode ", settingLayout[ID], 7, 2, Register::DPP::AnalogMonitorMode);
 
   SetUpSpinBox(sbBufferGain[ID], "Buffer Occup. Gain ", settingLayout[ID], 8, 2, Register::DPP::BufferOccupancyGain);
+
+
+  SetUpComboBoxBit(cbLEMOMode[ID], "LEMO Mode ", settingLayout[ID], 9, 0, Register::DPP::Bit_FrontPanelIOControl::ListLEMOLevel, Register::DPP::FrontPanelIOControl, Register::DPP::Bit_FrontPanelIOControl::LEMOLevel);
+  
+
+  ///============================ Trig out mode
+  QLabel * trgOutMode = new QLabel("TRI-OUT Mode ", this);
+  trgOutMode->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+  settingLayout[ID]->addWidget(trgOutMode, 9, 2);
+  cbTRGOUTMode[ID] = new RComboBox(this);
+  settingLayout[ID]->addWidget(cbTRGOUTMode[ID], 9, 3);
+
+  std::vector<std::pair<std::string, unsigned int>>  items = Register::DPP::Bit_FrontPanelIOControl::ListTRGOUTConfig;
+
+  for(int i = 0; i < (int) items.size(); i++){
+    cbTRGOUTMode[ID]->addItem(QString::fromStdString(items[i].first), items[i].second);
+  }
+
+  connect( cbTRGOUTMode[ID], &RComboBox::currentIndexChanged, this, [=](int index){
+    if( !enableSignalSlot ) return;
+
+    if( index == 0 ) {
+      digi[ID]->SetBits(Register::DPP::FrontPanelIOControl, Register::DPP::Bit_FrontPanelIOControl::DisableTrgOut, 1, -1);
+    }else{
+      digi[ID]->SetBits(Register::DPP::FrontPanelIOControl, Register::DPP::Bit_FrontPanelIOControl::DisableTrgOut, 0, -1);
+
+      unsigned short bit = (cbTRGOUTMode[ID]->currentData().toUInt() >> 14) & 0x3F ;
+
+      digi[ID]->SetBits(Register::DPP::FrontPanelIOControl, {6, 14}, bit, -1);
+
+    }
+    
+  });
 
 }
 
@@ -528,6 +665,23 @@ void DigiSettingsPanel::UpdatePanelFromMemory(){
   }
 
   sbBufferGain[ID]->setValue(digi[ID]->GetSettingFromMemory(Register::DPP::BufferOccupancyGain));
+
+
+  uint32_t frontPanel = digi[ID]->GetSettingFromMemory(Register::DPP::FrontPanelIOControl);
+  cbLEMOMode[ID]->setCurrentIndex( ( frontPanel & 0x1 ));
+
+  if( (frontPanel >> 1 ) & 0x1 ) { // bit-1, TRIG-OUT high impedance, i.e. disable
+    cbTRGOUTMode[ID]->setCurrentIndex(0);
+  }else{
+    unsigned short trgOutBit = ((frontPanel >> 14 ) & 0x3F ) << 14 ;
+
+    for( int i = 0; i < cbTRGOUTMode[ID]->count() ; i++ ){
+      if( cbTRGOUTMode[ID]->itemData(i).toUInt() == trgOutBit ){
+        cbTRGOUTMode[ID]->setCurrentIndex(i);
+        break;
+      }
+    }
+  }
 
   enableSignalSlot = true;
 

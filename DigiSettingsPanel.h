@@ -51,6 +51,8 @@ private:
   QGroupBox * infoBox[MaxNDigitizer];
   QGridLayout * infoLayout[MaxNDigitizer];
 
+  QLineEdit * leSaveFilePath;
+
   QPushButton * bnRefreshSetting; // read setting from board
   QPushButton * bnProgramPreDefined;
   QPushButton * bnClearBuffer;
@@ -60,7 +62,7 @@ private:
   QPushButton * bnSaveSettings;
   QPushButton * bnLoadSettings;
 
-
+  /// ============================= Board Configure
   QGroupBox * boardSettingBox[MaxNDigitizer];
   QGridLayout * settingLayout[MaxNDigitizer];
 
@@ -88,11 +90,29 @@ private:
   RComboBox * cbAcqStartArm[MaxNDigitizer];
   RComboBox * cbPLLRefClock[MaxNDigitizer];
 
+  RComboBox * cbLEMOMode[MaxNDigitizer];
+  RComboBox * cbTRGOUTMode[MaxNDigitizer];
+
+  /// ============================= board Status
   QPushButton * bnACQStatus[MaxNDigitizer][9];
   QPushButton * bnBdFailStatus[MaxNDigitizer][3];
   QPushButton * bnReadOutStatus[MaxNDigitizer][3];
 
+  /// ============================= Trigger Configure
+  QGridLayout * triggerLayout[MaxNDigitizer];
 
+  QPushButton * bnGlobalTriggerMask[MaxNDigitizer][MaxNChannels/2];
+  RSpinBox * sbGlbMajCoinWin[MaxNDigitizer];
+  RSpinBox * sbGlbMajLvl[MaxNDigitizer];
+  RComboBox * cbGlbUseOtherTriggers[MaxNDigitizer]; // combine bit 30, 31
+
+  QPushButton * bnTRGOUTMask[MaxNDigitizer][MaxNChannels/2];
+  RSpinBox * sbTRGOUTMajLvl[MaxNDigitizer];
+  RComboBox * cbTRGOUTLogic[MaxNDigitizer];
+  RComboBox * cbTRGOUTUseOtherTriggers[MaxNDigitizer]; // combine bit 30, 31
+
+
+  //QPushButton * bnTriggerValidMask[MaxNDigitizer][MaxNChannels/2];
 };
 
 
