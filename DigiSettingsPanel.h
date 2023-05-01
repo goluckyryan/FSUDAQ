@@ -37,8 +37,8 @@ private:
   void SetUpSpinBox(RSpinBox * &sb, QString label, QGridLayout *gLayout, int row, int col, Reg para);
 
   void CleanUpGroupBox(QGroupBox * & gBox);
-  void SetUpGlobalTriggerMaskAndFrontPanelMask();
-  
+  void SetUpGlobalTriggerMaskAndFrontPanelMask(QGridLayout * & gLayout);
+
   void SetUpPHABoard();
   void SetUpPHAChannel();
   
@@ -72,8 +72,12 @@ private:
   QPushButton * bnLoadSettings;
 
   /// ============================= Board Configure
-  QGroupBox * boardSettingBox[MaxNDigitizer];
-  QGridLayout * settingLayout[MaxNDigitizer];
+  // QGroupBox * boardSettingBox[MaxNDigitizer];
+  QGridLayout * bdCfgLayout[MaxNDigitizer];
+  QGridLayout * bdACQLayout[MaxNDigitizer];
+  QGridLayout * bdGlbTRGOUTLayout[MaxNDigitizer];
+  QGridLayout * bdTriggerLayout[MaxNDigitizer];
+  QGridLayout * bdLVDSLayout[MaxNDigitizer];
 
   QCheckBox * chkAutoDataFlush[MaxNDigitizer];
   QCheckBox * chkDecimateTrace[MaxNDigitizer];
@@ -94,6 +98,7 @@ private:
   RSpinBox * sbRunDelay[MaxNDigitizer];
   RComboBox * cbAnalogMonitorMode[MaxNDigitizer];
   RSpinBox * sbBufferGain[MaxNDigitizer];
+  RSpinBox * sbVoltageLevel[MaxNDigitizer];  
 
   RComboBox * cbStartStopMode[MaxNDigitizer];
   RComboBox * cbAcqStartArm[MaxNDigitizer];
@@ -102,14 +107,15 @@ private:
   RComboBox * cbLEMOMode[MaxNDigitizer];
   RComboBox * cbTRGOUTMode[MaxNDigitizer];
 
+  RComboBox * cbTRGINMode[MaxNDigitizer];
+  RComboBox * cbTRINMezzanines[MaxNDigitizer];
+
   /// ============================= board Status
   QPushButton * bnACQStatus[MaxNDigitizer][9];
   QPushButton * bnBdFailStatus[MaxNDigitizer][3];
   QPushButton * bnReadOutStatus[MaxNDigitizer][3];
 
   /// ============================= Trigger Configure
-  QGridLayout * triggerLayout[MaxNDigitizer];
-
   QPushButton * bnGlobalTriggerMask[MaxNDigitizer][MaxNChannels/2];
   RSpinBox * sbGlbMajCoinWin[MaxNDigitizer];
   RSpinBox * sbGlbMajLvl[MaxNDigitizer];
@@ -122,6 +128,10 @@ private:
 
   /// ============================ Channel
   QWidget * chAllSetting;
+  QWidget * chStatus;
+  QWidget * chInput;
+  QWidget * chTrap;
+  QWidget * chOthers;
 
   //---------- PHA
   RSpinBox * sbRecordLength[MaxNChannels + 1];
