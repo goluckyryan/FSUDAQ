@@ -31,16 +31,22 @@ signals:
 private:
 
   void SetUpInfo(QString label, std::string value, QGridLayout *gLayout, int row, int col);
-  void SetUpCheckBox(QCheckBox * &chkBox, QString label, QGridLayout *gLayout, int row, int col, Register::Reg para, std::pair<unsigned short, unsigned short> bit);
-  void SetUpComboBoxBit(RComboBox * &cb, QString label, QGridLayout *gLayout, int row, int col, std::vector<std::pair<std::string, unsigned int>> items, Register::Reg para, std::pair<unsigned short, unsigned short> bit);
-  void SetUpComboBox(RComboBox * &cb, QString label, QGridLayout *gLayout, int row, int col, Register::Reg para);
-  void SetUpSpinBox(RSpinBox * &sb, QString label, QGridLayout *gLayout, int row, int col, Register::Reg para);
+  void SetUpCheckBox(QCheckBox * &chkBox, QString label, QGridLayout *gLayout, int row, int col, Reg para, std::pair<unsigned short, unsigned short> bit);
+  void SetUpComboBoxBit(RComboBox * &cb, QString label, QGridLayout *gLayout, int row, int col, std::vector<std::pair<std::string, unsigned int>> items, Reg para, std::pair<unsigned short, unsigned short> bit, int colspan = 1);
+  void SetUpComboBox(RComboBox * &cb, QString label, QGridLayout *gLayout, int row, int col, Reg para);
+  void SetUpSpinBox(RSpinBox * &sb, QString label, QGridLayout *gLayout, int row, int col, Reg para);
 
   void CleanUpGroupBox(QGroupBox * & gBox);
+  void SetUpGlobalTriggerMaskAndFrontPanelMask();
+  
   void SetUpPHABoard();
   void SetUpPHAChannel();
   
   void SetUpPSDBoard();
+
+
+
+  void UpdatePHASetting();
 
 
   Digitizer ** digi;
@@ -116,6 +122,48 @@ private:
 
   /// ============================ Channel
   QWidget * chAllSetting;
+
+  //---------- PHA
+  RSpinBox * sbRecordLength[MaxNChannels + 1];
+  RComboBox * cbDynamicRange[MaxNChannels + 1];
+  RSpinBox * sbPreTrigger[MaxNChannels + 1];
+  RComboBox * cbRCCR2Smoothing[MaxNChannels + 1];
+  RSpinBox * sbInputRiseTime[MaxNChannels + 1];
+  RSpinBox * sbThreshold[MaxNChannels + 1];
+  RSpinBox * sbRiseTimeValidWin[MaxNChannels + 1];
+  RSpinBox * sbTriggerHoldOff[MaxNChannels + 1];
+  RSpinBox * sbShapedTrigWidth[MaxNChannels + 1];
+  RSpinBox * sbDCOffset[MaxNChannels + 1];
+  RComboBox * cbPolarity[MaxNChannels + 1];
+
+  RSpinBox * sbTrapRiseTime[MaxNChannels + 1];
+  RSpinBox * sbTrapFlatTop[MaxNChannels + 1];
+  RSpinBox * sbDecay[MaxNChannels + 1];
+  RSpinBox * sbTrapScaling[MaxNChannels + 1];
+  RSpinBox * sbPeaking[MaxNChannels + 1];
+  RSpinBox * sbPeakingHoldOff[MaxNChannels + 1];
+  RComboBox * cbPeakAvg[MaxNChannels + 1];
+  RComboBox * cBaseLineAvg[MaxNChannels + 1];
+  QCheckBox * chkActiveBaseline[MaxNChannels + 1];
+  QCheckBox * chkBaselineRestore[MaxNChannels + 1];
+  RSpinBox * sbFineGain[MaxNChannels + 1];
+
+  QCheckBox * chkDisableSelfTrigger[MaxNChannels + 1];
+  QCheckBox * chkEnableRollOver[MaxNChannels + 1];
+  QCheckBox * chkEnablePileUp[MaxNChannels + 1];
+  QCheckBox * chkTagCorrelation[MaxNChannels + 1];
+  RComboBox * cbDecimateTrace[MaxNChannels + 1];
+  RComboBox * cbDecimateGain[MaxNChannels + 1];
+  RSpinBox * sbNumEventAgg[MaxNChannels + 1];
+  RComboBox * cbTriggerValid[MaxNChannels + 1];
+  RComboBox * cbTrigCount[MaxNChannels + 1];
+  RComboBox * cbTrigMode[MaxNChannels + 1];
+  RComboBox * cbShapedTrigger[MaxNChannels + 1];
+  RComboBox * cbExtra2Option[MaxNChannels + 1];
+  RComboBox * cbVetoSource[MaxNChannels + 1];
+  RSpinBox * sbVetoWidth[MaxNChannels + 1];
+  RComboBox * cbVetoStep[MaxNChannels + 1];
+
 
   //QPushButton * bnTriggerValidMask[MaxNDigitizer][MaxNChannels/2];
 };

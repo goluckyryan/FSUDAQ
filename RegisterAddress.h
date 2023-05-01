@@ -19,8 +19,6 @@
 /// Reg haha("haha", 0x1234);
 /// uint32_t papa = haha; /// papa = 0x1234
 
-namespace Register {  
-
 enum RW { ReadWrite, ReadONLY, WriteONLY};
 
 class Reg{
@@ -140,525 +138,566 @@ inline uint32_t Reg::CalAddress(unsigned int index){
 }
 
 
-  const Reg EventReadOutBuffer("EventReadOutBuffer", 0x0000, RW::ReadONLY, false, {});  /// R
+const Reg EventReadOutBuffer("EventReadOutBuffer", 0x0000, RW::ReadONLY, false, {});  /// R
+
+///========== Channel or Group
+const Reg ChannelDummy32                ("ChannelDummy32"               , 0x1024, RW::ReadWrite, false, {});  /// R/W
+const Reg InputDynamicRange             ("InputDynamicRange"            , 0x1028, RW::ReadWrite, false, {});  /// R/W
+const Reg ChannelPulseWidth             ("ChannelPulseWidth"            , 0x1070, RW::ReadWrite, false, {});  /// R/W
+const Reg ChannelTriggerThreshold       ("ChannelTriggerThreshold"      , 0x1080, RW::ReadWrite, false, {});  /// R/W
+const Reg CoupleSelfTriggerLogic_G      ("CoupleSelfTriggerLogic_G"     , 0x1084, RW::ReadWrite,  true, {});  /// R/W 
+const Reg ChannelStatus_R               ("ChannelStatus_R"              , 0x1088, RW::ReadONLY,  false, {});  /// R
+const Reg AMCFirmwareRevision_R         ("AMCFirmwareRevision_R"        , 0x108C, RW::ReadONLY,  false, {});  /// R
+const Reg ChannelDCOffset               ("ChannelDCOffset"              , 0x1098, RW::ReadWrite, false, {});  /// R/W
+const Reg ChannelADCTemperature_R       ("ChannelADCTemperature_R"      , 0x10A8, RW::ReadONLY,  false, {});  /// R
+const Reg ChannelSelfTriggerRateMeter_R ("ChannelSelfTriggerRateMeter_R", 0x10EC, RW::ReadONLY,  false, {});  /// R
   
-  ///========== Channel or Group
-  const Reg ChannelDummy32                ("ChannelDummy32"               , 0x1024, RW::ReadWrite, false, {});  /// R/W
-  const Reg InputDynamicRange             ("InputDynamicRange"            , 0x1028, RW::ReadWrite, false, {});  /// R/W
-  const Reg ChannelPulseWidth             ("ChannelPulseWidth"            , 0x1070, RW::ReadWrite, false, {});  /// R/W
-  const Reg ChannelTriggerThreshold       ("ChannelTriggerThreshold"      , 0x1080, RW::ReadWrite, false, {});  /// R/W
-  const Reg CoupleSelfTriggerLogic_G      ("CoupleSelfTriggerLogic_G"     , 0x1084, RW::ReadWrite,  true, {});  /// R/W 
-  const Reg ChannelStatus_R               ("ChannelStatus_R"              , 0x1088, RW::ReadONLY,  false, {});  /// R
-  const Reg AMCFirmwareRevision_R         ("AMCFirmwareRevision_R"        , 0x108C, RW::ReadONLY,  false, {});  /// R
-  const Reg ChannelDCOffset               ("ChannelDCOffset"              , 0x1098, RW::ReadWrite, false, {});  /// R/W
-  const Reg ChannelADCTemperature_R       ("ChannelADCTemperature_R"      , 0x10A8, RW::ReadONLY,  false, {});  /// R
-  const Reg ChannelSelfTriggerRateMeter_R ("ChannelSelfTriggerRateMeter_R", 0x10EC, RW::ReadONLY,  false, {});  /// R
-    
-  ///========== Board
-  const Reg BoardConfiguration           ("BoardConfiguration"           , 0x8000, RW::ReadWrite, false, {});  /// R/W
-  const Reg BufferOrganization           ("BufferOrganization"           , 0x800C, RW::ReadWrite, false, {});  /// R/W
-  const Reg CustomSize                   ("CustomSize"                   , 0x8020, RW::ReadWrite, false, {});  /// R/W
-  const Reg ADCCalibration_W             ("ADCCalibration_W"             , 0x809C, RW::WriteONLY, false, {});  ///   W
-  const Reg AcquisitionControl           ("AcquisitionControl"           , 0x8100, RW::ReadWrite, false, {});  /// R/W
-  const Reg AcquisitionStatus_R          ("AcquisitionStatus_R"          , 0x8104, RW::ReadONLY , false, {});  /// R
-  const Reg SoftwareTrigger_W            ("SoftwareTrigger_W"            , 0x8108, RW::WriteONLY, false, {});  ///   W
-  const Reg GlobalTriggerMask            ("GlobalTriggerMask"            , 0x810C, RW::ReadWrite, false, {});  /// R/W
-  const Reg FrontPanelTRGOUTEnableMask   ("FrontPanelTRGOUTEnableMask"   , 0x8110, RW::ReadWrite, false, {});  /// R/W
-  const Reg PostTrigger                  ("PostTrigger"                  , 0x8114, RW::ReadWrite, false, {});  /// R/W
-  const Reg LVDSIOData                   ("LVDSIOData"                   , 0x8118, RW::ReadWrite, false, {});  /// R/W
-  const Reg FrontPanelIOControl          ("FrontPanelIOControl"          , 0x811C, RW::ReadWrite, false, {});  /// R/W
-  const Reg ChannelEnableMask            ("ChannelEnableMask"            , 0x8120, RW::ReadWrite, false, {});  /// R/W
-  const Reg ROCFPGAFirmwareRevision_R    ("ROCFPGAFirmwareRevision_R"    , 0x8124, RW::ReadONLY , false, {});  /// R
-  const Reg EventStored_R                ("EventStored_R"                , 0x812C, RW::ReadONLY , false, {});  /// R
-  const Reg VoltageLevelModeConfig       ("VoltageLevelModeConfig"       , 0x8138, RW::ReadWrite, false, {});  /// R/W
-  const Reg SoftwareClockSync_W          ("SoftwareClockSync_W"          , 0x813C, RW::WriteONLY, false, {});  ///   W 
-  const Reg BoardInfo_R                  ("BoardInfo_R"                  , 0x8140, RW::ReadONLY , false, {});  /// R
-  const Reg AnalogMonitorMode            ("AnalogMonitorMode"            , 0x8144, RW::ReadWrite, false, {});  /// R/W
-  const Reg EventSize_R                  ("EventSize_R"                  , 0x814C, RW::ReadONLY , false, {});  /// R
-  const Reg FanSpeedControl              ("FanSpeedControl"              , 0x8168, RW::ReadWrite, false, {});  /// R/W
-  const Reg MemoryBufferAlmostFullLevel  ("MemoryBufferAlmostFullLevel"  , 0x816C, RW::ReadWrite, false, {});  /// R/W
-  const Reg RunStartStopDelay            ("RunStartStopDelay"            , 0x8170, RW::ReadWrite, false, {});  /// R/W
-  const Reg BoardFailureStatus_R         ("BoardFailureStatus_R"         , 0x8178, RW::ReadONLY , false, {});  /// R
-  const Reg FrontPanelLVDSIONewFeatures  ("FrontPanelLVDSIONewFeatures"  , 0x81A0, RW::ReadWrite, false, {});  /// R/W
-  const Reg BufferOccupancyGain          ("BufferOccupancyGain"          , 0x81B4, RW::ReadWrite, false, {});  /// R/W
-  const Reg ChannelsShutdown_W           ("ChannelsShutdown_W"           , 0x81C0, RW::WriteONLY, false, {});  ///   W 
-  const Reg ExtendedVetoDelay            ("ExtendedVetoDelay"            , 0x81C4, RW::ReadWrite, false, {});  /// R/W
-  const Reg ReadoutControl               ("ReadoutControl"               , 0xEF00, RW::ReadWrite, false, {});  /// R/W
-  const Reg ReadoutStatus_R              ("ReadoutStatus_R"              , 0xEF04, RW::ReadONLY , false, {});  /// R
-  const Reg BoardID                      ("BoardID"                      , 0xEF08, RW::ReadWrite, false, {});  /// R/W
-  const Reg MCSTBaseAddressAndControl    ("MCSTBaseAddressAndControl"    , 0xEF0C, RW::ReadWrite, false, {});  /// R/W
-  const Reg RelocationAddress            ("RelocationAddress"            , 0xEF10, RW::ReadWrite, false, {});  /// R/W
-  const Reg InterruptStatusID            ("InterruptStatusID"            , 0xEF14, RW::ReadWrite, false, {});  /// R/W
-  const Reg InterruptEventNumber         ("InterruptEventNumber"         , 0xEF18, RW::ReadWrite, false, {});  /// R/W
-  const Reg MaxAggregatePerBlockTransfer ("MaxAggregatePerBlockTransfer" , 0xEF1C, RW::ReadWrite, false, {});  /// R/W
-  const Reg Scratch                      ("Scratch"                      , 0xEF20, RW::ReadWrite, false, {});  /// R/W
-  const Reg SoftwareReset_W              ("SoftwareReset_W"              , 0xEF24, RW::WriteONLY, false, {});  ///   W
-  const Reg SoftwareClear_W              ("SoftwareClear_W"              , 0xEF28, RW::WriteONLY, false, {});  ///   W  
+///========== Board
+const Reg BoardConfiguration           ("BoardConfiguration"           , 0x8000, RW::ReadWrite, false, {});  /// R/W
+const Reg BufferOrganization           ("BufferOrganization"           , 0x800C, RW::ReadWrite, false, {});  /// R/W
+const Reg CustomSize                   ("CustomSize"                   , 0x8020, RW::ReadWrite, false, {});  /// R/W
+const Reg ADCCalibration_W             ("ADCCalibration_W"             , 0x809C, RW::WriteONLY, false, {});  ///   W
+const Reg AcquisitionControl           ("AcquisitionControl"           , 0x8100, RW::ReadWrite, false, {});  /// R/W
+const Reg AcquisitionStatus_R          ("AcquisitionStatus_R"          , 0x8104, RW::ReadONLY , false, {});  /// R
+const Reg SoftwareTrigger_W            ("SoftwareTrigger_W"            , 0x8108, RW::WriteONLY, false, {});  ///   W
+const Reg GlobalTriggerMask            ("GlobalTriggerMask"            , 0x810C, RW::ReadWrite, false, {});  /// R/W
+const Reg FrontPanelTRGOUTEnableMask   ("FrontPanelTRGOUTEnableMask"   , 0x8110, RW::ReadWrite, false, {});  /// R/W
+const Reg PostTrigger                  ("PostTrigger"                  , 0x8114, RW::ReadWrite, false, {});  /// R/W
+const Reg LVDSIOData                   ("LVDSIOData"                   , 0x8118, RW::ReadWrite, false, {});  /// R/W
+const Reg FrontPanelIOControl          ("FrontPanelIOControl"          , 0x811C, RW::ReadWrite, false, {});  /// R/W
+const Reg ChannelEnableMask            ("ChannelEnableMask"            , 0x8120, RW::ReadWrite, false, {});  /// R/W
+const Reg ROCFPGAFirmwareRevision_R    ("ROCFPGAFirmwareRevision_R"    , 0x8124, RW::ReadONLY , false, {});  /// R
+const Reg EventStored_R                ("EventStored_R"                , 0x812C, RW::ReadONLY , false, {});  /// R
+const Reg VoltageLevelModeConfig       ("VoltageLevelModeConfig"       , 0x8138, RW::ReadWrite, false, {});  /// R/W
+const Reg SoftwareClockSync_W          ("SoftwareClockSync_W"          , 0x813C, RW::WriteONLY, false, {});  ///   W 
+const Reg BoardInfo_R                  ("BoardInfo_R"                  , 0x8140, RW::ReadONLY , false, {});  /// R
+const Reg AnalogMonitorMode            ("AnalogMonitorMode"            , 0x8144, RW::ReadWrite, false, {});  /// R/W
+const Reg EventSize_R                  ("EventSize_R"                  , 0x814C, RW::ReadONLY , false, {});  /// R
+const Reg FanSpeedControl              ("FanSpeedControl"              , 0x8168, RW::ReadWrite, false, {});  /// R/W
+const Reg MemoryBufferAlmostFullLevel  ("MemoryBufferAlmostFullLevel"  , 0x816C, RW::ReadWrite, false, {});  /// R/W
+const Reg RunStartStopDelay            ("RunStartStopDelay"            , 0x8170, RW::ReadWrite, false, {});  /// R/W
+const Reg BoardFailureStatus_R         ("BoardFailureStatus_R"         , 0x8178, RW::ReadONLY , false, {});  /// R
+const Reg FrontPanelLVDSIONewFeatures  ("FrontPanelLVDSIONewFeatures"  , 0x81A0, RW::ReadWrite, false, {});  /// R/W
+const Reg BufferOccupancyGain          ("BufferOccupancyGain"          , 0x81B4, RW::ReadWrite, false, {});  /// R/W
+const Reg ChannelsShutdown_W           ("ChannelsShutdown_W"           , 0x81C0, RW::WriteONLY, false, {});  ///   W 
+const Reg ExtendedVetoDelay            ("ExtendedVetoDelay"            , 0x81C4, RW::ReadWrite, false, {});  /// R/W
+const Reg ReadoutControl               ("ReadoutControl"               , 0xEF00, RW::ReadWrite, false, {});  /// R/W
+const Reg ReadoutStatus_R              ("ReadoutStatus_R"              , 0xEF04, RW::ReadONLY , false, {});  /// R
+const Reg BoardID                      ("BoardID"                      , 0xEF08, RW::ReadWrite, false, {});  /// R/W
+const Reg MCSTBaseAddressAndControl    ("MCSTBaseAddressAndControl"    , 0xEF0C, RW::ReadWrite, false, {});  /// R/W
+const Reg RelocationAddress            ("RelocationAddress"            , 0xEF10, RW::ReadWrite, false, {});  /// R/W
+const Reg InterruptStatusID            ("InterruptStatusID"            , 0xEF14, RW::ReadWrite, false, {});  /// R/W
+const Reg InterruptEventNumber         ("InterruptEventNumber"         , 0xEF18, RW::ReadWrite, false, {});  /// R/W
+const Reg MaxAggregatePerBlockTransfer ("MaxAggregatePerBlockTransfer" , 0xEF1C, RW::ReadWrite, false, {});  /// R/W
+const Reg Scratch                      ("Scratch"                      , 0xEF20, RW::ReadWrite, false, {});  /// R/W
+const Reg SoftwareReset_W              ("SoftwareReset_W"              , 0xEF24, RW::WriteONLY, false, {});  ///   W
+const Reg SoftwareClear_W              ("SoftwareClear_W"              , 0xEF28, RW::WriteONLY, false, {});  ///   W  
 
-  
-  ///====== Common for PHA and PSD
-  namespace DPP {
 
-    namespace Bit_BoardConfig{
-      const std::pair<unsigned short, unsigned short> EnableAutoDataFlush = {1, 0} ; /// length, smallest pos
-      const std::pair<unsigned short, unsigned short> DecimateTrace = {1, 1} ; 
-      const std::pair<unsigned short, unsigned short> TrigPropagation = {1, 2} ; 
-      const std::pair<unsigned short, unsigned short> DualTrace = {1, 11} ; 
-      const std::pair<unsigned short, unsigned short> AnalogProbe1 = {2, 12} ; 
-      const std::pair<unsigned short, unsigned short> AnalogProbe2 = {2, 14} ; 
-      const std::pair<unsigned short, unsigned short> RecordTrace = {1, 16} ; 
-      const std::pair<unsigned short, unsigned short> EnableExtra2 = {1, 17} ; 
-      const std::pair<unsigned short, unsigned short> DigiProbel1 = {4, 20} ; 
-      const std::pair<unsigned short, unsigned short> DigiProbel2 = {3, 26} ; 
+///====== Common for PHA and PSD
+namespace DPP {
 
-      const std::vector<std::pair<std::string, unsigned int>> ListAnaProbe1_PHA = {{"Input", 0},
-                                                                               {"RC-CR", 1},
-                                                                               {"RC-CR2", 2},
-                                                                               {"Trapezoid", 3}};
-      const std::vector<std::pair<std::string, unsigned int>> ListAnaProbe2_PHA = {{"Input", 0},
-                                                                    {"Threshold", 1},
-                                                                    {"Trap. - Baseline", 2},
-                                                                    {"Trap. Baseline", 3}};
+  namespace Bit_BoardConfig{
+    const std::pair<unsigned short, unsigned short> EnableAutoDataFlush = {1, 0} ; /// length, smallest pos
+    const std::pair<unsigned short, unsigned short> DecimateTrace = {1, 1} ; 
+    const std::pair<unsigned short, unsigned short> TrigPropagation = {1, 2} ; 
+    const std::pair<unsigned short, unsigned short> DualTrace = {1, 11} ; 
+    const std::pair<unsigned short, unsigned short> AnalogProbe1 = {2, 12} ; 
+    const std::pair<unsigned short, unsigned short> AnalogProbe2 = {2, 14} ; 
+    const std::pair<unsigned short, unsigned short> RecordTrace = {1, 16} ; 
+    const std::pair<unsigned short, unsigned short> EnableExtra2 = {1, 17} ; 
+    const std::pair<unsigned short, unsigned short> DigiProbel1 = {4, 20} ; 
+    const std::pair<unsigned short, unsigned short> DigiProbel2 = {3, 26} ; 
 
-      const std::vector<std::pair<std::string, unsigned int>> ListDigiProbe1_PHA = {{"Peaking", 0},
-                                                                      {"Armed", 1},
-                                                                      {"Peak Run", 2},
-                                                                      {"Pile Up", 3},
-                                                                      {"peaking", 4},
-                                                                      {"TRG Valid. Win", 5},
-                                                                      {"Baseline Freeze", 6},
-                                                                      {"TRG Holdoff", 7},
-                                                                      {"TRG Valid.", 8},
-                                                                      {"ACQ Busy", 9},
-                                                                      {"Zero Cross", 10},
-                                                                      {"Ext. TRG", 11},
-                                                                      {"Budy", 12}};
+    const std::vector<std::pair<std::string, unsigned int>> ListAnaProbe1_PHA = {{"Input", 0},
+                                                                              {"RC-CR", 1},
+                                                                              {"RC-CR2", 2},
+                                                                              {"Trapezoid", 3}};
+    const std::vector<std::pair<std::string, unsigned int>> ListAnaProbe2_PHA = {{"Input", 0},
+                                                                  {"Threshold", 1},
+                                                                  {"Trap. - Baseline", 2},
+                                                                  {"Trap. Baseline", 3}};
 
-    }
-    
-    namespace Bit_DPPAlgorithmControl {
-      const std::pair<unsigned short, unsigned short> TrapRescaling = {6, 0} ; /// length, smallest pos
-      const std::pair<unsigned short, unsigned short> TraceDecimation = {2, 8};
-      const std::pair<unsigned short, unsigned short> TraceDeciGain = {2, 10,};
-      const std::pair<unsigned short, unsigned short> PeakMean = {2, 12};
-      const std::pair<unsigned short, unsigned short> Polarity = {1, 16};
-      const std::pair<unsigned short, unsigned short> TriggerMode = {2, 18};
-      const std::pair<unsigned short, unsigned short> BaselineAvg = {3, 20};
-      const std::pair<unsigned short, unsigned short> DisableSelfTrigger = {1, 24};
-      const std::pair<unsigned short, unsigned short> EnableRollOverFlag = {1, 26};
-      const std::pair<unsigned short, unsigned short> EnablePileUpFlag = {1, 27};
+    const std::vector<std::pair<std::string, unsigned int>> ListDigiProbe1_PHA = {{"Peaking", 0},
+                                                                    {"Armed", 1},
+                                                                    {"Peak Run", 2},
+                                                                    {"Pile Up", 3},
+                                                                    {"peaking", 4},
+                                                                    {"TRG Valid. Win", 5},
+                                                                    {"Baseline Freeze", 6},
+                                                                    {"TRG Holdoff", 7},
+                                                                    {"TRG Valid.", 8},
+                                                                    {"ACQ Busy", 9},
+                                                                    {"Zero Cross", 10},
+                                                                    {"Ext. TRG", 11},
+                                                                    {"Budy", 12}};
 
-      const std::vector<std::pair<std::string, unsigned int>> ListTraceDecimation = {{"Disabled", 0},
-                                                                                     {"2 samples", 1},
-                                                                                     {"4 samples", 2},
-                                                                                     {"8 samples", 3}};
-
-      const std::vector<std::pair<std::string, unsigned int>> ListDecimationGain = {{"x1", 0},
-                                                                                    {"x2", 1},
-                                                                                    {"x4", 2},
-                                                                                    {"x8", 3}};
-
-      const std::vector<std::pair<std::string, unsigned int>> ListPeakMean = {{"1 sample", 0},
-                                                                              {"4 sample", 1},
-                                                                              {"16 sample", 2},
-                                                                              {"64 sample", 3}};
-
-      const std::vector<std::pair<std::string, unsigned int>> ListPolarity = {{"Positive", 0},
-                                                                              {"Negative", 1}};
-
-      const std::vector<std::pair<std::string, unsigned int>> ListTrigMode = {{"Independent", 0},
-                                                                              {"Coincident (Shape Trig.)", 1},
-                                                                              {"Anti-Coincident (Shape Trig.)", 3}};
-
-      const std::vector<std::pair<std::string, unsigned int>> ListBaselineAvg = {{"Not Used", 0},
-                                                                                 {"16 samples", 1},
-                                                                                 {"64 samples", 2},
-                                                                                 {"256 samples", 3},
-                                                                                 {"1024 samples", 4},
-                                                                                 {"4096 samples", 5},
-                                                                                 {"16384 samples", 6}};
-
-    }
-
-    namespace Bit_AcquistionControl {
-      const std::pair<unsigned short, unsigned short> StartStopMode = {2, 0} ;
-      const std::pair<unsigned short, unsigned short> ACQStartArm = {1, 2} ;
-      const std::pair<unsigned short, unsigned short> PLLRef = {1, 6} ;
-      const std::pair<unsigned short, unsigned short> LVDSBusyEnable = {1, 8} ;
-      const std::pair<unsigned short, unsigned short> LVDSVetoEnable = {1, 9} ;
-      const std::pair<unsigned short, unsigned short> VetoTRGOut = {1, 12} ;
-    }
-
-    namespace Bit_AcqStatus {
-      const std::pair<unsigned short, unsigned short> AcqStatus = {1, 2} ;
-      const std::pair<unsigned short, unsigned short> EventReady = {1, 3} ;
-      const std::pair<unsigned short, unsigned short> EventFull = {1, 4} ;
-      const std::pair<unsigned short, unsigned short> ClockSource = {1, 5} ;
-      const std::pair<unsigned short, unsigned short> PLLLock = {1, 7} ;
-      const std::pair<unsigned short, unsigned short> BoardReady = {1, 8} ;
-      const std::pair<unsigned short, unsigned short> SINStatus = {1, 15} ;
-      const std::pair<unsigned short, unsigned short> TRGINStatus = {1, 16} ;
-      const std::pair<unsigned short, unsigned short> ChannelsDown = {1, 19} ;
-    }
-
-    namespace Bit_ReadoutControl {
-      const std::pair<unsigned short, unsigned short> VMEInterruptLevel = {3, 0} ;
-      const std::pair<unsigned short, unsigned short> EnableOpticalLinkInpt = {1, 3} ;
-      const std::pair<unsigned short, unsigned short> EnableEventAligned = {1, 4} ;
-      const std::pair<unsigned short, unsigned short> VMEAlign64Mode = {1, 5} ;
-      const std::pair<unsigned short, unsigned short> VMEBaseAddressReclocated = {1, 6} ;
-      const std::pair<unsigned short, unsigned short> InterrupReleaseMode = {1, 7} ;
-      const std::pair<unsigned short, unsigned short> EnableExtendedBlockTransfer = {1, 8} ;
-    }
-
-    namespace Bit_FrontPanelIOControl {
-      const std::pair<unsigned short, unsigned short> LEMOLevel = {1, 0} ;
-      const std::pair<unsigned short, unsigned short> DisableTrgOut = {1, 1} ;
-      const std::pair<unsigned short, unsigned short> LVDSDirection1 = {1, 2} ; // [3:0]
-      const std::pair<unsigned short, unsigned short> LVDSDirection2 = {1, 3} ; // [7:4]
-      const std::pair<unsigned short, unsigned short> LVDSDirection3 = {1, 4} ; // [11:8]
-      const std::pair<unsigned short, unsigned short> LVDSDirection4 = {1, 5} ; // [15:12]
-      const std::pair<unsigned short, unsigned short> LVDSConfiguration = {2, 6};
-      const std::pair<unsigned short, unsigned short> LVDSNewFeature = {1, 8};
-      const std::pair<unsigned short, unsigned short> LVDSLatchMode = {1, 9};
-      const std::pair<unsigned short, unsigned short> TRGINMode = {1, 10};
-      const std::pair<unsigned short, unsigned short> TRGINMezzanine = {1, 11};
-      const std::pair<unsigned short, unsigned short> TRGOUTConfig = {6, 14};
-      const std::pair<unsigned short, unsigned short> PatternConfig = {2, 21};
-
-      const std::vector<std::pair<std::string, unsigned int>> ListLEMOLevel = {{"NIM I/O", 0},
-                                                                               {"TTL I/O", 1}};
-      const std::vector<std::pair<std::string, unsigned int>> ListTRGIMode = {{"Edge of TRG-IN", 0},
-                                                                              {"Whole duration of TR-IN", 1}};
-      const std::vector<std::pair<std::string, unsigned int>> ListTRGIMezzanine = {{"Pocessed by Motherboard", 0},
-                                                                                   {"Skip Motherboard", 1}};
-
-      const std::vector<std::pair<std::string, unsigned int>> ListTRGOUTConfig = {{"Disable",            0x00002}, /// this is TRG_OUT high  imped. 0x811C bit[1]
-                                                                                  {"force TRG-OUT is 0", 0x08000},
-                                                                                  {"force TRG-OUT is 1", 0x0C000},
-                                                                                  {"Trigger (Mask)",     0x00000},
-                                                                                  {"Channel Probe",      0x20000},
-                                                                                  {"S-IN",               0x30000},
-                                                                                  {"RUN",                0x10000},
-                                                                                  {"Sync Clock",         0x50000},
-                                                                                  {"Clock Phase",        0x90000},
-                                                                                  {"BUSY/UNLOCK",        0xD0000}};
-
-    }
-
-    const Reg RecordLength_G              ("RecordLength_G"              , 0x1020, RW::ReadWrite,  true, 0x3FFF,  8); /// R/W
-    const Reg InputDynamicRange           ("InputDynamicRange"           , 0x1028, RW::ReadWrite, false, {{"2 Vpp", 0},{"0.5 Vpp", 1}}); /// R/W
-    const Reg NumberEventsPerAggregate_G  ("NumberEventsPerAggregate_G"  , 0x1034, RW::ReadWrite,  true,  0x3FF, -1); /// R/W
-    const Reg PreTrigger                  ("PreTrigger"                  , 0x1038, RW::ReadWrite, false,   0xFF,  4); /// R/W
-    const Reg TriggerThreshold            ("TriggerThreshold"            , 0x106C, RW::ReadWrite, false, 0x3FFF, -1); /// R/W
-    const Reg TriggerHoldOffWidth         ("TriggerHoldOffWidth"         , 0x1074, RW::ReadWrite, false,  0x3FF,  4); /// R/W
-    const Reg DPPAlgorithmControl         ("DPPAlgorithmControl"         , 0x1080, RW::ReadWrite, false, {}); /// R/W 
-    const Reg ChannelStatus_R             ("ChannelStatus_R"             , 0x1088, RW::ReadONLY , false, {}); /// R
-    const Reg AMCFirmwareRevision_R       ("AMCFirmwareRevision_R"       , 0x108C, RW::ReadONLY , false, {}); /// R
-    const Reg ChannelDCOffset             ("ChannelDCOffset"             , 0x1098, RW::ReadWrite, false, 0xFFFF, -1); /// R/W
-    const Reg ChannelADCTemperature_R     ("ChannelADCTemperature_R"     , 0x10A8, RW::ReadONLY , false, {}); /// R
-    const Reg IndividualSoftwareTrigger_W ("IndividualSoftwareTrigger_W" , 0x10C0, RW::WriteONLY, false, {}); ///   W
-    const Reg VetoWidth                   ("VetoWidth"                   , 0x10D4, RW::ReadWrite, false, {}); /// R/W
-    
-    /// I know there are many duplication, it is the design.
-    const Reg BoardConfiguration          ("BoardConfiguration"          , 0x8000, RW::ReadWrite, false, {});  /// R/W
-    const Reg AggregateOrganization       ("AggregateOrganization"       , 0x800C, RW::ReadWrite, false, {{"Not use", 0x0},
-                                                                                                          {"Not use", 0x1},
-                                                                                                          {   "4", 0x2},
-                                                                                                          {   "8", 0x3},
-                                                                                                          {  "16", 0x4},
-                                                                                                          {  "32", 0x5},
-                                                                                                          {  "64", 0x6},
-                                                                                                          { "128", 0x7},
-                                                                                                          { "256", 0x8},
-                                                                                                          { "512", 0x9},
-                                                                                                          {"1024", 0xA}});  /// R/W
-    const Reg ADCCalibration_W            ("ADCCalibration_W"            , 0x809C, RW::WriteONLY, false, {});  ///   W
-    const Reg ChannelShutdown_W           ("ChannelShutdown_W"           , 0x80BC, RW::WriteONLY, false, {{"no shutdown", 0},{"shutdown", 1}});  ///   W
-    const Reg AcquisitionControl          ("AcquisitionControl"          , 0x8100, RW::ReadWrite, false, {});  /// R/W
-    const Reg AcquisitionStatus_R         ("AcquisitionStatus_R"         , 0x8104, RW::ReadONLY , false, {});  /// R
-    const Reg SoftwareTrigger_W           ("SoftwareTrigger_W"           , 0x8108, RW::WriteONLY, false, {});  ///   W
-    const Reg GlobalTriggerMask           ("GlobalTriggerMask"           , 0x810C, RW::ReadWrite, false, {});  /// R/W
-    const Reg FrontPanelTRGOUTEnableMask  ("FrontPanelTRGOUTEnableMask"  , 0x8110, RW::ReadWrite, false, {});  /// R/W
-    const Reg LVDSIOData                  ("LVDSIOData"                  , 0x8118, RW::ReadWrite, false, {});  /// R/W
-    const Reg FrontPanelIOControl         ("FrontPanelIOControl"         , 0x811C, RW::ReadWrite, false, {});  /// R/W
-    const Reg ChannelEnableMask           ("ChannelEnableMask"           , 0x8120, RW::ReadWrite, false, {});  /// R/W
-    const Reg ROCFPGAFirmwareRevision_R   ("ROCFPGAFirmwareRevision_R"   , 0x8124, RW::ReadONLY , false, {});  /// R
-    const Reg EventStored_R               ("EventStored_R"               , 0x812C, RW::ReadONLY , false, {});  /// R
-    const Reg VoltageLevelModeConfig      ("VoltageLevelModeConfig"      , 0x8138, RW::ReadWrite, false, {});  /// R/W
-    const Reg SoftwareClockSync_W         ("SoftwareClockSync_W"         , 0x813C, RW::WriteONLY, false, {});  ///   W
-    const Reg BoardInfo_R                 ("BoardInfo_R"                 , 0x8140, RW::ReadONLY , false, {});  /// R    
-    const Reg AnalogMonitorMode           ("AnalogMonitorMode"           , 0x8144, RW::ReadWrite, false, {{"Trig. Maj. Mode", 0},
-                                                                                                          {"Test mode", 1},
-                                                                                                          {"Buffer occp. Mode", 3},
-                                                                                                          {"Voltage Lvl Mode", 4}});  /// R/W
-    const Reg EventSize_R                 ("EventSize_R"                 , 0x814C, RW::ReadONLY , false, {});  /// R
-    const Reg TimeBombDowncounter_R       ("TimeBombDowncounter_R"       , 0x8158, RW::ReadONLY , false, {});  /// R
-    const Reg FanSpeedControl             ("FanSpeedControl"             , 0x8168, RW::ReadWrite, false, {});  /// R/W
-    const Reg RunStartStopDelay           ("RunStartStopDelay"           , 0x8170, RW::ReadWrite, false, 0xFF, 8);  /// R/W
-    const Reg BoardFailureStatus_R        ("BoardFailureStatus_R"        , 0x8178, RW::ReadONLY , false, {});  /// R
-    const Reg DisableExternalTrigger      ("DisableExternalTrigger"      , 0x817C, RW::ReadWrite, false, {});  /// R/W
-    const Reg FrontPanelLVDSIONewFeatures ("FrontPanelLVDSIONewFeatures" , 0x81A0, RW::ReadWrite, false, {});  /// R/W
-    const Reg BufferOccupancyGain         ("BufferOccupancyGain"         , 0x81B4, RW::ReadWrite, false, 0xF, -1);  /// R/W
-    const Reg ExtendedVetoDelay           ("ExtendedVetoDelay"           , 0x81C4, RW::ReadWrite, false, 0xFFFF, 4);  /// R/W
-    const Reg ReadoutControl              ("ReadoutControl"              , 0xEF00, RW::ReadWrite, false, {});  /// R/W
-    const Reg ReadoutStatus_R             ("ReadoutStatus_R"             , 0xEF04, RW::ReadONLY , false, {});  /// R
-    const Reg BoardID                     ("BoardID"                     , 0xEF08, RW::ReadWrite, false, {});  /// R/W 
-    const Reg MCSTBaseAddressAndControl   ("MCSTBaseAddressAndControl"   , 0xEF0C, RW::ReadWrite, false, {});  /// R/W
-    const Reg RelocationAddress           ("RelocationAddress"           , 0xEF10, RW::ReadWrite, false, {});  /// R/W
-    const Reg InterruptStatusID           ("InterruptStatusID"           , 0xEF14, RW::ReadWrite, false, {});  /// R/W
-    const Reg InterruptEventNumber        ("InterruptEventNumber"        , 0xEF18, RW::ReadWrite, false, {});  /// R/W
-    const Reg MaxAggregatePerBlockTransfer("MaxAggregatePerBlockTransfer", 0xEF1C, RW::ReadWrite, false, 0x3FF, -1);  /// R/W
-    const Reg Scratch                     ("Scratch"                     , 0xEF20, RW::ReadWrite, false, {});  /// R/W
-    const Reg SoftwareReset_W             ("SoftwareReset_W"             , 0xEF24, RW::WriteONLY, false, {});  ///   W
-    const Reg SoftwareClear_W             ("SoftwareClear_W"             , 0xEF28, RW::WriteONLY, false, {});  ///   W  
-    const Reg ConfigurationReload_W       ("ConfigurationReload_W"       , 0xEF34, RW::WriteONLY, false, {});  ///   W
-    const Reg ROMChecksum_R               ("ROMChecksum_R"               , 0xF000, RW::ReadONLY , false, {});  /// R
-    const Reg ROMChecksumByte2_R          ("ROMChecksumByte2_R"          , 0xF004, RW::ReadONLY , false, {});  /// R
-    const Reg ROMChecksumByte1_R          ("ROMChecksumByte1_R"          , 0xF008, RW::ReadONLY , false, {});  /// R
-    const Reg ROMChecksumByte0_R          ("ROMChecksumByte0_R"          , 0xF00C, RW::ReadONLY , false, {});  /// R
-    const Reg ROMConstantByte2_R          ("ROMConstantByte2_R"          , 0xF010, RW::ReadONLY , false, {});  /// R
-    const Reg ROMConstantByte1_R          ("ROMConstantByte1_R"          , 0xF014, RW::ReadONLY , false, {});  /// R
-    const Reg ROMConstantByte0_R          ("ROMConstantByte0_R"          , 0xF018, RW::ReadONLY , false, {});  /// R
-    const Reg ROM_C_Code_R                ("ROM_C_Code_R"                , 0xF01C, RW::ReadONLY , false, {});  /// R
-    const Reg ROM_R_Code_R                ("ROM_R_Code_R"                , 0xF020, RW::ReadONLY , false, {});  /// R
-    const Reg ROM_IEEE_OUI_Byte2_R        ("ROM_IEEE_OUI_Byte2_R"        , 0xF024, RW::ReadONLY , false, {});  /// R
-    const Reg ROM_IEEE_OUI_Byte1_R        ("ROM_IEEE_OUI_Byte1_R"        , 0xF028, RW::ReadONLY , false, {});  /// R
-    const Reg ROM_IEEE_OUI_Byte0_R        ("ROM_IEEE_OUI_Byte0_R"        , 0xF02C, RW::ReadONLY , false, {});  /// R
-    const Reg ROM_BoardVersion_R          ("ROM_BoardVersion_R"          , 0xF030, RW::ReadONLY , false, {});  /// R
-    const Reg ROM_BoardFromFactor_R       ("ROM_BoardFromFactor_R"       , 0xF034, RW::ReadONLY , false, {});  /// R
-    const Reg ROM_BoardIDByte1_R          ("ROM_BoardIDByte1_R"          , 0xF038, RW::ReadONLY , false, {});  /// R
-    const Reg ROM_BoardIDByte0_R          ("ROM_BoardIDByte0_R"          , 0xF03C, RW::ReadONLY , false, {});  /// R
-    const Reg ROM_PCB_rev_Byte3_R         ("ROM_PCB_rev_Byte3_R"         , 0xF040, RW::ReadONLY , false, {});  /// R
-    const Reg ROM_PCB_rev_Byte2_R         ("ROM_PCB_rev_Byte2_R"         , 0xF044, RW::ReadONLY , false, {});  /// R
-    const Reg ROM_PCB_rev_Byte1_R         ("ROM_PCB_rev_Byte1_R"         , 0xF048, RW::ReadONLY , false, {});  /// R
-    const Reg ROM_PCB_rev_Byte0_R         ("ROM_PCB_rev_Byte0_R"         , 0xF04C, RW::ReadONLY , false, {});  /// R
-    const Reg ROM_FlashType_R             ("ROM_FlashType_R"             , 0xF050, RW::ReadONLY , false, {});  /// R
-    const Reg ROM_BoardSerialNumByte1_R   ("ROM_BoardSerialNumByte1_R"   , 0xF080, RW::ReadONLY , false, {});  /// R
-    const Reg ROM_BoardSerialNumByte0_R   ("ROM_BoardSerialNumByte0_R"   , 0xF084, RW::ReadONLY , false, {});  /// R
-    const Reg ROM_VCXO_Type_R             ("ROM_VCXO_Type_R"             , 0xF088, RW::ReadONLY , false, {});  /// R
- 
-    const Reg TriggerValidationMask_G     ("TriggerValidationMask_G"     , 0x8180, RW::ReadWrite, true, {});  /// R/W,  
-    
-    namespace PHA {
-      const Reg DataFlush_W               ("DataFlush_W"              , 0x103C, RW::WriteONLY, false, {}); ///   W   not sure
-      const Reg ChannelStopAcquisition    ("ChannelStopAcquisition"   , 0x1040, RW::ReadWrite, false, {{"Run", 0}, {"Stop", 1}}); /// R/W   not sure
-      const Reg RCCR2SmoothingFactor      ("RCCR2SmoothingFactor"     , 0x1054, RW::ReadWrite, false, {{  "Disabled", 0x0},
-                                                                                                       {  "2 sample", 0x1},
-                                                                                                       {  "4 sample", 0x2},
-                                                                                                       {  "8 sample", 0x4},
-                                                                                                       { "16 sample", 0x8},
-                                                                                                       { "32 sample", 0x10},
-                                                                                                       { "64 sample", 0x20},
-                                                                                                       {"128 sample", 0x3F}
-                                                                                                      }); /// R/W   Trigger Filter smoothing, triggerSmoothingFactor
-      const Reg InputRiseTime             ("InputRiseTime"            , 0x1058, RW::ReadWrite, false,   0xFF,  4); /// R/W   OK
-      const Reg TrapezoidRiseTime         ("TrapezoidRiseTime"        , 0x105C, RW::ReadWrite, false,  0xFFF,  4); /// R/W   OK
-      const Reg TrapezoidFlatTop          ("TrapezoidFlatTop"         , 0x1060, RW::ReadWrite, false,  0xFFF,  4); /// R/W   OK
-      const Reg PeakingTime               ("PeakingTime"              , 0x1064, RW::ReadWrite, false,  0xFFF,  4); /// R/W   OK
-      const Reg DecayTime                 ("DecayTime"                , 0x1068, RW::ReadWrite, false, 0xFFFF,  4); /// R/W   OK
-      const Reg TriggerThreshold          ("TriggerThreshold"         , 0x106C, RW::ReadWrite, false, 0x3FFF, -1); /// R/W   OK
-      const Reg RiseTimeValidationWindow  ("RiseTimeValidationWindow" , 0x1070, RW::ReadWrite, false,  0x3FF,  1); /// R/W   OK
-      const Reg TriggerHoldOffWidth       ("TriggerHoldOffWidth"      , 0x1074, RW::ReadWrite, false,  0x3FF,  4); /// R/W   OK
-      const Reg PeakHoldOff               ("PeakHoldOff"              , 0x1078, RW::ReadWrite, false,  0x3FF,  4); /// R/W   OK
-      const Reg ShapedTriggerWidth        ("ShapedTriggerWidth"       , 0x1084, RW::ReadWrite, false,  0x3FF,  4); /// R/W   not sure
-      const Reg DPPAlgorithmControl2_G    ("DPPAlgorithmControl2_G"   , 0x10A0, RW::ReadWrite,  true, {}); /// R/W   OK
-      const Reg FineGain                  ("FineGain"                 , 0x10C4, RW::ReadWrite, false, {}); /// R/W   OK
-
-      namespace Bit_DPPAlgorithmControl2 {
-        const std::pair<unsigned short, unsigned short> LocalShapeTriggerMode = {3, 0} ;
-        const std::pair<unsigned short, unsigned short> LocalTrigValidMode = {3, 4} ;
-        const std::pair<unsigned short, unsigned short> Extra2Option = {3, 8} ;
-        const std::pair<unsigned short, unsigned short> VetoSource = {2, 14} ;
-        const std::pair<unsigned short, unsigned short> TriggerCounterFlag = {2, 16} ;
-        const std::pair<unsigned short, unsigned short> ActivebaselineCalulation = {1, 18} ;
-        const std::pair<unsigned short, unsigned short> TagCorrelatedEvents = {1, 19} ;
-        const std::pair<unsigned short, unsigned short> EnableActiveBaselineRestoration = {1, 29} ;
-
-        const std::vector<std::pair<std::string, unsigned int>> ListLocalShapeTrigMode = {{"Disabled", 0},
-                                                                                          {"AND", 4},
-                                                                                          {"The even Channel", 5},
-                                                                                          {"The odd Channel", 6},
-                                                                                          {"OR", 7}};
-
-        const std::vector<std::pair<std::string, unsigned int>> ListLocalTrigValidMode = {{"Disabled", 0},
-                                                                                          {"Crossed", 4},
-                                                                                          {"Equal", 5},
-                                                                                          {"AND", 6},
-                                                                                          {"OR", 7}};
-
-        const std::vector<std::pair<std::string, unsigned int>> ListExtra2 = {{"Extended timeStamp +  baseline * 4", 0},
-                                                                              {"Extended timeStamp + Fine timestamp", 2},
-                                                                              {"Lost Trig. Count  + Total Trig. Count", 4},
-                                                                              {"Event Before 0-xing + After 0-xing", 5}};
-
-        const std::vector<std::pair<std::string, unsigned int>> ListVetoSource = {{"Disabled", 0},
-                                                                                  {"Common (Global Trig. Mask)", 1},
-                                                                                  {"Difference (Trig. Mask)", 2},
-                                                                                  {"Negative Saturation", 3}};
-
-        const std::vector<std::pair<std::string, unsigned int>> ListTrigCounter = {{"1024", 0},
-                                                                                  {"128", 1},
-                                                                                  {"8192", 2}};
-
-      }
-
-    }
-
-    namespace PSD  {
-      const Reg CFDSetting                     ("CFDSetting"                     , 0x103C, RW::ReadWrite, false, {}); /// R/W
-      const Reg ForcedDataFlush_W              ("ForcedDataFlush_W"              , 0x1040, RW::WriteONLY, false, {}); ///   W
-      const Reg ChargeZeroSuppressionThreshold ("ChargeZeroSuppressionThreshold" , 0x1044, RW::ReadWrite, false, {}); /// R/W
-      const Reg ShortGateWidth                 ("ShortGateWidth"                 , 0x1054, RW::ReadWrite, false, {}); /// R/W
-      const Reg LongGateWidth                  ("LongGateWidth"                  , 0x1058, RW::ReadWrite, false, {}); /// R/W
-      const Reg GateOffset                     ("GateOffset"                     , 0x105C, RW::ReadWrite, false, {}); /// R/W
-      const Reg TriggerThreshold               ("TriggerThreshold"               , 0x1060, RW::ReadWrite, false, {}); /// R/W
-      const Reg FixedBaseline                  ("FixedBaseline"                  , 0x1064, RW::ReadWrite, false, {}); /// R/W
-      const Reg TriggerLatency                 ("TriggerLatency"                 , 0x106C, RW::ReadWrite, false, {}); /// R/W
-      const Reg ShapedTriggerWidth             ("ShapedTriggerWidth"             , 0x1070, RW::ReadWrite, false, {}); /// R/W
-      const Reg TriggerHoldOffWidth            ("TriggerHoldOffWidth"            , 0x1074, RW::ReadWrite, false, {}); /// R/W
-      const Reg ThresholdForPSDCut             ("ThresholdForPSDCut"             , 0x1078, RW::ReadWrite, false, {}); /// R/W
-      const Reg PurGapThreshold                ("PurGapThreshold"                , 0x107C, RW::ReadWrite, false, {}); /// R/W
-      const Reg DPPAlgorithmControl2_G         ("DPPAlgorithmControl2_G"         , 0x1084, RW::ReadWrite,  true, {}); /// R/W 
-      const Reg EarlyBaselineFreeze            ("EarlyBaselineFreeze"            , 0x10D8, RW::ReadWrite,  true, {}); /// R/W
-    }
   }
-};  // end of namepace Register
+  
+  namespace Bit_DPPAlgorithmControl {
+    const std::pair<unsigned short, unsigned short> TrapRescaling = {6, 0} ; /// length, smallest pos
+    const std::pair<unsigned short, unsigned short> TraceDecimation = {2, 8};
+    const std::pair<unsigned short, unsigned short> TraceDeciGain = {2, 10,};
+    const std::pair<unsigned short, unsigned short> PeakMean = {2, 12};
+    const std::pair<unsigned short, unsigned short> Polarity = {1, 16};
+    const std::pair<unsigned short, unsigned short> TriggerMode = {2, 18};
+    const std::pair<unsigned short, unsigned short> BaselineAvg = {3, 20};
+    const std::pair<unsigned short, unsigned short> DisableSelfTrigger = {1, 24};
+    const std::pair<unsigned short, unsigned short> EnableRollOverFlag = {1, 26};
+    const std::pair<unsigned short, unsigned short> EnablePileUpFlag = {1, 27};
 
-const std::vector<Register::Reg> RegisterPHAList = {
-  Register::DPP::PHA::DataFlush_W               ,
-  Register::DPP::PHA::ChannelStopAcquisition    ,
-  Register::DPP::PHA::RCCR2SmoothingFactor      ,
-  Register::DPP::PHA::InputRiseTime             ,
-  Register::DPP::PHA::TrapezoidRiseTime         ,
-  Register::DPP::PHA::TrapezoidFlatTop          ,
-  Register::DPP::PHA::PeakingTime               ,
-  Register::DPP::PHA::DecayTime                 ,
-  Register::DPP::PHA::TriggerThreshold          ,
-  Register::DPP::PHA::RiseTimeValidationWindow  ,
-  Register::DPP::PHA::TriggerHoldOffWidth       ,
-  Register::DPP::PHA::PeakHoldOff               ,
-  Register::DPP::PHA::ShapedTriggerWidth        ,
-  Register::DPP::PHA::DPPAlgorithmControl2_G    ,
-  Register::DPP::PHA::FineGain                  ,
+    const std::vector<std::pair<std::string, unsigned int>> ListTraceDecimation = {{"Disabled", 0},
+                                                                                    {"2 samples", 1},
+                                                                                    {"4 samples", 2},
+                                                                                    {"8 samples", 3}};
+
+    const std::vector<std::pair<std::string, unsigned int>> ListDecimationGain = {{"x1", 0},
+                                                                                  {"x2", 1},
+                                                                                  {"x4", 2},
+                                                                                  {"x8", 3}};
+
+    const std::vector<std::pair<std::string, unsigned int>> ListPeakMean = {{"1 sample", 0},
+                                                                            {"4 sample", 1},
+                                                                            {"16 sample", 2},
+                                                                            {"64 sample", 3}};
+
+    const std::vector<std::pair<std::string, unsigned int>> ListPolarity = {{"Positive", 0},
+                                                                            {"Negative", 1}};
+
+    const std::vector<std::pair<std::string, unsigned int>> ListTrigMode = {{"Independent", 0},
+                                                                            {"Coincident (Shape Trig.)", 1},
+                                                                            {"Anti-Coincident (Shape Trig.)", 3}};
+
+    const std::vector<std::pair<std::string, unsigned int>> ListBaselineAvg = {{"Not Used", 0},
+                                                                                {"16 samples", 1},
+                                                                                {"64 samples", 2},
+                                                                                {"256 samples", 3},
+                                                                                {"1024 samples", 4},
+                                                                                {"4096 samples", 5},
+                                                                                {"16384 samples", 6}};
+
+  }
+
+  namespace Bit_AcquistionControl {
+    const std::pair<unsigned short, unsigned short> StartStopMode = {2, 0} ;
+    const std::pair<unsigned short, unsigned short> ACQStartArm = {1, 2} ;
+    const std::pair<unsigned short, unsigned short> PLLRef = {1, 6} ;
+    const std::pair<unsigned short, unsigned short> LVDSBusyEnable = {1, 8} ;
+    const std::pair<unsigned short, unsigned short> LVDSVetoEnable = {1, 9} ;
+    const std::pair<unsigned short, unsigned short> VetoTRGOut = {1, 12} ;
+  }
+
+  namespace Bit_AcqStatus {
+    const std::pair<unsigned short, unsigned short> AcqStatus = {1, 2} ;
+    const std::pair<unsigned short, unsigned short> EventReady = {1, 3} ;
+    const std::pair<unsigned short, unsigned short> EventFull = {1, 4} ;
+    const std::pair<unsigned short, unsigned short> ClockSource = {1, 5} ;
+    const std::pair<unsigned short, unsigned short> PLLLock = {1, 7} ;
+    const std::pair<unsigned short, unsigned short> BoardReady = {1, 8} ;
+    const std::pair<unsigned short, unsigned short> SINStatus = {1, 15} ;
+    const std::pair<unsigned short, unsigned short> TRGINStatus = {1, 16} ;
+    const std::pair<unsigned short, unsigned short> ChannelsDown = {1, 19} ;
+  }
+
+  namespace Bit_ReadoutControl {
+    const std::pair<unsigned short, unsigned short> VMEInterruptLevel = {3, 0} ;
+    const std::pair<unsigned short, unsigned short> EnableOpticalLinkInpt = {1, 3} ;
+    const std::pair<unsigned short, unsigned short> EnableEventAligned = {1, 4} ;
+    const std::pair<unsigned short, unsigned short> VMEAlign64Mode = {1, 5} ;
+    const std::pair<unsigned short, unsigned short> VMEBaseAddressReclocated = {1, 6} ;
+    const std::pair<unsigned short, unsigned short> InterrupReleaseMode = {1, 7} ;
+    const std::pair<unsigned short, unsigned short> EnableExtendedBlockTransfer = {1, 8} ;
+  }
+
+  namespace Bit_GlobalTriggerMask {
+    const std::pair<unsigned short, unsigned short> GroupedChMask = {8, 0} ;
+    const std::pair<unsigned short, unsigned short> MajorCoinWin = {4, 20} ;
+    const std::pair<unsigned short, unsigned short> MajorLevel = {2, 24} ;
+    const std::pair<unsigned short, unsigned short> LVDSTrigger = {1, 29} ;
+    const std::pair<unsigned short, unsigned short> ExtTrigger = {1, 30} ;
+    const std::pair<unsigned short, unsigned short> SWTrigger = {1, 31} ;
+  }
+
+  namespace Bit_TRGOUTMask{
+    const std::pair<unsigned short, unsigned short> GroupedChMask = {8, 0} ;
+    const std::pair<unsigned short, unsigned short> TRGOUTLogic = {2, 8} ;
+    const std::pair<unsigned short, unsigned short> MajorLevel = {3, 10} ;
+    const std::pair<unsigned short, unsigned short> LVDSTrigger = {1, 29} ;
+    const std::pair<unsigned short, unsigned short> ExtTrigger = {1, 30} ;
+    const std::pair<unsigned short, unsigned short> SWTrigger = {1, 31} ;
+  }
+
+  namespace Bit_FrontPanelIOControl {
+    const std::pair<unsigned short, unsigned short> LEMOLevel = {1, 0} ;
+    const std::pair<unsigned short, unsigned short> DisableTrgOut = {1, 1} ;
+    const std::pair<unsigned short, unsigned short> LVDSDirection1 = {1, 2} ; // [3:0]
+    const std::pair<unsigned short, unsigned short> LVDSDirection2 = {1, 3} ; // [7:4]
+    const std::pair<unsigned short, unsigned short> LVDSDirection3 = {1, 4} ; // [11:8]
+    const std::pair<unsigned short, unsigned short> LVDSDirection4 = {1, 5} ; // [15:12]
+    const std::pair<unsigned short, unsigned short> LVDSConfiguration = {2, 6};
+    const std::pair<unsigned short, unsigned short> LVDSNewFeature = {1, 8};
+    const std::pair<unsigned short, unsigned short> LVDSLatchMode = {1, 9};
+    const std::pair<unsigned short, unsigned short> TRGINMode = {1, 10};
+    const std::pair<unsigned short, unsigned short> TRGINMezzanine = {1, 11};
+    const std::pair<unsigned short, unsigned short> TRGOUTConfig = {6, 14};
+    const std::pair<unsigned short, unsigned short> PatternConfig = {2, 21};
+
+    const std::vector<std::pair<std::string, unsigned int>> ListLEMOLevel = {{"NIM I/O", 0},
+                                                                              {"TTL I/O", 1}};
+    const std::vector<std::pair<std::string, unsigned int>> ListTRGIMode = {{"Edge of TRG-IN", 0},
+                                                                            {"Whole duration of TR-IN", 1}};
+    const std::vector<std::pair<std::string, unsigned int>> ListTRGIMezzanine = {{"Pocessed by Motherboard", 0},
+                                                                                  {"Skip Motherboard", 1}};
+
+    const std::vector<std::pair<std::string, unsigned int>> ListTRGOUTConfig = {{"Disable",            0x00002}, /// this is TRG_OUT high  imped. 0x811C bit[1]
+                                                                                {"force TRG-OUT is 0", 0x08000},
+                                                                                {"force TRG-OUT is 1", 0x0C000},
+                                                                                {"Trigger (Mask)",     0x00000},
+                                                                                {"Channel Probe",      0x20000},
+                                                                                {"S-IN",               0x30000},
+                                                                                {"RUN",                0x10000},
+                                                                                {"Sync Clock",         0x50000},
+                                                                                {"Clock Phase",        0x90000},
+                                                                                {"BUSY/UNLOCK",        0xD0000}};
+  }
+
+  namespace Bit_VetoWidth {
+    const std::pair<unsigned short, unsigned short> VetoWidth = {16, 0} ;
+    const std::pair<unsigned short, unsigned short> VetoStep = {2, 16} ;
+
+    const std::vector<std::pair<std::string, unsigned int>> ListVetoStep = {{"  16 ns (725),   8 ns (730)", 0},
+                                                                            {"   4 ns (725),   2 ns (730)", 1},
+                                                                            {"1048 ns (725), 524 ns (730)", 2},
+                                                                            {" 264 ns (725), 134 ns (730)", 3}};
+
+  }
+
+  const Reg RecordLength_G              ("RecordLength_G"              , 0x1020, RW::ReadWrite,  true, 0x3FFF,  8); /// R/W
+  const Reg InputDynamicRange           ("InputDynamicRange"           , 0x1028, RW::ReadWrite, false, {{"2 Vpp", 0},{"0.5 Vpp", 1}}); /// R/W
+  const Reg NumberEventsPerAggregate_G  ("NumberEventsPerAggregate_G"  , 0x1034, RW::ReadWrite,  true,  0x3FF, -1); /// R/W
+  const Reg PreTrigger                  ("PreTrigger"                  , 0x1038, RW::ReadWrite, false,   0xFF,  4); /// R/W
+  const Reg TriggerThreshold            ("TriggerThreshold"            , 0x106C, RW::ReadWrite, false, 0x3FFF, -1); /// R/W
+  const Reg TriggerHoldOffWidth         ("TriggerHoldOffWidth"         , 0x1074, RW::ReadWrite, false,  0x3FF,  4); /// R/W
+  const Reg DPPAlgorithmControl         ("DPPAlgorithmControl"         , 0x1080, RW::ReadWrite, false, {}); /// R/W 
+  const Reg ChannelStatus_R             ("ChannelStatus_R"             , 0x1088, RW::ReadONLY , false, {}); /// R
+  const Reg AMCFirmwareRevision_R       ("AMCFirmwareRevision_R"       , 0x108C, RW::ReadONLY , false, {}); /// R
+  const Reg ChannelDCOffset             ("ChannelDCOffset"             , 0x1098, RW::ReadWrite, false, 0xFFFF, -1); /// R/W
+  const Reg ChannelADCTemperature_R     ("ChannelADCTemperature_R"     , 0x10A8, RW::ReadONLY , false, {}); /// R
+  const Reg IndividualSoftwareTrigger_W ("IndividualSoftwareTrigger_W" , 0x10C0, RW::WriteONLY, false, {}); ///   W
+  const Reg VetoWidth                   ("VetoWidth"                   , 0x10D4, RW::ReadWrite, false, {}); /// R/W
   
-  Register::DPP::RecordLength_G             ,
-  Register::DPP::InputDynamicRange          ,
-  Register::DPP::NumberEventsPerAggregate_G ,
-  Register::DPP::PreTrigger                 ,
-  Register::DPP::TriggerThreshold           ,
-  Register::DPP::TriggerHoldOffWidth        ,
-  Register::DPP::DPPAlgorithmControl        ,
-  Register::DPP::ChannelStatus_R            ,
-  Register::DPP::AMCFirmwareRevision_R      ,
-  Register::DPP::ChannelDCOffset            ,
-  Register::DPP::ChannelADCTemperature_R    ,
-  Register::DPP::IndividualSoftwareTrigger_W,
-  Register::DPP::VetoWidth                  ,
+  /// I know there are many duplication, it is the design.
+  const Reg BoardConfiguration          ("BoardConfiguration"          , 0x8000, RW::ReadWrite, false, {});  /// R/W
+  const Reg AggregateOrganization       ("AggregateOrganization"       , 0x800C, RW::ReadWrite, false, {{"Not use", 0x0},
+                                                                                                        {"Not use", 0x1},
+                                                                                                        {   "4", 0x2},
+                                                                                                        {   "8", 0x3},
+                                                                                                        {  "16", 0x4},
+                                                                                                        {  "32", 0x5},
+                                                                                                        {  "64", 0x6},
+                                                                                                        { "128", 0x7},
+                                                                                                        { "256", 0x8},
+                                                                                                        { "512", 0x9},
+                                                                                                        {"1024", 0xA}});  /// R/W
+  const Reg ADCCalibration_W            ("ADCCalibration_W"            , 0x809C, RW::WriteONLY, false, {});  ///   W
+  const Reg ChannelShutdown_W           ("ChannelShutdown_W"           , 0x80BC, RW::WriteONLY, false, {{"no shutdown", 0},{"shutdown", 1}});  ///   W
+  const Reg AcquisitionControl          ("AcquisitionControl"          , 0x8100, RW::ReadWrite, false, {});  /// R/W
+  const Reg AcquisitionStatus_R         ("AcquisitionStatus_R"         , 0x8104, RW::ReadONLY , false, {});  /// R
+  const Reg SoftwareTrigger_W           ("SoftwareTrigger_W"           , 0x8108, RW::WriteONLY, false, {});  ///   W
+  const Reg GlobalTriggerMask           ("GlobalTriggerMask"           , 0x810C, RW::ReadWrite, false, {});  /// R/W
+  const Reg FrontPanelTRGOUTEnableMask  ("FrontPanelTRGOUTEnableMask"  , 0x8110, RW::ReadWrite, false, {});  /// R/W
+  const Reg LVDSIOData                  ("LVDSIOData"                  , 0x8118, RW::ReadWrite, false, {});  /// R/W
+  const Reg FrontPanelIOControl         ("FrontPanelIOControl"         , 0x811C, RW::ReadWrite, false, {});  /// R/W
+  const Reg ChannelEnableMask           ("ChannelEnableMask"           , 0x8120, RW::ReadWrite, false, {});  /// R/W
+  const Reg ROCFPGAFirmwareRevision_R   ("ROCFPGAFirmwareRevision_R"   , 0x8124, RW::ReadONLY , false, {});  /// R
+  const Reg EventStored_R               ("EventStored_R"               , 0x812C, RW::ReadONLY , false, {});  /// R
+  const Reg VoltageLevelModeConfig      ("VoltageLevelModeConfig"      , 0x8138, RW::ReadWrite, false, {});  /// R/W
+  const Reg SoftwareClockSync_W         ("SoftwareClockSync_W"         , 0x813C, RW::WriteONLY, false, {});  ///   W
+  const Reg BoardInfo_R                 ("BoardInfo_R"                 , 0x8140, RW::ReadONLY , false, {});  /// R    
+  const Reg AnalogMonitorMode           ("AnalogMonitorMode"           , 0x8144, RW::ReadWrite, false, {{"Trig. Maj. Mode", 0},
+                                                                                                        {"Test mode", 1},
+                                                                                                        {"Buffer occp. Mode", 3},
+                                                                                                        {"Voltage Lvl Mode", 4}});  /// R/W
+  const Reg EventSize_R                 ("EventSize_R"                 , 0x814C, RW::ReadONLY , false, {});  /// R
+  const Reg TimeBombDowncounter_R       ("TimeBombDowncounter_R"       , 0x8158, RW::ReadONLY , false, {});  /// R
+  const Reg FanSpeedControl             ("FanSpeedControl"             , 0x8168, RW::ReadWrite, false, {});  /// R/W
+  const Reg RunStartStopDelay           ("RunStartStopDelay"           , 0x8170, RW::ReadWrite, false, 0xFF, 8);  /// R/W
+  const Reg BoardFailureStatus_R        ("BoardFailureStatus_R"        , 0x8178, RW::ReadONLY , false, {});  /// R
+  const Reg DisableExternalTrigger      ("DisableExternalTrigger"      , 0x817C, RW::ReadWrite, false, {});  /// R/W
+  const Reg FrontPanelLVDSIONewFeatures ("FrontPanelLVDSIONewFeatures" , 0x81A0, RW::ReadWrite, false, {});  /// R/W
+  const Reg BufferOccupancyGain         ("BufferOccupancyGain"         , 0x81B4, RW::ReadWrite, false, 0xF, -1);  /// R/W
+  const Reg ExtendedVetoDelay           ("ExtendedVetoDelay"           , 0x81C4, RW::ReadWrite, false, 0xFFFF, 4);  /// R/W
+  const Reg ReadoutControl              ("ReadoutControl"              , 0xEF00, RW::ReadWrite, false, {});  /// R/W
+  const Reg ReadoutStatus_R             ("ReadoutStatus_R"             , 0xEF04, RW::ReadONLY , false, {});  /// R
+  const Reg BoardID                     ("BoardID"                     , 0xEF08, RW::ReadWrite, false, {});  /// R/W 
+  const Reg MCSTBaseAddressAndControl   ("MCSTBaseAddressAndControl"   , 0xEF0C, RW::ReadWrite, false, {});  /// R/W
+  const Reg RelocationAddress           ("RelocationAddress"           , 0xEF10, RW::ReadWrite, false, {});  /// R/W
+  const Reg InterruptStatusID           ("InterruptStatusID"           , 0xEF14, RW::ReadWrite, false, {});  /// R/W
+  const Reg InterruptEventNumber        ("InterruptEventNumber"        , 0xEF18, RW::ReadWrite, false, {});  /// R/W
+  const Reg MaxAggregatePerBlockTransfer("MaxAggregatePerBlockTransfer", 0xEF1C, RW::ReadWrite, false, 0x3FF, -1);  /// R/W
+  const Reg Scratch                     ("Scratch"                     , 0xEF20, RW::ReadWrite, false, {});  /// R/W
+  const Reg SoftwareReset_W             ("SoftwareReset_W"             , 0xEF24, RW::WriteONLY, false, {});  ///   W
+  const Reg SoftwareClear_W             ("SoftwareClear_W"             , 0xEF28, RW::WriteONLY, false, {});  ///   W  
+  const Reg ConfigurationReload_W       ("ConfigurationReload_W"       , 0xEF34, RW::WriteONLY, false, {});  ///   W
+  const Reg ROMChecksum_R               ("ROMChecksum_R"               , 0xF000, RW::ReadONLY , false, {});  /// R
+  const Reg ROMChecksumByte2_R          ("ROMChecksumByte2_R"          , 0xF004, RW::ReadONLY , false, {});  /// R
+  const Reg ROMChecksumByte1_R          ("ROMChecksumByte1_R"          , 0xF008, RW::ReadONLY , false, {});  /// R
+  const Reg ROMChecksumByte0_R          ("ROMChecksumByte0_R"          , 0xF00C, RW::ReadONLY , false, {});  /// R
+  const Reg ROMConstantByte2_R          ("ROMConstantByte2_R"          , 0xF010, RW::ReadONLY , false, {});  /// R
+  const Reg ROMConstantByte1_R          ("ROMConstantByte1_R"          , 0xF014, RW::ReadONLY , false, {});  /// R
+  const Reg ROMConstantByte0_R          ("ROMConstantByte0_R"          , 0xF018, RW::ReadONLY , false, {});  /// R
+  const Reg ROM_C_Code_R                ("ROM_C_Code_R"                , 0xF01C, RW::ReadONLY , false, {});  /// R
+  const Reg ROM_R_Code_R                ("ROM_R_Code_R"                , 0xF020, RW::ReadONLY , false, {});  /// R
+  const Reg ROM_IEEE_OUI_Byte2_R        ("ROM_IEEE_OUI_Byte2_R"        , 0xF024, RW::ReadONLY , false, {});  /// R
+  const Reg ROM_IEEE_OUI_Byte1_R        ("ROM_IEEE_OUI_Byte1_R"        , 0xF028, RW::ReadONLY , false, {});  /// R
+  const Reg ROM_IEEE_OUI_Byte0_R        ("ROM_IEEE_OUI_Byte0_R"        , 0xF02C, RW::ReadONLY , false, {});  /// R
+  const Reg ROM_BoardVersion_R          ("ROM_BoardVersion_R"          , 0xF030, RW::ReadONLY , false, {});  /// R
+  const Reg ROM_BoardFromFactor_R       ("ROM_BoardFromFactor_R"       , 0xF034, RW::ReadONLY , false, {});  /// R
+  const Reg ROM_BoardIDByte1_R          ("ROM_BoardIDByte1_R"          , 0xF038, RW::ReadONLY , false, {});  /// R
+  const Reg ROM_BoardIDByte0_R          ("ROM_BoardIDByte0_R"          , 0xF03C, RW::ReadONLY , false, {});  /// R
+  const Reg ROM_PCB_rev_Byte3_R         ("ROM_PCB_rev_Byte3_R"         , 0xF040, RW::ReadONLY , false, {});  /// R
+  const Reg ROM_PCB_rev_Byte2_R         ("ROM_PCB_rev_Byte2_R"         , 0xF044, RW::ReadONLY , false, {});  /// R
+  const Reg ROM_PCB_rev_Byte1_R         ("ROM_PCB_rev_Byte1_R"         , 0xF048, RW::ReadONLY , false, {});  /// R
+  const Reg ROM_PCB_rev_Byte0_R         ("ROM_PCB_rev_Byte0_R"         , 0xF04C, RW::ReadONLY , false, {});  /// R
+  const Reg ROM_FlashType_R             ("ROM_FlashType_R"             , 0xF050, RW::ReadONLY , false, {});  /// R
+  const Reg ROM_BoardSerialNumByte1_R   ("ROM_BoardSerialNumByte1_R"   , 0xF080, RW::ReadONLY , false, {});  /// R
+  const Reg ROM_BoardSerialNumByte0_R   ("ROM_BoardSerialNumByte0_R"   , 0xF084, RW::ReadONLY , false, {});  /// R
+  const Reg ROM_VCXO_Type_R             ("ROM_VCXO_Type_R"             , 0xF088, RW::ReadONLY , false, {});  /// R
+
+  const Reg TriggerValidationMask_G     ("TriggerValidationMask_G"     , 0x8180, RW::ReadWrite, true, {});  /// R/W,  
   
-  Register::DPP::TriggerValidationMask_G   
+  namespace PHA {
+    const Reg DataFlush_W               ("DataFlush_W"              , 0x103C, RW::WriteONLY, false, {}); ///   W   not sure
+    const Reg ChannelStopAcquisition    ("ChannelStopAcquisition"   , 0x1040, RW::ReadWrite, false, {{"Run", 0}, {"Stop", 1}}); /// R/W   not sure
+    const Reg RCCR2SmoothingFactor      ("RCCR2SmoothingFactor"     , 0x1054, RW::ReadWrite, false, {{  "Disabled", 0x0},
+                                                                                                      {  "2 sample", 0x1},
+                                                                                                      {  "4 sample", 0x2},
+                                                                                                      {  "8 sample", 0x4},
+                                                                                                      { "16 sample", 0x8},
+                                                                                                      { "32 sample", 0x10},
+                                                                                                      { "64 sample", 0x20},
+                                                                                                      {"128 sample", 0x3F}
+                                                                                                    }); /// R/W   Trigger Filter smoothing, triggerSmoothingFactor
+    const Reg InputRiseTime             ("InputRiseTime"            , 0x1058, RW::ReadWrite, false,   0xFF,  4); /// R/W   OK
+    const Reg TrapezoidRiseTime         ("TrapezoidRiseTime"        , 0x105C, RW::ReadWrite, false,  0xFFF,  4); /// R/W   OK
+    const Reg TrapezoidFlatTop          ("TrapezoidFlatTop"         , 0x1060, RW::ReadWrite, false,  0xFFF,  4); /// R/W   OK
+    const Reg PeakingTime               ("PeakingTime"              , 0x1064, RW::ReadWrite, false,  0xFFF,  4); /// R/W   OK
+    const Reg DecayTime                 ("DecayTime"                , 0x1068, RW::ReadWrite, false, 0xFFFF,  4); /// R/W   OK
+    const Reg TriggerThreshold          ("TriggerThreshold"         , 0x106C, RW::ReadWrite, false, 0x3FFF, -1); /// R/W   OK
+    const Reg RiseTimeValidationWindow  ("RiseTimeValidationWindow" , 0x1070, RW::ReadWrite, false,  0x3FF,  1); /// R/W   OK
+    const Reg TriggerHoldOffWidth       ("TriggerHoldOffWidth"      , 0x1074, RW::ReadWrite, false,  0x3FF,  4); /// R/W   OK
+    const Reg PeakHoldOff               ("PeakHoldOff"              , 0x1078, RW::ReadWrite, false,  0x3FF,  4); /// R/W   OK
+    const Reg ShapedTriggerWidth        ("ShapedTriggerWidth"       , 0x1084, RW::ReadWrite, false,  0x3FF,  4); /// R/W   not sure
+    const Reg DPPAlgorithmControl2_G    ("DPPAlgorithmControl2_G"   , 0x10A0, RW::ReadWrite,  true, {}); /// R/W   OK
+    const Reg FineGain                  ("FineGain"                 , 0x10C4, RW::ReadWrite, false, {}); /// R/W   OK
+
+    namespace Bit_DPPAlgorithmControl2 {
+      const std::pair<unsigned short, unsigned short> LocalShapeTriggerMode = {3, 0} ;
+      const std::pair<unsigned short, unsigned short> LocalTrigValidMode = {3, 4} ;
+      const std::pair<unsigned short, unsigned short> Extra2Option = {3, 8} ;
+      const std::pair<unsigned short, unsigned short> VetoSource = {2, 14} ;
+      const std::pair<unsigned short, unsigned short> TriggerCounterFlag = {2, 16} ;
+      const std::pair<unsigned short, unsigned short> ActivebaselineCalulation = {1, 18} ;
+      const std::pair<unsigned short, unsigned short> TagCorrelatedEvents = {1, 19} ;
+      const std::pair<unsigned short, unsigned short> EnableActiveBaselineRestoration = {1, 29} ;
+
+      const std::vector<std::pair<std::string, unsigned int>> ListLocalShapeTrigMode = {{"Disabled", 0},
+                                                                                        {"AND", 4},
+                                                                                        {"The even Channel", 5},
+                                                                                        {"The odd Channel", 6},
+                                                                                        {"OR", 7}};
+
+      const std::vector<std::pair<std::string, unsigned int>> ListLocalTrigValidMode = {{"Disabled", 0},
+                                                                                        {"Crossed", 4},
+                                                                                        {"Equal", 5},
+                                                                                        {"AND", 6},
+                                                                                        {"OR", 7}};
+
+      const std::vector<std::pair<std::string, unsigned int>> ListExtra2 = {{"Extended timeStamp +  baseline * 4", 0},
+                                                                            {"Extended timeStamp + Fine timestamp", 2},
+                                                                            {"Lost Trig. Count  + Total Trig. Count", 4},
+                                                                            {"Event Before 0-xing + After 0-xing", 5}};
+
+      const std::vector<std::pair<std::string, unsigned int>> ListVetoSource = {{"Disabled", 0},
+                                                                                {"Common (Global Trig. Mask)", 1},
+                                                                                {"Difference (Trig. Mask)", 2},
+                                                                                {"Negative Saturation", 3}};
+
+      const std::vector<std::pair<std::string, unsigned int>> ListTrigCounter = {{"1024", 0},
+                                                                                {"128", 1},
+                                                                                {"8192", 2}};
+
+    }
+
+  }
+
+  namespace PSD  {
+    const Reg CFDSetting                     ("CFDSetting"                     , 0x103C, RW::ReadWrite, false, {}); /// R/W
+    const Reg ForcedDataFlush_W              ("ForcedDataFlush_W"              , 0x1040, RW::WriteONLY, false, {}); ///   W
+    const Reg ChargeZeroSuppressionThreshold ("ChargeZeroSuppressionThreshold" , 0x1044, RW::ReadWrite, false, {}); /// R/W
+    const Reg ShortGateWidth                 ("ShortGateWidth"                 , 0x1054, RW::ReadWrite, false, {}); /// R/W
+    const Reg LongGateWidth                  ("LongGateWidth"                  , 0x1058, RW::ReadWrite, false, {}); /// R/W
+    const Reg GateOffset                     ("GateOffset"                     , 0x105C, RW::ReadWrite, false, {}); /// R/W
+    const Reg TriggerThreshold               ("TriggerThreshold"               , 0x1060, RW::ReadWrite, false, {}); /// R/W
+    const Reg FixedBaseline                  ("FixedBaseline"                  , 0x1064, RW::ReadWrite, false, {}); /// R/W
+    const Reg TriggerLatency                 ("TriggerLatency"                 , 0x106C, RW::ReadWrite, false, {}); /// R/W
+    const Reg ShapedTriggerWidth             ("ShapedTriggerWidth"             , 0x1070, RW::ReadWrite, false, {}); /// R/W
+    const Reg TriggerHoldOffWidth            ("TriggerHoldOffWidth"            , 0x1074, RW::ReadWrite, false, {}); /// R/W
+    const Reg ThresholdForPSDCut             ("ThresholdForPSDCut"             , 0x1078, RW::ReadWrite, false, {}); /// R/W
+    const Reg PurGapThreshold                ("PurGapThreshold"                , 0x107C, RW::ReadWrite, false, {}); /// R/W
+    const Reg DPPAlgorithmControl2_G         ("DPPAlgorithmControl2_G"         , 0x1084, RW::ReadWrite,  true, {}); /// R/W 
+    const Reg EarlyBaselineFreeze            ("EarlyBaselineFreeze"            , 0x10D8, RW::ReadWrite,  true, {}); /// R/W
+  }
+
+  namespace QDC {
+    const Reg GateWidth                     ("GateWidth"                     , 0x1030, RW::ReadWrite, false, 0xFFF, 4); /// R/W
+    const Reg GateOffset                    ("GateOfset"                     , 0x1034, RW::ReadWrite, false,  0xFF, 4); /// R/W
+    const Reg FixedBaseline                 ("FixedBaseline"                 , 0x1038, RW::ReadWrite, false, 0xFFF, 4); /// R/W
+    const Reg Pretrigger                    ("PreTrigger"                    , 0x103C, RW::ReadWrite, false,  0xFF, 4); /// R/W
+    const Reg DPPAlgorithmControl           ("DPPAlgorithmControl"           , 0x1040, RW::ReadWrite, false, {}); /// R/W
+  }
+
+} // end of DPP namepace Register
+
+const std::vector<Reg> RegisterPHAList = {
+  DPP::PHA::DataFlush_W               ,
+  DPP::PHA::ChannelStopAcquisition    ,
+  DPP::PHA::RCCR2SmoothingFactor      ,
+  DPP::PHA::InputRiseTime             ,
+  DPP::PHA::TrapezoidRiseTime         ,
+  DPP::PHA::TrapezoidFlatTop          ,
+  DPP::PHA::PeakingTime               ,
+  DPP::PHA::DecayTime                 ,
+  DPP::PHA::TriggerThreshold          ,
+  DPP::PHA::RiseTimeValidationWindow  ,
+  DPP::PHA::TriggerHoldOffWidth       ,
+  DPP::PHA::PeakHoldOff               ,
+  DPP::PHA::ShapedTriggerWidth        ,
+  DPP::PHA::DPPAlgorithmControl2_G    ,
+  DPP::PHA::FineGain                  ,
+  
+  DPP::RecordLength_G             ,
+  DPP::InputDynamicRange          ,
+  DPP::NumberEventsPerAggregate_G ,
+  DPP::PreTrigger                 ,
+  DPP::TriggerThreshold           ,
+  DPP::TriggerHoldOffWidth        ,
+  DPP::DPPAlgorithmControl        ,
+  DPP::ChannelStatus_R            ,
+  DPP::AMCFirmwareRevision_R      ,
+  DPP::ChannelDCOffset            ,
+  DPP::ChannelADCTemperature_R    ,
+  DPP::IndividualSoftwareTrigger_W,
+  DPP::VetoWidth                  ,
+  
+  DPP::TriggerValidationMask_G   
 };
 
-const std::vector<Register::Reg> RegisterPSDList = {
-  Register::DPP::PSD::CFDSetting                     ,
-  Register::DPP::PSD::ForcedDataFlush_W              ,
-  Register::DPP::PSD::ChargeZeroSuppressionThreshold ,
-  Register::DPP::PSD::ShortGateWidth                 ,
-  Register::DPP::PSD::LongGateWidth                  ,
-  Register::DPP::PSD::GateOffset                     ,
-  Register::DPP::PSD::TriggerThreshold               ,
-  Register::DPP::PSD::FixedBaseline                  ,
-  Register::DPP::PSD::TriggerLatency                 ,
-  Register::DPP::PSD::ShapedTriggerWidth             ,
-  Register::DPP::PSD::TriggerHoldOffWidth            ,
-  Register::DPP::PSD::ThresholdForPSDCut             ,
-  Register::DPP::PSD::PurGapThreshold                ,
-  Register::DPP::PSD::DPPAlgorithmControl2_G         ,
-  Register::DPP::PSD::EarlyBaselineFreeze            ,
+const std::vector<Reg> RegisterPSDList = {
+  DPP::PSD::CFDSetting                     ,
+  DPP::PSD::ForcedDataFlush_W              ,
+  DPP::PSD::ChargeZeroSuppressionThreshold ,
+  DPP::PSD::ShortGateWidth                 ,
+  DPP::PSD::LongGateWidth                  ,
+  DPP::PSD::GateOffset                     ,
+  DPP::PSD::TriggerThreshold               ,
+  DPP::PSD::FixedBaseline                  ,
+  DPP::PSD::TriggerLatency                 ,
+  DPP::PSD::ShapedTriggerWidth             ,
+  DPP::PSD::TriggerHoldOffWidth            ,
+  DPP::PSD::ThresholdForPSDCut             ,
+  DPP::PSD::PurGapThreshold                ,
+  DPP::PSD::DPPAlgorithmControl2_G         ,
+  DPP::PSD::EarlyBaselineFreeze            ,
   
-  Register::DPP::RecordLength_G             ,
-  Register::DPP::InputDynamicRange          ,
-  Register::DPP::NumberEventsPerAggregate_G ,
-  Register::DPP::PreTrigger                 ,
-  Register::DPP::TriggerThreshold           ,
-  Register::DPP::TriggerHoldOffWidth        ,
-  Register::DPP::DPPAlgorithmControl        ,
-  Register::DPP::ChannelStatus_R            ,
-  Register::DPP::AMCFirmwareRevision_R      ,
-  Register::DPP::ChannelDCOffset            ,
-  Register::DPP::ChannelADCTemperature_R    ,
-  Register::DPP::IndividualSoftwareTrigger_W,
-  Register::DPP::VetoWidth                  ,
+  DPP::RecordLength_G             ,
+  DPP::InputDynamicRange          ,
+  DPP::NumberEventsPerAggregate_G ,
+  DPP::PreTrigger                 ,
+  DPP::TriggerThreshold           ,
+  DPP::TriggerHoldOffWidth        ,
+  DPP::DPPAlgorithmControl        ,
+  DPP::ChannelStatus_R            ,
+  DPP::AMCFirmwareRevision_R      ,
+  DPP::ChannelDCOffset            ,
+  DPP::ChannelADCTemperature_R    ,
+  DPP::IndividualSoftwareTrigger_W,
+  DPP::VetoWidth                  ,
   
-  Register::DPP::TriggerValidationMask_G   
+  DPP::TriggerValidationMask_G   
+};
+
+const std::vector<Reg> RegisterQDCList = { //TODO
+
+
 };
 
 /// Only Board Setting 
-const std::vector<Register::Reg> RegisterDPPList = {
+const std::vector<Reg> RegisterDPPList = {
   
-  Register::DPP::BoardConfiguration          ,
-  Register::DPP::AggregateOrganization       ,
-  Register::DPP::ADCCalibration_W            ,
-  Register::DPP::ChannelShutdown_W           ,
-  Register::DPP::AcquisitionControl          ,
-  Register::DPP::AcquisitionStatus_R         ,
-  Register::DPP::SoftwareTrigger_W           ,
-  Register::DPP::GlobalTriggerMask           ,
-  Register::DPP::FrontPanelTRGOUTEnableMask  ,
-  Register::DPP::LVDSIOData                  ,
-  Register::DPP::FrontPanelIOControl         ,
-  Register::DPP::ChannelEnableMask           ,
-  Register::DPP::ROCFPGAFirmwareRevision_R   ,
-  Register::DPP::EventStored_R               ,
-  Register::DPP::VoltageLevelModeConfig      ,
-  Register::DPP::SoftwareClockSync_W         ,
-  Register::DPP::BoardInfo_R                 ,
-  Register::DPP::AnalogMonitorMode           ,
-  Register::DPP::EventSize_R                 ,
-  Register::DPP::TimeBombDowncounter_R       ,
-  Register::DPP::FanSpeedControl             ,
-  Register::DPP::RunStartStopDelay           ,
-  Register::DPP::BoardFailureStatus_R        ,
-  Register::DPP::DisableExternalTrigger      ,
-  Register::DPP::FrontPanelLVDSIONewFeatures ,
-  Register::DPP::BufferOccupancyGain         ,
-  Register::DPP::ExtendedVetoDelay           ,
-  Register::DPP::ReadoutControl              ,
-  Register::DPP::ReadoutStatus_R             ,
-  Register::DPP::BoardID                     ,
-  Register::DPP::MCSTBaseAddressAndControl   ,
-  Register::DPP::RelocationAddress           ,
-  Register::DPP::InterruptStatusID           ,
-  Register::DPP::InterruptEventNumber        ,
-  Register::DPP::MaxAggregatePerBlockTransfer,
-  Register::DPP::Scratch                     ,
-  Register::DPP::SoftwareReset_W             ,
-  Register::DPP::SoftwareClear_W             ,
-  Register::DPP::ConfigurationReload_W       ,
-  Register::DPP::ROMChecksum_R               ,
-  Register::DPP::ROMChecksumByte2_R          ,
-  Register::DPP::ROMChecksumByte1_R          ,
-  Register::DPP::ROMChecksumByte0_R          ,
-  Register::DPP::ROMConstantByte2_R          ,
-  Register::DPP::ROMConstantByte1_R          ,
-  Register::DPP::ROMConstantByte0_R          ,
-  Register::DPP::ROM_C_Code_R                ,
-  Register::DPP::ROM_R_Code_R                ,
-  Register::DPP::ROM_IEEE_OUI_Byte2_R        ,
-  Register::DPP::ROM_IEEE_OUI_Byte1_R        ,
-  Register::DPP::ROM_IEEE_OUI_Byte0_R        ,
-  Register::DPP::ROM_BoardVersion_R          ,
-  Register::DPP::ROM_BoardFromFactor_R       ,
-  Register::DPP::ROM_BoardIDByte1_R          ,
-  Register::DPP::ROM_BoardIDByte0_R          ,
-  Register::DPP::ROM_PCB_rev_Byte3_R         ,
-  Register::DPP::ROM_PCB_rev_Byte2_R         ,
-  Register::DPP::ROM_PCB_rev_Byte1_R         ,
-  Register::DPP::ROM_PCB_rev_Byte0_R         ,
-  Register::DPP::ROM_FlashType_R             ,
-  Register::DPP::ROM_BoardSerialNumByte1_R   ,
-  Register::DPP::ROM_BoardSerialNumByte0_R   ,
-  Register::DPP::ROM_VCXO_Type_R             
+  DPP::BoardConfiguration          ,
+  DPP::AggregateOrganization       ,
+  DPP::ADCCalibration_W            ,
+  DPP::ChannelShutdown_W           ,
+  DPP::AcquisitionControl          ,
+  DPP::AcquisitionStatus_R         ,
+  DPP::SoftwareTrigger_W           ,
+  DPP::GlobalTriggerMask           ,
+  DPP::FrontPanelTRGOUTEnableMask  ,
+  DPP::LVDSIOData                  ,
+  DPP::FrontPanelIOControl         ,
+  DPP::ChannelEnableMask           ,
+  DPP::ROCFPGAFirmwareRevision_R   ,
+  DPP::EventStored_R               ,
+  DPP::VoltageLevelModeConfig      ,
+  DPP::SoftwareClockSync_W         ,
+  DPP::BoardInfo_R                 ,
+  DPP::AnalogMonitorMode           ,
+  DPP::EventSize_R                 ,
+  DPP::TimeBombDowncounter_R       ,
+  DPP::FanSpeedControl             ,
+  DPP::RunStartStopDelay           ,
+  DPP::BoardFailureStatus_R        ,
+  DPP::DisableExternalTrigger      ,
+  DPP::FrontPanelLVDSIONewFeatures ,
+  DPP::BufferOccupancyGain         ,
+  DPP::ExtendedVetoDelay           ,
+  DPP::ReadoutControl              ,
+  DPP::ReadoutStatus_R             ,
+  DPP::BoardID                     ,
+  DPP::MCSTBaseAddressAndControl   ,
+  DPP::RelocationAddress           ,
+  DPP::InterruptStatusID           ,
+  DPP::InterruptEventNumber        ,
+  DPP::MaxAggregatePerBlockTransfer,
+  DPP::Scratch                     ,
+  DPP::SoftwareReset_W             ,
+  DPP::SoftwareClear_W             ,
+  DPP::ConfigurationReload_W       ,
+  DPP::ROMChecksum_R               ,
+  DPP::ROMChecksumByte2_R          ,
+  DPP::ROMChecksumByte1_R          ,
+  DPP::ROMChecksumByte0_R          ,
+  DPP::ROMConstantByte2_R          ,
+  DPP::ROMConstantByte1_R          ,
+  DPP::ROMConstantByte0_R          ,
+  DPP::ROM_C_Code_R                ,
+  DPP::ROM_R_Code_R                ,
+  DPP::ROM_IEEE_OUI_Byte2_R        ,
+  DPP::ROM_IEEE_OUI_Byte1_R        ,
+  DPP::ROM_IEEE_OUI_Byte0_R        ,
+  DPP::ROM_BoardVersion_R          ,
+  DPP::ROM_BoardFromFactor_R       ,
+  DPP::ROM_BoardIDByte1_R          ,
+  DPP::ROM_BoardIDByte0_R          ,
+  DPP::ROM_PCB_rev_Byte3_R         ,
+  DPP::ROM_PCB_rev_Byte2_R         ,
+  DPP::ROM_PCB_rev_Byte1_R         ,
+  DPP::ROM_PCB_rev_Byte0_R         ,
+  DPP::ROM_FlashType_R             ,
+  DPP::ROM_BoardSerialNumByte1_R   ,
+  DPP::ROM_BoardSerialNumByte0_R   ,
+  DPP::ROM_VCXO_Type_R             
   
 };
 

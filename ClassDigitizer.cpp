@@ -48,7 +48,7 @@ void Digitizer::Reset(){
   ret = CAEN_DGTZ_Reset(handle);
   if( ret != 0 ) ErrorMsg(__func__);
   
-  ret |= CAEN_DGTZ_WriteRegister(handle, Register::DPP::SoftwareClear_W, 1);
+  ret |= CAEN_DGTZ_WriteRegister(handle, DPP::SoftwareClear_W, 1);
   if( ret != 0 ) ErrorMsg("Reset-SoftwareClear_W");
 
 }
@@ -129,7 +129,7 @@ int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose
     default : data->DPPTypeStr = "STD"; break; // stardard
   }
   /// change address 0xEF08 (5 bits), this will reflected in the 2nd word of the Board Agg. header.
-  ret = CAEN_DGTZ_WriteRegister(handle, Register::DPP::BoardID, (DPPType & 0xF));
+  ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardID, (DPPType & 0xF));
   if ( verbose ){
     PrintBoard();    
     if (DPPType < 0x80 ) {
@@ -216,8 +216,8 @@ void Digitizer::SetChannelMask(uint32_t mask){
   if( !isConnected ) return;
   channelMask = mask;
   ret |= CAEN_DGTZ_SetChannelEnableMask(handle, channelMask);
-  SaveSettingToFile(Register::DPP::ChannelEnableMask, mask);
-  SetSettingToMemory(Register::DPP::ChannelEnableMask, mask);
+  SaveSettingToFile(DPP::ChannelEnableMask, mask);
+  SetSettingToMemory(DPP::ChannelEnableMask, mask);
   ErrorMsg(__func__);
 }
 
@@ -241,7 +241,7 @@ int Digitizer::ProgramBoard(){
   ///                                 |   | +- (1) trigger overlap not allowed
   ///                                 |   +- (3) test pattern disable  
   ///                                 + (6) Self-trigger polarity, 1 = negative, 0 = Positive
-  ret = CAEN_DGTZ_WriteRegister(handle,  (uint32_t) Register::BoardConfiguration , 0x000E0114);  /// Channel Control Reg (indiv trg, seq readout) ??
+  ret = CAEN_DGTZ_WriteRegister(handle,  (uint32_t) BoardConfiguration , 0x000E0114);  /// Channel Control Reg (indiv trg, seq readout) ??
   
   /// Set the I/O level (CAEN_DGTZ_IOLevel_NIM or CAEN_DGTZ_IOLevel_TTL)
   ret |= CAEN_DGTZ_SetIOLevel(handle, IOlev);
@@ -253,7 +253,7 @@ int Digitizer::ProgramBoard(){
   ret |= CAEN_DGTZ_SetRecordLength(handle, 2000);
   
   /// Set Extras 2 to enable, this override Accusition mode, focring list mode
-  ret |= CAEN_DGTZ_WriteRegister(handle, Register::BoardConfiguration , 0x00E8114 );
+  ret |= CAEN_DGTZ_WriteRegister(handle, BoardConfiguration , 0x00E8114 );
   
   /// Set the digitizer acquisition mode (CAEN_DGTZ_SW_CONTROLLED or CAEN_DGTZ_S_IN_CONTROLLED)
   ret |= CAEN_DGTZ_SetAcquisitionMode(handle, CAEN_DGTZ_SW_CONTROLLED); /// software command
@@ -273,9 +273,9 @@ int Digitizer::ProgramBoard(){
   ret |= CAEN_DGTZ_SetRunSynchronizationMode(handle, CAEN_DGTZ_RUN_SYNC_Disabled);  
 
   /// Set how many events to accumulate in the board memory before being available for readout
-  ret |= CAEN_DGTZ_WriteRegister(handle, Register::DPP::NumberEventsPerAggregate_G + 0x7000, 100);
-  ret |= CAEN_DGTZ_WriteRegister(handle, Register::DPP::AggregateOrganization, 0);
-  ret |= CAEN_DGTZ_WriteRegister(handle, Register::DPP::MaxAggregatePerBlockTransfer, 50);
+  ret |= CAEN_DGTZ_WriteRegister(handle, DPP::NumberEventsPerAggregate_G + 0x7000, 100);
+  ret |= CAEN_DGTZ_WriteRegister(handle, DPP::AggregateOrganization, 0);
+  ret |= CAEN_DGTZ_WriteRegister(handle, DPP::MaxAggregatePerBlockTransfer, 50);
 
   ErrorMsg(__func__);
   return ret;
@@ -287,9 +287,9 @@ int Digitizer::ProgramPHABoard(){
   ret = CAEN_DGTZ_Reset(handle);
   printf("======== program board PHA\n");
 
-  ret = CAEN_DGTZ_WriteRegister(handle, Register::DPP::RecordLength_G + 0x7000, 62);  
-  ret = CAEN_DGTZ_WriteRegister(handle, Register::DPP::BoardConfiguration, 0x0F8915);  /// has Extra2, dual trace, input and trap-baseline
-  ///ret = CAEN_DGTZ_WriteRegister(handle, Register::DPP::BoardConfiguration, 0x0D8115);  /// diable Extra2
+  ret = CAEN_DGTZ_WriteRegister(handle, DPP::RecordLength_G + 0x7000, 62);  
+  ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardConfiguration, 0x0F8915);  /// has Extra2, dual trace, input and trap-baseline
+  ///ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardConfiguration, 0x0D8115);  /// diable Extra2
   
   //TODO change to write register
   ret = CAEN_DGTZ_SetAcquisitionMode(handle, CAEN_DGTZ_SW_CONTROLLED); /// software command
@@ -307,26 +307,26 @@ int Digitizer::ProgramPHABoard(){
   
   uint32_t address;
   
-  address = Register::DPP::PHA::DecayTime;               ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 5000 ); 
-  address = Register::DPP::PHA::TrapezoidFlatTop;        ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 0x1A ); 
-  address = Register::DPP::PHA::TrapezoidRiseTime;       ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 6 ); 
-  address = Register::DPP::PHA::PeakingTime;             ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 6 ); 
-  address = Register::DPP::PHA::RCCR2SmoothingFactor;    ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 4 ); 
-  address = Register::DPP::PHA::InputRiseTime;           ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 6 ); 
-  address = Register::DPP::PHA::TriggerThreshold;        ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 1000 );
-  address = Register::DPP::PHA::PeakHoldOff;             ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 0x3E );
-  address = Register::DPP::PHA::TriggerHoldOffWidth;     ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 0x3E );
-  address = Register::DPP::PHA::RiseTimeValidationWindow;ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 0x0 );
+  address = DPP::PHA::DecayTime;               ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 5000 ); 
+  address = DPP::PHA::TrapezoidFlatTop;        ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 0x1A ); 
+  address = DPP::PHA::TrapezoidRiseTime;       ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 6 ); 
+  address = DPP::PHA::PeakingTime;             ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 6 ); 
+  address = DPP::PHA::RCCR2SmoothingFactor;    ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 4 ); 
+  address = DPP::PHA::InputRiseTime;           ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 6 ); 
+  address = DPP::PHA::TriggerThreshold;        ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 1000 );
+  address = DPP::PHA::PeakHoldOff;             ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 0x3E );
+  address = DPP::PHA::TriggerHoldOffWidth;     ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 0x3E );
+  address = DPP::PHA::RiseTimeValidationWindow;ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 0x0 );
   
     
-  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(Register::DPP::ChannelDCOffset) + 0x7000 , 0xEEEE );
-  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(Register::DPP::PreTrigger) + 0x7000 , 32 );
-  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(Register::DPP::InputDynamicRange) + 0x7000 , 0x0 );
+  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::ChannelDCOffset) + 0x7000 , 0xEEEE );
+  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PreTrigger) + 0x7000 , 32 );
+  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::InputDynamicRange) + 0x7000 , 0x0 );
   
-  ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(Register::DPP::NumberEventsPerAggregate_G) + 0x7000, 511);
-  ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(Register::DPP::AggregateOrganization), 2);
-  ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(Register::DPP::MaxAggregatePerBlockTransfer), 4);
-  ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(Register::DPP::DPPAlgorithmControl) + 0x7000, 0xC30200f);
+  ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::NumberEventsPerAggregate_G) + 0x7000, 511);
+  ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::AggregateOrganization), 2);
+  ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::MaxAggregatePerBlockTransfer), 4);
+  ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::DPPAlgorithmControl) + 0x7000, 0xC30200f);
   
   if( ret != 0 ) { printf("==== set channels error.\n"); return 0;}
   
@@ -381,23 +381,23 @@ unsigned int Digitizer::CalByteForBuffer(){
   unsigned int aggOrgan;
   
   if( isConnected ){
-    numAggBLT = ReadRegister(Register::DPP::MaxAggregatePerBlockTransfer, 0, false);
-    chMask    = ReadRegister(Register::DPP::ChannelEnableMask, 0, false);
-    boardCfg  = ReadRegister(Register::DPP::BoardConfiguration, 0, false);
-    aggOrgan  = ReadRegister(Register::DPP::AggregateOrganization, 0, false);
+    numAggBLT = ReadRegister(DPP::MaxAggregatePerBlockTransfer, 0, false);
+    chMask    = ReadRegister(DPP::ChannelEnableMask, 0, false);
+    boardCfg  = ReadRegister(DPP::BoardConfiguration, 0, false);
+    aggOrgan  = ReadRegister(DPP::AggregateOrganization, 0, false);
 
     for( int pCh = 0; pCh < NChannel/2; pCh++){
-      eventAgg[pCh]     = ReadRegister(Register::DPP::NumberEventsPerAggregate_G, pCh * 2 , false);
-      recordLength[pCh] = ReadRegister(Register::DPP::RecordLength_G, pCh * 2 , false);
+      eventAgg[pCh]     = ReadRegister(DPP::NumberEventsPerAggregate_G, pCh * 2 , false);
+      recordLength[pCh] = ReadRegister(DPP::RecordLength_G, pCh * 2 , false);
     }
   }else{
-    numAggBLT = GetSettingFromMemory(Register::DPP::MaxAggregatePerBlockTransfer);
-    chMask    = GetSettingFromMemory(Register::DPP::ChannelEnableMask);
-    boardCfg  = GetSettingFromMemory(Register::DPP::BoardConfiguration);
-    aggOrgan  = GetSettingFromMemory(Register::DPP::AggregateOrganization);
+    numAggBLT = GetSettingFromMemory(DPP::MaxAggregatePerBlockTransfer);
+    chMask    = GetSettingFromMemory(DPP::ChannelEnableMask);
+    boardCfg  = GetSettingFromMemory(DPP::BoardConfiguration);
+    aggOrgan  = GetSettingFromMemory(DPP::AggregateOrganization);
     for( int pCh = 0; pCh < NChannel/2; pCh++){
-      eventAgg[pCh]     = GetSettingFromMemory(Register::DPP::NumberEventsPerAggregate_G, pCh * 2 );
-      recordLength[pCh] = GetSettingFromMemory(Register::DPP::RecordLength_G, pCh * 2);
+      eventAgg[pCh]     = GetSettingFromMemory(DPP::NumberEventsPerAggregate_G, pCh * 2 );
+      recordLength[pCh] = GetSettingFromMemory(DPP::RecordLength_G, pCh * 2);
     }
   }
   
@@ -432,7 +432,7 @@ int Digitizer::ReadData(){
   }
   
   ret = CAEN_DGTZ_ReadData(handle, CAEN_DGTZ_SLAVE_TERMINATED_READOUT_MBLT, data->buffer, &(data->nByte));
-  //uint32_t EventSize = ReadRegister(Register::DPP::EventSize); // Is it as same as data->nByte?
+  //uint32_t EventSize = ReadRegister(DPP::EventSize); // Is it as same as data->nByte?
   //printf("Read Buffer size %d byte, Event Size : %d byte \n", data->nByte, EventSize);
   
   if (ret || data->nByte == 0) {
@@ -444,7 +444,7 @@ int Digitizer::ReadData(){
 
 void Digitizer::PrintACQStatue(){
   if( !isConnected ) return;
-  unsigned int status = ReadRegister(Register::DPP::AcquisitionStatus_R);
+  unsigned int status = ReadRegister(DPP::AcquisitionStatus_R);
   
   printf("=================== Print ACQ status \n");
   printf("  32  28  24  20  16  12   8   4   0\n");
@@ -463,7 +463,7 @@ void Digitizer::PrintACQStatue(){
 //===========================================================
 //===========================================================
 //===========================================================
-void Digitizer::WriteRegister (Register::Reg registerAddress, uint32_t value, int ch, bool isSave2MemAndFile){
+void Digitizer::WriteRegister (Reg registerAddress, uint32_t value, int ch, bool isSave2MemAndFile){
   
   printf("%30s[0x%04X](ch-%02d) [0x%04X]: 0x%08X \n", registerAddress.GetNameChar(), registerAddress.GetAddress(),ch, registerAddress.ActualAddress(ch), value);
 
@@ -473,10 +473,10 @@ void Digitizer::WriteRegister (Register::Reg registerAddress, uint32_t value, in
     return;
   }
   
-  if( registerAddress.GetType() == Register::RW::ReadONLY ) return;
+  if( registerAddress.GetType() == RW::ReadONLY ) return;
   
   ret = CAEN_DGTZ_WriteRegister(handle, registerAddress.ActualAddress(ch), value);
-  if( ret == 0 && isSave2MemAndFile && registerAddress.GetType() == Register::RW::ReadWrite) {
+  if( ret == 0 && isSave2MemAndFile && registerAddress.GetType() == RW::ReadWrite) {
     SetSettingToMemory(registerAddress, value, ch);
     SaveSettingToFile(registerAddress, value, ch);
   }
@@ -484,9 +484,9 @@ void Digitizer::WriteRegister (Register::Reg registerAddress, uint32_t value, in
   ErrorMsg("WriteRegister:" + std::to_string(registerAddress));
 }
 
-uint32_t Digitizer::ReadRegister(Register::Reg registerAddress, unsigned short ch, bool isSave2MemAndFile, std::string str ){
+uint32_t Digitizer::ReadRegister(Reg registerAddress, unsigned short ch, bool isSave2MemAndFile, std::string str ){
   if( !isConnected )  return 0;
-  if( registerAddress.GetType() == Register::RW::WriteONLY ) return 0;
+  if( registerAddress.GetType() == RW::WriteONLY ) return 0;
 
   ret = CAEN_DGTZ_ReadRegister(handle, registerAddress.ActualAddress(ch), &returnData);
   
@@ -518,9 +518,9 @@ uint32_t Digitizer::PrintRegister(uint32_t address, std::string msg){
 }
 
 //========================================== setting file IO
-Register::Reg Digitizer::FindRegister(uint32_t address){
+Reg Digitizer::FindRegister(uint32_t address){
   
-  Register::Reg tempReg;  
+  Reg tempReg;  
   ///========= Find Match Register
   for( int p = 0; p < (int) RegisterDPPList[p]; p++){
     if( address == RegisterDPPList[p].GetAddress() ) {
@@ -559,23 +559,23 @@ void Digitizer::ReadAllSettingsFromBoard(bool force){
 
   /// board setting
   for( int p = 0; p < (int) RegisterDPPList.size(); p++){
-    if( RegisterDPPList[p].GetType() == Register::RW::WriteONLY) continue;
+    if( RegisterDPPList[p].GetType() == RW::WriteONLY) continue;
     ReadRegister(RegisterDPPList[p]); 
   }
   
-  channelMask = GetSettingFromMemory(Register::DPP::ChannelEnableMask);
+  channelMask = GetSettingFromMemory(DPP::ChannelEnableMask);
   
   /// Channels Setting
   for( int ch = 0; ch < NChannel; ch ++){
     if( DPPType == V1730_DPP_PHA_CODE ){
       for( int p = 0; p < (int) RegisterPHAList.size(); p++){
-        if( RegisterPHAList[p].GetType() == Register::RW::WriteONLY) continue;
+        if( RegisterPHAList[p].GetType() == RW::WriteONLY) continue;
         ReadRegister(RegisterPHAList[p], ch); 
       }
     }
     if( DPPType == V1730_DPP_PSD_CODE ){
       for( int p = 0; p < (int) RegisterPSDList.size(); p++){
-        if( RegisterPSDList[p].GetType() == Register::RW::WriteONLY) continue;
+        if( RegisterPSDList[p].GetType() == RW::WriteONLY) continue;
         ReadRegister(RegisterPSDList[p], ch); 
       }
     }
@@ -587,11 +587,11 @@ void Digitizer::ProgramSettingsToBoard(){
   if( !isConnected ) return;
   if( isDummy ) return;
   
-  Register::Reg haha;
+  Reg haha;
   
   /// board setting
   for( int p = 0; p < (int) RegisterDPPList[p]; p++){
-    if( RegisterDPPList[p].GetType() == Register::RW::ReadONLY) continue;
+    if( RegisterDPPList[p].GetType() == RW::ReadONLY) continue;
     haha = RegisterDPPList[p];
     WriteRegister(haha, GetSettingFromMemory(haha), -1, false); 
     usleep(100 * 1000);
@@ -600,7 +600,7 @@ void Digitizer::ProgramSettingsToBoard(){
   for( int ch = 0; ch < NChannel; ch ++){
     if( DPPType == V1730_DPP_PHA_CODE ){
       for( int p = 0; p < (int) RegisterPHAList[p]; p++){
-        if( RegisterPHAList[p].GetType() == Register::RW::ReadONLY) continue;
+        if( RegisterPHAList[p].GetType() == RW::ReadONLY) continue;
         haha = RegisterPHAList[p];
         WriteRegister(haha, GetSettingFromMemory(haha, ch), ch, false); 
         usleep(100 * 1000);
@@ -608,7 +608,7 @@ void Digitizer::ProgramSettingsToBoard(){
     }
     if( DPPType == V1730_DPP_PSD_CODE ){
       for( int p = 0; p < (int) RegisterPSDList[p]; p++){
-        if( RegisterPSDList[p].GetType() == Register::RW::ReadONLY) continue;
+        if( RegisterPSDList[p].GetType() == RW::ReadONLY) continue;
         haha = RegisterPHAList[p];
         WriteRegister(haha, GetSettingFromMemory(haha, ch), ch, false); 
         usleep(100 * 1000);
@@ -617,13 +617,13 @@ void Digitizer::ProgramSettingsToBoard(){
   } 
 }
 
-void Digitizer::SetSettingToMemory(Register::Reg registerAddress,  unsigned int value, unsigned short ch ){
+void Digitizer::SetSettingToMemory(Reg registerAddress,  unsigned int value, unsigned short ch ){
   unsigned short index = registerAddress.Index(ch);
   if( index > SETTINGSIZE ) return;
   setting[index] = value;
 }
 
-unsigned int Digitizer::GetSettingFromMemory(Register::Reg registerAddress, unsigned short ch ){
+unsigned int Digitizer::GetSettingFromMemory(Reg registerAddress, unsigned short ch ){
   unsigned short index = registerAddress.Index(ch);
   if( index > SETTINGSIZE ) return 0xFFFF;
   return setting[index] ;
@@ -668,7 +668,7 @@ int Digitizer::LoadSettingBinaryToMemory(std::string fileName){
     settingFileName = fileName;
     fclose (settingFile);
     
-    uint32_t fileDPP = ((ReadSettingFromFile(Register::DPP::AMCFirmwareRevision_R, 0) >> 8) & 0xFF);
+    uint32_t fileDPP = ((ReadSettingFromFile(DPP::AMCFirmwareRevision_R, 0) >> 8) & 0xFF);
     
     /// compare seeting DPP version;
     if( isConnected && DPPType != (int) fileDPP ){
@@ -685,7 +685,7 @@ int Digitizer::LoadSettingBinaryToMemory(std::string fileName){
 
       if( dummy == 0 ) printf("reach the end of file\n");
       
-      uint32_t boardInfo = GetSettingFromMemory(Register::DPP::BoardInfo_R);
+      uint32_t boardInfo = GetSettingFromMemory(DPP::BoardInfo_R);
       if( (boardInfo & 0xFF) == 0x0E ) ch2ns = 4.0;
       if( (boardInfo & 0xFF) == 0x0B ) ch2ns = 2.0;
 
@@ -697,7 +697,7 @@ int Digitizer::LoadSettingBinaryToMemory(std::string fileName){
   }
 }
     
-unsigned int Digitizer::ReadSettingFromFile(Register::Reg registerAddress, unsigned short ch){
+unsigned int Digitizer::ReadSettingFromFile(Reg registerAddress, unsigned short ch){
   if ( !settingFileExist ) return -1;
   
   unsigned short index = registerAddress.Index(ch);
@@ -717,7 +717,7 @@ unsigned int Digitizer::ReadSettingFromFile(Register::Reg registerAddress, unsig
    
 }
 
-void Digitizer::SaveSettingToFile(Register::Reg registerAddress, unsigned int value, unsigned short ch){
+void Digitizer::SaveSettingToFile(Reg registerAddress, unsigned int value, unsigned short ch){
   if ( !settingFileExist ) return ;
   
   unsigned short index = registerAddress.Index(ch);
@@ -757,7 +757,7 @@ void Digitizer::SaveAllSettingsAsText(std::string fileName){
     return;
   }
 
-  Register::Reg haha;
+  Reg haha;
   
   for( unsigned int i = 0; i < SETTINGSIZE ; i++){
     haha.SetName("");
@@ -779,9 +779,9 @@ void Digitizer::SaveAllSettingsAsText(std::string fileName){
     }
     if( haha.GetName() != "" )  {
       std::string typeStr ;
-      if( haha.GetType() == Register::RW::ReadWrite ) typeStr = "R/W";
-      if( haha.GetType() == Register::RW::ReadONLY  ) typeStr = "R  ";
-      if( haha.GetType() == Register::RW::WriteONLY ) typeStr = "  W";
+      if( haha.GetType() == RW::ReadWrite ) typeStr = "R/W";
+      if( haha.GetType() == RW::ReadONLY  ) typeStr = "R  ";
+      if( haha.GetType() == RW::WriteONLY ) typeStr = "  W";
       fprintf( txtFile, "0x%04X %30s   0x%08X  %s  %u\n", actualAddress, 
                                                           haha.GetNameChar(), 
                                                           setting[i], 
@@ -853,11 +853,11 @@ void Digitizer::ErrorMsg(std::string header){
 
 //============================== DPP-Alpgorthm Control 
 void Digitizer::SetDPPAlgorithmControl(uint32_t bit, int ch){
-  WriteRegister( Register::DPP::DPPAlgorithmControl, bit, ch);    
+  WriteRegister( DPP::DPPAlgorithmControl, bit, ch);    
   if( ret != 0 ) ErrorMsg(__func__);
 }
 
-unsigned int Digitizer::ReadBits(Register::Reg address, unsigned int bitLength, unsigned int bitSmallestPos, int ch ){
+unsigned int Digitizer::ReadBits(Reg address, unsigned int bitLength, unsigned int bitSmallestPos, int ch ){
   int tempCh = ch;
   if (ch < 0 && address < 0x8000 ) tempCh = 0; /// take ch-0 
   uint32_t bit = ReadRegister(address, tempCh);
@@ -865,7 +865,7 @@ unsigned int Digitizer::ReadBits(Register::Reg address, unsigned int bitLength, 
   return bit;
 }
 
-void Digitizer::SetBits(Register::Reg address, unsigned int bitValue, unsigned int bitLength, unsigned int bitSmallestPos, int ch){
+void Digitizer::SetBits(Reg address, unsigned int bitValue, unsigned int bitLength, unsigned int bitSmallestPos, int ch){
   ///printf("address : 0x%X, value : 0x%X, len : %d, pos : %d, ch : %d \n", address, bitValue, bitLength, bitSmallestPos, ch);
   uint32_t bit ;
   uint32_t bitmask = (uint(pow(2, bitLength)-1) << bitSmallestPos);  

@@ -309,7 +309,7 @@ void Scope::SetUpComboBoxSimple(RComboBox * &cb, QString str, int row, int col){
   
 }
 
-void Scope::SetUpComboBox(RComboBox * &cb, QString str, int row, int col, const Register::Reg para){
+void Scope::SetUpComboBox(RComboBox * &cb, QString str, int row, int col, const Reg para){
   
   SetUpComboBoxSimple(cb, str, row, col);
 
@@ -342,7 +342,7 @@ void Scope::SetUpComboBox(RComboBox * &cb, QString str, int row, int col, const 
 
 }
 
-void Scope::SetUpSpinBox(RSpinBox * &sb, QString str, int row, int col, const Register::Reg para){
+void Scope::SetUpSpinBox(RSpinBox * &sb, QString str, int row, int col, const Reg para){
   QLabel * lb = new QLabel(str, settingGroup);
   lb->setAlignment(Qt::AlignRight | Qt::AlignCenter);
   settingLayout->addWidget(lb, row, col);
@@ -377,16 +377,16 @@ void Scope::SetUpSpinBox(RSpinBox * &sb, QString str, int row, int col, const Re
 
     uint32_t value = sb->value() / ch2ns / abs(para.GetPartialStep());
 
-    if( para == Register::DPP::RecordLength_G || para == Register::DPP::PreTrigger){
+    if( para == DPP::RecordLength_G || para == DPP::PreTrigger){
       int factor = digi[ID]->IsDualTrace() ? 2 : 1;
       value = value * factor;
     }
 
-    if( para == Register::DPP::ChannelDCOffset ){
+    if( para == DPP::ChannelDCOffset ){
       value = uint16_t((1.0 - sb->value()/100.) * 0xFFFF);
     }
 
-    if( para == Register::DPP::PHA::TriggerThreshold ){
+    if( para == DPP::PHA::TriggerThreshold ){
       value = sb->value();
     }
 
@@ -425,23 +425,23 @@ void Scope::SetUpPHAPanel(){
   enableSignalSlot = false;
 
   int rowID = 0;
-  SetUpSpinBox(sbReordLength,     "Record Length [ns] ", rowID, 0, Register::DPP::RecordLength_G);
-  SetUpSpinBox(sbPreTrigger,        "Pre Trigger [ns] ", rowID, 2, Register::DPP::PreTrigger);
-  SetUpSpinBox(sbDCOffset,             "DC offset [%] ", rowID, 4, Register::DPP::ChannelDCOffset);
+  SetUpSpinBox(sbReordLength,     "Record Length [ns] ", rowID, 0, DPP::RecordLength_G);
+  SetUpSpinBox(sbPreTrigger,        "Pre Trigger [ns] ", rowID, 2, DPP::PreTrigger);
+  SetUpSpinBox(sbDCOffset,             "DC offset [%] ", rowID, 4, DPP::ChannelDCOffset);
   sbDCOffset->setDecimals(2);    
-  SetUpComboBox(cbDynamicRange,        "Dynamic Range ", rowID, 6, Register::DPP::InputDynamicRange);
+  SetUpComboBox(cbDynamicRange,        "Dynamic Range ", rowID, 6, DPP::InputDynamicRange);
 
   rowID ++; //=============================================================
-  SetUpSpinBox(sbInputRiseTime, "Input Rise Time [ns] ", rowID, 0, Register::DPP::PHA::InputRiseTime);
-  SetUpSpinBox(sbThreshold,          "Threshold [LSB] ", rowID, 2, Register::DPP::PHA::TriggerThreshold);
-  SetUpSpinBox(sbTriggerHoldOff,"Trigger HoldOff [ns] ", rowID, 4, Register::DPP::PHA::TriggerHoldOffWidth);
-  SetUpComboBox(cbSmoothingFactor,     "Smooth Factor ", rowID, 6, Register::DPP::PHA::RCCR2SmoothingFactor);
+  SetUpSpinBox(sbInputRiseTime, "Input Rise Time [ns] ", rowID, 0, DPP::PHA::InputRiseTime);
+  SetUpSpinBox(sbThreshold,          "Threshold [LSB] ", rowID, 2, DPP::PHA::TriggerThreshold);
+  SetUpSpinBox(sbTriggerHoldOff,"Trigger HoldOff [ns] ", rowID, 4, DPP::PHA::TriggerHoldOffWidth);
+  SetUpComboBox(cbSmoothingFactor,     "Smooth Factor ", rowID, 6, DPP::PHA::RCCR2SmoothingFactor);
   
   rowID ++; //=============================================================
-  SetUpSpinBox(sbTrapRiseTime,  "Trap. Rise Time [ns] ", rowID, 0, Register::DPP::PHA::TrapezoidRiseTime);
-  SetUpSpinBox(sbTrapFlatTop,     "Trap. FlatTop [ns] ", rowID, 2, Register::DPP::PHA::TrapezoidFlatTop);
-  SetUpSpinBox(sbDecayTime,          "Decay Time [ns] ", rowID, 4, Register::DPP::PHA::DecayTime);
-  SetUpSpinBox(sbPeakingTime,      "Peaking Time [ns] ", rowID, 6, Register::DPP::PHA::PeakingTime);
+  SetUpSpinBox(sbTrapRiseTime,  "Trap. Rise Time [ns] ", rowID, 0, DPP::PHA::TrapezoidRiseTime);
+  SetUpSpinBox(sbTrapFlatTop,     "Trap. FlatTop [ns] ", rowID, 2, DPP::PHA::TrapezoidFlatTop);
+  SetUpSpinBox(sbDecayTime,          "Decay Time [ns] ", rowID, 4, DPP::PHA::DecayTime);
+  SetUpSpinBox(sbPeakingTime,      "Peaking Time [ns] ", rowID, 6, DPP::PHA::PeakingTime);
 
   rowID ++; //=============================================================
   SetUpComboBoxSimple(cbPolarity, "Polarity ", rowID, 0);
@@ -449,7 +449,7 @@ void Scope::SetUpPHAPanel(){
   cbPolarity->addItem("Negative", 1);
   connect(cbPolarity, &RComboBox::currentIndexChanged, this, [=](){
     if( !enableSignalSlot ) return;
-    digi[ID]->SetBits(Register::DPP::DPPAlgorithmControl, Register::DPP::Bit_DPPAlgorithmControl::Polarity, cbPolarity->currentData().toInt(), cbScopeCh->currentIndex());
+    digi[ID]->SetBits(DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl::Polarity, cbPolarity->currentData().toInt(), cbScopeCh->currentIndex());
   });
 
   SetUpComboBoxSimple(cbBaselineAvg, "Baseline Avg. ", rowID, 2);
@@ -462,7 +462,7 @@ void Scope::SetUpPHAPanel(){
   cbBaselineAvg->addItem("16384 sample", 6);
   connect(cbBaselineAvg, &RComboBox::currentIndexChanged, this, [=](){
     if( !enableSignalSlot ) return;
-    digi[ID]->SetBits(Register::DPP::DPPAlgorithmControl, Register::DPP::Bit_DPPAlgorithmControl::BaselineAvg, cbBaselineAvg->currentData().toInt(), cbScopeCh->currentIndex());
+    digi[ID]->SetBits(DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl::BaselineAvg, cbBaselineAvg->currentData().toInt(), cbScopeCh->currentIndex());
   });
 
   SetUpComboBoxSimple(cbPeakAvg, "Peak Avg. ", rowID, 4);
@@ -472,10 +472,10 @@ void Scope::SetUpPHAPanel(){
   cbPeakAvg->addItem("64 sample", 3);
   connect(cbPeakAvg, &RComboBox::currentIndexChanged, this, [=](){
     if( !enableSignalSlot ) return;
-    digi[ID]->SetBits(Register::DPP::DPPAlgorithmControl, Register::DPP::Bit_DPPAlgorithmControl::PeakMean, cbPeakAvg->currentData().toInt(), cbScopeCh->currentIndex());
+    digi[ID]->SetBits(DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl::PeakMean, cbPeakAvg->currentData().toInt(), cbScopeCh->currentIndex());
   });
 
-  SetUpSpinBox(sbPeakHoldOff,      "Peak HoldOff [ns] ", rowID, 6, Register::DPP::PHA::PeakHoldOff);
+  SetUpSpinBox(sbPeakHoldOff,      "Peak HoldOff [ns] ", rowID, 6, DPP::PHA::PeakHoldOff);
 
 
   rowID ++; //=============================================================
@@ -486,7 +486,7 @@ void Scope::SetUpPHAPanel(){
   cbAnaProbe1->addItem("Trap.", 3);
   connect(cbAnaProbe1, &RComboBox::currentIndexChanged, this, [=](){
     if( !enableSignalSlot ) return;
-    digi[ID]->SetBits(Register::DPP::BoardConfiguration, Register::DPP::Bit_BoardConfig::AnalogProbe1, cbAnaProbe1->currentData().toInt(), cbScopeCh->currentIndex());
+    digi[ID]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::AnalogProbe1, cbAnaProbe1->currentData().toInt(), cbScopeCh->currentIndex());
     dataTrace[0]->setName(cbAnaProbe1->currentText());
   });
 
@@ -497,7 +497,7 @@ void Scope::SetUpPHAPanel(){
   cbAnaProbe2->addItem("Baseline", 3);
   connect(cbAnaProbe2, &RComboBox::currentIndexChanged, this, [=](){
     if( !enableSignalSlot ) return;
-    digi[ID]->SetBits(Register::DPP::BoardConfiguration, Register::DPP::Bit_BoardConfig::AnalogProbe2, cbAnaProbe2->currentData().toInt(), cbScopeCh->currentIndex());
+    digi[ID]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::AnalogProbe2, cbAnaProbe2->currentData().toInt(), cbScopeCh->currentIndex());
     dataTrace[1]->setName(cbAnaProbe2->currentText());
   });
 
@@ -517,7 +517,7 @@ void Scope::SetUpPHAPanel(){
   cbDigiProbe1->addItem("Budy", 12);
   connect(cbDigiProbe1, &RComboBox::currentIndexChanged, this, [=](){
     if( !enableSignalSlot ) return;
-    digi[ID]->SetBits(Register::DPP::BoardConfiguration, Register::DPP::Bit_BoardConfig::DigiProbel1, cbDigiProbe1->currentData().toInt(), cbScopeCh->currentIndex());
+    digi[ID]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::DigiProbel1, cbDigiProbe1->currentData().toInt(), cbScopeCh->currentIndex());
     dataTrace[2]->setName(cbDigiProbe2->currentText());
   });
 
@@ -533,11 +533,11 @@ void Scope::SetUpPHAPanel(){
 void Scope::SetUpPSDPanel(){
 
   int rowID = 0;
-  SetUpSpinBox(sbReordLength,     "Record Length [ns] ", rowID, 0, Register::DPP::RecordLength_G);
-  SetUpSpinBox(sbPreTrigger,        "Pre Trigger [ns] ", rowID, 2, Register::DPP::PreTrigger);
-  SetUpSpinBox(sbDCOffset,             "DC offset [%] ", rowID, 4, Register::DPP::ChannelDCOffset);
+  SetUpSpinBox(sbReordLength,     "Record Length [ns] ", rowID, 0, DPP::RecordLength_G);
+  SetUpSpinBox(sbPreTrigger,        "Pre Trigger [ns] ", rowID, 2, DPP::PreTrigger);
+  SetUpSpinBox(sbDCOffset,             "DC offset [%] ", rowID, 4, DPP::ChannelDCOffset);
   sbDCOffset->setDecimals(2);    
-  SetUpComboBox(cbDynamicRange,        "Dynamic Range ", rowID, 6, Register::DPP::InputDynamicRange);
+  SetUpComboBox(cbDynamicRange,        "Dynamic Range ", rowID, 6, DPP::InputDynamicRange);
 
   rowID ++; //=============================================================
   SetUpComboBoxSimple(cbPolarity, "Polarity ", rowID, 0);
@@ -545,7 +545,7 @@ void Scope::SetUpPSDPanel(){
   cbPolarity->addItem("Negative", 1);
   connect(cbPolarity, &RComboBox::currentIndexChanged, this, [=](){
     if( !enableSignalSlot ) return;
-    digi[ID]->SetBits(Register::DPP::DPPAlgorithmControl, Register::DPP::Bit_DPPAlgorithmControl::Polarity, cbPolarity->currentData().toInt(), cbScopeCh->currentIndex());
+    digi[ID]->SetBits(DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl::Polarity, cbPolarity->currentData().toInt(), cbScopeCh->currentIndex());
   });
 }
 
@@ -568,7 +568,7 @@ void Scope::EnableControl(bool enable){
 //*=======================================================
 //*=======================================================
 
-void Scope::UpdateComobox(RComboBox * &cb, const Register::Reg para){
+void Scope::UpdateComobox(RComboBox * &cb, const Reg para){
   int ch = cbScopeCh->currentIndex();
 
   enableSignalSlot = false;
@@ -585,7 +585,7 @@ void Scope::UpdateComobox(RComboBox * &cb, const Register::Reg para){
   //enableSignalSlot = true;
 }
 
-void Scope::UpdateSpinBox(RSpinBox * &sb, const Register::Reg para){
+void Scope::UpdateSpinBox(RSpinBox * &sb, const Reg para){
   int ch = cbScopeCh->currentIndex();
 
   enableSignalSlot = false;
@@ -603,37 +603,37 @@ void Scope::UpdatePanelFromMomeory(){
 
   int factor = digi[ID]->IsDualTrace() ? 2 : 1; // if dual trace, 
 
-  unsigned int haha = digi[ID]->GetSettingFromMemory(Register::DPP::RecordLength_G, ch);
-  sbReordLength->setValue(haha * Register::DPP::RecordLength_G.GetPartialStep() * ch2ns / factor);
+  unsigned int haha = digi[ID]->GetSettingFromMemory(DPP::RecordLength_G, ch);
+  sbReordLength->setValue(haha * DPP::RecordLength_G.GetPartialStep() * ch2ns / factor);
 
-  haha = digi[ID]->GetSettingFromMemory(Register::DPP::PreTrigger, ch);
-  sbPreTrigger->setValue(haha * Register::DPP::PreTrigger.GetPartialStep() * ch2ns / factor);
+  haha = digi[ID]->GetSettingFromMemory(DPP::PreTrigger, ch);
+  sbPreTrigger->setValue(haha * DPP::PreTrigger.GetPartialStep() * ch2ns / factor);
 
-  haha = digi[ID]->GetSettingFromMemory(Register::DPP::ChannelDCOffset, ch);
+  haha = digi[ID]->GetSettingFromMemory(DPP::ChannelDCOffset, ch);
   sbDCOffset->setValue((1.0 - haha * 1.0 / 0xFFFF) * 100 );
 
-  UpdateComobox(cbDynamicRange, Register::DPP::InputDynamicRange);
+  UpdateComobox(cbDynamicRange, DPP::InputDynamicRange);
 
-  uint32_t DPPAlg = digi[ID]->GetSettingFromMemory(Register::DPP::DPPAlgorithmControl, ch);
-  if( Digitizer::ExtractBits(DPPAlg, Register::DPP::Bit_DPPAlgorithmControl::Polarity) ){
+  uint32_t DPPAlg = digi[ID]->GetSettingFromMemory(DPP::DPPAlgorithmControl, ch);
+  if( Digitizer::ExtractBits(DPPAlg, DPP::Bit_DPPAlgorithmControl::Polarity) ){
     cbPolarity->setCurrentIndex(1);
   }else{
     cbPolarity->setCurrentIndex(0);
   }
 
   if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ){
-    UpdateSpinBox(sbInputRiseTime,  Register::DPP::PHA::InputRiseTime);
-    UpdateSpinBox(sbThreshold,      Register::DPP::PHA::TriggerThreshold);
-    UpdateSpinBox(sbTriggerHoldOff, Register::DPP::PHA::TriggerHoldOffWidth);
+    UpdateSpinBox(sbInputRiseTime,  DPP::PHA::InputRiseTime);
+    UpdateSpinBox(sbThreshold,      DPP::PHA::TriggerThreshold);
+    UpdateSpinBox(sbTriggerHoldOff, DPP::PHA::TriggerHoldOffWidth);
 
-    UpdateSpinBox(sbTrapRiseTime, Register::DPP::PHA::TrapezoidRiseTime);
-    UpdateSpinBox(sbTrapFlatTop,  Register::DPP::PHA::TrapezoidFlatTop);
-    UpdateSpinBox(sbDecayTime,    Register::DPP::PHA::DecayTime);
-    UpdateSpinBox(sbPeakingTime,  Register::DPP::PHA::PeakingTime);
+    UpdateSpinBox(sbTrapRiseTime, DPP::PHA::TrapezoidRiseTime);
+    UpdateSpinBox(sbTrapFlatTop,  DPP::PHA::TrapezoidFlatTop);
+    UpdateSpinBox(sbDecayTime,    DPP::PHA::DecayTime);
+    UpdateSpinBox(sbPeakingTime,  DPP::PHA::PeakingTime);
 
-    UpdateComobox(cbSmoothingFactor, Register::DPP::PHA::RCCR2SmoothingFactor);
+    UpdateComobox(cbSmoothingFactor, DPP::PHA::RCCR2SmoothingFactor);
 
-    int temp = Digitizer::ExtractBits(DPPAlg, Register::DPP::Bit_DPPAlgorithmControl::BaselineAvg);
+    int temp = Digitizer::ExtractBits(DPPAlg, DPP::Bit_DPPAlgorithmControl::BaselineAvg);
     for(int i = 0; i < cbBaselineAvg->count(); i++){
       if( cbBaselineAvg->itemData(i).toInt() == temp) {
         cbBaselineAvg->setCurrentIndex(i);
@@ -641,7 +641,7 @@ void Scope::UpdatePanelFromMomeory(){
       }
     }
 
-    temp = Digitizer::ExtractBits(DPPAlg, Register::DPP::Bit_DPPAlgorithmControl::PeakMean);
+    temp = Digitizer::ExtractBits(DPPAlg, DPP::Bit_DPPAlgorithmControl::PeakMean);
     for(int i = 0; i < cbPeakAvg->count(); i++){
       if( cbPeakAvg->itemData(i).toInt() == temp) {
         cbPeakAvg->setCurrentIndex(i);
@@ -649,9 +649,9 @@ void Scope::UpdatePanelFromMomeory(){
       }
     }
 
-    uint32_t BdCfg = digi[ID]->GetSettingFromMemory(Register::DPP::BoardConfiguration);
+    uint32_t BdCfg = digi[ID]->GetSettingFromMemory(DPP::BoardConfiguration);
 
-    temp = Digitizer::ExtractBits(BdCfg, Register::DPP::Bit_BoardConfig::AnalogProbe1);
+    temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::AnalogProbe1);
     for(int i = 0; i < cbAnaProbe1->count(); i++){
       if( cbAnaProbe1->itemData(i).toInt() == temp) {
         cbAnaProbe1->setCurrentIndex(i);
@@ -659,7 +659,7 @@ void Scope::UpdatePanelFromMomeory(){
         break;
       }
     }
-    temp = Digitizer::ExtractBits(BdCfg, Register::DPP::Bit_BoardConfig::AnalogProbe2);
+    temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::AnalogProbe2);
     for(int i = 0; i < cbAnaProbe2->count(); i++){
       if( cbAnaProbe2->itemData(i).toInt() == temp) {
         cbAnaProbe2->setCurrentIndex(i);
@@ -667,7 +667,7 @@ void Scope::UpdatePanelFromMomeory(){
         break;
       }
     }
-    temp = Digitizer::ExtractBits(BdCfg, Register::DPP::Bit_BoardConfig::DigiProbel1);
+    temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::DigiProbel1);
     for(int i = 0; i < cbDigiProbe1->count(); i++){
       if( cbDigiProbe1->itemData(i).toInt() == temp) {
         cbDigiProbe1->setCurrentIndex(i);
@@ -686,22 +686,22 @@ void Scope::ReadSettingsFromBoard(){
 
   int ch = cbScopeCh->currentIndex();
 
-  digi[ID]->ReadRegister(Register::DPP::RecordLength_G, ch);
-  digi[ID]->ReadRegister(Register::DPP::PreTrigger, ch);
-  digi[ID]->ReadRegister(Register::DPP::ChannelDCOffset, ch);
-  digi[ID]->ReadRegister(Register::DPP::InputDynamicRange, ch);
-  digi[ID]->ReadRegister(Register::DPP::BoardConfiguration, ch);
-  digi[ID]->ReadRegister(Register::DPP::DPPAlgorithmControl, ch);
+  digi[ID]->ReadRegister(DPP::RecordLength_G, ch);
+  digi[ID]->ReadRegister(DPP::PreTrigger, ch);
+  digi[ID]->ReadRegister(DPP::ChannelDCOffset, ch);
+  digi[ID]->ReadRegister(DPP::InputDynamicRange, ch);
+  digi[ID]->ReadRegister(DPP::BoardConfiguration, ch);
+  digi[ID]->ReadRegister(DPP::DPPAlgorithmControl, ch);
 
   if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ){
 
-    digi[ID]->ReadRegister(Register::DPP::PHA::InputRiseTime, ch);
-    digi[ID]->ReadRegister(Register::DPP::PHA::TriggerThreshold, ch);
-    digi[ID]->ReadRegister(Register::DPP::PHA::TriggerHoldOffWidth, ch);
-    digi[ID]->ReadRegister(Register::DPP::PHA::TrapezoidRiseTime, ch);
-    digi[ID]->ReadRegister(Register::DPP::PHA::TrapezoidFlatTop, ch);
-    digi[ID]->ReadRegister(Register::DPP::PHA::DecayTime, ch);
-    digi[ID]->ReadRegister(Register::DPP::PHA::PeakingTime, ch);
+    digi[ID]->ReadRegister(DPP::PHA::InputRiseTime, ch);
+    digi[ID]->ReadRegister(DPP::PHA::TriggerThreshold, ch);
+    digi[ID]->ReadRegister(DPP::PHA::TriggerHoldOffWidth, ch);
+    digi[ID]->ReadRegister(DPP::PHA::TrapezoidRiseTime, ch);
+    digi[ID]->ReadRegister(DPP::PHA::TrapezoidFlatTop, ch);
+    digi[ID]->ReadRegister(DPP::PHA::DecayTime, ch);
+    digi[ID]->ReadRegister(DPP::PHA::PeakingTime, ch);
 
   }
 

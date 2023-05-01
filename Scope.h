@@ -44,16 +44,16 @@ signals:
 private:
 
   void SetUpComboBoxSimple(RComboBox * &cb, QString str, int row, int col);
-  void SetUpComboBox(RComboBox * &cb, QString str, int row, int col, const Register::Reg para);
-  void SetUpSpinBox(RSpinBox * &sb, QString str, int row, int col, const Register::Reg para);
+  void SetUpComboBox(RComboBox * &cb, QString str, int row, int col, const Reg para);
+  void SetUpSpinBox(RSpinBox * &sb, QString str, int row, int col, const Reg para);
 
   void CleanUpSettingsGroupBox();
   void SetUpPHAPanel();
   void SetUpPSDPanel();
   void EnableControl(bool enable);
 
-  void UpdateComobox(RComboBox * &cb, const Register::Reg para);
-  void UpdateSpinBox(RSpinBox * &sb, const Register::Reg para);
+  void UpdateComobox(RComboBox * &cb, const Reg para);
+  void UpdateSpinBox(RSpinBox * &sb, const Reg para);
   void UpdatePanelFromMomeory();
 
   Digitizer ** digi;
