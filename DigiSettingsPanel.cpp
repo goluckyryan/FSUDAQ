@@ -4,6 +4,8 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QGroupBox>
+#include <QDir>
+#include <QFileDialog>
 
                                                                                   // bit = 0, bit = 1
 std::vector<std::pair<std::pair<QString, QString>, unsigned short>> ACQToolTip = {{{"ACQ STOP", "ACQ RUN"}, 2}, 
@@ -24,15 +26,17 @@ std::vector<std::pair<std::pair<QString, QString>, unsigned short>> ReadoutToolT
                                                                                       {{"No Bus Error", "Bus Error"}, 2},
                                                                                       {{"FIFO not empty", "FIFO is empty"}, 3}};
 
-DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QMainWindow *parent): QMainWindow(parent){
+DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QString rawDataPath, QMainWindow *parent): QMainWindow(parent){
 
   this->digi = digi;
   this->nDigi = nDigi;
 
+  this->rawDataPath = rawDataPath;
+
   enableSignalSlot = false;
 
   setWindowTitle("Digitizer Settings");
-  setGeometry(0, 0, 1400, 800);  
+  setGeometry(0, 0, 1400, 820);  
 
   tabWidget = new QTabWidget(this);
   setCentralWidget(tabWidget);
@@ -69,7 +73,7 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QMai
 
       SetUpInfo(  "S/N No. ", std::to_string(digi[ID]->GetSerialNumber()), infoLayout[ID], 1, 0);
       SetUpInfo(  "No. Ch. ", std::to_string(digi[ID]->GetNChannels()), infoLayout[ID], 1, 2);
-      SetUpInfo("Sampling Rate ", std::to_string(digi[ID]->GetCh2ns()), infoLayout[ID], 1, 4);
+      SetUpInfo("Sampling Rate ", std::to_string((int) digi[ID]->GetCh2ns()) + " ns = " + std::to_string( (int) (1000/digi[ID]->GetCh2ns())) + " MHz" , infoLayout[ID], 1, 4);
 
       SetUpInfo("ADC bit ", std::to_string(digi[ID]->GetADCBits()), infoLayout[ID], 2, 0);
       SetUpInfo("ROC version ", digi[ID]->GetROCVersion(), infoLayout[ID], 2, 2);
@@ -144,9 +148,9 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QMai
       lbSavePath->setAlignment(Qt::AlignRight | Qt::AlignCenter);
       buttonLayout->addWidget(lbSavePath, rowID, 0);
       
-      leSaveFilePath = new QLineEdit(this);
-      leSaveFilePath->setReadOnly(true);
-      buttonLayout->addWidget(leSaveFilePath, rowID, 1, 1, 3);
+      leSaveFilePath[iDigi] = new QLineEdit(this);
+      leSaveFilePath[iDigi]->setReadOnly(true);
+      buttonLayout->addWidget(leSaveFilePath[iDigi], rowID, 1, 1, 3);
 
       rowID ++; //---------------------------
       bnRefreshSetting = new QPushButton("Refresh Settings", this);
@@ -161,6 +165,9 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QMai
       buttonLayout->addWidget(bnClearBuffer, rowID, 2);
       connect(bnClearBuffer, &QPushButton::clicked, this, [=](){ digi[ID]->WriteRegister(DPP::SoftwareClear_W, 1);});
 
+      bnLoadSettings = new QPushButton("Load Settings", this);
+      buttonLayout->addWidget(bnLoadSettings, rowID, 3);
+      connect(bnLoadSettings, &QPushButton::clicked, this, &DigiSettingsPanel::LoadSetting);
 
       rowID ++; //---------------------------
       bnSendSoftwareTriggerSignal = new QPushButton("Send SW Trigger Signal", this);
@@ -171,11 +178,13 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QMai
       buttonLayout->addWidget(bnSendSoftwareClockSyncSignal, rowID, 1);
       connect(bnSendSoftwareClockSyncSignal, &QPushButton::clicked, this, [=](){ digi[ID]->WriteRegister(DPP::SoftwareClockSync_W, 1);});
 
-      bnSaveSettings = new QPushButton("Save Settings", this);
+      bnSaveSettings = new QPushButton("Save Settings (bin)", this);
       buttonLayout->addWidget(bnSaveSettings, rowID, 2);
-      bnLoadSettings = new QPushButton("Load Settings", this);
-      buttonLayout->addWidget(bnLoadSettings, rowID, 3);
+      connect(bnSaveSettings, &QPushButton::clicked, this, [=](){ SaveSetting(0);});
 
+      bnSaveSettingsToText = new QPushButton("Save Settings (txt)", this);
+      buttonLayout->addWidget(bnSaveSettingsToText, rowID, 3);
+      connect(bnSaveSettingsToText, &QPushButton::clicked, this, [=](){ SaveSetting(1);});
     }
 
     {//^======================= Board Settings
@@ -195,15 +204,11 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QMai
       bdACQLayout[iDigi]->setAlignment(Qt::AlignTop);
       bdACQLayout[iDigi]->setSpacing(2);
 
-      if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) SetUpPHABoard();
-
       QWidget * bdGlbTrgOUTMask = new QWidget(this);
       bdTab->addTab(bdGlbTrgOUTMask, "Global / TRG-OUT / TRG-IN");
       bdGlbTRGOUTLayout[iDigi] = new QGridLayout(bdGlbTrgOUTMask);
       bdGlbTRGOUTLayout[iDigi]->setAlignment(Qt::AlignTop);
       bdGlbTRGOUTLayout[iDigi]->setSpacing(2);
-
-      SetUpGlobalTriggerMaskAndFrontPanelMask(bdGlbTRGOUTLayout[iDigi]);
 
       QWidget * bdTriggerMask = new QWidget(this);
       bdTab->addTab(bdTriggerMask, "Trigger Mask");
@@ -219,6 +224,9 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QMai
 
       QLabel * lbLVDSInfo = new QLabel(" LDVS settings will be implement later. ", bdLVDS);
       bdLVDSLayout[iDigi]->addWidget(lbLVDSInfo);
+
+      if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) SetUpPHABoard();
+      SetUpGlobalTriggerMaskAndFrontPanelMask(bdGlbTRGOUTLayout[iDigi]);
 
     }
 
@@ -378,6 +386,7 @@ void DigiSettingsPanel::SetUpSpinBox(RSpinBox * &sb, QString label, QGridLayout 
 
 }
 
+//&###########################################################
 void DigiSettingsPanel::CleanUpGroupBox(QGroupBox * & gBox){
 
   printf("============== %s \n", __func__);
@@ -478,8 +487,8 @@ void DigiSettingsPanel::SetUpGlobalTriggerMaskAndFrontPanelMask(QGridLayout * & 
       sbVoltageLevel[ID]->setEnabled(false);
     }
 
-    if( index == 2 )  sbBufferGain[ID]->setEnabled(true);
-    if( index == 3 )  sbVoltageLevel[ID]->setEnabled(true);
+    sbBufferGain[ID]->setEnabled(( index == 2 ));
+    sbVoltageLevel[ID]->setEnabled(( index == 3 ));
 
   });
 
@@ -488,7 +497,7 @@ void DigiSettingsPanel::SetUpGlobalTriggerMaskAndFrontPanelMask(QGridLayout * & 
   sbVoltageLevel[ID]->setToolTip("1 LSD = 0.244 mV");
   sbVoltageLevel[ID]->setToolTipDuration(-1);
 
-  //^=============================== Mask
+  //^=============================== Global Mask, TRG-OUT Mask
   QWidget * kaka = new QWidget(this);
   gLayout->addWidget(kaka, 7, 0, 1,     4);
 
@@ -632,6 +641,7 @@ void DigiSettingsPanel::SetUpGlobalTriggerMaskAndFrontPanelMask(QGridLayout * & 
   connect(cbTRGOUTLogic[ID], &RComboBox::currentIndexChanged, this, [=](int index){
     if( !enableSignalSlot ) return;
     digi[ID]->SetBits(DPP::FrontPanelTRGOUTEnableMask, DPP::Bit_TRGOUTMask::TRGOUTLogic, index, -1);
+    sbTRGOUTMajLvl[ID]->setEnabled( (index == 2) );
   });
 
   //*============================================
@@ -639,6 +649,7 @@ void DigiSettingsPanel::SetUpGlobalTriggerMaskAndFrontPanelMask(QGridLayout * & 
   sbTRGOUTMajLvl[ID]->setMinimum(0);
   sbTRGOUTMajLvl[ID]->setMaximum(7);
   sbTRGOUTMajLvl[ID]->setSingleStep(1);
+  sbTRGOUTMajLvl[ID]->setEnabled( false );
   maskLayout->addWidget(sbTRGOUTMajLvl[ID], 2, 11);
 
   connect(sbTRGOUTMajLvl[ID], &RSpinBox::valueChanged, this, [=](){
@@ -665,10 +676,107 @@ void DigiSettingsPanel::SetUpGlobalTriggerMaskAndFrontPanelMask(QGridLayout * & 
     digi[ID]->SetBits(DPP::FrontPanelTRGOUTEnableMask, {2, 30}, index, -1);
   });
 
+  //^============================================ Trigger Validation Mask
 
+  QLabel * info = new QLabel ("Each Row define the trigger requested by other coupled channels.", this);
+  bdTriggerLayout[ID]->addWidget(info, 0, 0, 1, 13 );
+
+  for( int i = 0; i < MaxNChannels/2 ; i++){
+
+    if( i == 0 ) {
+      for( int j = 0; j < MaxNChannels/2; j++) {
+        QLabel * lb0 = new QLabel(QString::number(2*j) + "-" + QString::number(2*j+1), this);
+        lb0->setAlignment(Qt::AlignHCenter | Qt::AlignBottom);
+        bdTriggerLayout[ID]->addWidget(lb0, 1, j + 1 );
+      }
+
+      QLabel * lb1 = new QLabel("Logic", this);
+      lb1->setAlignment(Qt::AlignHCenter | Qt::AlignBottom);
+      bdTriggerLayout[ID]->addWidget(lb1, 1, MaxNChannels/2 + 1 );
+      
+      QLabel * lb2 = new QLabel("Maj. Lvl.", this);
+      lb2->setAlignment(Qt::AlignHCenter | Qt::AlignBottom);
+      bdTriggerLayout[ID]->addWidget(lb2, 1, MaxNChannels/2 + 2 );
+
+      QLabel * lb3 = new QLabel("Ext.", this);
+      lb3->setAlignment(Qt::AlignHCenter | Qt::AlignBottom);
+      bdTriggerLayout[ID]->addWidget(lb3, 1, MaxNChannels/2 + 3 );
+
+      QLabel * lb4 = new QLabel("SW", this);
+      lb4->setAlignment(Qt::AlignHCenter | Qt::AlignBottom);
+      bdTriggerLayout[ID]->addWidget(lb4, 1, MaxNChannels/2 + 4 );
+    }
+
+    QLabel * lbCh = new QLabel(QString::number(2*i) + "-" + QString::number(2*i+1), this);
+    lbCh->setAlignment(Qt::AlignCenter | Qt::AlignRight);
+    bdTriggerLayout[ID]->addWidget(lbCh, i + 2, 0 );
+
+    for( int j = 0; j < MaxNChannels/2; j++){
+      bnTriggerMask[ID][i][j] = new QPushButton(this);
+      bdTriggerLayout[ID]->addWidget(bnTriggerMask[ID][i][j] , i + 2, j + 1 );
+
+      connect(bnTriggerMask[ID][i][j], &QPushButton::clicked, this, [=](){
+        if( !enableSignalSlot) return;
+
+        if( bnTriggerMask[ID][i][j]->styleSheet() == "" ){
+          bnTriggerMask[ID][i][j]->setStyleSheet("background-color : green;");
+          digi[ID]->SetBits(DPP::TriggerValidationMask_G, {1, j}, 1, 2*i);
+        }else{
+          bnTriggerMask[ID][i][j]->setStyleSheet("");
+          digi[ID]->SetBits(DPP::TriggerValidationMask_G, {1, j}, 0, 2*i);
+        }
+      });
+    }
+
+    cbMaskLogic[ID][i] = new RComboBox(this);
+    cbMaskLogic[ID][i]->addItem("OR", 0);
+    cbMaskLogic[ID][i]->addItem("AND", 1);
+    cbMaskLogic[ID][i]->addItem("Maj.", 2);
+    bdTriggerLayout[ID]->addWidget(cbMaskLogic[ID][i], i + 2, MaxNChannels/2 + 1);
+    connect(cbMaskLogic[ID][i], &RComboBox::currentIndexChanged, this, [=](int index){
+      if( !enableSignalSlot) return;
+      digi[ID]->SetBits(DPP::TriggerValidationMask_G, {2, 8}, index, 2*i);
+      sbMaskMajorLevel[ID][i]->setEnabled((index == 2));
+
+    });
+
+    sbMaskMajorLevel[ID][i] = new RSpinBox(this);
+    sbMaskMajorLevel[ID][i]->setMinimum(0);
+    sbMaskMajorLevel[ID][i]->setMaximum(7);
+    sbMaskMajorLevel[ID][i]->setSingleStep(1);
+    sbMaskMajorLevel[ID][i]->setEnabled(false);
+    bdTriggerLayout[ID]->addWidget(sbMaskMajorLevel[ID][i], i + 2, MaxNChannels/2 + 2);
+    connect(sbMaskMajorLevel[ID][i], &RSpinBox::valueChanged, this, [=](){
+      if( !enableSignalSlot ) return;
+      sbMaskMajorLevel[ID][i]->setStyleSheet("color : blue;");
+    });
+    connect(sbMaskMajorLevel[ID][i], &RSpinBox::returnPressed, this, [=](){
+      if( !enableSignalSlot ) return;
+      sbMaskMajorLevel[ID][i]->setStyleSheet("");
+      digi[ID]->SetBits(DPP::TriggerValidationMask_G, {3, 10} ,sbMaskMajorLevel[ID][i]->value(), 2*i);
+    });
+
+    chkMaskExtTrigger[ID][i] = new QCheckBox("",this);
+    chkMaskExtTrigger[ID][i]->setLayoutDirection(Qt::RightToLeft);
+    bdTriggerLayout[ID]->addWidget(chkMaskExtTrigger[ID][i], i + 2, MaxNChannels/2 + 3);
+    connect(chkMaskExtTrigger[ID][i], &QCheckBox::stateChanged, this, [=](int state){
+      if( !enableSignalSlot ) return;
+      digi[ID]->SetBits(DPP::TriggerValidationMask_G, {1, 30} , state ? 1 : 0 , 2*i);
+    });
+
+    chkMaskSWTrigger[ID][i] = new QCheckBox("",this);
+    chkMaskSWTrigger[ID][i]->setLayoutDirection(Qt::RightToLeft);
+    bdTriggerLayout[ID]->addWidget(chkMaskSWTrigger[ID][i], i + 2, MaxNChannels/2 + 4);
+    connect(chkMaskSWTrigger[ID][i], &QCheckBox::stateChanged, this, [=](int state){
+      if( !enableSignalSlot ) return;
+      digi[ID]->SetBits(DPP::TriggerValidationMask_G, {1, 31} , state ? 1 : 0 , 2*i);
+    });
+
+  }
 
 }
 
+//&###########################################################
 void DigiSettingsPanel::SetUpPHABoard(){
   printf("============== %s \n", __func__);
 
@@ -743,23 +851,78 @@ void DigiSettingsPanel::SetUpPHABoard(){
                                                                                    {"ACQ RUN", 1}},DPP::AcquisitionControl, DPP::Bit_AcquistionControl::ACQStartArm);
 
 
-  SetUpComboBoxBit(cbPLLRefClock[ID], "PLL Ref. Clock ", bdCfgLayout[ID], 4, 0, {{"Internal 50 MHz", 0},{"Ext. CLK-IN", 1}}, DPP::AcquisitionControl, DPP::Bit_AcquistionControl::ACQStartArm);
+  SetUpComboBoxBit(cbPLLRefClock[ID], "PLL Ref. Clock ", bdACQLayout[ID], 4, 0, {{"Internal 50 MHz", 0},{"Ext. CLK-IN", 1}}, DPP::AcquisitionControl, DPP::Bit_AcquistionControl::ACQStartArm);
 
   SetUpSpinBox(sbRunDelay[ID], "Run Delay [ns] ", bdACQLayout[ID], 5, 0, DPP::RunStartStopDelay);
 
+  {//==================================
+    QGroupBox * readOutGroup = new QGroupBox("Readout Control (VME only)",this);
+    bdACQLayout[ID]->addWidget(readOutGroup, 6, 0, 1, 2);
+
+    QGridLayout *readOutLayout = new QGridLayout(readOutGroup);
+    readOutLayout->setSpacing(2);
+
+    SetUpCheckBox(chkEnableOpticalInterrupt[ID],         "Enable Optical Link Interrupt", readOutLayout, 0, 1, DPP::ReadoutControl, DPP::Bit_ReadoutControl::EnableOpticalLinkInpt);
+    SetUpCheckBox(chkEnableVME64Aligment[ID],                  "Enable VME Align64 Mode", readOutLayout, 1, 1, DPP::ReadoutControl, DPP::Bit_ReadoutControl::VMEAlign64Mode);
+    SetUpCheckBox(chkEnableExtendedBlockTransfer[ID],   "Enable Extended Block Transfer", readOutLayout, 2, 1, DPP::ReadoutControl, DPP::Bit_ReadoutControl::EnableExtendedBlockTransfer);
+    SetUpCheckBox(chkEnableAddRelocation[ID],       "Enable VME Base Address Relocation", readOutLayout, 3, 1, DPP::ReadoutControl, DPP::Bit_ReadoutControl::VMEBaseAddressReclocated);
+    SetUpCheckBox(chkEnableVMEReadoutStatus[ID], "VME Bus Error / Event Aligned Readout", readOutLayout, 4, 1, DPP::ReadoutControl, DPP::Bit_ReadoutControl::EnableEventAligned);
+
+    SetUpComboBoxBit(cbInterruptMode[ID], "Interrupt Release Mode : ", readOutLayout, 5, 0, {{"On Register Access", 0},{"On Acknowledge", 1}}, DPP::ReadoutControl, DPP::Bit_ReadoutControl::InterrupReleaseMode);
+
+    QLabel * lbInterruptLevel = new QLabel ("VME Interrupt Level :", this);
+    lbInterruptLevel->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+    readOutLayout->addWidget(lbInterruptLevel, 6, 0);
+
+    sbVMEInterruptLevel[ID] = new RSpinBox(this);
+    sbVMEInterruptLevel[ID]->setMinimum(0);
+    sbVMEInterruptLevel[ID]->setMaximum(7);
+    sbVMEInterruptLevel[ID]->setSingleStep(1);
+    readOutLayout->addWidget(sbVMEInterruptLevel[ID], 6, 1);
+
+    connect(sbVMEInterruptLevel[ID], &RSpinBox::valueChanged, this, [=](){
+      if( !enableSignalSlot ) return;
+      sbVMEInterruptLevel[ID]->setStyleSheet("color : blue;");
+    });
+
+    connect(sbVMEInterruptLevel[ID], &RSpinBox::returnPressed, this, [=](){
+      if( !enableSignalSlot ) return;
+      sbVMEInterruptLevel[ID]->setStyleSheet("");
+      digi[ID]->SetBits(DPP::ReadoutControl, DPP::Bit_ReadoutControl::VMEInterruptLevel, sbVMEInterruptLevel[ID]->value(), -1);
+    });
+
+  }
 }
 
+//&###########################################################
 void DigiSettingsPanel::SetUpPHAChannel(){
 
   //^======================== All Channels
   QVBoxLayout * allSettingLayout = new QVBoxLayout(chAllSetting);
   allSettingLayout->setAlignment(Qt::AlignTop);
+  allSettingLayout->setSpacing(2);
+
+  QWidget * jaja = new QWidget(this);
+  allSettingLayout->addWidget(jaja);
+
+  QHBoxLayout * papa = new QHBoxLayout(jaja);
+  papa->setAlignment(Qt::AlignLeft);
+
+  QLabel * lbChSel = new QLabel ("Ch : ", this);
+  lbChSel->setAlignment(Qt::AlignCenter | Qt::AlignRight);
+  papa->addWidget(lbChSel);
+
+  chSelection[ID] = new RComboBox(this);
+  chSelection[ID]->addItem("All Ch.", -1);
+  for( int i = 0; i < digi[ID]->GetNChannels(); i++) chSelection[ID]->addItem(QString::number(i), i);
+  papa->addWidget(chSelection[ID]);
 
   {//*========================= input
     QGroupBox * inputBox = new QGroupBox("input Settings", this);
     allSettingLayout->addWidget(inputBox);
 
     QGridLayout  * inputLayout = new QGridLayout(inputBox);
+    inputLayout->setSpacing(2);
 
     SetUpSpinBox(sbRecordLength[MaxNChannels], "Record Length [G][ns] : ", inputLayout, 0, 0, DPP::RecordLength_G);
     SetUpComboBox(cbDynamicRange[MaxNChannels],        "Dynamic Range : ", inputLayout, 0, 2, DPP::InputDynamicRange);
@@ -780,6 +943,7 @@ void DigiSettingsPanel::SetUpPHAChannel(){
     allSettingLayout->addWidget(trapBox);
 
     QGridLayout  * trapLayout = new QGridLayout(trapBox);
+    trapLayout->setSpacing(2);
 
     SetUpSpinBox(sbTrapRiseTime[MaxNChannels],   "Rise Time [ns] : ", trapLayout, 0, 0, DPP::PHA::TrapezoidRiseTime);
     SetUpSpinBox(sbTrapFlatTop[MaxNChannels],     "Flat Top [ns] : ", trapLayout, 0, 2, DPP::PHA::TrapezoidFlatTop);
@@ -800,7 +964,8 @@ void DigiSettingsPanel::SetUpPHAChannel(){
     allSettingLayout->addWidget(otherBox);
     
     QGridLayout  * otherLayout = new QGridLayout(otherBox);
-    
+    otherLayout->setSpacing(2);
+
     SetUpCheckBox(chkDisableSelfTrigger[MaxNChannels],  "Disable Self Trigger ", otherLayout, 0, 0, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl::DisableSelfTrigger);
     SetUpCheckBox(chkEnableRollOver[MaxNChannels],     "Enable Roll-Over Event", otherLayout, 0, 1, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl::EnableRollOverFlag);
     SetUpCheckBox(chkEnablePileUp[MaxNChannels],          "Allow Pile-up Event", otherLayout, 1, 0, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl::EnablePileUpFlag);
@@ -826,10 +991,12 @@ void DigiSettingsPanel::SetUpPHAChannel(){
 
 }
 
+//&###########################################################
 void DigiSettingsPanel::SetUpPSDBoard(){
 
 }
 
+//&###########################################################
 void DigiSettingsPanel::UpdatePanelFromMemory(){
 
   printf("============== %s \n", __func__);
@@ -951,13 +1118,8 @@ void DigiSettingsPanel::UpdatePanelFromMemory(){
 
   {
     int index = cbAnalogMonitorMode[ID]->currentIndex();
-    if( index < 2) {
-      sbBufferGain[ID]->setEnabled(false);
-      sbVoltageLevel[ID]->setEnabled(false);
-    }
-
-    if( index == 2 )  sbBufferGain[ID]->setEnabled(true);
-    if( index == 3 )  sbVoltageLevel[ID]->setEnabled(true);
+    sbBufferGain[ID]->setEnabled(( index == 2 ));
+    sbVoltageLevel[ID]->setEnabled(( index == 3 ));
   }
 
   sbBufferGain[ID]->setValue(digi[ID]->GetSettingFromMemory(DPP::BufferOccupancyGain));
@@ -1006,13 +1168,46 @@ void DigiSettingsPanel::UpdatePanelFromMemory(){
   }
 
   cbTRGOUTLogic[ID]->setCurrentIndex(Digitizer::ExtractBits(TRGOUTMask, DPP::Bit_TRGOUTMask::TRGOUTLogic));
+  sbTRGOUTMajLvl[ID]->setEnabled( Digitizer::ExtractBits(TRGOUTMask, DPP::Bit_TRGOUTMask::TRGOUTLogic) == 2 );
   sbTRGOUTMajLvl[ID]->setValue( Digitizer::ExtractBits(TRGOUTMask, DPP::Bit_TRGOUTMask::MajorLevel));
   cbTRGOUTUseOtherTriggers[ID]->setCurrentIndex(Digitizer::ExtractBits(TRGOUTMask, {2, 30}));
 
-  enableSignalSlot = true;
+  //*========================================
+  uint32_t readoutCtl = digi[ID]->GetSettingFromMemory(DPP::ReadoutControl);
 
+  sbVMEInterruptLevel[ID]->setValue(readoutCtl & 0x7);
+  chkEnableOpticalInterrupt[ID]->setChecked( Digitizer::ExtractBits(readoutCtl, DPP::Bit_ReadoutControl::EnableOpticalLinkInpt));
+  chkEnableVMEReadoutStatus[ID]->setChecked( Digitizer::ExtractBits(readoutCtl, DPP::Bit_ReadoutControl::EnableEventAligned));
+  chkEnableVME64Aligment[ID]->setChecked( Digitizer::ExtractBits(readoutCtl, DPP::Bit_ReadoutControl::VMEAlign64Mode));
+  chkEnableAddRelocation[ID]->setChecked( Digitizer::ExtractBits(readoutCtl, DPP::Bit_ReadoutControl::VMEBaseAddressReclocated));
+  chkEnableExtendedBlockTransfer[ID]->setChecked( Digitizer::ExtractBits(readoutCtl, DPP::Bit_ReadoutControl::EnableExtendedBlockTransfer));
+  cbInterruptMode[ID]->setCurrentIndex(Digitizer::ExtractBits(readoutCtl, DPP::Bit_ReadoutControl::InterrupReleaseMode));
+
+  //*========================================
+  for( int i = 0; i < MaxNChannels/2; i++){
+    uint32_t trigger = digi[ID]->GetSettingFromMemory(DPP::TriggerValidationMask_G,  2*i );
+
+    cbMaskLogic[ID][i]->setCurrentIndex( (trigger >> 8 ) & 0x3 );
+    chkMaskExtTrigger[ID][i]->setEnabled((((trigger >> 8 ) & 0x3) != 2));
+
+    sbMaskMajorLevel[ID][i]->setValue( ( trigger >> 10 ) & 0x3 );
+    chkMaskExtTrigger[ID][i]->setChecked( ( trigger >> 30 ) & 0x1 );
+    chkMaskSWTrigger[ID][i]->setChecked( ( trigger >> 31 ) & 0x1 );
+
+    for( int j = 0; j < MaxNChannels/2; j++){
+      if( ( trigger >> j ) & 0x1 ) {
+        bnTriggerMask[ID][i][j]->setStyleSheet("background-color: green;");
+      }else{
+        bnTriggerMask[ID][i][j]->setStyleSheet("");
+      }
+    }
+  }
+  
+
+  enableSignalSlot = true;
 }
 
+//&###########################################################
 void DigiSettingsPanel::UpdatePHASetting(){
 
 
@@ -1029,4 +1224,55 @@ void DigiSettingsPanel::ReadSettingsFromBoard(){
 
 }
 
+void DigiSettingsPanel::SaveSetting(int opt){
+  
+  QDir dir(rawDataPath);
+  if( !dir.exists() ) dir.mkpath(".");
+
+  QString filePath = QFileDialog::getSaveFileName(this, "Save Settings File", rawDataPath, opt == 0 ? "Data file (*.dat)" : "Text file (*.txt)");
+
+  if (!filePath.isEmpty()) {
+
+    QFileInfo  fileInfo(filePath);
+    QString ext = fileInfo.suffix();
+    if( opt == 0 ){
+      if( ext == "") filePath += ".dat";
+      digi[ID]->SaveAllSettingsAsBin(filePath.toStdString().c_str());
+      leSaveFilePath[ID]->setText(filePath + " | update constantly");
+    }
+    if( opt == 1 ){
+      if( ext == "") filePath += ".txt";
+      digi[ID]->SaveAllSettingsAsText(filePath.toStdString().c_str());
+      leSaveFilePath[ID]->setText(filePath);
+    }
+
+    SendLogMsg("Saved setting file <b>" +  filePath + "</b>.");
+
+  }
+
+}
+
+void DigiSettingsPanel::LoadSetting(){
+  QFileDialog fileDialog(this);
+  fileDialog.setDirectory(rawDataPath);
+  fileDialog.setFileMode(QFileDialog::ExistingFile);
+  fileDialog.setNameFilter("Data file (*.dat);;");
+  int result = fileDialog.exec();
+
+  if( ! (result == QDialog::Accepted) ) return;
+
+  if( fileDialog.selectedFiles().size() == 0 ) return; // when no file selected.
+
+  QString fileName = fileDialog.selectedFiles().at(0);
+
+  leSaveFilePath[ID]->setText(fileName);
+
+  if( digi[ID]->LoadSettingBinaryToMemory(fileName.toStdString().c_str()) ){
+    SendLogMsg("Loaded settings file " + fileName + " for Digi-" + QString::number(digi[ID]->GetSerialNumber()));
+    digi[ID]->ProgramSettingsToBoard();
+    UpdatePanelFromMemory();
+  }else{
+    SendLogMsg("Fail to Loaded settings file " + fileName + " for Digi-" + QString::number(digi[ID]->GetSerialNumber()));
+  }
+}
 

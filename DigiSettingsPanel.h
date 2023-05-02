@@ -17,16 +17,18 @@ class DigiSettingsPanel : public QMainWindow{
   Q_OBJECT
 
 public:
-  DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent = nullptr);
+  DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QString rawDataPath, QMainWindow * parent = nullptr);
   ~DigiSettingsPanel();
 
 private slots:
   void UpdatePanelFromMemory();
   void ReadSettingsFromBoard();
 
+  void SaveSetting(int opt);
+  void LoadSetting();
+
 signals:
   void SendLogMsg(const QString &msg);
-
 
 private:
 
@@ -44,8 +46,6 @@ private:
   
   void SetUpPSDBoard();
 
-
-
   void UpdatePHASetting();
 
 
@@ -53,6 +53,7 @@ private:
   unsigned int nDigi;
   unsigned short ID;
 
+  QString rawDataPath;
   bool enableSignalSlot;
 
   QTabWidget * tabWidget;
@@ -60,7 +61,7 @@ private:
   QGroupBox * infoBox[MaxNDigitizer];
   QGridLayout * infoLayout[MaxNDigitizer];
 
-  QLineEdit * leSaveFilePath;
+  QLineEdit * leSaveFilePath[MaxNDigitizer];
 
   QPushButton * bnRefreshSetting; // read setting from board
   QPushButton * bnProgramPreDefined;
@@ -70,6 +71,7 @@ private:
   QPushButton * bnSendSoftwareClockSyncSignal;
   QPushButton * bnSaveSettings;
   QPushButton * bnLoadSettings;
+  QPushButton * bnSaveSettingsToText;
 
   /// ============================= Board Configure
   // QGroupBox * boardSettingBox[MaxNDigitizer];
@@ -110,12 +112,27 @@ private:
   RComboBox * cbTRGINMode[MaxNDigitizer];
   RComboBox * cbTRINMezzanines[MaxNDigitizer];
 
+  RSpinBox * sbVMEInterruptLevel[MaxNDigitizer];
+  QCheckBox * chkEnableOpticalInterrupt[MaxNDigitizer];
+  QCheckBox * chkEnableVMEReadoutStatus[MaxNDigitizer];
+  QCheckBox * chkEnableVME64Aligment[MaxNDigitizer];
+  QCheckBox * chkEnableAddRelocation[MaxNDigitizer];
+  RComboBox * cbInterruptMode[MaxNDigitizer];
+  QCheckBox * chkEnableExtendedBlockTransfer[MaxNDigitizer];
+
+  /// ============================= trigger validation mask
+  RComboBox * cbMaskLogic[MaxNDigitizer][MaxNChannels/2];
+  RSpinBox * sbMaskMajorLevel[MaxNDigitizer][MaxNChannels/2];
+  QCheckBox * chkMaskExtTrigger[MaxNDigitizer][MaxNChannels/2];
+  QCheckBox * chkMaskSWTrigger[MaxNDigitizer][MaxNChannels/2];
+  QPushButton * bnTriggerMask[MaxNDigitizer][MaxNChannels/2][MaxNChannels/2];
+
   /// ============================= board Status
   QPushButton * bnACQStatus[MaxNDigitizer][9];
   QPushButton * bnBdFailStatus[MaxNDigitizer][3];
   QPushButton * bnReadOutStatus[MaxNDigitizer][3];
 
-  /// ============================= Trigger Configure
+  /// ============================= Mask Configure
   QPushButton * bnGlobalTriggerMask[MaxNDigitizer][MaxNChannels/2];
   RSpinBox * sbGlbMajCoinWin[MaxNDigitizer];
   RSpinBox * sbGlbMajLvl[MaxNDigitizer];
@@ -132,6 +149,8 @@ private:
   QWidget * chInput;
   QWidget * chTrap;
   QWidget * chOthers;
+
+  RComboBox * chSelection[MaxNDigitizer];
 
   //---------- PHA
   RSpinBox * sbRecordLength[MaxNChannels + 1];

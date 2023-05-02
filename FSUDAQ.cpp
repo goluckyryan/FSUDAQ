@@ -744,7 +744,7 @@ void MainWindow::OpenScope(){
 void MainWindow::OpenDigiSettings(){
 
   if( digiSettings == nullptr ) {
-    digiSettings = new DigiSettingsPanel(digi, nDigi);
+    digiSettings = new DigiSettingsPanel(digi, nDigi, rawDataPath);
     //connect(scope, &Scope::SendLogMsg, this, &MainWindow::LogMsg);
     digiSettings->show();
   }else{
