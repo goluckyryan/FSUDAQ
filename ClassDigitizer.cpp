@@ -284,8 +284,9 @@ int Digitizer::ProgramBoard(){
 
 int Digitizer::ProgramPHABoard(){
   
+  printf("========Digitizer::%s\n", __func__);
+
   ret = CAEN_DGTZ_Reset(handle);
-  printf("======== program board PHA\n");
 
   ret = CAEN_DGTZ_WriteRegister(handle, DPP::RecordLength_G + 0x7000, 62);  
   ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardConfiguration, 0x0F8915);  /// has Extra2, dual trace, input and trap-baseline
@@ -302,8 +303,6 @@ int Digitizer::ProgramPHABoard(){
   
   ret = CAEN_DGTZ_SetRunSynchronizationMode(handle, CAEN_DGTZ_RUN_SYNC_Disabled);
   if( ret != 0 ) { printf("==== set board error.\n"); return 0;}
-
-  printf("======== program Channels PHA\n");
   
   uint32_t address;
   
@@ -329,8 +328,6 @@ int Digitizer::ProgramPHABoard(){
   ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::DPPAlgorithmControl) + 0x7000, 0xC30200f);
   
   if( ret != 0 ) { printf("==== set channels error.\n"); return 0;}
-  
-  printf("End of program board and channels\n");
   
   isSettingFilledinMemeory = false; /// unlock the ReadAllSettingsFromBoard();
   ReadAllSettingsFromBoard();
@@ -555,7 +552,7 @@ void Digitizer::ReadAllSettingsFromBoard(bool force){
   if( AcqRun ) return;
   if( isSettingFilledinMemeory && !force) return;
 
-  printf("===== %s \n", __func__);
+  printf("===== Digitizer::%s \n", __func__);
 
   /// board setting
   for( int p = 0; p < (int) RegisterDPPList.size(); p++){
@@ -581,37 +578,44 @@ void Digitizer::ReadAllSettingsFromBoard(bool force){
     }
   }
   isSettingFilledinMemeory = true;
+
+  printf("---------------------- end of %s \n", __func__);
+
 }
 
 void Digitizer::ProgramSettingsToBoard(){
-  if( !isConnected ) return;
-  if( isDummy ) return;
+  if( !isConnected || isDummy ) return;
   
+  printf("========== %s \n", __func__);
+
   Reg haha;
   
   /// board setting
-  for( int p = 0; p < (int) RegisterDPPList[p]; p++){
-    if( RegisterDPPList[p].GetType() == RW::ReadONLY) continue;
-    haha = RegisterDPPList[p];
-    WriteRegister(haha, GetSettingFromMemory(haha), -1, false); 
-    usleep(100 * 1000);
+  for( int p = 0; p < (int) RegisterDPPList.size(); p++){
+    if( RegisterDPPList[p].GetType() == RW::ReadWrite) {
+      haha = RegisterDPPList[p];
+      WriteRegister(haha, GetSettingFromMemory(haha), -1, false); 
+      usleep(1 * 1000);
+    }
   }
   /// Channels Setting
   for( int ch = 0; ch < NChannel; ch ++){
     if( DPPType == V1730_DPP_PHA_CODE ){
-      for( int p = 0; p < (int) RegisterPHAList[p]; p++){
-        if( RegisterPHAList[p].GetType() == RW::ReadONLY) continue;
-        haha = RegisterPHAList[p];
-        WriteRegister(haha, GetSettingFromMemory(haha, ch), ch, false); 
-        usleep(100 * 1000);
+      for( int p = 0; p < (int) RegisterPHAList.size(); p++){
+        if( RegisterPHAList[p].GetType() == RW::ReadWrite ){
+          haha = RegisterPHAList[p];
+          WriteRegister(haha, GetSettingFromMemory(haha, ch), ch, false); 
+          usleep(1 * 1000);
+        }
       }
     }
     if( DPPType == V1730_DPP_PSD_CODE ){
-      for( int p = 0; p < (int) RegisterPSDList[p]; p++){
-        if( RegisterPSDList[p].GetType() == RW::ReadONLY) continue;
-        haha = RegisterPHAList[p];
-        WriteRegister(haha, GetSettingFromMemory(haha, ch), ch, false); 
-        usleep(100 * 1000);
+      for( int p = 0; p < (int) RegisterPSDList.size(); p++){
+        if( RegisterPSDList[p].GetType() == RW::ReadWrite){
+          haha = RegisterPHAList[p];
+          WriteRegister(haha, GetSettingFromMemory(haha, ch), ch, false); 
+          usleep(1 * 1000);
+        }
       }
     }
   } 

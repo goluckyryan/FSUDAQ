@@ -161,33 +161,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
   programSettingsFilePath = QDir::current().absolutePath() + "/programSettings.txt";
   LoadProgramSettings();
 
-  {
-    scalar = new QMainWindow(this);
-    scalar->setWindowTitle("Scalar");
-
-    QScrollArea * scopeScroll = new QScrollArea(scalar);
-    scalar->setCentralWidget(scopeScroll);
-    scopeScroll->setWidgetResizable(true);
-    scopeScroll->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-
-    QWidget * layoutWidget = new QWidget(scalar);
-    scopeScroll->setWidget(layoutWidget);
-
-    scalarLayout = new QGridLayout(layoutWidget);
-    scalarLayout->setSpacing(0);
-    scalarLayout->setAlignment(Qt::AlignTop);
-
-    leTrigger = nullptr;
-    leAccept = nullptr;
-
-    lbLastUpdateTime = nullptr;
-    lbScalarACQStatus = nullptr;
-
-    scalarThread = new TimingThread();
-    connect(scalarThread, &TimingThread::timeUp, this, &MainWindow::UpdateScalar);
-
-  }
-
   //=========== disable widget
   WaitForDigitizersOpen(true);
 
@@ -373,14 +346,29 @@ void MainWindow::OpenDigitizers(){
   readDataThread = new ReadDataThread * [nDigi];
   for( unsigned int i = 0; i < nDigi; i++){
     digi[i] = new Digitizer(portList[i].first, portList[i].second);
-    //TODO === load settings 
     digi[i]->Reset();
-    digi[i]->ProgramPHABoard();
+
+    ///============== load settings 
+    QString fileName = rawDataPath + "/Digi-" + QString::number(digi[i]->GetSerialNumber()) + ".bin"; 
+    QFile file(fileName);
+    if( !file.open(QIODevice::Text | QIODevice::ReadOnly) ) {
+      LogMsg("<b>" + fileName + "</b> not found. Program predefined PHA settings."); //TODO, PSD?
+      digi[i]->ProgramPHABoard();
+    }else{
+      LogMsg("Found <b>" + fileName + "</b> for digitizer settings.");
+      
+      if( digi[i]->LoadSettingBinaryToMemory(fileName.toStdString().c_str()) == 0 ){
+        LogMsg("Loaded settings file " + fileName + " for Digi-" + QString::number(digi[i]->GetSerialNumber()));
+        digi[i]->ProgramSettingsToBoard();
+        
+      }else{
+        LogMsg("Fail to Loaded settings file " + fileName + " for Digi-" + QString::number(digi[i]->GetSerialNumber()));
+      }
+    }    
+
     readDataThread[i] = new ReadDataThread(digi[i], i);
     connect(readDataThread[i], &ReadDataThread::sendMsg, this, &MainWindow::LogMsg);
   }
-
-  digi[0]->SaveAllSettingsAsText("setting.txt");
 
   LogMsg(QString("Done. Opened %1 digitizer(s).").arg(nDigi));
 
@@ -413,8 +401,6 @@ void MainWindow::CloseDigitizers(){
   for(unsigned int i = 0; i < nDigi; i ++){
     digi[i]->CloseDigitizer();
     delete digi[i];
-    digi[i] = nullptr;
-
     delete readDataThread[i];
   }
   delete [] digi;
@@ -447,6 +433,30 @@ void MainWindow::WaitForDigitizersOpen(bool onOff){
 //***************************************************************
 //***************************************************************
 void MainWindow::SetupScalar(){
+
+  scalar = new QMainWindow(this);
+  scalar->setWindowTitle("Scalar");
+
+  QScrollArea * scopeScroll = new QScrollArea(scalar);
+  scalar->setCentralWidget(scopeScroll);
+  scopeScroll->setWidgetResizable(true);
+  scopeScroll->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+  QWidget * layoutWidget = new QWidget(scalar);
+  scopeScroll->setWidget(layoutWidget);
+
+  scalarLayout = new QGridLayout(layoutWidget);
+  scalarLayout->setSpacing(0);
+  scalarLayout->setAlignment(Qt::AlignTop);
+
+  leTrigger = nullptr;
+  leAccept = nullptr;
+
+  lbLastUpdateTime = nullptr;
+  lbScalarACQStatus = nullptr;
+
+  scalarThread = new TimingThread();
+  connect(scalarThread, &TimingThread::timeUp, this, &MainWindow::UpdateScalar);
 
   scalar->setGeometry(0, 0, 10 + nDigi * 180, 110 + MaxNChannels * 20);
 

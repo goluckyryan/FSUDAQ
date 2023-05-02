@@ -1229,21 +1229,21 @@ void DigiSettingsPanel::SaveSetting(int opt){
   QDir dir(rawDataPath);
   if( !dir.exists() ) dir.mkpath(".");
 
-  QString filePath = QFileDialog::getSaveFileName(this, "Save Settings File", rawDataPath, opt == 0 ? "Data file (*.dat)" : "Text file (*.txt)");
+  QString filePath = QFileDialog::getSaveFileName(this, "Save Settings File", rawDataPath, opt == 0 ? "Binary (*.bin)" : "Text file (*.txt)");
 
   if (!filePath.isEmpty()) {
 
     QFileInfo  fileInfo(filePath);
     QString ext = fileInfo.suffix();
     if( opt == 0 ){
-      if( ext == "") filePath += ".dat";
+      if( ext == "") filePath += ".bin";
       digi[ID]->SaveAllSettingsAsBin(filePath.toStdString().c_str());
-      leSaveFilePath[ID]->setText(filePath + " | update constantly");
+      leSaveFilePath[ID]->setText(filePath + " | dynamic update");
     }
     if( opt == 1 ){
       if( ext == "") filePath += ".txt";
       digi[ID]->SaveAllSettingsAsText(filePath.toStdString().c_str());
-      leSaveFilePath[ID]->setText(filePath);
+      leSaveFilePath[ID]->setText(filePath + " | not loadable!!");
     }
 
     SendLogMsg("Saved setting file <b>" +  filePath + "</b>.");
@@ -1256,7 +1256,7 @@ void DigiSettingsPanel::LoadSetting(){
   QFileDialog fileDialog(this);
   fileDialog.setDirectory(rawDataPath);
   fileDialog.setFileMode(QFileDialog::ExistingFile);
-  fileDialog.setNameFilter("Data file (*.dat);;");
+  fileDialog.setNameFilter("Binary (*.bin);;");
   int result = fileDialog.exec();
 
   if( ! (result == QDialog::Accepted) ) return;
@@ -1265,12 +1265,12 @@ void DigiSettingsPanel::LoadSetting(){
 
   QString fileName = fileDialog.selectedFiles().at(0);
 
-  leSaveFilePath[ID]->setText(fileName);
-
-  if( digi[ID]->LoadSettingBinaryToMemory(fileName.toStdString().c_str()) ){
+  if( digi[ID]->LoadSettingBinaryToMemory(fileName.toStdString().c_str()) == 0 ){
     SendLogMsg("Loaded settings file " + fileName + " for Digi-" + QString::number(digi[ID]->GetSerialNumber()));
+    leSaveFilePath[ID]->setText(fileName + " | dynamic update");
     digi[ID]->ProgramSettingsToBoard();
     UpdatePanelFromMemory();
+
   }else{
     SendLogMsg("Fail to Loaded settings file " + fileName + " for Digi-" + QString::number(digi[ID]->GetSerialNumber()));
   }
