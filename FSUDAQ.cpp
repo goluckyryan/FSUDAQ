@@ -339,9 +339,15 @@ void MainWindow::OpenDigitizers(){
       QCoreApplication::processEvents(); //to prevent Qt said application not responding.
     }
   }
-  LogMsg(QString("Done seraching. Found %1 digitizer(s). Opening digitizer(s)....").arg(nDigi));
   logMsgHTMLMode = true;
 
+  if( nDigi == 0 ) {
+    LogMsg(QString("Done seraching. No digitizer found."));
+    return;
+  }else{
+    LogMsg(QString("Done seraching. Found %1 digitizer(s). Opening digitizer(s)....").arg(nDigi));
+  }
+  
   digi = new Digitizer * [nDigi];
   readDataThread = new ReadDataThread * [nDigi];
   for( unsigned int i = 0; i < nDigi; i++){
@@ -349,7 +355,7 @@ void MainWindow::OpenDigitizers(){
     digi[i]->Reset();
 
     ///============== load settings 
-    QString fileName = rawDataPath + "/Digi-" + QString::number(digi[i]->GetSerialNumber()) + ".bin"; 
+    QString fileName = rawDataPath + "/Digi-" + QString::number(digi[i]->GetSerialNumber()) + ".bin"; //TODO add DPP Type in File Name
     QFile file(fileName);
     if( !file.open(QIODevice::Text | QIODevice::ReadOnly) ) {
       LogMsg("<b>" + fileName + "</b> not found. Program predefined PHA settings."); //TODO, PSD?
@@ -368,6 +374,8 @@ void MainWindow::OpenDigitizers(){
 
     readDataThread[i] = new ReadDataThread(digi[i], i);
     connect(readDataThread[i], &ReadDataThread::sendMsg, this, &MainWindow::LogMsg);
+    
+    QCoreApplication::processEvents(); //to prevent Qt said application not responding.
   }
 
   LogMsg(QString("Done. Opened %1 digitizer(s).").arg(nDigi));

@@ -36,7 +36,7 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
   enableSignalSlot = false;
 
   setWindowTitle("Digitizer Settings");
-  setGeometry(0, 0, 1400, 820);  
+  setGeometry(0, 0, 1500, 850);  
 
   tabWidget = new QTabWidget(this);
   setCentralWidget(tabWidget);
@@ -952,7 +952,7 @@ void DigiSettingsPanel::SetUpPHAChannel(){
     SetUpSpinBox(sbPeaking[MaxNChannels],          "Peaking [ns] : ", trapLayout, 2, 0, DPP::PHA::PeakingTime);
     SetUpSpinBox(sbPeakingHoldOff[MaxNChannels], "Peak Hold-off [ns] : ", trapLayout, 2, 2, DPP::PHA::PeakHoldOff);
     SetUpComboBoxBit(cbPeakAvg[MaxNChannels],         "Peak Avg. : ", trapLayout, 3, 0, DPP::Bit_DPPAlgorithmControl::ListPeakMean, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl::PeakMean);
-    SetUpComboBoxBit(cBaseLineAvg[MaxNChannels],  "Baseline Avg. : ", trapLayout, 3, 2, DPP::Bit_DPPAlgorithmControl::ListBaselineAvg, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl::BaselineAvg);
+    SetUpComboBoxBit(cbBaseLineAvg[MaxNChannels],  "Baseline Avg. : ", trapLayout, 3, 2, DPP::Bit_DPPAlgorithmControl::ListBaselineAvg, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl::BaselineAvg);
     SetUpCheckBox(chkActiveBaseline[MaxNChannels], "Active basline [G]", trapLayout, 4, 0, DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::ActivebaselineCalulation);
     SetUpCheckBox(chkBaselineRestore[MaxNChannels], "Baseline Restorer [G]", trapLayout, 4, 1, DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::EnableActiveBaselineRestoration);
     SetUpSpinBox(sbFineGain[MaxNChannels],            "Fine Gain : ", trapLayout, 4, 2, DPP::PHA::FineGain);
@@ -984,10 +984,185 @@ void DigiSettingsPanel::SetUpPHAChannel(){
 
   }
 
-  //^================== status
+  {//^================== status
+    QGridLayout * statusLayout = new QGridLayout(chStatus);
+    statusLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    statusLayout->setSpacing(2);
+
+    QLabel * lbCh   = new QLabel ("Ch.", this);      lbCh->setAlignment(Qt::AlignHCenter);   statusLayout->addWidget(lbCh, 0, 0);
+    QLabel * lbLED  = new QLabel ("Status", this);   lbLED->setAlignment(Qt::AlignHCenter);  statusLayout->addWidget(lbLED, 0, 1, 1, 3);
+    QLabel * lbTemp = new QLabel ("Temp [C]", this); lbTemp->setAlignment(Qt::AlignHCenter); statusLayout->addWidget(lbTemp, 0, 4);
+
+    QStringList chStatusInfo = {"SPI bus is busy.", "ADC Calibration is done.", "ADC shutdown, over-heat"};
+
+    for( int i = 0; i < MaxNChannels; i++){
+
+      QLabel * lbChID = new QLabel (QString::number(i), this);      
+      lbChID->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+      lbChID->setFixedWidth(20);
+      statusLayout->addWidget(lbChID, i + 1, 0); 
+
+      for( int j = 0; j < 3; j++ ){
+        bnChStatus[ID][i][j] = new QPushButton(this);
+        bnChStatus[ID][i][j]->setToolTip(chStatusInfo[j]);
+        bnChStatus[ID][i][j]->setFixedSize(20, 20);
+        statusLayout->addWidget(bnChStatus[ID][i][j], i + 1, j + 1);
+      }
+
+      leADCTemp[ID][i] = new QLineEdit(this);
+      leADCTemp[ID][i]->setReadOnly(true);
+      leADCTemp[ID][i]->setFixedWidth(100);
+      statusLayout->addWidget(leADCTemp[ID][i], i +1, 3 + 1);
+
+    }
+    
+    QPushButton * bnADCCali = new QPushButton("ADC Calibration", this);
+    statusLayout->addWidget(bnADCCali, MaxNChannels + 1, 0, 1, 5);
+
+    connect(bnADCCali, &QPushButton::clicked, this, [=](){
+      digi[ID]->WriteRegister(DPP::ADCCalibration_W, 1);
+      for( int i = 0 ; i < digi[ID]->GetNChannels(); i++ ) digi[ID]->ReadRegister(DPP::ChannelStatus_R, i);
+      UpdatePanelFromMemory();
+    });
+  }
+
+  {//^============================= input
+
+    QVBoxLayout *inputLayout = new QVBoxLayout(chInput);
+
+    QTabWidget * inputTab = new QTabWidget(this);
+    inputLayout->addWidget(inputTab);
+
+    QStringList tabName = {"Common Settings", "Probably OK Setings"};
+
+    const int nTab = tabName.count();
+
+    QWidget ** tabID = new QWidget * [nTab];
+
+    for( int i = 0; i < nTab; i++){   
+      tabID [i]  = new QWidget(this);
+      inputTab->addTab(tabID[i], tabName[i]);
+
+      QGridLayout * tabLayout = new QGridLayout(tabID[i]);
+      tabLayout->setSpacing(2);
+      tabLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+
+      QLabel * lb0 = new QLabel("Ch.", this); lb0->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb0, 0, 0);
+      
+      for( int ch = 0; ch < digi[ID]->GetNChannels(); ch++){
+      
+        QLabel * chid = new QLabel(QString::number(ch), this);
+        chid->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+        chid->setFixedWidth(20);
+        tabLayout->addWidget(chid, ch + 1, 0);
 
 
+        if( i == 0 ) {
 
+          if( ch == 0 ){
+            QLabel * lb1 = new QLabel("Threshold", this); lb1->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb1, 0, 2);
+            QLabel * lb2 = new QLabel("DC offset [%]", this); lb2->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb2, 0, 4);
+            QLabel * lb3 = new QLabel("Record Length [G][ns]", this); lb3->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb3, 0, 6);
+            QLabel * lb4 = new QLabel("Pre-Trigger [ns]", this); lb4->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb4, 0, 8);
+            QLabel * lb5 = new QLabel("Dynamic Range", this); lb5->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb5, 0, 10);
+            QLabel * lb6 = new QLabel("Polarity", this); lb6->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb6, 0, 12);
+          }
+
+          SetUpSpinBox(sbThreshold[ch],       "", tabLayout, ch + 1, 1, DPP::PHA::TriggerThreshold);
+          SetUpSpinBox(sbDCOffset[ch],        "", tabLayout, ch + 1, 3, DPP::ChannelDCOffset);
+          SetUpSpinBox(sbRecordLength[ch],    "", tabLayout, ch + 1, 5, DPP::RecordLength_G);
+          SetUpSpinBox(sbPreTrigger[ch],      "", tabLayout, ch + 1, 7, DPP::PreTrigger);
+          SetUpComboBox(cbDynamicRange[ch],   "", tabLayout, ch + 1, 9, DPP::InputDynamicRange);
+          SetUpComboBoxBit(cbPolarity[ch], "", tabLayout, ch + 1, 11, DPP::Bit_DPPAlgorithmControl::ListPolarity, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl::Polarity);
+        }
+
+        if ( i == 1 ){
+
+          if( ch == 0 ){
+            QLabel * lb1 = new QLabel("Rise Time [ns]", this); lb1->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb1, 0, 2);
+            QLabel * lb2 = new QLabel("Rise Time Valid. Win. [ns]", this); lb2->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb2, 0, 4);
+            QLabel * lb3 = new QLabel("Tigger Hold-off [ns]", this); lb3->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb3, 0, 6);
+            QLabel * lb4 = new QLabel("Shaped Trig. Width [ns]", this); lb4->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb4, 0, 8);
+            QLabel * lb5= new QLabel("Smoothing factor", this); lb5->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb5, 0, 10);
+          }
+          SetUpSpinBox(sbInputRiseTime[ch],   "", tabLayout, ch + 1, 1, DPP::PHA::InputRiseTime);
+          SetUpSpinBox(sbRiseTimeValidWin[ch],"", tabLayout, ch + 1, 3, DPP::PHA::RiseTimeValidationWindow);
+          SetUpSpinBox(sbTriggerHoldOff[ch],  "", tabLayout, ch + 1, 5, DPP::PHA::TriggerHoldOffWidth);
+          SetUpSpinBox(sbShapedTrigWidth[ch], "", tabLayout, ch + 1, 7, DPP::PHA::ShapedTriggerWidth);
+          SetUpComboBox(cbRCCR2Smoothing[ch], "", tabLayout, ch + 1, 9, DPP::PHA::RCCR2SmoothingFactor);
+        }
+      }
+
+    }
+  
+  }
+
+  {//^================================== Trapezoid 
+
+    QVBoxLayout *trapLayout = new QVBoxLayout(chTrap);
+
+    QTabWidget * trapTab = new QTabWidget(this);
+    trapLayout->addWidget(trapTab);
+
+    QStringList tabName = {"Common Settings", "Probably OK Setings"};
+
+    const int nTab = tabName.count();
+
+    QWidget ** tabID = new QWidget * [nTab];
+
+    for( int i = 0; i < nTab; i++){   
+      tabID [i]  = new QWidget(this);
+      trapTab->addTab(tabID[i], tabName[i]);
+
+      QGridLayout * tabLayout = new QGridLayout(tabID[i]);
+      tabLayout->setSpacing(2);
+      tabLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+
+      QLabel * lb0 = new QLabel("Ch.", this); lb0->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb0, 0, 0);
+      
+      for( int ch = 0; ch < digi[ID]->GetNChannels(); ch++){
+      
+        QLabel * chid = new QLabel(QString::number(ch), this);
+        chid->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+        chid->setFixedWidth(20);
+        tabLayout->addWidget(chid, ch + 1, 0);
+
+
+        if( i == 0 ) {
+
+          if( ch == 0 ){
+            QLabel * lb1 = new QLabel("Rise Time [ns]", this); lb1->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb1, 0, 2);
+            QLabel * lb2 = new QLabel("Flat Top [ns]", this); lb2->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb2, 0, 4);
+            QLabel * lb3 = new QLabel("Decay [ns]", this); lb3->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb3, 0, 6);
+            QLabel * lb4 = new QLabel("Peaking [ns]", this); lb4->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb4, 0, 8);
+            QLabel * lb5 = new QLabel("Peak Avg", this); lb5->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb5, 0, 10);
+            QLabel * lb6 = new QLabel("baseline Avg", this); lb6->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb6, 0, 12);
+          }
+
+          SetUpSpinBox(sbTrapRiseTime[ch], "", tabLayout, ch + 1, 1, DPP::PHA::TrapezoidRiseTime);
+          SetUpSpinBox(sbTrapFlatTop[ch],  "", tabLayout, ch + 1, 3, DPP::PHA::TrapezoidFlatTop);
+          SetUpSpinBox(sbDecay[ch],        "", tabLayout, ch + 1, 5, DPP::PHA::DecayTime);
+          SetUpSpinBox(sbPeaking[ch],      "", tabLayout, ch + 1, 7, DPP::PHA::PeakingTime);
+          SetUpComboBoxBit(cbPeakAvg[ch],  "", tabLayout, ch + 1, 9, DPP::Bit_DPPAlgorithmControl::ListPeakMean, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl::PeakMean);
+          SetUpComboBoxBit(cbBaseLineAvg[ch], "", tabLayout, ch + 1, 11, DPP::Bit_DPPAlgorithmControl::ListBaselineAvg, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl::BaselineAvg);
+        }
+
+        if ( i == 1 ){
+
+          if( ch == 0 ){
+            QLabel * lb1 = new QLabel("Peak holdoff [ns]", this); lb1->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb1, 0, 2);
+            QLabel * lb2 = new QLabel("Rescaling", this); lb2->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb2, 0, 4);
+            QLabel * lb3 = new QLabel("Fine Gain", this); lb3->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb3, 0, 6);
+          }
+          SetUpSpinBox(sbPeakingHoldOff[ch],   "", tabLayout, ch + 1, 1, DPP::PHA::PeakHoldOff);
+          SetUpSpinBox(sbTrapScaling[ch],      "", tabLayout, ch + 1, 3, DPP::PHA::DPPAlgorithmControl2_G);
+          SetUpSpinBox(sbFineGain[ch],         "", tabLayout, ch + 1, 5, DPP::PHA::FineGain);
+        }
+      }
+
+    }
+
+  }
 
 }
 
@@ -1202,7 +1377,17 @@ void DigiSettingsPanel::UpdatePanelFromMemory(){
       }
     }
   }
-  
+
+  //*========================================== Channel Status
+  for( int i = 0; i < MaxNChannels; i++){
+    uint32_t chStatus = digi[ID]->GetSettingFromMemory(DPP::ChannelStatus_R, i);
+
+    bnChStatus[ID][i][0]->setStyleSheet( ( (chStatus >> 2 ) & 0x1 ) ? "background-color: red;" : "");
+    bnChStatus[ID][i][1]->setStyleSheet( ( (chStatus >> 3 ) & 0x1 ) ? "background-color: green;" : "");
+    bnChStatus[ID][i][2]->setStyleSheet( ( (chStatus >> 8 ) & 0x1 ) ? "background-color: red;" : "");
+
+    leADCTemp[ID][i]->setText( QString::number( digi[ID]->GetSettingFromMemory(DPP::ChannelADCTemperature_R, i) ) );
+  }
 
   enableSignalSlot = true;
 }

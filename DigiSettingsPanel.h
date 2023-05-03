@@ -74,7 +74,6 @@ private:
   QPushButton * bnSaveSettingsToText;
 
   /// ============================= Board Configure
-  // QGroupBox * boardSettingBox[MaxNDigitizer];
   QGridLayout * bdCfgLayout[MaxNDigitizer];
   QGridLayout * bdACQLayout[MaxNDigitizer];
   QGridLayout * bdGlbTRGOUTLayout[MaxNDigitizer];
@@ -172,7 +171,7 @@ private:
   RSpinBox * sbPeaking[MaxNChannels + 1];
   RSpinBox * sbPeakingHoldOff[MaxNChannels + 1];
   RComboBox * cbPeakAvg[MaxNChannels + 1];
-  RComboBox * cBaseLineAvg[MaxNChannels + 1];
+  RComboBox * cbBaseLineAvg[MaxNChannels + 1];
   QCheckBox * chkActiveBaseline[MaxNChannels + 1];
   QCheckBox * chkBaselineRestore[MaxNChannels + 1];
   RSpinBox * sbFineGain[MaxNChannels + 1];
@@ -193,8 +192,9 @@ private:
   RSpinBox * sbVetoWidth[MaxNChannels + 1];
   RComboBox * cbVetoStep[MaxNChannels + 1];
 
+  QPushButton * bnChStatus[MaxNDigitizer][MaxNChannels][3];
+  QLineEdit * leADCTemp[MaxNDigitizer][MaxNChannels];
 
-  //QPushButton * bnTriggerValidMask[MaxNDigitizer][MaxNChannels/2];
 };
 
 

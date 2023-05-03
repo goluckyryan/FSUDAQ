@@ -1,8 +1,8 @@
 #ifndef MACRO_H
 #define MACRO_H
 
-#define MaxNPorts 2
-#define MaxNBoards 1
+#define MaxNPorts 1
+#define MaxNBoards 2
 
 #define MaxNDigitizer MaxNPorts * MaxNBoards
 

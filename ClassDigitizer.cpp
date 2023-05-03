@@ -194,7 +194,7 @@ int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose
     ProgramBoard();
   }
   
-  if( isConnected ) ReadAllSettingsFromBoard(); 
+  //if( isConnected ) ReadAllSettingsFromBoard(); 
 
   return ret;
 }
@@ -284,7 +284,7 @@ int Digitizer::ProgramBoard(){
 
 int Digitizer::ProgramPHABoard(){
   
-  printf("========Digitizer::%s\n", __func__);
+  printf("===== Digitizer::%s\n", __func__);
 
   ret = CAEN_DGTZ_Reset(handle);
 
@@ -578,8 +578,6 @@ void Digitizer::ReadAllSettingsFromBoard(bool force){
     }
   }
   isSettingFilledinMemeory = true;
-
-  printf("---------------------- end of %s \n", __func__);
 
 }
 
