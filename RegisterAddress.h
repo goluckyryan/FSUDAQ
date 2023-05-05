@@ -61,7 +61,7 @@ class Reg{
     const char * GetNameChar()     const {return name.c_str();}
     uint32_t     GetAddress()      const {return address; }
     RW           GetType()         const {return type;}
-    bool         GetGroup()        const {return group;}
+    bool         IsCoupled()       const {return group;}
     unsigned int GetMaxBit()       const {return maxBit;} 
     int          GetPartialStep()  const {return partialStep;} /// step = partialStep * ch2ns, -1 : step = 1
     void         Print()           const ;
@@ -232,6 +232,7 @@ namespace DPP {
                                                                     {"Ext. TRG", 11},
                                                                     {"Budy", 12}};
 
+    const std::vector<std::pair<std::string, unsigned int>> ListDigiProbe2_PHA = {{"Trigger", 0}};
   }
   
   namespace Bit_DPPAlgorithmControl {
@@ -285,6 +286,17 @@ namespace DPP {
     const std::pair<unsigned short, unsigned short> LVDSBusyEnable = {1, 8} ;
     const std::pair<unsigned short, unsigned short> LVDSVetoEnable = {1, 9} ;
     const std::pair<unsigned short, unsigned short> VetoTRGOut = {1, 12} ;
+
+    const std::vector<std::pair<std::string, unsigned int>> ListStartStopMode = {{"SW controlled", 0},
+                                                                                 {"S-IN/GPI controlled", 1},
+                                                                                 {"1st Trigger", 2},
+                                                                                 {"LVDS controlled", 3}};
+
+    const std::vector<std::pair<std::string, unsigned int>> ListACQStartArm = {{"ACQ STOP", 0},
+                                                                               {"ACQ RUN", 1}};
+
+    const std::vector<std::pair<std::string, unsigned int>> ListPLLRef = {{"Internal 50 MHz", 0},
+                                                                          {"Ext. CLK-IN", 1}};
   }
 
   namespace Bit_AcqStatus {

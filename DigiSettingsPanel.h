@@ -50,7 +50,10 @@ private:
   void UpdateComboBox(RComboBox * &cb, Reg para, int ch);
   void UpdateComboBoxBit(RComboBox * &cb, uint32_t fullBit, std::pair<unsigned short, unsigned short> bit);
 
-  void SyncSpinBox(RSpinBox *(&spb)[][MaxNChannels+1], int ch);
+  void SyncSpinBox(RSpinBox *(&spb)[][MaxNChannels+1]);
+  void SyncComboBox(RComboBox *(&cb)[][MaxNChannels+1]);
+  void SyncCheckBox(QCheckBox *(&chk)[][MaxNChannels+1]);
+  void SyncAllChannelsTab_PHA();
 
   void UpdatePHASetting();
 

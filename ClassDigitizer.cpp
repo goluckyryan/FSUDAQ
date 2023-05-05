@@ -465,17 +465,29 @@ void Digitizer::WriteRegister (Reg registerAddress, uint32_t value, int ch, bool
   printf("%30s[0x%04X](ch-%02d) [0x%04X]: 0x%08X \n", registerAddress.GetNameChar(), registerAddress.GetAddress(),ch, registerAddress.ActualAddress(ch), value);
 
   if( !isConnected ) {
-    SetSettingToMemory(registerAddress, value, ch);
-    SaveSettingToFile(registerAddress, value, ch);
+    //SetSettingToMemory(registerAddress, value, ch); //TODO should the binary setting be edited offline?
+    //SaveSettingToFile(registerAddress, value, ch);
     return;
   }
   
   if( registerAddress.GetType() == RW::ReadONLY ) return;
   
   ret = CAEN_DGTZ_WriteRegister(handle, registerAddress.ActualAddress(ch), value);
+
   if( ret == 0 && isSave2MemAndFile && registerAddress.GetType() == RW::ReadWrite) {
-    SetSettingToMemory(registerAddress, value, ch);
-    SaveSettingToFile(registerAddress, value, ch);
+    if( ch < 0 ) {
+      for(int i = 0; i < NChannel; i++){
+        SetSettingToMemory(registerAddress, value, i);
+        SaveSettingToFile(registerAddress, value, i);
+      }
+    }else{
+      SetSettingToMemory(registerAddress, value, ch);
+      SaveSettingToFile(registerAddress, value, ch);
+      if( registerAddress.IsCoupled() ) {
+        SetSettingToMemory(registerAddress, value, ch%2 == 0 ? ch + 1 : ch -1);
+        SaveSettingToFile(registerAddress, value, ch%2 == 0 ? ch + 1 : ch -1);
+      }
+    }
   }
   
   ErrorMsg("WriteRegister:" + std::to_string(registerAddress));

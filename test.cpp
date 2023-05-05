@@ -37,22 +37,24 @@ int main(int argc, char* argv[]){
 
   const float ch2ns = dig[0]->GetCh2ns();
 
-  Data * data =  dig[0]->GetData();
+  
 
-  dig[0]->StartACQ();
+  // Data * data =  dig[0]->GetData();
 
-  for( int i = 0; i < 50; i ++ ){
-    usleep(100*1000);
-    dig[0]->ReadData();
-    data->DecodeBuffer(false);
-    data->PrintStat();
+  // dig[0]->StartACQ();
 
-    int index = data->NumEventsDecoded[0];
-    printf("-------------- %ld \n", data->Waveform1[0][index].size());
+  // for( int i = 0; i < 50; i ++ ){
+  //   usleep(100*1000);
+  //   dig[0]->ReadData();
+  //   data->DecodeBuffer(false);
+  //   data->PrintStat();
 
-  }
+  //   int index = data->NumEventsDecoded[0];
+  //   printf("-------------- %ld \n", data->Waveform1[0][index].size());
 
-  dig[0]->StopACQ();
+  // }
+
+  // dig[0]->StopACQ();
 
 
   //data->PrintAllData();
