@@ -19,7 +19,7 @@
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
 
   setWindowTitle("FSU DAQ");
-  setGeometry(500, 100, 1000, 500);
+  setGeometry(500, 100, 1100, 500);
 
   digi = nullptr;
   nDigi = 0;
@@ -358,8 +358,17 @@ void MainWindow::OpenDigitizers(){
     QString fileName = rawDataPath + "/Digi-" + QString::number(digi[i]->GetSerialNumber()) + ".bin"; //TODO add DPP Type in File Name
     QFile file(fileName);
     if( !file.open(QIODevice::Text | QIODevice::ReadOnly) ) {
-      LogMsg("<b>" + fileName + "</b> not found. Program predefined PHA settings."); //TODO, PSD?
-      digi[i]->ProgramPHABoard();
+
+      if( digi[i]->GetDPPType() == V1730_DPP_PHA_CODE ) {
+        digi[i]->ProgramPHABoard();
+        LogMsg("<b>" + fileName + "</b> not found. Program predefined PHA settings.");
+      }
+
+      if( digi[i]->GetDPPType() == V1730_DPP_PSD_CODE ){
+
+        LogMsg("<b>" + fileName + "</b> not found."); //TODO, PSD?
+      }
+
     }else{
       LogMsg("Found <b>" + fileName + "</b> for digitizer settings.");
       

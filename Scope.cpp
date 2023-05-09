@@ -449,7 +449,7 @@ void Scope::SetUpPHAPanel(){
   cbPolarity->addItem("Negative", 1);
   connect(cbPolarity, &RComboBox::currentIndexChanged, this, [=](){
     if( !enableSignalSlot ) return;
-    digi[ID]->SetBits(DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl::Polarity, cbPolarity->currentData().toInt(), cbScopeCh->currentIndex());
+    digi[ID]->SetBits(DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PHA::Polarity, cbPolarity->currentData().toInt(), cbScopeCh->currentIndex());
   });
 
   SetUpComboBoxSimple(cbBaselineAvg, "Baseline Avg. ", rowID, 2);
@@ -462,7 +462,7 @@ void Scope::SetUpPHAPanel(){
   cbBaselineAvg->addItem("16384 sample", 6);
   connect(cbBaselineAvg, &RComboBox::currentIndexChanged, this, [=](){
     if( !enableSignalSlot ) return;
-    digi[ID]->SetBits(DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl::BaselineAvg, cbBaselineAvg->currentData().toInt(), cbScopeCh->currentIndex());
+    digi[ID]->SetBits(DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PHA::BaselineAvg, cbBaselineAvg->currentData().toInt(), cbScopeCh->currentIndex());
   });
 
   SetUpComboBoxSimple(cbPeakAvg, "Peak Avg. ", rowID, 4);
@@ -472,7 +472,7 @@ void Scope::SetUpPHAPanel(){
   cbPeakAvg->addItem("64 sample", 3);
   connect(cbPeakAvg, &RComboBox::currentIndexChanged, this, [=](){
     if( !enableSignalSlot ) return;
-    digi[ID]->SetBits(DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl::PeakMean, cbPeakAvg->currentData().toInt(), cbScopeCh->currentIndex());
+    digi[ID]->SetBits(DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PHA::PeakMean, cbPeakAvg->currentData().toInt(), cbScopeCh->currentIndex());
   });
 
   SetUpSpinBox(sbPeakHoldOff,      "Peak HoldOff [ns] ", rowID, 6, DPP::PHA::PeakHoldOff);
@@ -545,7 +545,7 @@ void Scope::SetUpPSDPanel(){
   cbPolarity->addItem("Negative", 1);
   connect(cbPolarity, &RComboBox::currentIndexChanged, this, [=](){
     if( !enableSignalSlot ) return;
-    digi[ID]->SetBits(DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl::Polarity, cbPolarity->currentData().toInt(), cbScopeCh->currentIndex());
+    digi[ID]->SetBits(DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PHA::Polarity, cbPolarity->currentData().toInt(), cbScopeCh->currentIndex());
   });
 }
 
@@ -615,7 +615,7 @@ void Scope::UpdatePanelFromMomeory(){
   UpdateComobox(cbDynamicRange, DPP::InputDynamicRange);
 
   uint32_t DPPAlg = digi[ID]->GetSettingFromMemory(DPP::DPPAlgorithmControl, ch);
-  if( Digitizer::ExtractBits(DPPAlg, DPP::Bit_DPPAlgorithmControl::Polarity) ){
+  if( Digitizer::ExtractBits(DPPAlg, DPP::Bit_DPPAlgorithmControl_PHA::Polarity) ){
     cbPolarity->setCurrentIndex(1);
   }else{
     cbPolarity->setCurrentIndex(0);
@@ -633,7 +633,7 @@ void Scope::UpdatePanelFromMomeory(){
 
     UpdateComobox(cbSmoothingFactor, DPP::PHA::RCCR2SmoothingFactor);
 
-    int temp = Digitizer::ExtractBits(DPPAlg, DPP::Bit_DPPAlgorithmControl::BaselineAvg);
+    int temp = Digitizer::ExtractBits(DPPAlg, DPP::Bit_DPPAlgorithmControl_PHA::BaselineAvg);
     for(int i = 0; i < cbBaselineAvg->count(); i++){
       if( cbBaselineAvg->itemData(i).toInt() == temp) {
         cbBaselineAvg->setCurrentIndex(i);
@@ -641,7 +641,7 @@ void Scope::UpdatePanelFromMomeory(){
       }
     }
 
-    temp = Digitizer::ExtractBits(DPPAlg, DPP::Bit_DPPAlgorithmControl::PeakMean);
+    temp = Digitizer::ExtractBits(DPPAlg, DPP::Bit_DPPAlgorithmControl_PHA::PeakMean);
     for(int i = 0; i < cbPeakAvg->count(); i++){
       if( cbPeakAvg->itemData(i).toInt() == temp) {
         cbPeakAvg->setCurrentIndex(i);
