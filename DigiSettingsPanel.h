@@ -57,9 +57,11 @@ private:
   void SyncSpinBox(RSpinBox *(&spb)[][MaxNChannels+1]);
   void SyncComboBox(RComboBox *(&cb)[][MaxNChannels+1]);
   void SyncCheckBox(QCheckBox *(&chk)[][MaxNChannels+1]);
-  void SyncAllChannelsTab_PHA();
 
+  void SyncAllChannelsTab_PHA();
   void UpdatePHASetting();
+  void SyncAllChannelsTab_PSD();
+  void UpdatePSDSetting();
 
 
   Digitizer ** digi;

@@ -258,7 +258,8 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
   connect(tabWidget, &QTabWidget::currentChanged, this, [=](int index){ 
     if( index < (int) nDigi) {
       ID = index;
-      if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) UpdatePanelFromMemory(); 
+      //if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) UpdatePanelFromMemory(); 
+      UpdatePanelFromMemory(); 
     }
   });
 
@@ -1403,7 +1404,7 @@ void DigiSettingsPanel::SetUpPSDChannel(){
     papa->addWidget(chSelection[ID]);
 
     connect(chSelection[ID], &RComboBox::currentIndexChanged, this, [=](){
-      SyncAllChannelsTab_PHA();
+      SyncAllChannelsTab_PSD();
     });
   }
 
@@ -2128,6 +2129,7 @@ void DigiSettingsPanel::UpdatePanelFromMemory(){
   }
 
   if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) UpdatePHASetting();
+  if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) UpdatePSDSetting();
 
   enableSignalSlot = true;
 }
@@ -2309,6 +2311,7 @@ void DigiSettingsPanel::SyncAllChannelsTab_PHA(){
 
 }
 
+
 void DigiSettingsPanel::UpdatePHASetting(){
 
   enableSignalSlot = false;
@@ -2371,6 +2374,145 @@ void DigiSettingsPanel::UpdatePHASetting(){
   enableSignalSlot = true;
 
   SyncAllChannelsTab_PHA();
+
+}
+
+
+void DigiSettingsPanel::SyncAllChannelsTab_PSD(){
+
+    SyncSpinBox(sbRecordLength);
+    SyncSpinBox(sbPreTrigger);
+    SyncSpinBox(sbThreshold);
+    SyncSpinBox(sbDCOffset);
+    SyncSpinBox(sbPSDCutThreshold);
+    SyncSpinBox(sbChargeZeroSupZero);
+    SyncSpinBox(sbShapedTrigWidth);
+    SyncSpinBox(sbTriggerHoldOff);
+    SyncSpinBox(sbTriggerLatency);
+    SyncSpinBox(sbShortGate);
+    SyncSpinBox(sbLongGate);
+    SyncSpinBox(sbGateOffset);
+    SyncSpinBox(sbFixedBaseline);
+    SyncSpinBox(sbCFDDely);
+    SyncSpinBox(sbNumEventAgg);
+    SyncSpinBox(sbVetoWidth);
+    SyncSpinBox(sbPURGAPThreshold);
+
+    SyncCheckBox(chkBaseLineCal);
+    SyncCheckBox(chkChargePedestal);
+    SyncCheckBox(chkDiscardQLong);
+    SyncCheckBox(chkCutBelow);
+    SyncCheckBox(chkCutAbove);
+    SyncCheckBox(chkRejOverRange);
+    SyncCheckBox(chkDisableOppositePulse);
+    SyncCheckBox(chkDisableSelfTrigger);
+    SyncCheckBox(chkRejPileUp);
+    SyncCheckBox(chkPileUpInGate);
+    SyncCheckBox(chkDisableTriggerHysteresis);
+    SyncCheckBox(chkMarkSaturation);
+    SyncCheckBox(chkResetTimestampByTRGIN);
+    SyncCheckBox(chkTestPule);
+
+    SyncComboBox(cbDynamicRange);
+    SyncComboBox(cbPolarity);
+    SyncComboBox(cbChargeSensitivity);
+    SyncComboBox(cbBaseLineAvg);
+    SyncComboBox(cbTrigMode);
+    SyncComboBox(cbLocalTriggerValid);
+    SyncComboBox(cbAdditionLocalTrigValid);
+    SyncComboBox(cbDiscriMode);
+    SyncComboBox(cbLocalShapedTrigger);
+    SyncComboBox(cbTrigCount);
+    SyncComboBox(cbTriggerOpt);
+    SyncComboBox(cbSmoothedChargeIntegration);
+    SyncComboBox(cbCFDFraction);
+    SyncComboBox(cbCFDInterpolation);
+    SyncComboBox(cbTestPulseRate);
+    SyncComboBox(cbExtra2Option);
+    SyncComboBox(cbVetoSource);
+    SyncComboBox(cbVetoMode);
+    SyncComboBox(cbVetoStep);
+
+
+}
+void DigiSettingsPanel::UpdatePSDSetting(){
+
+  enableSignalSlot = false;
+
+  printf("------ %s \n", __func__);
+
+  for(int ch = 0; ch < digi[ID]->GetNChannels(); ch ++){
+
+    UpdateSpinBox(sbRecordLength[ID][ch],      DPP::RecordLength_G, ch);
+    UpdateSpinBox(sbPreTrigger[ID][ch],        DPP::PreTrigger, ch);
+    UpdateSpinBox(sbThreshold[ID][ch],         DPP::PSD::TriggerThreshold, ch);
+    UpdateSpinBox(sbDCOffset[ID][ch],          DPP::ChannelDCOffset, ch);
+    UpdateSpinBox(sbChargeZeroSupZero[ID][ch], DPP::PSD::ChargeZeroSuppressionThreshold, ch);
+    UpdateSpinBox(sbPSDCutThreshold[ID][ch],   DPP::PSD::ThresholdForPSDCut, ch);
+    UpdateSpinBox(sbTriggerHoldOff[ID][ch],    DPP::PSD::TriggerHoldOffWidth, ch);
+    UpdateSpinBox(sbShapedTrigWidth[ID][ch],   DPP::PSD::ShapedTriggerWidth, ch);
+    UpdateSpinBox(sbTriggerLatency[ID][ch],    DPP::PSD::TriggerLatency, ch);
+    UpdateSpinBox(sbShortGate[ID][ch],         DPP::PSD::ShortGateWidth, ch);
+    UpdateSpinBox(sbLongGate[ID][ch],          DPP::PSD::LongGateWidth, ch);
+    UpdateSpinBox(sbGateOffset[ID][ch],        DPP::PSD::GateOffset, ch);
+    UpdateSpinBox(sbFixedBaseline[ID][ch],     DPP::PSD::FixedBaseline, ch);
+    UpdateSpinBox(sbPURGAPThreshold[ID][ch],   DPP::PSD::PurGapThreshold, ch);
+    UpdateSpinBox(sbNumEventAgg[ID][ch],       DPP::NumberEventsPerAggregate_G, ch);
+    UpdateComboBox(cbDynamicRange[ID][ch],     DPP::InputDynamicRange, ch);
+
+
+    uint32_t dpp = digi[ID]->GetSettingFromMemory(DPP::DPPAlgorithmControl, ch);
+
+    UpdateComboBoxBit(cbPolarity[ID][ch],           dpp, DPP::Bit_DPPAlgorithmControl_PSD::Polarity);
+    UpdateComboBoxBit(cbChargeSensitivity[ID][ch],  dpp, DPP::Bit_DPPAlgorithmControl_PSD::ChargeSensitivity);
+    UpdateComboBoxBit(cbBaseLineAvg[ID][ch],        dpp, DPP::Bit_DPPAlgorithmControl_PSD::BaselineAvg);
+    UpdateComboBoxBit(cbTrigMode[ID][ch],           dpp, DPP::Bit_DPPAlgorithmControl_PSD::TriggerMode);
+    UpdateComboBoxBit(cbDiscriMode[ID][ch],         dpp, DPP::Bit_DPPAlgorithmControl_PSD::DiscriminationMode);
+    UpdateComboBoxBit(cbTriggerOpt[ID][ch],         dpp, DPP::Bit_DPPAlgorithmControl_PSD::TriggerCountOpt);
+    UpdateComboBoxBit(cbTestPulseRate[ID][ch],      dpp, DPP::Bit_DPPAlgorithmControl_PSD::TestPulseRate);
+
+    chkChargePedestal[ID][ch]->setChecked(  Digitizer::ExtractBits(dpp, DPP::Bit_DPPAlgorithmControl_PSD::ChargePedestal));
+    chkBaseLineCal[ID][ch]->setChecked(     Digitizer::ExtractBits(dpp, DPP::Bit_DPPAlgorithmControl_PSD::BaselineCal));
+    chkDiscardQLong[ID][ch]->setChecked(    Digitizer::ExtractBits(dpp, DPP::Bit_DPPAlgorithmControl_PSD::DiscardQLongSmallerQThreshold));
+    chkCutBelow[ID][ch]->setChecked(        Digitizer::ExtractBits(dpp, DPP::Bit_DPPAlgorithmControl_PSD::EnablePSDCutBelow));
+    chkCutAbove[ID][ch]->setChecked(        Digitizer::ExtractBits(dpp, DPP::Bit_DPPAlgorithmControl_PSD::EnablePSDCutAbove));
+    chkRejOverRange[ID][ch]->setChecked(    Digitizer::ExtractBits(dpp, DPP::Bit_DPPAlgorithmControl_PSD::RejectOverRange));
+    chkTestPule[ID][ch]->setChecked(        Digitizer::ExtractBits(dpp, DPP::Bit_DPPAlgorithmControl_PSD::InternalTestPulse));
+
+    uint32_t dpp2 = digi[ID]->GetSettingFromMemory(DPP::PSD::DPPAlgorithmControl2_G, ch);
+
+    chkDisableOppositePulse[ID][ch]->setChecked(     Digitizer::ExtractBits(dpp2, DPP::Bit_DPPAlgorithmControl_PSD::DisableOppositePolarityInhibitZeroCrossingOnCFD));
+    chkDisableSelfTrigger[ID][ch]->setChecked(       Digitizer::ExtractBits(dpp2, DPP::Bit_DPPAlgorithmControl_PSD::DisableSelfTrigger));
+    chkRejPileUp[ID][ch]->setChecked(                Digitizer::ExtractBits(dpp2, DPP::Bit_DPPAlgorithmControl_PSD::RejectPileup));
+    chkPileUpInGate[ID][ch]->setChecked(             Digitizer::ExtractBits(dpp2, DPP::Bit_DPPAlgorithmControl_PSD::PileupWithinGate));
+    chkDisableTriggerHysteresis[ID][ch]->setChecked( Digitizer::ExtractBits(dpp2, DPP::Bit_DPPAlgorithmControl_PSD::DisableTriggerHysteresis));
+    chkMarkSaturation[ID][ch]->setChecked(           Digitizer::ExtractBits(dpp2, DPP::PSD::Bit_DPPAlgorithmControl2::MarkSaturation));
+    chkResetTimestampByTRGIN[ID][ch]->setChecked(    Digitizer::ExtractBits(dpp2, DPP::PSD::Bit_DPPAlgorithmControl2::ResetTimestampByTRGIN));
+
+
+    UpdateComboBoxBit(cbLocalTriggerValid[ID][ch],          dpp2, DPP::PSD::Bit_DPPAlgorithmControl2::LocalTrigValidMode);
+    UpdateComboBoxBit(cbAdditionLocalTrigValid[ID][ch],     dpp2, DPP::PSD::Bit_DPPAlgorithmControl2::AdditionLocalTrigValid);
+    UpdateComboBoxBit(cbLocalShapedTrigger[ID][ch],         dpp2, DPP::PSD::Bit_DPPAlgorithmControl2::LocalShapeTriggerMode);
+    UpdateComboBoxBit(cbTrigCount[ID][ch],                  dpp2, DPP::PSD::Bit_DPPAlgorithmControl2::TriggerCounterFlag);
+    UpdateComboBoxBit(cbSmoothedChargeIntegration[ID][ch],  dpp2, DPP::PSD::Bit_DPPAlgorithmControl2::SmoothedChargeIntegration);
+    UpdateComboBoxBit(cbVetoSource[ID][ch],                 dpp2, DPP::PSD::Bit_DPPAlgorithmControl2::VetoSource);
+    UpdateComboBoxBit(cbVetoMode[ID][ch],                   dpp2, DPP::PSD::Bit_DPPAlgorithmControl2::VetoMode);
+    UpdateComboBoxBit(cbExtra2Option[ID][ch],               dpp2, DPP::PSD::Bit_DPPAlgorithmControl2::ExtraWordOption);
+   
+    uint32_t CFDBit = digi[ID]->GetSettingFromMemory(DPP::PSD::CFDSetting, ch);
+
+    UpdateSpinBox(sbCFDDely[ID][ch],           DPP::PSD::CFDSetting, ch);
+    UpdateComboBoxBit(cbCFDFraction[ID][ch],      CFDBit, DPP::PSD::Bit_CFDSetting::CFDFraction);
+    UpdateComboBoxBit(cbCFDInterpolation[ID][ch], CFDBit, DPP::PSD::Bit_CFDSetting::Interpolation);
+
+    uint32_t vetoBit = digi[ID]->GetSettingFromMemory(DPP::VetoWidth, ch);
+
+    UpdateSpinBox(sbVetoWidth[ID][ch],         DPP::VetoWidth, ch);
+    UpdateComboBoxBit(cbVetoStep[ID][ch], vetoBit, DPP::Bit_VetoWidth::VetoStep);
+  }
+  enableSignalSlot = true;
+
+  SyncAllChannelsTab_PSD();
 
 }
 
