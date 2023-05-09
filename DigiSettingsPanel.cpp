@@ -36,7 +36,7 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
   enableSignalSlot = false;
 
   setWindowTitle("Digitizer Settings");
-  setGeometry(0, 0, 1500, 850);  
+  setGeometry(0, 0, 1600, 850);  
 
   tabWidget = new QTabWidget(this);
   setCentralWidget(tabWidget);
@@ -935,6 +935,9 @@ void DigiSettingsPanel::SetUpPHAChannel(){
   QWidget * chInput = new QWidget(this);
   chTab->addTab(chInput, "Input");
 
+  QWidget * chTrig = new QWidget(this);
+  chTab->addTab(chTrig, "Trigger");
+
   QWidget * chTrap = new QWidget(this);
   chTab->addTab(chTrap, "Trapezoid");
 
@@ -1134,13 +1137,11 @@ void DigiSettingsPanel::SetUpPHAChannel(){
           if( ch == 0 ){
             QLabel * lb1 = new QLabel("Rise Time [ns]", this); lb1->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb1, 0, 2);
             QLabel * lb2 = new QLabel("Rise Time Valid. Win. [ns]", this); lb2->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb2, 0, 4);
-            QLabel * lb3 = new QLabel("Tigger Hold-off [ns]", this); lb3->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb3, 0, 6);
             QLabel * lb4 = new QLabel("Shaped Trig. Width [ns]", this); lb4->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb4, 0, 8);
             QLabel * lb5= new QLabel("Smoothing factor", this); lb5->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb5, 0, 10);
           }
           SetUpSpinBox(sbInputRiseTime[ID][ch],   "", tabLayout, ch + 1, 1, DPP::PHA::InputRiseTime, ch);
           SetUpSpinBox(sbRiseTimeValidWin[ID][ch],"", tabLayout, ch + 1, 3, DPP::PHA::RiseTimeValidationWindow, ch);
-          SetUpSpinBox(sbTriggerHoldOff[ID][ch],  "", tabLayout, ch + 1, 5, DPP::PHA::TriggerHoldOffWidth, ch);
           SetUpSpinBox(sbShapedTrigWidth[ID][ch], "", tabLayout, ch + 1, 7, DPP::PHA::ShapedTriggerWidth, ch);
           SetUpComboBox(cbRCCR2Smoothing[ID][ch], "", tabLayout, ch + 1, 9, DPP::PHA::RCCR2SmoothingFactor, ch);
         }
@@ -1148,6 +1149,64 @@ void DigiSettingsPanel::SetUpPHAChannel(){
 
     }
   
+  }
+
+  {//^================================== Trigger 
+
+    QVBoxLayout *trigLayout = new QVBoxLayout(chTrig);
+
+    QTabWidget * trigTab = new QTabWidget(this);
+    trigLayout->addWidget(trigTab);
+
+    QStringList tabName = {"Common Settings", "Probably OK Setings"};
+
+    const int nTab = tabName.count();
+
+    QWidget ** tabID = new QWidget * [nTab];
+
+    for( int i = 0; i < nTab; i++){   
+      tabID [i]  = new QWidget(this);
+      trigTab->addTab(tabID[i], tabName[i]);
+
+      QGridLayout * tabLayout = new QGridLayout(tabID[i]);
+      tabLayout->setSpacing(2);
+      tabLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+
+      QLabel * lb0 = new QLabel("Ch.", this); lb0->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb0, 0, 0);
+      
+      for( int ch = 0; ch < digi[ID]->GetNChannels(); ch++){
+        QLabel * chid = new QLabel(QString::number(ch), this);
+        chid->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+        chid->setFixedWidth(20);
+        tabLayout->addWidget(chid, ch + 1, 0);
+
+        if( i == 0 ){
+          if( ch == 0 ){
+            QLabel * lb0 = new QLabel("Trig Mode", this); lb0->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb0, 0, 4);
+            QLabel * lb3 = new QLabel("Tigger Hold-off [ns]", this); lb3->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb3, 0, 6);
+            QLabel * lb4 = new QLabel("Local Trig. Valid. [G]", this); lb4->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb4, 0, 8);
+          }
+          SetUpCheckBox(chkDisableSelfTrigger[ID][ch],  "Disable Self Trigger", tabLayout, ch + 1, 1, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PHA::DisableSelfTrigger, ch);
+          SetUpComboBoxBit(cbTrigMode[ID][ch],                              "", tabLayout, ch + 1, 3, DPP::Bit_DPPAlgorithmControl_PHA::ListTrigMode, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PHA::TriggerMode, 1, ch);
+          SetUpSpinBox(sbTriggerHoldOff[ID][ch],                            "", tabLayout, ch + 1, 5, DPP::PHA::TriggerHoldOffWidth, ch);
+          SetUpComboBoxBit(cbLocalTriggerValid[ID][ch],                     "", tabLayout, ch + 1, 7, DPP::PHA::Bit_DPPAlgorithmControl2::ListLocalTrigValidMode, DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::LocalTrigValidMode, 1, ch);
+        }
+
+        if( i == 1 ){
+          if( ch == 0 ){
+            QLabel * lb3 = new QLabel("Shaped Trig. Width [ns]", this); lb3->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb3, 0, 2);
+            QLabel * lb2 = new QLabel("Local Shaped Trig. [G]", this); lb2->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb2, 0, 4);
+            QLabel * lb1 = new QLabel("Trig. Counter Flag [G]", this); lb1->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb1, 0, 6);
+          }
+          SetUpSpinBox(sbShapedTrigWidth[ID][ch],        "", tabLayout, ch + 1, 1, DPP::PSD::ShapedTriggerWidth, ch);
+          SetUpComboBoxBit(cbLocalShapedTrigger[ID][ch], "", tabLayout, ch + 1, 3, DPP::PHA::Bit_DPPAlgorithmControl2::ListLocalShapeTrigMode, DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::LocalShapeTriggerMode, 1, ch);
+          SetUpComboBoxBit(cbTrigCount[ID][ch],          "", tabLayout, ch + 1, 5, DPP::PHA::Bit_DPPAlgorithmControl2::ListTrigCounter, DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::TriggerCounterFlag, 1, ch);
+          SetUpCheckBox(chkTagCorrelation[ID][ch], "Tag Correlated events [G]", tabLayout, ch + 1, 7, DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::TagCorrelatedEvents, ch);
+
+        }
+      }
+    }
+
   }
 
   {//^================================== Trapezoid 
@@ -1221,7 +1280,7 @@ void DigiSettingsPanel::SetUpPHAChannel(){
     QTabWidget * othersTab = new QTabWidget(this);
     otherLayout->addWidget(othersTab);
 
-    QStringList tabName = {"Tab-1", "Tab-2", "Veto", "Trigger", "Extra2"};
+    QStringList tabName = {"Tab-1", "Tab-2", "Veto", "Extra2"};
 
     const int nTab = tabName.count();
 
@@ -1244,13 +1303,8 @@ void DigiSettingsPanel::SetUpPHAChannel(){
         tabLayout->addWidget(chid, ch + 1, 0);
 
         if( i == 0 ){
-          if( ch == 0 ){
-            QLabel * lb1 = new QLabel("Trig. Counter Flag [G]", this); lb1->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb1, 0, 5);
-          }
-          SetUpCheckBox(chkDisableSelfTrigger[ID][ch],  "Disable Self Trigger", tabLayout, ch + 1, 1, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PHA::DisableSelfTrigger, ch);
           SetUpCheckBox(chkEnableRollOver[ID][ch],    "Enable Roll-Over Event", tabLayout, ch + 1, 2, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PHA::EnableRollOverFlag, ch);
           SetUpCheckBox(chkEnablePileUp[ID][ch],         "Allow Pile-up Event", tabLayout, ch + 1, 3, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PHA::EnablePileUpFlag, ch);
-          SetUpComboBoxBit(cbTrigCount[ID][ch],     "", tabLayout, ch + 1, 4, DPP::PHA::Bit_DPPAlgorithmControl2::ListTrigCounter, DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::TriggerCounterFlag, 1, ch);
         }
 
         if( i == 1 ){
@@ -1276,19 +1330,6 @@ void DigiSettingsPanel::SetUpPHAChannel(){
         }
 
         if( i == 3 ){
-          if( ch == 0 ){
-            QLabel * lb0 = new QLabel("Trig Mode", this); lb0->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb0, 0, 2);
-            QLabel * lb4 = new QLabel("Local Trig. Valid. [G]", this); lb4->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb4, 0, 4);
-            QLabel * lb2 = new QLabel("Local Shaped Trig. [G]", this); lb2->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb2, 0, 6);
-          }
-          SetUpComboBoxBit(cbTrigMode[ID][ch],      "", tabLayout, ch + 1, 1, DPP::Bit_DPPAlgorithmControl_PHA::ListTrigMode, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PHA::TriggerMode, 1, ch);
-          SetUpComboBoxBit(cbLocalTriggerValid[ID][ch],  "", tabLayout, ch + 1, 3, DPP::PHA::Bit_DPPAlgorithmControl2::ListLocalTrigValidMode, DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::LocalTrigValidMode, 1, ch);
-          SetUpComboBoxBit(cbLocalShapedTrigger[ID][ch], "", tabLayout, ch + 1, 5, DPP::PHA::Bit_DPPAlgorithmControl2::ListLocalShapeTrigMode, DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::LocalShapeTriggerMode, 1, ch);
-          SetUpCheckBox(chkTagCorrelation[ID][ch], "Tag Correlated events [G]", tabLayout, ch + 1, 8, DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::TagCorrelatedEvents, ch);
-
-        }
-
-        if( i == 4 ){
           if( ch == 0 ){
             QLabel * lb2 = new QLabel("Extra2 Option [G]", this); lb2->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb2, 0, 2);
           }
@@ -1330,6 +1371,9 @@ void DigiSettingsPanel::SetUpPSDChannel(){
 
   QWidget * chInput = new QWidget(this);
   chTab->addTab(chInput, "Input");
+
+  QWidget * chTrig = new QWidget(this);
+  chTab->addTab(chTrig, "Trigger");
 
   QWidget * chTrap = new QWidget(this);
   chTab->addTab(chTrap, "Pulse Shape");
@@ -1385,24 +1429,23 @@ void DigiSettingsPanel::SetUpPSDChannel(){
       cbChargeSensitivity[ID][MaxNChannels]->clear();
       cbChargeSensitivity[ID][MaxNChannels]->addItem("", -999);
 
-      if ( text.contains("2") ){ // 2Vpp
-        const std::vector<std::pair<std::string, unsigned int>> list = DPP::Bit_DPPAlgorithmControl_PSD::ListChargeSensitivity_2Vpp;
+      const std::vector<std::pair<std::string, unsigned int>> list = text.contains("0.5") ? DPP::Bit_DPPAlgorithmControl_PSD::ListChargeSensitivity_p5Vpp : DPP::Bit_DPPAlgorithmControl_PSD::ListChargeSensitivity_2Vpp;  
         
-        for( int i = 0; i < (int) list.size(); i++){
-          cbChargeSensitivity[ID][MaxNChannels]->addItem(QString::fromStdString(list[i].first), list[i].second);
-        }
-      }
-
+      for( int i = 0; i < (int) list.size(); i++) cbChargeSensitivity[ID][MaxNChannels]->addItem(QString::fromStdString(list[i].first), list[i].second);
+      
     });
 
     SetUpCheckBox(chkBaseLineCal[ID][MaxNChannels],     "Baseline ReCal.", inputLayout, 4, 1, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::BaselineCal);
     SetUpComboBoxBit(cbBaseLineAvg[ID][MaxNChannels],  "Baseline Avg. : ", inputLayout, 4, 2, DPP::Bit_DPPAlgorithmControl_PSD::ListBaselineAvg, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::BaselineAvg);
 
-    SetUpCheckBox(chkDiscardQLong[ID][MaxNChannels], "Discard QLong < QThr ", inputLayout, 5, 1, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::DiscardQLongSmallerQThreshold);
+    SetUpCheckBox(chkDiscardQLong[ID][MaxNChannels], "Discard QLong < QThr.", inputLayout, 5, 1, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::DiscardQLongSmallerQThreshold);
     SetUpSpinBox(sbChargeZeroSupZero[ID][MaxNChannels],     "Q-Threshold : ", inputLayout, 5, 2, DPP::PSD::ChargeZeroSuppressionThreshold);
-    SetUpCheckBox(chkCutBelow[ID][MaxNChannels],      "Cut Below Threshold ", inputLayout, 6, 1, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::EnablePSDCutBelow);
-    SetUpCheckBox(chkCutAbove[ID][MaxNChannels],      "Cut Above Threshold ", inputLayout, 6, 2, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::EnablePSDCutAbove);
-    SetUpCheckBox(chkRejOverRange[ID][MaxNChannels],      "Rej. Over-Range ", inputLayout, 6, 3, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::RejectOverRange);
+
+    SetUpSpinBox(sbPSDCutThreshold[ID][MaxNChannels], "PSD Cut Threshold : ", inputLayout, 6, 0, DPP::PSD::ThresholdForPSDCut);
+    SetUpCheckBox(chkCutBelow[ID][MaxNChannels],            "Cut Below Thr.", inputLayout, 7, 1, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::EnablePSDCutBelow);
+    SetUpCheckBox(chkCutAbove[ID][MaxNChannels],            "Cut Above Thr.", inputLayout, 7, 2, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::EnablePSDCutAbove);
+    SetUpCheckBox(chkRejOverRange[ID][MaxNChannels],      "Rej. Over-Range ", inputLayout, 7, 3, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::RejectOverRange);
+
   }
 
   {//*=================== Trigger
@@ -1412,12 +1455,12 @@ void DigiSettingsPanel::SetUpPSDChannel(){
     QGridLayout  * trigLayout = new QGridLayout(trigBox);
     trigLayout->setSpacing(2);
 
-    SetUpCheckBox(chkDisableOppositePulse[ID][MaxNChannels],  "Disable 0-Xing inhibit from opp. pulse", trigLayout, 0, 0, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::DisableOppositePolarityInhibitZeroCrossingOnCFD, -1, 2);
-    SetUpCheckBox(chkDisableSelfTrigger[ID][MaxNChannels],                     "Disable Self Trigger ", trigLayout, 0, 2, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::DisableSelfTrigger);
-    SetUpCheckBox(chkRejPileUp[ID][MaxNChannels],                                      "Rej. Pile-Up ", trigLayout, 1, 0, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::RejectPileup);
-    SetUpCheckBox(chkPileUpInGate[ID][MaxNChannels],                                 "Pile-Up in Gate", trigLayout, 1, 2, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::PileupWithinGate);
-    SetUpCheckBox(chkDisableTriggerHysteresis[ID][MaxNChannels],           "Disbale Trig. Hysteresis ", trigLayout, 2, 0, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::DisableTriggerHysteresis, -1, 2);
-    SetUpComboBoxBit(cbTrigMode[ID][MaxNChannels],                                      "Trig Mode : ", trigLayout, 2, 1, DPP::Bit_DPPAlgorithmControl_PSD::ListTrigMode, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::TriggerMode, 2);
+    SetUpCheckBox(chkDisableOppositePulse[ID][MaxNChannels],  "Disable 0-Xing inhibit from opp. pulse", trigLayout, 0, 1, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::DisableOppositePolarityInhibitZeroCrossingOnCFD, -1, 2);
+    SetUpCheckBox(chkDisableSelfTrigger[ID][MaxNChannels],                     "Disable Self Trigger ", trigLayout, 0, 3, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::DisableSelfTrigger);
+    SetUpCheckBox(chkRejPileUp[ID][MaxNChannels],                                      "Rej. Pile-Up ", trigLayout, 1, 1, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::RejectPileup);
+    SetUpCheckBox(chkPileUpInGate[ID][MaxNChannels],                                 "Pile-Up in Gate", trigLayout, 1, 3, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::PileupWithinGate);
+    SetUpCheckBox(chkDisableTriggerHysteresis[ID][MaxNChannels],           "Disbale Trig. Hysteresis ", trigLayout, 2, 1, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::DisableTriggerHysteresis, -1, 2);
+    SetUpComboBoxBit(cbTrigMode[ID][MaxNChannels],                                      "Trig Mode : ", trigLayout, 2, 2, DPP::Bit_DPPAlgorithmControl_PSD::ListTrigMode, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::TriggerMode);
 
     SetUpComboBoxBit(cbLocalTriggerValid[ID][MaxNChannels],                  "Local Trig. Valid. [G] : ", trigLayout, 3, 0, DPP::PSD::Bit_DPPAlgorithmControl2::ListLocalTrigValidMode, DPP::PSD::DPPAlgorithmControl2_G, DPP::PSD::Bit_DPPAlgorithmControl2::LocalTrigValidMode);
     SetUpSpinBox(sbTriggerHoldOff[ID][MaxNChannels],                           "Tigger Hold-off [ns] : ", trigLayout, 3, 2, DPP::PSD::TriggerHoldOffWidth);
@@ -1426,7 +1469,9 @@ void DigiSettingsPanel::SetUpPSDChannel(){
     SetUpComboBoxBit(cbLocalShapedTrigger[ID][MaxNChannels],                 "Local Shaped Trig. [G] : ", trigLayout, 5, 0, DPP::PSD::Bit_DPPAlgorithmControl2::ListLocalShapeTrigMode, DPP::PSD::DPPAlgorithmControl2_G, DPP::PSD::Bit_DPPAlgorithmControl2::LocalShapeTriggerMode, 1);
     SetUpSpinBox(sbShapedTrigWidth[ID][MaxNChannels],                       "Shaped Trig. Width [ns] : ", trigLayout, 5, 2, DPP::PSD::ShapedTriggerWidth);
 
-    SetUpComboBoxBit(cbTriggerOpt[ID][MaxNChannels],        "Trigger Count opt : ", trigLayout, 6, 0, DPP::Bit_DPPAlgorithmControl_PSD::ListTriggerCountOpt, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::TriggerCountOpt, 2);
+    SetUpComboBoxBit(cbTrigCount[ID][MaxNChannels],    "Trig. Counter Flag [G] : ", trigLayout, 6, 0, DPP::PSD::Bit_DPPAlgorithmControl2::ListTrigCounter, DPP::PSD::DPPAlgorithmControl2_G, DPP::PSD::Bit_DPPAlgorithmControl2::TriggerCounterFlag);
+    SetUpSpinBox(sbTriggerLatency[ID][MaxNChannels],     "Trigger Latency [ns] : ", trigLayout, 6, 2, DPP::PSD::TriggerLatency);
+    SetUpComboBoxBit(cbTriggerOpt[ID][MaxNChannels],        "Trigger Count opt : ", trigLayout, 7, 0, DPP::Bit_DPPAlgorithmControl_PSD::ListTriggerCountOpt, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::TriggerCountOpt, 2);
   }
 
   {//*===================== PSD
@@ -1440,13 +1485,13 @@ void DigiSettingsPanel::SetUpPSDChannel(){
     SetUpSpinBox(sbLongGate[ID][MaxNChannels],               "Long Gate [ns] : ", trapLayout, 1, 2, DPP::PSD::LongGateWidth);
     SetUpSpinBox(sbGateOffset[ID][MaxNChannels],           "Gate Offset [ns] : ", trapLayout, 2, 0, DPP::PSD::GateOffset);
     SetUpSpinBox(sbFixedBaseline[ID][MaxNChannels],          "Fixed Baseline : ", trapLayout, 2, 2, DPP::PSD::FixedBaseline);
-    SetUpSpinBox(sbTriggerLatency[ID][MaxNChannels],   "Trigger Latency [ns] : ", trapLayout, 3, 0, DPP::PSD::TriggerLatency);
-    SetUpSpinBox(sbPSDCutThreshold[ID][MaxNChannels],     "PSD Cut Threshold : ", trapLayout, 3, 2, DPP::PSD::ThresholdForPSDCut);
-    SetUpSpinBox(sbPURGAPThreshold[ID][MaxNChannels],     "PUR-GAP Threshold : ", trapLayout, 4, 0, DPP::PSD::PurGapThreshold);
 
-    SetUpSpinBox(sbCFDDely[ID][MaxNChannels],                "CFD Delay [ns] : ", trapLayout, 5, 0, DPP::PSD::CFDSetting);
-    SetUpComboBoxBit(cbCFDFraction[ID][MaxNChannels],          "CFD Fraction : ", trapLayout, 5, 2, DPP::PSD::Bit_CFDSetting::ListCFDFraction, DPP::PSD::CFDSetting, DPP::PSD::Bit_CFDSetting::CFDFraction, 1);
-    SetUpComboBoxBit(cbCFDInterpolation[ID][MaxNChannels], "CFD interpolaton : ", trapLayout, 6, 0, DPP::PSD::Bit_CFDSetting::ListItepolation, DPP::PSD::CFDSetting, DPP::PSD::Bit_CFDSetting::Interpolation, 3);
+    SetUpSpinBox(sbPURGAPThreshold[ID][MaxNChannels],     "PUR-GAP Threshold : ", trapLayout, 3, 0, DPP::PSD::PurGapThreshold);
+    SetUpComboBoxBit(cbSmoothedChargeIntegration[ID][MaxNChannels], "Smooth Q-integr. [G] : ", trapLayout, 3, 2, DPP::PSD::Bit_DPPAlgorithmControl2::ListSmoothedChargeIntegration, DPP::PSD::DPPAlgorithmControl2_G, DPP::PSD::Bit_DPPAlgorithmControl2::SmoothedChargeIntegration, 1, 1);
+
+    SetUpSpinBox(sbCFDDely[ID][MaxNChannels],                "CFD Delay [ns] : ", trapLayout, 4, 0, DPP::PSD::CFDSetting);
+    SetUpComboBoxBit(cbCFDFraction[ID][MaxNChannels],          "CFD Fraction : ", trapLayout, 4, 2, DPP::PSD::Bit_CFDSetting::ListCFDFraction, DPP::PSD::CFDSetting, DPP::PSD::Bit_CFDSetting::CFDFraction, 1);
+    SetUpComboBoxBit(cbCFDInterpolation[ID][MaxNChannels], "CFD interpolaton : ", trapLayout, 5, 0, DPP::PSD::Bit_CFDSetting::ListItepolation, DPP::PSD::CFDSetting, DPP::PSD::Bit_CFDSetting::Interpolation, 3);
 
   }
 
@@ -1457,33 +1502,24 @@ void DigiSettingsPanel::SetUpPSDChannel(){
     QGridLayout  * otherLayout = new QGridLayout(otherBox);
     otherLayout->setSpacing(2);
    
-    SetUpCheckBox(chkTestPule[ID][MaxNChannels], "Int. Test Pulse : ", otherLayout, 7, 0, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::InternalTestPulse);
-
+    SetUpCheckBox(chkMarkSaturation[ID][MaxNChannels],          "Mark Saturation Pulse [G]", otherLayout,  0, 0, DPP::PSD::DPPAlgorithmControl2_G, DPP::PSD::Bit_DPPAlgorithmControl2::MarkSaturation, -1, 2);
+    SetUpCheckBox(chkResetTimestampByTRGIN[ID][MaxNChannels],  "TRI-IN Reset Timestamp [G]", otherLayout,  0, 2, DPP::PSD::DPPAlgorithmControl2_G, DPP::PSD::Bit_DPPAlgorithmControl2::ResetTimestampByTRGIN, -1, 2);
+    
+    SetUpCheckBox(chkTestPule[ID][MaxNChannels],                       "Int. Test Pulse", otherLayout, 1, 0, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::InternalTestPulse);
     if( digi[ID]->GetBoardInfo().Model == CAEN_DGTZ_V1730 ){
-      SetUpComboBoxBit(cbTestPulseRate[ID][MaxNChannels],  "Test Pulse Rate : ", otherLayout, 8, 0, DPP::Bit_DPPAlgorithmControl_PSD::ListTestPulseRate_730, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::TestPulseRate);
+      SetUpComboBoxBit(cbTestPulseRate[ID][MaxNChannels],  "Test Pulse Rate : ", otherLayout, 1, 2, DPP::Bit_DPPAlgorithmControl_PSD::ListTestPulseRate_730, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::TestPulseRate);
     }
-
     if( digi[ID]->GetBoardInfo().Model == CAEN_DGTZ_V1725 ){
-      SetUpComboBoxBit(cbTestPulseRate[ID][MaxNChannels],  "Test Pulse Rate : ", otherLayout, 8, 0, DPP::Bit_DPPAlgorithmControl_PSD::ListTestPulseRate_725, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::TestPulseRate);
+      SetUpComboBoxBit(cbTestPulseRate[ID][MaxNChannels],  "Test Pulse Rate : ", otherLayout, 1, 2, DPP::Bit_DPPAlgorithmControl_PSD::ListTestPulseRate_725, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::TestPulseRate);
     }
 
-    SetUpCheckBox(chkMarkSaturation[ID][MaxNChannels],  "Mark Saturation Pulse [G]", otherLayout, 8, 0, DPP::PSD::DPPAlgorithmControl2_G, DPP::PSD::Bit_DPPAlgorithmControl2::MarkSaturation);
+    SetUpComboBoxBit(cbExtra2Option[ID][MaxNChannels],       "Extra word Option [G] : ", otherLayout, 2, 0, DPP::PSD::Bit_DPPAlgorithmControl2::ListExtraWordOpt, DPP::PSD::DPPAlgorithmControl2_G, DPP::PSD::Bit_DPPAlgorithmControl2::ExtraWordOption, 3);
+    SetUpSpinBox(sbNumEventAgg[ID][MaxNChannels],          "Events per Agg. [G] : ", otherLayout, 3, 0, DPP::NumberEventsPerAggregate_G);
 
-    SetUpSpinBox(sbNumEventAgg[ID][MaxNChannels],          "Events per Agg. [G] : ", otherLayout, 0, 0, DPP::NumberEventsPerAggregate_G);
-
-    SetUpSpinBox(sbVetoWidth[ID][MaxNChannels],                     "Veto Width : ", otherLayout, 0, 2, DPP::VetoWidth);
-    SetUpComboBoxBit(cbVetoStep[ID][MaxNChannels],                   "Veto Step : ", otherLayout, 1, 0, DPP::Bit_VetoWidth::ListVetoStep, DPP::VetoWidth, DPP::Bit_VetoWidth::VetoStep, 1);
-
-    SetUpComboBoxBit(cbExtra2Option[ID][MaxNChannels],       "Extra word Option [G] : ", otherLayout, 4, 0, DPP::PSD::Bit_DPPAlgorithmControl2::ListExtraWordOpt, DPP::PSD::DPPAlgorithmControl2_G, DPP::PSD::Bit_DPPAlgorithmControl2::ExtraWordOption, 3);
-
-    SetUpComboBoxBit(cbSmoothedChargeIntegration[ID][MaxNChannels], "Smooth Q-integration [G] : ", otherLayout, 5, 0, DPP::PSD::Bit_DPPAlgorithmControl2::ListSmoothedChargeIntegration, DPP::PSD::DPPAlgorithmControl2_G, DPP::PSD::Bit_DPPAlgorithmControl2::SmoothedChargeIntegration, 1);
-    SetUpComboBoxBit(cbTrigCount[ID][MaxNChannels],     "Trig. Counter Flag [G] : ", otherLayout, 6, 0, DPP::PSD::Bit_DPPAlgorithmControl2::ListTrigCounter, DPP::PSD::DPPAlgorithmControl2_G, DPP::PSD::Bit_DPPAlgorithmControl2::TriggerCounterFlag);
-
-    SetUpComboBoxBit(cbVetoSource[ID][MaxNChannels],           "Veto Source [G] : ", otherLayout, 7, 0, DPP::PSD::Bit_DPPAlgorithmControl2::ListVetoSource, DPP::PSD::DPPAlgorithmControl2_G, DPP::PSD::Bit_DPPAlgorithmControl2::VetoSource);
-
-    SetUpComboBoxBit(cbVetoMode[ID][MaxNChannels],  "Veto Mode [G] : ", otherLayout, 10, 0, DPP::PSD::Bit_DPPAlgorithmControl2::ListVetoMode, DPP::PSD::DPPAlgorithmControl2_G, DPP::PSD::Bit_DPPAlgorithmControl2::VetoMode);
-
-    SetUpCheckBox(chkResetTimestampByTRGIN[ID][MaxNChannels],  "TRI-IN Reset Timestamp [G]", otherLayout, 11, 0, DPP::PSD::DPPAlgorithmControl2_G, DPP::PSD::Bit_DPPAlgorithmControl2::ResetTimestampByTRGIN);
+    SetUpComboBoxBit(cbVetoSource[ID][MaxNChannels],   "Veto Source [G] : ", otherLayout, 5, 0, DPP::PSD::Bit_DPPAlgorithmControl2::ListVetoSource, DPP::PSD::DPPAlgorithmControl2_G, DPP::PSD::Bit_DPPAlgorithmControl2::VetoSource);
+    SetUpComboBoxBit(cbVetoMode[ID][MaxNChannels],       "Veto Mode [G] : ", otherLayout, 5, 2, DPP::PSD::Bit_DPPAlgorithmControl2::ListVetoMode, DPP::PSD::DPPAlgorithmControl2_G, DPP::PSD::Bit_DPPAlgorithmControl2::VetoMode);
+    SetUpSpinBox(sbVetoWidth[ID][MaxNChannels],             "Veto Width : ", otherLayout, 6, 0, DPP::VetoWidth);
+    SetUpComboBoxBit(cbVetoStep[ID][MaxNChannels],           "Veto Step : ", otherLayout, 6, 2, DPP::Bit_VetoWidth::ListVetoStep, DPP::VetoWidth, DPP::Bit_VetoWidth::VetoStep, 1);
 
   }
 
@@ -1526,6 +1562,330 @@ void DigiSettingsPanel::SetUpPSDChannel(){
       UpdatePanelFromMemory();
     });
   }
+
+  {//^============================= input
+
+    QVBoxLayout *inputLayout = new QVBoxLayout(chInput);
+
+    QTabWidget * inputTab = new QTabWidget(this);
+    inputLayout->addWidget(inputTab);
+
+    QStringList tabName = {"Common Settings", "QLong", "PSD Cut", "Others"};
+
+    const int nTab = tabName.count();
+
+    QWidget ** tabID = new QWidget * [nTab];
+
+    for( int i = 0; i < nTab; i++){   
+      tabID [i]  = new QWidget(this);
+      inputTab->addTab(tabID[i], tabName[i]);
+
+      QGridLayout * tabLayout = new QGridLayout(tabID[i]);
+      tabLayout->setSpacing(2);
+      tabLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+
+      QLabel * lb0 = new QLabel("Ch.", this); lb0->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb0, 0, 0);
+      
+      for( int ch = 0; ch < digi[ID]->GetNChannels(); ch++){
+      
+        QLabel * chid = new QLabel(QString::number(ch), this);
+        chid->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+        chid->setFixedWidth(20);
+        tabLayout->addWidget(chid, ch + 1, 0);
+
+        if( i == 0 ) {
+          if( ch == 0 ){
+            QLabel * lb1 = new QLabel("Threshold", this); lb1->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb1, 0, 2);
+            QLabel * lb2 = new QLabel("DC offset [%]", this); lb2->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb2, 0, 4);
+            QLabel * lb3 = new QLabel("Record Length [G][ns]", this); lb3->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb3, 0, 6);
+            QLabel * lb4 = new QLabel("Pre-Trigger [ns]", this); lb4->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb4, 0, 8);
+            QLabel * lb5 = new QLabel("Dynamic Range", this); lb5->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb5, 0, 10);
+            QLabel * lb6 = new QLabel("Polarity", this); lb6->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb6, 0, 12);
+          }
+          SetUpSpinBox(sbThreshold[ID][ch],       "", tabLayout, ch + 1, 1, DPP::PHA::TriggerThreshold, ch);
+          SetUpSpinBox(sbDCOffset[ID][ch],        "", tabLayout, ch + 1, 3, DPP::ChannelDCOffset, ch);
+          SetUpSpinBox(sbRecordLength[ID][ch],    "", tabLayout, ch + 1, 5, DPP::RecordLength_G, ch);
+          SetUpSpinBox(sbPreTrigger[ID][ch],      "", tabLayout, ch + 1, 7, DPP::PreTrigger, ch);
+          SetUpComboBox(cbDynamicRange[ID][ch],   "", tabLayout, ch + 1, 9, DPP::InputDynamicRange, ch);
+          SetUpComboBoxBit(cbPolarity[ID][ch], "", tabLayout, ch + 1, 11, DPP::Bit_DPPAlgorithmControl_PHA::ListPolarity, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PHA::Polarity, 1, ch);
+        }
+
+        if ( i == 1 ){
+          if( ch == 0 ){
+            QLabel * lb1 = new QLabel("Q-Threshold", this); lb1->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb1, 0, 2);
+          }
+
+          SetUpSpinBox(sbChargeZeroSupZero[ID][ch],                   "", tabLayout, ch + 1, 1, DPP::PSD::ChargeZeroSuppressionThreshold, ch);
+          SetUpCheckBox(chkDiscardQLong[ID][ch], "Discard QLong < QThr.", tabLayout, ch + 1, 3, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::DiscardQLongSmallerQThreshold, ch);
+        }
+
+        if ( i == 2 ){
+          if( ch == 0 ){
+            QLabel * lb1 = new QLabel("PSD Cut Threshold", this); lb1->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb1, 0, 2);
+          }
+
+         SetUpSpinBox(sbPSDCutThreshold[ID][ch],                      "", tabLayout, ch + 1, 1, DPP::PSD::ThresholdForPSDCut, ch);
+          SetUpCheckBox(chkCutBelow[ID][ch],           "Cut Below Thr. ", tabLayout, ch + 1, 3, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::EnablePSDCutBelow, ch);
+          SetUpCheckBox(chkCutAbove[ID][ch],           "Cut Above Thr. ", tabLayout, ch + 1, 4, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::EnablePSDCutAbove, ch);
+          SetUpCheckBox(chkRejOverRange[ID][ch],      "Rej. Over-Range ", tabLayout, ch + 1, 5, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::RejectOverRange, ch);
+        }
+
+        if( i == 3 ){
+
+          if( ch == 0 ){
+            QLabel * lb1 = new QLabel("Charge Sensitivity", this); lb1->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb1, 0, 3);
+            QLabel * lb2 = new QLabel("Baseline Avg.", this);      lb2->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb2, 0, 6);
+          }
+
+          SetUpCheckBox(chkChargePedestal[ID][ch],     "Add Charge Pedestal", tabLayout, ch + 1, 1, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::ChargePedestal);
+          SetUpComboBoxBit(cbChargeSensitivity[ID][ch],                   "", tabLayout, ch + 1, 2, DPP::Bit_DPPAlgorithmControl_PSD::ListChargeSensitivity_2Vpp, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::ChargeSensitivity);
+          connect( cbDynamicRange[ID][ch], &RComboBox::currentTextChanged, this, [=](QString text){
+
+            cbChargeSensitivity[ID][ch]->clear();
+            cbChargeSensitivity[ID][ch]->addItem("", -999);
+
+            const std::vector<std::pair<std::string, unsigned int>> list = text.contains("0.5") ? DPP::Bit_DPPAlgorithmControl_PSD::ListChargeSensitivity_p5Vpp : DPP::Bit_DPPAlgorithmControl_PSD::ListChargeSensitivity_2Vpp;  
+            
+            for( int i = 0; i < (int) list.size(); i++) cbChargeSensitivity[ID][ch]->addItem(QString::fromStdString(list[i].first), list[i].second);
+
+          });
+
+          SetUpCheckBox(chkBaseLineCal[ID][ch],     "Baseline ReCal.", tabLayout, ch + 1, 4, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::BaselineCal);
+          SetUpComboBoxBit(cbBaseLineAvg[ID][ch],                  "", tabLayout, ch + 1, 5, DPP::Bit_DPPAlgorithmControl_PSD::ListBaselineAvg, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::BaselineAvg);
+        }
+
+      }
+
+    }
+  
+  }
+
+  {//^================================== Trigger 
+
+    QVBoxLayout *trigLayout = new QVBoxLayout(chTrig);
+
+    QTabWidget * trigTab = new QTabWidget(this);
+    trigLayout->addWidget(trigTab);
+
+    QStringList tabName = {"Common Settings", "Probably OK Setings", "Others", "Others-2", "Others-3"};
+
+    const int nTab = tabName.count();
+
+    QWidget ** tabID = new QWidget * [nTab];
+
+    for( int i = 0; i < nTab; i++){   
+      tabID [i]  = new QWidget(this);
+      trigTab->addTab(tabID[i], tabName[i]);
+
+      QGridLayout * tabLayout = new QGridLayout(tabID[i]);
+      tabLayout->setSpacing(2);
+      tabLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+
+      QLabel * lb0 = new QLabel("Ch.", this); lb0->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb0, 0, 0);
+      
+      for( int ch = 0; ch < digi[ID]->GetNChannels(); ch++){
+        QLabel * chid = new QLabel(QString::number(ch), this);
+        chid->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+        chid->setFixedWidth(20);
+        tabLayout->addWidget(chid, ch + 1, 0);
+
+        if( i == 0 ){
+          if( ch == 0 ){
+            QLabel * lb0 = new QLabel("Trig Mode", this); lb0->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb0, 0, 4);
+            QLabel * lb3 = new QLabel("Tigger Hold-off [ns]", this); lb3->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb3, 0, 6);
+            QLabel * lb4 = new QLabel("Local Trig. Valid. [G]", this); lb4->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb4, 0, 8);
+          }
+          SetUpCheckBox(chkDisableSelfTrigger[ID][ch],  "Disable Self Trigger", tabLayout, ch + 1, 1, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PHA::DisableSelfTrigger, ch);
+          SetUpComboBoxBit(cbTrigMode[ID][ch],                              "", tabLayout, ch + 1, 3, DPP::Bit_DPPAlgorithmControl_PHA::ListTrigMode, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PHA::TriggerMode, 1, ch);
+          SetUpSpinBox(sbTriggerHoldOff[ID][ch],                            "", tabLayout, ch + 1, 5, DPP::PHA::TriggerHoldOffWidth, ch);
+          SetUpComboBoxBit(cbLocalTriggerValid[ID][ch],                     "", tabLayout, ch + 1, 7, DPP::PHA::Bit_DPPAlgorithmControl2::ListLocalTrigValidMode, DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::LocalTrigValidMode, 1, ch);
+        }
+
+        if( i == 1 ){
+          if( ch == 0 ){
+            QLabel * lb3 = new QLabel("Shaped Trig. Width [ns]", this); lb3->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb3, 0, 2);
+            QLabel * lb2 = new QLabel("Local Shaped Trig. [G]", this); lb2->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb2, 0, 4);
+            QLabel * lb1 = new QLabel("Trig. Counter Flag [G]", this); lb1->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb1, 0, 6);
+          }
+          SetUpSpinBox(sbShapedTrigWidth[ID][ch],        "", tabLayout, ch + 1, 1, DPP::PSD::ShapedTriggerWidth, ch);
+          SetUpComboBoxBit(cbLocalShapedTrigger[ID][ch], "", tabLayout, ch + 1, 3, DPP::PHA::Bit_DPPAlgorithmControl2::ListLocalShapeTrigMode, DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::LocalShapeTriggerMode, 1, ch);
+          SetUpComboBoxBit(cbTrigCount[ID][ch],          "", tabLayout, ch + 1, 5, DPP::PHA::Bit_DPPAlgorithmControl2::ListTrigCounter, DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::TriggerCounterFlag, 1, ch);
+
+        }
+
+        if( i == 2 ){
+          SetUpCheckBox(chkDisableOppositePulse[ID][ch],  "Disable 0-Xing inhibit from opp. pulse", tabLayout, ch + 1, 1, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::DisableOppositePolarityInhibitZeroCrossingOnCFD, ch, 2);
+          SetUpCheckBox(chkRejPileUp[ID][ch],                                      "Rej. Pile-Up ", tabLayout, ch + 1, 3, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::RejectPileup, ch);
+        }
+
+        if( i == 3){
+          SetUpCheckBox(chkDisableTriggerHysteresis[ID][ch],           "Disbale Trig. Hysteresis ", tabLayout, ch + 1, 1, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::DisableTriggerHysteresis, ch, 2);
+          SetUpCheckBox(chkPileUpInGate[ID][ch],                                 "Pile-Up in Gate", tabLayout, ch + 1, 3, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::PileupWithinGate, ch);
+
+        }
+        if( i == 4){
+          if( ch == 0 ){
+            QLabel * lb3 = new QLabel("Local Trig. Valid. Opt [G]", this); lb3->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb3, 0, 2);
+            QLabel * lb2 = new QLabel("Discri. Mode", this);               lb2->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb2, 0, 4);
+            QLabel * lb1 = new QLabel("Trigger Count opt", this);          lb1->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb1, 0, 6);
+            QLabel * lb0 = new QLabel("Trigger Latency [ns]", this);       lb0->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb0, 0, 8);
+          }
+          SetUpComboBoxBit(cbAdditionLocalTrigValid[ID][ch], "", tabLayout, ch + 1, 1, DPP::PSD::Bit_DPPAlgorithmControl2::ListAdditionLocalTrigValid, DPP::PSD::DPPAlgorithmControl2_G, DPP::PSD::Bit_DPPAlgorithmControl2::AdditionLocalTrigValid, 1, ch);
+          SetUpComboBoxBit(cbDiscriMode[ID][ch],             "", tabLayout, ch + 1, 3, DPP::Bit_DPPAlgorithmControl_PSD::ListDiscriminationMode, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::DiscriminationMode, 1, ch);
+          SetUpComboBoxBit(cbTriggerOpt[ID][ch],             "", tabLayout, ch + 1, 5, DPP::Bit_DPPAlgorithmControl_PSD::ListTriggerCountOpt, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::TriggerCountOpt, 2, ch);
+          SetUpSpinBox(sbTriggerLatency[ID][ch],             "", tabLayout, ch + 1, 7, DPP::PSD::TriggerLatency, ch);
+        }
+
+      }
+    }
+
+  }
+
+
+  {//^================================== PSD 
+
+    QVBoxLayout *trapLayout = new QVBoxLayout(chTrap);
+
+    QTabWidget * trapTab = new QTabWidget(this);
+    trapLayout->addWidget(trapTab);
+
+    QStringList tabName = {"Common Settings", "CFD", "Others"};
+
+    const int nTab = tabName.count();
+
+    QWidget ** tabID = new QWidget * [nTab];
+
+    for( int i = 0; i < nTab; i++){   
+      tabID [i]  = new QWidget(this);
+      trapTab->addTab(tabID[i], tabName[i]);
+
+      QGridLayout * tabLayout = new QGridLayout(tabID[i]);
+      tabLayout->setSpacing(2);
+      tabLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+
+      QLabel * lb0 = new QLabel("Ch.", this); lb0->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb0, 0, 0);
+      
+      for( int ch = 0; ch < digi[ID]->GetNChannels(); ch++){
+      
+        QLabel * chid = new QLabel(QString::number(ch), this);
+        chid->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+        chid->setFixedWidth(20);
+        tabLayout->addWidget(chid, ch + 1, 0);
+
+
+        if( i == 0 ) {
+          if( ch == 0 ){
+            QLabel * lb1 = new QLabel("Short Gate [ns]", this); lb1->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb1, 0, 2);
+            QLabel * lb2 = new QLabel("Long Gate [ns]", this); lb2->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb2, 0, 4);
+            QLabel * lb3 = new QLabel("Gate Offset [ns]", this); lb3->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb3, 0, 6);
+            QLabel * lb4 = new QLabel("Fixed Baseline", this); lb4->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb4, 0, 8);
+          }
+
+          SetUpSpinBox(sbShortGate[ID][ch],            "", tabLayout, ch + 1, 1, DPP::PSD::ShortGateWidth, ch);
+          SetUpSpinBox(sbLongGate[ID][ch],             "", tabLayout, ch + 1, 3, DPP::PSD::LongGateWidth, ch);
+          SetUpSpinBox(sbGateOffset[ID][ch],           "", tabLayout, ch + 1, 5, DPP::PSD::GateOffset, ch);
+          SetUpSpinBox(sbFixedBaseline[ID][ch],        "", tabLayout, ch + 1, 7, DPP::PSD::FixedBaseline, ch);
+          
+        }
+
+        if ( i == 1 ){
+          if( ch == 0 ){
+            QLabel * lb1 = new QLabel("CFD Delay [ns]", this); lb1->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb1, 0, 2);
+            QLabel * lb2 = new QLabel("CFD Fraction", this); lb2->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb2, 0, 4);
+            QLabel * lb3 = new QLabel("CFD interpolaton", this); lb3->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb3, 0, 6);
+          }
+ 
+          SetUpSpinBox(sbCFDDely[ID][ch],              "", tabLayout, ch + 1, 1, DPP::PSD::CFDSetting, ch);
+          SetUpComboBoxBit(cbCFDFraction[ID][ch],      "", tabLayout, ch + 1, 3, DPP::PSD::Bit_CFDSetting::ListCFDFraction, DPP::PSD::CFDSetting, DPP::PSD::Bit_CFDSetting::CFDFraction, 1, ch);
+          SetUpComboBoxBit(cbCFDInterpolation[ID][ch], "", tabLayout, ch + 1, 5, DPP::PSD::Bit_CFDSetting::ListItepolation, DPP::PSD::CFDSetting, DPP::PSD::Bit_CFDSetting::Interpolation, 2, ch);
+        }
+
+        if( i == 2){
+          if( ch == 0){
+            QLabel * lb5 = new QLabel("PUR-GAP Threshold", this); lb5->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb5, 0, 2);
+            QLabel * lb6 = new QLabel("Smooth Q-integr. [G]", this); lb6->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb6, 0, 4);
+          }
+          SetUpSpinBox(sbPURGAPThreshold[ID][ch],               "", tabLayout, ch + 1, 1, DPP::PSD::PurGapThreshold, ch);
+          SetUpComboBoxBit(cbSmoothedChargeIntegration[ID][ch], "", tabLayout, ch + 1, 3, DPP::PSD::Bit_DPPAlgorithmControl2::ListSmoothedChargeIntegration, DPP::PSD::DPPAlgorithmControl2_G, DPP::PSD::Bit_DPPAlgorithmControl2::SmoothedChargeIntegration, 1, ch);
+        }
+
+      }
+    }
+  }
+
+  {//^======================================== Others
+    QVBoxLayout *otherLayout = new QVBoxLayout(chOthers);
+
+    QTabWidget * othersTab = new QTabWidget(this);
+    otherLayout->addWidget(othersTab);
+
+    QStringList tabName = {"Tab-1", "Test Pulse", "Veto", "Extra2"};
+
+    const int nTab = tabName.count();
+
+    QWidget ** tabID = new QWidget * [nTab];
+
+    for( int i = 0; i < nTab; i++){
+      tabID [i]  = new QWidget(this);
+      othersTab->addTab(tabID[i], tabName[i]);
+
+      QGridLayout * tabLayout = new QGridLayout(tabID[i]);
+      tabLayout->setSpacing(2);
+      tabLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+
+      QLabel * lb0 = new QLabel("Ch.", this); lb0->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb0, 0, 0);
+
+      for( int ch = 0; ch < digi[ID]->GetNChannels(); ch++){
+        QLabel * chid = new QLabel(QString::number(ch), this);
+        chid->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+        chid->setFixedWidth(20);
+        tabLayout->addWidget(chid, ch + 1, 0);
+
+        if( i == 0 ){
+          if( ch == 0 ){
+            QLabel * lb3 = new QLabel("Events per Agg. [G]", this); lb3->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb3, 0, 6);
+          }
+          SetUpCheckBox(chkMarkSaturation[ID][ch],          "Mark Saturation Pulse [G]", tabLayout,  ch + 1, 1, DPP::PSD::DPPAlgorithmControl2_G, DPP::PSD::Bit_DPPAlgorithmControl2::MarkSaturation, ch, 2);
+          SetUpCheckBox(chkResetTimestampByTRGIN[ID][ch],  "TRI-IN Reset Timestamp [G]", tabLayout,  ch + 1, 3, DPP::PSD::DPPAlgorithmControl2_G, DPP::PSD::Bit_DPPAlgorithmControl2::ResetTimestampByTRGIN, ch, 2);
+          SetUpSpinBox(sbNumEventAgg[ID][ch],       "", tabLayout, ch + 1, 5, DPP::NumberEventsPerAggregate_G, ch);
+        }
+
+        if( i == 1 ){
+          if( ch == 0 ){
+            QLabel * lb3 = new QLabel("Test Pulse Rate", this); lb3->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb3, 0, 3);
+          }
+          SetUpCheckBox(chkTestPule[ID][ch],   "Int. Test Pulse", tabLayout, ch + 1, 1, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::InternalTestPulse);
+          if( digi[ID]->GetBoardInfo().Model == CAEN_DGTZ_V1730 ){
+            SetUpComboBoxBit(cbTestPulseRate[ID][ch],  "", tabLayout, ch + 1, 2, DPP::Bit_DPPAlgorithmControl_PSD::ListTestPulseRate_730, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::TestPulseRate, 1, ch);
+          }
+          if( digi[ID]->GetBoardInfo().Model == CAEN_DGTZ_V1725 ){
+            SetUpComboBoxBit(cbTestPulseRate[ID][ch],  "", tabLayout, ch + 1, 2, DPP::Bit_DPPAlgorithmControl_PSD::ListTestPulseRate_725, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PSD::TestPulseRate, 1, ch);
+          }
+        }
+
+        if( i == 2 ){
+          if( ch == 0 ){
+            QLabel * lb3 = new QLabel("Veto Source [G]", this); lb3->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb3, 0, 2);
+            QLabel * lb2 = new QLabel("Veto Mode [G]", this); lb2->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb2, 0, 4);
+            QLabel * lb4 = new QLabel("Veto Width", this); lb4->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb4, 0, 6);
+            QLabel * lb5 = new QLabel("Veto Step", this); lb5->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb5, 0, 8);
+          }
+          SetUpComboBoxBit(cbVetoSource[ID][ch],    "", tabLayout, ch + 1, 1, DPP::PHA::Bit_DPPAlgorithmControl2::ListVetoSource, DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::VetoSource, 1, ch);
+          SetUpComboBoxBit(cbVetoMode[ID][ch],      "", tabLayout, ch + 1, 3, DPP::PSD::Bit_DPPAlgorithmControl2::ListVetoMode, DPP::PSD::DPPAlgorithmControl2_G, DPP::PSD::Bit_DPPAlgorithmControl2::VetoMode, 1, ch);
+          SetUpSpinBox(sbVetoWidth[ID][ch],         "", tabLayout, ch + 1, 5, DPP::VetoWidth, ch);
+          SetUpComboBoxBit(cbVetoStep[ID][ch],      "", tabLayout, ch + 1, 7, DPP::Bit_VetoWidth::ListVetoStep, DPP::VetoWidth, DPP::Bit_VetoWidth::VetoStep, 1, ch);
+        }
+
+        if( i == 3 ){
+          if( ch == 0 ){
+            QLabel * lb2 = new QLabel("Extra2 Option [G]", this); lb2->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb2, 0, 2);
+          }
+          SetUpComboBoxBit(cbExtra2Option[ID][ch],  "", tabLayout, ch + 1, 1, DPP::PHA::Bit_DPPAlgorithmControl2::ListExtra2, DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::Extra2Option, 2, ch);
+        }
+      }
+    }
+  }
+
 
 }
 
