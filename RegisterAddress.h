@@ -738,6 +738,10 @@ namespace DPP {
 } // end of DPP namepace Register
 
 const std::vector<Reg> RegisterPHAList = {
+  DPP::RecordLength_G             ,
+  DPP::InputDynamicRange          ,
+  DPP::NumberEventsPerAggregate_G ,
+  DPP::PreTrigger                 ,
   DPP::PHA::DataFlush_W               ,
   DPP::PHA::ChannelStopAcquisition    ,
   DPP::PHA::RCCR2SmoothingFactor      ,
@@ -750,28 +754,24 @@ const std::vector<Reg> RegisterPHAList = {
   DPP::PHA::RiseTimeValidationWindow  ,
   DPP::PHA::TriggerHoldOffWidth       ,
   DPP::PHA::PeakHoldOff               ,
-  DPP::PHA::ShapedTriggerWidth        ,
-  DPP::PHA::DPPAlgorithmControl2_G    ,
-  DPP::PHA::FineGain                  ,
-  
-  DPP::RecordLength_G             ,
-  DPP::InputDynamicRange          ,
-  DPP::NumberEventsPerAggregate_G ,
-  DPP::PreTrigger                 ,
-  DPP::TriggerThreshold           ,
-  DPP::TriggerHoldOffWidth        ,
   DPP::DPPAlgorithmControl        ,
+  DPP::PHA::ShapedTriggerWidth        ,
   DPP::ChannelStatus_R            ,
   DPP::AMCFirmwareRevision_R      ,
   DPP::ChannelDCOffset            ,
+  DPP::PHA::DPPAlgorithmControl2_G    ,
   DPP::ChannelADCTemperature_R    ,
   DPP::IndividualSoftwareTrigger_W,
+  DPP::PHA::FineGain                  ,
   DPP::VetoWidth                  ,
-  
   DPP::TriggerValidationMask_G   
 };
 
 const std::vector<Reg> RegisterPSDList = {
+  DPP::RecordLength_G             ,
+  DPP::InputDynamicRange          ,
+  DPP::NumberEventsPerAggregate_G ,
+  DPP::PreTrigger                 ,
   DPP::PSD::CFDSetting                     ,
   DPP::PSD::ForcedDataFlush_W              ,
   DPP::PSD::ChargeZeroSuppressionThreshold ,
@@ -785,23 +785,15 @@ const std::vector<Reg> RegisterPSDList = {
   DPP::PSD::TriggerHoldOffWidth            ,
   DPP::PSD::ThresholdForPSDCut             ,
   DPP::PSD::PurGapThreshold                ,
-  DPP::PSD::DPPAlgorithmControl2_G         ,
-  DPP::PSD::EarlyBaselineFreeze            ,
-  
-  DPP::RecordLength_G             ,
-  DPP::InputDynamicRange          ,
-  DPP::NumberEventsPerAggregate_G ,
-  DPP::PreTrigger                 ,
-  DPP::TriggerThreshold           ,
-  DPP::TriggerHoldOffWidth        ,
   DPP::DPPAlgorithmControl        ,
+  DPP::PSD::DPPAlgorithmControl2_G         ,
   DPP::ChannelStatus_R            ,
   DPP::AMCFirmwareRevision_R      ,
   DPP::ChannelDCOffset            ,
   DPP::ChannelADCTemperature_R    ,
   DPP::IndividualSoftwareTrigger_W,
   DPP::VetoWidth                  ,
-  
+  DPP::PSD::EarlyBaselineFreeze            ,  
   DPP::TriggerValidationMask_G   
 };
 

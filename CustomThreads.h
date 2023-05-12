@@ -36,30 +36,9 @@ public:
 
       }else{
         printf("ReadDataThread::%s------------ ret : %d \n", __func__, ret);
-        if( ret == CAEN_DGTZ_WrongAcqMode) break;
+        digi->StopACQ();
+        break;
       }
-
-    //   // if( ret == CAEN_FELib_Success){
-    //   //   if( isSaveData) digi->SaveDataToFile();
-    //   // }else if(ret == CAEN_FELib_Stop){
-    //   //   digi->ErrorMsg("No more data");
-    //   //   //emit endOfLastData();
-    //   //   break;
-    //   // }else{
-    //   //   //digi->ErrorMsg("ReadDataLoop()");
-    //   //   digi->evt->ClearTrace();
-    //   // }
-
-    //   // if( isSaveData ){
-    //   //   clock_gettime(CLOCK_REALTIME, &tb);
-    //   //   if( tb.tv_sec - ta.tv_sec > 2 ) {
-    //   //     emit sendMsg("FileSize ("+ QString::number(digi->GetSerialNumber()) +"): " +  QString::number(digi->GetTotalFilesSize()/1024./1024.) + " MB");
-    //   //     //emit checkFileSize();
-    //   //     //double duration = tb.tv_nsec-ta.tv_nsec + tb.tv_sec*1e+9 - ta.tv_sec*1e+9;
-    //   //     //printf("%4d, duration : %10.0f, %6.1f\n", readCount, duration, 1e9/duration);
-    //   //     ta = tb;
-    //   //   }
-    //   // }
     }
   }
 signals:

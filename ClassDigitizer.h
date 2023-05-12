@@ -77,6 +77,7 @@ class Digitizer{
     void         PrintBoard()      ;    
     virtual int  ProgramBoard()    ; /// program a generic board, no program channel
     int          ProgramPHABoard() ; /// program a default PHA board with dual trace
+    int          ProgramPSDBoard() ; 
     
     //^================ ACQ control
     void   StopACQ();

@@ -85,10 +85,8 @@ private:
   /// common to PSD and PHA
   RSpinBox * sbReordLength;
   RSpinBox * sbPreTrigger;
-
   RSpinBox * sbDCOffset;
   RComboBox * cbDynamicRange;
-
   RComboBox * cbPolarity;
 
   /// PHA
@@ -109,6 +107,11 @@ private:
   RComboBox * cbAnaProbe2;
   RComboBox * cbDigiProbe1;
   RComboBox * cbDigiProbe2;
+
+  /// PSD
+  RSpinBox * sbShortGate;
+  RSpinBox * sbLongGate;
+  RSpinBox * sbGateOffset;
 
 };
 

@@ -317,7 +317,6 @@ int Digitizer::ProgramPHABoard(){
   address = DPP::PHA::TriggerHoldOffWidth;     ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 0x3E );
   address = DPP::PHA::RiseTimeValidationWindow;ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 0x0 );
   
-    
   ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::ChannelDCOffset) + 0x7000 , 0xEEEE );
   ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PreTrigger) + 0x7000 , 32 );
   ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::InputDynamicRange) + 0x7000 , 0x0 );
@@ -335,6 +334,31 @@ int Digitizer::ProgramPHABoard(){
   return ret;
 }
 
+int Digitizer::ProgramPSDBoard(){
+
+  printf("===== Digitizer::%s\n", __func__);
+
+  ret = CAEN_DGTZ_Reset(handle);
+  ret = CAEN_DGTZ_WriteRegister(handle, DPP::RecordLength_G + 0x7000, 62);  
+  ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardConfiguration, 0x0F3911);  /// has Extra2, dual trace, input and CFD
+
+  ret = CAEN_DGTZ_SetAcquisitionMode(handle, CAEN_DGTZ_SW_CONTROLLED); /// software command
+  ret |= CAEN_DGTZ_SetIOLevel(handle, CAEN_DGTZ_IOLevel_NIM);
+  ret |= CAEN_DGTZ_SetExtTriggerInputMode(handle, CAEN_DGTZ_TRGMODE_ACQ_ONLY);
+
+  ret = CAEN_DGTZ_SetChannelEnableMask(handle, 0xFFFF);
+
+  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::ChannelDCOffset) + 0x7000 , 0xEEEE );
+
+  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PreTrigger) + 0x7000 , 32 );
+  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::RecordLength_G) + 0x7000 , 128 );
+
+  if( ret != 0 ) { printf("==== set channels error.\n"); return 0;}
+  
+  ReadAllSettingsFromBoard();
+  return ret;
+}
+
 //========================================================= ACQ control
 void Digitizer::StartACQ(){
   if ( AcqRun ) return;
@@ -344,6 +368,8 @@ void Digitizer::StartACQ(){
     printf("============= buffer size bigger than 160 MB");
     return;
   }
+
+  if( DPPType == V1730_DPP_PSD_CODE) bufferSize = 80 * 1024 * 1024; //TODO allocate 80 MB for PSD
   
   data->AllocateMemory(bufferSize);
   ret = CAEN_DGTZ_SWStartAcquisition(handle);
@@ -353,7 +379,7 @@ void Digitizer::StartACQ(){
     return;
   }
   
-  printf("\e[1m\e[33m======= Acquisition Started for Board %d\e[0m\n", boardID);
+  printf("\e[1m\e[33m======= Acquisition Started for %d | Board %d, Port %d\e[0m\n", BoardInfo.SerialNumber, boardID, portID);
   AcqRun = true;
   data->ClearTriggerRate();
 }
@@ -363,7 +389,7 @@ void Digitizer::StopACQ(){
   int ret = CAEN_DGTZ_SWStopAcquisition(handle);
   ret |= CAEN_DGTZ_ClearData(handle);
   if( ret != 0 ) ErrorMsg("something wrong when try to stop ACQ and clear buffer");
-  printf("\n\e[1m\e[33m====== Acquisition STOPPED for Board %d\e[0m\n", boardID);
+  printf("\n\e[1m\e[33m====== Acquisition STOPPED for %d | Board %d, Port %d\e[0m\n", BoardInfo.SerialNumber, boardID, portID);
   AcqRun = false;
   data->ClearTriggerRate();
   data->ClearBuffer();
@@ -827,40 +853,40 @@ std::string Digitizer::GetDPPString(int DPPType){
 void Digitizer::ErrorMsg(std::string header){
   switch (ret){
     ///case CAEN_DGTZ_Success                 : /**   0 */ printf("%s | Operation completed successfully.\n", header.c_str()); break;
-    case CAEN_DGTZ_CommError               : /**  -1 */ printf("%s | Communication Error.\n", header.c_str()); break;
-    case CAEN_DGTZ_GenericError            : /**  -2 */ printf("%s | Unspecified error.\n", header.c_str()); break;
-    case CAEN_DGTZ_InvalidParam            : /**  -3 */ printf("%s | Invalid parameter.\n", header.c_str()); break;
-    case CAEN_DGTZ_InvalidLinkType         : /**  -4 */ printf("%s | Invalid Link Type.\n", header.c_str()); break;
-    case CAEN_DGTZ_InvalidHandle           : /**  -5 */ printf("%s | Invalid device handler.\n", header.c_str()); break;
-    case CAEN_DGTZ_MaxDevicesError         : /**  -6 */ printf("%s | Maximum number of devices exceeded.\n", header.c_str()); break;
-    case CAEN_DGTZ_BadBoardType            : /**  -7 */ printf("%s | Operation not allowed on this type of board.\n", header.c_str()); break;
-    case CAEN_DGTZ_BadInterruptLev         : /**  -8 */ printf("%s | The interrupt level is not allowed.\n", header.c_str()); break;
-    case CAEN_DGTZ_BadEventNumber          : /**  -9 */ printf("%s | The event number is bad.\n", header.c_str()); break;
-    case CAEN_DGTZ_ReadDeviceRegisterFail  : /** -10 */ printf("%s | Unable to read the registry.\n", header.c_str()); break;
-    case CAEN_DGTZ_WriteDeviceRegisterFail : /** -11 */ printf("%s | Unable to write the registry.\n", header.c_str()); break;
-    case CAEN_DGTZ_InvalidChannelNumber    : /** -13 */ printf("%s | The channel number is invalid.\n", header.c_str()); break;
-    case CAEN_DGTZ_ChannelBusy             : /** -14 */ printf("%s | The channel is busy.\n", header.c_str()); break;
-    case CAEN_DGTZ_FPIOModeInvalid         : /** -15 */ printf("%s | Invalid FPIO mode.\n", header.c_str()); break;
-    case CAEN_DGTZ_WrongAcqMode            : /** -16 */ printf("%s | Wrong Acquistion mode.\n", header.c_str()); break;
-    case CAEN_DGTZ_FunctionNotAllowed      : /** -17 */ printf("%s | This function is not allowed on this module.\n", header.c_str()); break;
-    case CAEN_DGTZ_Timeout                 : /** -18 */ printf("%s | Communication Timeout.\n", header.c_str()); break;
-    case CAEN_DGTZ_InvalidBuffer           : /** -19 */ printf("%s | The buffer is invalid.\n", header.c_str()); break;
-    case CAEN_DGTZ_EventNotFound           : /** -20 */ printf("%s | The event is not found.\n", header.c_str()); break;
-    case CAEN_DGTZ_InvalidEvent            : /** -21 */ printf("%s | The event is invalid.\n", header.c_str()); break;
-    case CAEN_DGTZ_OutOfMemory             : /** -22 */ printf("%s | Out of memory.\n", header.c_str()); break;
-    case CAEN_DGTZ_CalibrationError        : /** -23 */ printf("%s | Unable to calibrate the board.\n", header.c_str()); break;
-    case CAEN_DGTZ_DigitizerNotFound       : /** -24 */ printf("%s | Unbale to open the digitizer.\n", header.c_str()); break;
-    case CAEN_DGTZ_DigitizerAlreadyOpen    : /** -25 */ printf("%s | The digitizer is already open.\n", header.c_str()); break;
-    case CAEN_DGTZ_DigitizerNotReady       : /** -26 */ printf("%s | The digitizer is not ready.\n", header.c_str()); break;
-    case CAEN_DGTZ_InterruptNotConfigured  : /** -27 */ printf("%s | The digitizer has no IRQ configured.\n", header.c_str()); break;
-    case CAEN_DGTZ_DigitizerMemoryCorrupted: /** -28 */ printf("%s | The digitizer flash memory is corrupted.\n", header.c_str()); break;
-    case CAEN_DGTZ_DPPFirmwareNotSupported : /** -29 */ printf("%s | The digitier DPP firmware is not supported in this lib version.\n", header.c_str()); break;
-    case CAEN_DGTZ_InvalidLicense          : /** -30 */ printf("%s | Invalid firmware licence.\n", header.c_str()); break;
-    case CAEN_DGTZ_InvalidDigitizerStatus  : /** -31 */ printf("%s | The digitizer is found in a corrupted status.\n", header.c_str()); break;
-    case CAEN_DGTZ_UnsupportedTrace        : /** -32 */ printf("%s | The given trace is not supported.\n", header.c_str()); break;
-    case CAEN_DGTZ_InvalidProbe            : /** -33 */ printf("%s | The given probe is not supported.\n", header.c_str()); break;
-    case CAEN_DGTZ_UnsupportedBaseAddress  : /** -34 */ printf("%s | The base address is not supported.\n", header.c_str()); break;
-    case CAEN_DGTZ_NotYetImplemented       : /** -99 */ printf("%s | The function is not yet implemented.\n", header.c_str()); break;
+    case CAEN_DGTZ_CommError               : /**  -1 */ printf("%s %d | Communication Error.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_GenericError            : /**  -2 */ printf("%s %d | Unspecified error.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_InvalidParam            : /**  -3 */ printf("%s %d | Invalid parameter.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_InvalidLinkType         : /**  -4 */ printf("%s %d | Invalid Link Type.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_InvalidHandle           : /**  -5 */ printf("%s %d | Invalid device handler.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_MaxDevicesError         : /**  -6 */ printf("%s %d | Maximum number of devices exceeded.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_BadBoardType            : /**  -7 */ printf("%s %d | Operation not allowed on this type of board.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_BadInterruptLev         : /**  -8 */ printf("%s %d | The interrupt level is not allowed.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_BadEventNumber          : /**  -9 */ printf("%s %d | The event number is bad.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_ReadDeviceRegisterFail  : /** -10 */ printf("%s %d | Unable to read the registry.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_WriteDeviceRegisterFail : /** -11 */ printf("%s %d | Unable to write the registry.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_InvalidChannelNumber    : /** -13 */ printf("%s %d | The channel number is invalid.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_ChannelBusy             : /** -14 */ printf("%s %d | The channel is busy.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_FPIOModeInvalid         : /** -15 */ printf("%s %d | Invalid FPIO mode.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_WrongAcqMode            : /** -16 */ printf("%s %d | Wrong Acquistion mode.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_FunctionNotAllowed      : /** -17 */ printf("%s %d | This function is not allowed on this module.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_Timeout                 : /** -18 */ printf("%s %d | Communication Timeout.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_InvalidBuffer           : /** -19 */ printf("%s %d | The buffer is invalid.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_EventNotFound           : /** -20 */ printf("%s %d | The event is not found.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_InvalidEvent            : /** -21 */ printf("%s %d | The event is invalid.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_OutOfMemory             : /** -22 */ printf("%s %d | Out of memory.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_CalibrationError        : /** -23 */ printf("%s %d | Unable to calibrate the board.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_DigitizerNotFound       : /** -24 */ printf("%s %d | Unbale to open the digitizer.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_DigitizerAlreadyOpen    : /** -25 */ printf("%s %d | The digitizer is already open.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_DigitizerNotReady       : /** -26 */ printf("%s %d | The digitizer is not ready.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_InterruptNotConfigured  : /** -27 */ printf("%s %d | The digitizer has no IRQ configured.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_DigitizerMemoryCorrupted: /** -28 */ printf("%s %d | The digitizer flash memory is corrupted.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_DPPFirmwareNotSupported : /** -29 */ printf("%s %d | The digitier DPP firmware is not supported in this lib version.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_InvalidLicense          : /** -30 */ printf("%s %d | Invalid firmware licence.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_InvalidDigitizerStatus  : /** -31 */ printf("%s %d | The digitizer is found in a corrupted status.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_UnsupportedTrace        : /** -32 */ printf("%s %d | The given trace is not supported.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_InvalidProbe            : /** -33 */ printf("%s %d | The given probe is not supported.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_UnsupportedBaseAddress  : /** -34 */ printf("%s %d | The base address is not supported.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_NotYetImplemented       : /** -99 */ printf("%s %d | The function is not yet implemented.\n", header.c_str(), BoardInfo.SerialNumber); break;
   }
   
 }

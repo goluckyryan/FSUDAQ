@@ -58,6 +58,8 @@ private:
   void SyncComboBox(RComboBox *(&cb)[][MaxNChannels+1]);
   void SyncCheckBox(QCheckBox *(&chk)[][MaxNChannels+1]);
 
+  void UpdateBoardAndChannelsStatus(); // ReadRegister
+
   void SyncAllChannelsTab_PHA();
   void UpdatePHASetting();
   void SyncAllChannelsTab_PSD();
@@ -67,6 +69,8 @@ private:
   Digitizer ** digi;
   unsigned int nDigi;
   unsigned short ID;
+
+  std::vector<Reg> chRegList; 
 
   QString rawDataPath;
   bool enableSignalSlot;
@@ -145,6 +149,9 @@ private:
   QPushButton * bnACQStatus[MaxNDigitizer][9];
   QPushButton * bnBdFailStatus[MaxNDigitizer][3];
   QPushButton * bnReadOutStatus[MaxNDigitizer][3];
+  QLineEdit * leACQStatus[MaxNDigitizer];
+  QLineEdit * leBdFailStatus[MaxNDigitizer];
+  QLineEdit * leReadOutStatus[MaxNDigitizer];
 
   /// ============================= Mask Configure
   QPushButton * bnGlobalTriggerMask[MaxNDigitizer][MaxNChannels/2];

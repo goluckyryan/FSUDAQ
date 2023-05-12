@@ -352,7 +352,7 @@ void MainWindow::OpenDigitizers(){
   readDataThread = new ReadDataThread * [nDigi];
   for( unsigned int i = 0; i < nDigi; i++){
     digi[i] = new Digitizer(portList[i].first, portList[i].second);
-    digi[i]->Reset();
+    //digi[i]->Reset();
 
     ///============== load settings 
     QString fileName = rawDataPath + "/Digi-" + QString::number(digi[i]->GetSerialNumber()) + ".bin"; //TODO add DPP Type in File Name
@@ -360,13 +360,15 @@ void MainWindow::OpenDigitizers(){
     if( !file.open(QIODevice::Text | QIODevice::ReadOnly) ) {
 
       if( digi[i]->GetDPPType() == V1730_DPP_PHA_CODE ) {
-        digi[i]->ProgramPHABoard();
-        LogMsg("<b>" + fileName + "</b> not found. Program predefined PHA settings.");
+        //digi[i]->ProgramPHABoard();
+        //LogMsg("<b>" + fileName + "</b> not found. Program predefined PHA settings.");
+        LogMsg("<b>" + fileName + "</b> not found.");
       }
 
       if( digi[i]->GetDPPType() == V1730_DPP_PSD_CODE ){
-
-        LogMsg("<b>" + fileName + "</b> not found."); //TODO, PSD?
+        //digi[i]->ProgramPSDBoard();
+        //LogMsg("<b>" + fileName + "</b> not found. Program predefined PSD settings.");
+        LogMsg("<b>" + fileName + "</b> not found.");
       }
 
     }else{
@@ -380,6 +382,7 @@ void MainWindow::OpenDigitizers(){
         LogMsg("Fail to Loaded settings file " + fileName + " for Digi-" + QString::number(digi[i]->GetSerialNumber()));
       }
     }    
+    digi[i]->ReadAllSettingsFromBoard(true);
 
     readDataThread[i] = new ReadDataThread(digi[i], i);
     connect(readDataThread[i], &ReadDataThread::sendMsg, this, &MainWindow::LogMsg);
@@ -390,6 +393,7 @@ void MainWindow::OpenDigitizers(){
   LogMsg(QString("Done. Opened %1 digitizer(s).").arg(nDigi));
 
   WaitForDigitizersOpen(false);
+  bnStopACQ->setEnabled(false);
 
   SetupScalar();
 
