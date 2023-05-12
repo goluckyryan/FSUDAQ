@@ -55,6 +55,8 @@ private:
   void UpdateComobox(RComboBox * &cb, const Reg para);
   void UpdateSpinBox(RSpinBox * &sb, const Reg para);
   void UpdatePanelFromMomeory();
+  void UpdatePHAPanel();
+  void UpdatePSDPanel();
 
   Digitizer ** digi;
   unsigned short nDigi;

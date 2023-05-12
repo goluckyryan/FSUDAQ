@@ -116,9 +116,10 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
     if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) SetUpPHAPanel();
     if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) SetUpPSDPanel();
 
-    ReadSettingsFromBoard();
+    //ReadSettingsFromBoard();
 
   });
+
 
   bnReadSettingsFromBoard = new QPushButton("Refresh Settings", this);
   layout->addWidget(bnReadSettingsFromBoard, rowID, 2);
@@ -134,6 +135,7 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
     settingLayout->setSpacing(0);
 
     if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) SetUpPHAPanel();
+    if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) SetUpPSDPanel();
 
   }
   //================ Plot view
@@ -142,6 +144,7 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   plotView->setRenderHints(QPainter::Antialiasing);
   layout->addWidget(plotView, rowID, 0, 1, 6);
 
+  
   //================ Key binding
   rowID ++;
   QLabel * lbhints = new QLabel("Type 'r' to restore view, '+/-' Zoom in/out, arrow key to pan.", this);
@@ -186,10 +189,10 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   layout->setColumnStretch(4, 1);
   layout->setColumnStretch(5, 1);
 
-  UpdatePanelFromMomeory();
-
   bnScopeStart->setEnabled(true);
   bnScopeStop->setEnabled(false);
+
+  UpdatePanelFromMomeory();
 
   enableSignalSlot = true;
 
@@ -345,6 +348,7 @@ void Scope::SetUpComboBox(RComboBox * &cb, QString str, int row, int col, const 
 }
 
 void Scope::SetUpSpinBox(RSpinBox * &sb, QString str, int row, int col, const Reg para){
+
   QLabel * lb = new QLabel(str, settingGroup);
   lb->setAlignment(Qt::AlignRight | Qt::AlignCenter);
   settingLayout->addWidget(lb, row, col);
@@ -362,6 +366,7 @@ void Scope::SetUpSpinBox(RSpinBox * &sb, QString str, int row, int col, const Re
     if( !enableSignalSlot ) return;
     sb->setStyleSheet("color:blue");
   });
+
 
   connect(sb, &RSpinBox::returnPressed, this, [=](){
     if( !enableSignalSlot ) return;
@@ -534,12 +539,16 @@ void Scope::SetUpPHAPanel(){
 
 void Scope::SetUpPSDPanel(){
 
+  enableSignalSlot = false;
+  printf("==== %s \n", __func__);
+
   int rowID = 0;
   SetUpSpinBox(sbReordLength,     "Record Length [ns] ", rowID, 0, DPP::RecordLength_G);
   SetUpSpinBox(sbPreTrigger,        "Pre Trigger [ns] ", rowID, 2, DPP::PreTrigger);
   SetUpSpinBox(sbDCOffset,             "DC offset [%] ", rowID, 4, DPP::ChannelDCOffset);
   sbDCOffset->setDecimals(2);    
   SetUpComboBox(cbDynamicRange,        "Dynamic Range ", rowID, 6, DPP::InputDynamicRange);
+
 
   rowID ++; //=============================================================
   SetUpComboBoxSimple(cbPolarity, "Polarity ", rowID, 0);
@@ -554,7 +563,7 @@ void Scope::SetUpPSDPanel(){
   SetUpSpinBox(sbLongGate, "Long Gate [ns] ", rowID, 4, DPP::PSD::LongGateWidth);
   SetUpSpinBox(sbGateOffset, "Gate Offset [ns] ", rowID, 6, DPP::PSD::GateOffset);
 
-
+  enableSignalSlot = true;
 }
 
 void Scope::EnableControl(bool enable){
@@ -607,20 +616,34 @@ void Scope::UpdateSpinBox(RSpinBox * &sb, const Reg para){
 void Scope::UpdatePanelFromMomeory(){
 
   enableSignalSlot = false;
+  printf("==== %s \n", __func__);
+
   int ch = cbScopeCh->currentIndex();
 
-  int factor = digi[ID]->IsDualTrace() ? 2 : 1; // if dual trace, 
-
   unsigned int haha = digi[ID]->GetSettingFromMemory(DPP::RecordLength_G, ch);
-  sbReordLength->setValue(haha * DPP::RecordLength_G.GetPartialStep() * ch2ns / factor);
 
-  haha = digi[ID]->GetSettingFromMemory(DPP::PreTrigger, ch);
-  sbPreTrigger->setValue(haha * DPP::PreTrigger.GetPartialStep() * ch2ns / factor);
+  if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ){
+    int factor = digi[ID]->IsDualTrace() ? 2 : 1; // if dual trace, 
+    sbReordLength->setValue(haha * DPP::RecordLength_G.GetPartialStep() * ch2ns / factor);
+  }else{
+    sbReordLength->setValue(haha * DPP::RecordLength_G.GetPartialStep() * ch2ns);
+  }
 
   haha = digi[ID]->GetSettingFromMemory(DPP::ChannelDCOffset, ch);
   sbDCOffset->setValue((1.0 - haha * 1.0 / 0xFFFF) * 100 );
 
   UpdateComobox(cbDynamicRange, DPP::InputDynamicRange);
+  UpdateSpinBox(sbPreTrigger, DPP::PreTrigger);
+
+  if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) UpdatePHAPanel();
+  if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) UpdatePSDPanel();
+
+}
+
+void Scope::UpdatePHAPanel(){
+  enableSignalSlot = false;
+
+  int ch = cbScopeCh->currentIndex();
 
   uint32_t DPPAlg = digi[ID]->GetSettingFromMemory(DPP::DPPAlgorithmControl, ch);
   if( Digitizer::ExtractBits(DPPAlg, DPP::Bit_DPPAlgorithmControl_PHA::Polarity) ){
@@ -629,63 +652,81 @@ void Scope::UpdatePanelFromMomeory(){
     cbPolarity->setCurrentIndex(0);
   }
 
-  if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ){
-    UpdateSpinBox(sbInputRiseTime,  DPP::PHA::InputRiseTime);
-    UpdateSpinBox(sbThreshold,      DPP::PHA::TriggerThreshold);
-    UpdateSpinBox(sbTriggerHoldOff, DPP::PHA::TriggerHoldOffWidth);
+  UpdateSpinBox(sbInputRiseTime,  DPP::PHA::InputRiseTime);
+  UpdateSpinBox(sbThreshold,      DPP::PHA::TriggerThreshold);
+  UpdateSpinBox(sbTriggerHoldOff, DPP::PHA::TriggerHoldOffWidth);
 
-    UpdateSpinBox(sbTrapRiseTime, DPP::PHA::TrapezoidRiseTime);
-    UpdateSpinBox(sbTrapFlatTop,  DPP::PHA::TrapezoidFlatTop);
-    UpdateSpinBox(sbDecayTime,    DPP::PHA::DecayTime);
-    UpdateSpinBox(sbPeakingTime,  DPP::PHA::PeakingTime);
+  UpdateSpinBox(sbTrapRiseTime, DPP::PHA::TrapezoidRiseTime);
+  UpdateSpinBox(sbTrapFlatTop,  DPP::PHA::TrapezoidFlatTop);
+  UpdateSpinBox(sbDecayTime,    DPP::PHA::DecayTime);
+  UpdateSpinBox(sbPeakingTime,  DPP::PHA::PeakingTime);
 
-    UpdateComobox(cbSmoothingFactor, DPP::PHA::RCCR2SmoothingFactor);
+  UpdateComobox(cbSmoothingFactor, DPP::PHA::RCCR2SmoothingFactor);
 
-    int temp = Digitizer::ExtractBits(DPPAlg, DPP::Bit_DPPAlgorithmControl_PHA::BaselineAvg);
-    for(int i = 0; i < cbBaselineAvg->count(); i++){
-      if( cbBaselineAvg->itemData(i).toInt() == temp) {
-        cbBaselineAvg->setCurrentIndex(i);
-        break;
-      }
+  int temp = Digitizer::ExtractBits(DPPAlg, DPP::Bit_DPPAlgorithmControl_PHA::BaselineAvg);
+  for(int i = 0; i < cbBaselineAvg->count(); i++){
+    if( cbBaselineAvg->itemData(i).toInt() == temp) {
+      cbBaselineAvg->setCurrentIndex(i);
+      break;
     }
-
-    temp = Digitizer::ExtractBits(DPPAlg, DPP::Bit_DPPAlgorithmControl_PHA::PeakMean);
-    for(int i = 0; i < cbPeakAvg->count(); i++){
-      if( cbPeakAvg->itemData(i).toInt() == temp) {
-        cbPeakAvg->setCurrentIndex(i);
-        break;
-      }
-    }
-
-    uint32_t BdCfg = digi[ID]->GetSettingFromMemory(DPP::BoardConfiguration);
-
-    temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::AnalogProbe1);
-    for(int i = 0; i < cbAnaProbe1->count(); i++){
-      if( cbAnaProbe1->itemData(i).toInt() == temp) {
-        cbAnaProbe1->setCurrentIndex(i);
-        dataTrace[0]->setName(cbAnaProbe1->currentText());
-        break;
-      }
-    }
-    temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::AnalogProbe2);
-    for(int i = 0; i < cbAnaProbe2->count(); i++){
-      if( cbAnaProbe2->itemData(i).toInt() == temp) {
-        cbAnaProbe2->setCurrentIndex(i);
-        dataTrace[1]->setName(cbAnaProbe2->currentText());
-        break;
-      }
-    }
-    temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::DigiProbel1);
-    for(int i = 0; i < cbDigiProbe1->count(); i++){
-      if( cbDigiProbe1->itemData(i).toInt() == temp) {
-        cbDigiProbe1->setCurrentIndex(i);
-        dataTrace[2]->setName(cbDigiProbe1->currentText());
-        break;
-      }
-    }
-
-
   }
+
+  temp = Digitizer::ExtractBits(DPPAlg, DPP::Bit_DPPAlgorithmControl_PHA::PeakMean);
+  for(int i = 0; i < cbPeakAvg->count(); i++){
+    if( cbPeakAvg->itemData(i).toInt() == temp) {
+      cbPeakAvg->setCurrentIndex(i);
+      break;
+    }
+  }
+
+  uint32_t BdCfg = digi[ID]->GetSettingFromMemory(DPP::BoardConfiguration);
+
+  temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::AnalogProbe1);
+  for(int i = 0; i < cbAnaProbe1->count(); i++){
+    if( cbAnaProbe1->itemData(i).toInt() == temp) {
+      cbAnaProbe1->setCurrentIndex(i);
+      dataTrace[0]->setName(cbAnaProbe1->currentText());
+      break;
+    }
+  }
+  temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::AnalogProbe2);
+  for(int i = 0; i < cbAnaProbe2->count(); i++){
+    if( cbAnaProbe2->itemData(i).toInt() == temp) {
+      cbAnaProbe2->setCurrentIndex(i);
+      dataTrace[1]->setName(cbAnaProbe2->currentText());
+      break;
+    }
+  }
+  temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::DigiProbel1);
+  for(int i = 0; i < cbDigiProbe1->count(); i++){
+    if( cbDigiProbe1->itemData(i).toInt() == temp) {
+      cbDigiProbe1->setCurrentIndex(i);
+      dataTrace[2]->setName(cbDigiProbe1->currentText());
+      break;
+    }
+  }
+
+  enableSignalSlot = true;
+}
+
+void Scope::UpdatePSDPanel(){
+  enableSignalSlot = false;
+
+  printf("==== %s \n", __func__);
+
+
+  // int ch = cbScopeCh->currentIndex();
+
+  // uint32_t DPPAlg = digi[ID]->GetSettingFromMemory(DPP::DPPAlgorithmControl, ch);
+  // if( Digitizer::ExtractBits(DPPAlg, DPP::Bit_DPPAlgorithmControl_PSD::Polarity) ){
+  //   cbPolarity->setCurrentIndex(1);
+  // }else{
+  //   cbPolarity->setCurrentIndex(0);
+  // }
+
+  // UpdateSpinBox(sbShortGate, DPP::PSD::ShortGateWidth);
+  // UpdateSpinBox(sbLongGate,  DPP::PSD::LongGateWidth);
+  // UpdateSpinBox(sbGateOffset, DPP::PSD::GateOffset);
 
   enableSignalSlot = true;
 }
@@ -710,6 +751,14 @@ void Scope::ReadSettingsFromBoard(){
     digi[ID]->ReadRegister(DPP::PHA::TrapezoidFlatTop, ch);
     digi[ID]->ReadRegister(DPP::PHA::DecayTime, ch);
     digi[ID]->ReadRegister(DPP::PHA::PeakingTime, ch);
+
+  }
+
+  if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE){
+
+    digi[ID]->ReadRegister(DPP::PSD::ShortGateWidth);
+    digi[ID]->ReadRegister(DPP::PSD::LongGateWidth);
+    digi[ID]->ReadRegister(DPP::PSD::GateOffset);
 
   }
 
