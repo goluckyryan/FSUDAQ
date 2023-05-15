@@ -8,6 +8,7 @@
 #include <QCheckBox>
 #include <QGroupBox>
 #include <QPushButton>
+#include <QRadioButton>
 
 #include "macro.h"
 #include "ClassDigitizer.h"
@@ -65,12 +66,21 @@ private:
   void SyncAllChannelsTab_PSD();
   void UpdatePSDSetting();
 
+  void CheckRadioAndCheckedButtons();
+
 
   Digitizer ** digi;
   unsigned int nDigi;
   unsigned short ID;
 
   std::vector<Reg> chRegList; 
+
+  RComboBox * cbFromBoard;
+  RComboBox * cbToBoard;
+  QRadioButton * rbCh[MaxNChannels]; // Copy from ch
+  QCheckBox * chkCh[MaxNChannels]; // Copy to Ch
+  QPushButton * bnCopyBoard;
+  QPushButton * bnCopyChannel;
 
   QString rawDataPath;
   bool enableSignalSlot;

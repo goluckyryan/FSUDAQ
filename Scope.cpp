@@ -487,10 +487,9 @@ void Scope::SetUpPHAPanel(){
 
   rowID ++; //=============================================================
   SetUpComboBoxSimple(cbAnaProbe1, "Ana. Probe 1 ", rowID, 0);
-  cbAnaProbe1->addItem("Input", 0);
-  cbAnaProbe1->addItem("RC-CR", 1);
-  cbAnaProbe1->addItem("RC-CR2", 2);
-  cbAnaProbe1->addItem("Trap.", 3);
+  for( int i = 0; i < (int) DPP::Bit_BoardConfig::ListAnaProbe1_PHA.size(); i++){
+    cbAnaProbe1->addItem(QString::fromStdString(DPP::Bit_BoardConfig::ListAnaProbe1_PHA[i].first), DPP::Bit_BoardConfig::ListAnaProbe1_PHA[i].second);
+  }
   connect(cbAnaProbe1, &RComboBox::currentIndexChanged, this, [=](){
     if( !enableSignalSlot ) return;
     digi[ID]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::AnalogProbe1, cbAnaProbe1->currentData().toInt(), cbScopeCh->currentIndex());
@@ -498,10 +497,9 @@ void Scope::SetUpPHAPanel(){
   });
 
   SetUpComboBoxSimple(cbAnaProbe2, "Ana. Probe 2 ", rowID, 2);
-  cbAnaProbe2->addItem("Input", 0);
-  cbAnaProbe2->addItem("Threshold", 1);
-  cbAnaProbe2->addItem("Trap.-Baseline", 2);
-  cbAnaProbe2->addItem("Baseline", 3);
+  for( int i = 0; i < (int) DPP::Bit_BoardConfig::ListAnaProbe2_PHA.size(); i++){
+    cbAnaProbe2->addItem(QString::fromStdString(DPP::Bit_BoardConfig::ListAnaProbe2_PHA[i].first), DPP::Bit_BoardConfig::ListAnaProbe2_PHA[i].second);
+  }
   connect(cbAnaProbe2, &RComboBox::currentIndexChanged, this, [=](){
     if( !enableSignalSlot ) return;
     digi[ID]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::AnalogProbe2, cbAnaProbe2->currentData().toInt(), cbScopeCh->currentIndex());
@@ -509,27 +507,19 @@ void Scope::SetUpPHAPanel(){
   });
 
   SetUpComboBoxSimple(cbDigiProbe1, "Digi. Probe 1 ", rowID, 4);
-  cbDigiProbe1->addItem("Peaking", 0);
-  cbDigiProbe1->addItem("Armed", 1);
-  cbDigiProbe1->addItem("Peak Run", 2);
-  cbDigiProbe1->addItem("Pile Up", 3);
-  cbDigiProbe1->addItem("peaking", 4);
-  cbDigiProbe1->addItem("TRG Valid. Win", 5);
-  cbDigiProbe1->addItem("Baseline Freeze", 6);
-  cbDigiProbe1->addItem("TRG Holdoff", 7);
-  cbDigiProbe1->addItem("TRG Valid.", 8);
-  cbDigiProbe1->addItem("ACQ Busy", 9);
-  cbDigiProbe1->addItem("Zero Cross", 10);
-  cbDigiProbe1->addItem("Ext. TRG", 11);
-  cbDigiProbe1->addItem("Budy", 12);
+  for( int i = 0; i < (int) DPP::Bit_BoardConfig::ListDigiProbe1_PHA.size(); i++){
+    cbDigiProbe1->addItem(QString::fromStdString(DPP::Bit_BoardConfig::ListDigiProbe1_PHA[i].first), DPP::Bit_BoardConfig::ListDigiProbe1_PHA[i].second);
+  }
   connect(cbDigiProbe1, &RComboBox::currentIndexChanged, this, [=](){
     if( !enableSignalSlot ) return;
     digi[ID]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::DigiProbel1, cbDigiProbe1->currentData().toInt(), cbScopeCh->currentIndex());
-    dataTrace[2]->setName(cbDigiProbe2->currentText());
+    dataTrace[2]->setName(cbDigiProbe1->currentText());
   });
 
   SetUpComboBoxSimple(cbDigiProbe2, "Digi. Probe 2 ", rowID, 6);
-  cbDigiProbe2->addItem("Trigger", 0);
+  for( int i = 0; i < (int) DPP::Bit_BoardConfig::ListDigiProbe2_PHA.size(); i++){
+    cbDigiProbe2->addItem(QString::fromStdString(DPP::Bit_BoardConfig::ListDigiProbe2_PHA[i].first), DPP::Bit_BoardConfig::ListDigiProbe2_PHA[i].second);
+  }
   dataTrace[3]->setName(cbDigiProbe2->currentText());
   cbDigiProbe2->setEnabled(false);
 
@@ -562,6 +552,37 @@ void Scope::SetUpPSDPanel(){
   SetUpSpinBox(sbShortGate, "Short Gate [ns] ", rowID, 2, DPP::PSD::ShortGateWidth);
   SetUpSpinBox(sbLongGate, "Long Gate [ns] ", rowID, 4, DPP::PSD::LongGateWidth);
   SetUpSpinBox(sbGateOffset, "Gate Offset [ns] ", rowID, 6, DPP::PSD::GateOffset);
+
+  rowID ++; //=============================================================
+  SetUpComboBoxSimple(cbAnaProbe1, "Ana. Probe ", rowID, 0);
+  for( int i = 0; i < (int) DPP::Bit_BoardConfig::ListAnaProbe_PSD.size(); i++){
+    cbAnaProbe1->addItem(QString::fromStdString(DPP::Bit_BoardConfig::ListAnaProbe_PSD[i].first), DPP::Bit_BoardConfig::ListAnaProbe_PSD[i].second);
+  }
+  connect(cbAnaProbe1, &RComboBox::currentIndexChanged, this, [=](){
+    if( !enableSignalSlot ) return;
+    digi[ID]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::AnaProbe_PSD, cbAnaProbe1->currentData().toInt(), cbScopeCh->currentIndex());
+    dataTrace[0]->setName(cbAnaProbe1->currentText());
+  });
+
+  SetUpComboBoxSimple(cbDigiProbe1, "Digi. Probe 1 ", rowID, 4);
+  for( int i = 0; i < (int) DPP::Bit_BoardConfig::ListDigiProbe1_PSD.size(); i++){
+    cbDigiProbe1->addItem(QString::fromStdString(DPP::Bit_BoardConfig::ListDigiProbe1_PSD[i].first), DPP::Bit_BoardConfig::ListDigiProbe1_PSD[i].second);
+  }
+  connect(cbDigiProbe1, &RComboBox::currentIndexChanged, this, [=](){
+    if( !enableSignalSlot ) return;
+    digi[ID]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::DigiProbel1, cbDigiProbe1->currentData().toInt(), cbScopeCh->currentIndex());
+    dataTrace[2]->setName(cbDigiProbe1->currentText());
+  });
+
+  SetUpComboBoxSimple(cbDigiProbe2, "Digi. Probe 2 ", rowID, 6);
+  for( int i = 0; i < (int) DPP::Bit_BoardConfig::ListDigiProbe2_PSD.size(); i++){
+    cbDigiProbe2->addItem(QString::fromStdString(DPP::Bit_BoardConfig::ListDigiProbe2_PSD[i].first), DPP::Bit_BoardConfig::ListDigiProbe2_PSD[i].second);
+  }
+  connect(cbDigiProbe2, &RComboBox::currentIndexChanged, this, [=](){
+    if( !enableSignalSlot ) return;
+    digi[ID]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::DigiProbel1, cbDigiProbe1->currentData().toInt(), cbScopeCh->currentIndex());
+    dataTrace[3]->setName(cbDigiProbe2->currentText());
+  });
 
   enableSignalSlot = true;
 }
@@ -714,19 +735,45 @@ void Scope::UpdatePSDPanel(){
 
   printf("==== %s \n", __func__);
 
+  int ch = cbScopeCh->currentIndex();
 
-  // int ch = cbScopeCh->currentIndex();
+  uint32_t DPPAlg = digi[ID]->GetSettingFromMemory(DPP::DPPAlgorithmControl, ch);
+  if( Digitizer::ExtractBits(DPPAlg, DPP::Bit_DPPAlgorithmControl_PSD::Polarity) ){
+    cbPolarity->setCurrentIndex(1);
+  }else{
+    cbPolarity->setCurrentIndex(0);
+  }
 
-  // uint32_t DPPAlg = digi[ID]->GetSettingFromMemory(DPP::DPPAlgorithmControl, ch);
-  // if( Digitizer::ExtractBits(DPPAlg, DPP::Bit_DPPAlgorithmControl_PSD::Polarity) ){
-  //   cbPolarity->setCurrentIndex(1);
-  // }else{
-  //   cbPolarity->setCurrentIndex(0);
-  // }
+  UpdateSpinBox(sbShortGate, DPP::PSD::ShortGateWidth);
+  UpdateSpinBox(sbLongGate,  DPP::PSD::LongGateWidth);
+  UpdateSpinBox(sbGateOffset, DPP::PSD::GateOffset);
 
-  // UpdateSpinBox(sbShortGate, DPP::PSD::ShortGateWidth);
-  // UpdateSpinBox(sbLongGate,  DPP::PSD::LongGateWidth);
-  // UpdateSpinBox(sbGateOffset, DPP::PSD::GateOffset);
+  uint32_t BdCfg = digi[ID]->GetSettingFromMemory(DPP::BoardConfiguration, ch);
+
+  int temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::AnaProbe_PSD);
+  for( int i = 0; i < cbAnaProbe1->count(); i++){
+    if( cbAnaProbe1->itemData(i).toInt() == temp ) {
+      cbAnaProbe1->setCurrentIndex(i);
+      dataTrace[0]->setName(cbAnaProbe1->currentText());
+      break;
+    }
+  }
+  temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::DigiProbel1);
+  for( int i = 0; i < cbDigiProbe1->count(); i++){
+    if( cbDigiProbe1->itemData(i).toInt() == temp ) {
+      cbDigiProbe1->setCurrentIndex(i);
+      dataTrace[2]->setName(cbDigiProbe1->currentText());
+      break;
+    }
+  }
+  temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::DigiProbel2);
+  for( int i = 0; i < cbDigiProbe2->count(); i++){
+    if( cbDigiProbe2->itemData(i).toInt() == temp ) {
+      cbDigiProbe2->setCurrentIndex(i);
+      dataTrace[3]->setName(cbDigiProbe2->currentText());
+      break;
+    }
+  }
 
   enableSignalSlot = true;
 }

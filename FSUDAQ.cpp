@@ -551,6 +551,8 @@ void MainWindow::SetupScalar(){
 
 void MainWindow::CleanUpScalar(){
 
+  if( scalar == nullptr) return;
+
   scalar->close();
 
   if( leTrigger == nullptr ) return;

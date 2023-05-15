@@ -45,11 +45,15 @@ void Digitizer::Initalization(){
 }
 
 void Digitizer::Reset(){
-  ret = CAEN_DGTZ_Reset(handle);
-  if( ret != 0 ) ErrorMsg(__func__);
+  // ret = CAEN_DGTZ_Reset(handle);
+  // if( ret != 0 ) ErrorMsg(__func__);
   
-  ret |= CAEN_DGTZ_WriteRegister(handle, DPP::SoftwareClear_W, 1);
-  if( ret != 0 ) ErrorMsg("Reset-SoftwareClear_W");
+  // ret |= CAEN_DGTZ_WriteRegister(handle, DPP::SoftwareClear_W, 1);
+  // if( ret != 0 ) ErrorMsg("Reset-SoftwareClear_W");
+
+  // Clear data off the Output Buffer, the event counter, perform a FPGA global reset to default configuration
+  ret = CAEN_DGTZ_WriteRegister(handle, DPP::SoftwareReset_W, 1);
+  if( ret != 0 ) ErrorMsg("Reset-SoftwareReset_W");
 
 }
 
@@ -286,7 +290,9 @@ int Digitizer::ProgramPHABoard(){
   
   printf("===== Digitizer::%s\n", __func__);
 
-  ret = CAEN_DGTZ_Reset(handle);
+  //ret = CAEN_DGTZ_Reset(handle);
+
+  Reset();
 
   ret = CAEN_DGTZ_WriteRegister(handle, DPP::RecordLength_G + 0x7000, 62);  
   ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardConfiguration, 0x0F8915);  /// has Extra2, dual trace, input and trap-baseline
@@ -338,7 +344,9 @@ int Digitizer::ProgramPSDBoard(){
 
   printf("===== Digitizer::%s\n", __func__);
 
-  ret = CAEN_DGTZ_Reset(handle);
+  //ret = CAEN_DGTZ_Reset(handle);
+  Reset();
+
   ret = CAEN_DGTZ_WriteRegister(handle, DPP::RecordLength_G + 0x7000, 62);  
   ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardConfiguration, 0x0F3911);  /// has Extra2, dual trace, input and CFD
 
@@ -352,9 +360,14 @@ int Digitizer::ProgramPSDBoard(){
 
   ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PreTrigger) + 0x7000 , 32 );
   ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::RecordLength_G) + 0x7000 , 128 );
+  
+  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PSD::ShortGateWidth) + 0x7000 , 10 );
+  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PSD::LongGateWidth) + 0x7000 , 30 );
+  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PSD::GateOffset) + 0x7000 , 3 );
 
   if( ret != 0 ) { printf("==== set channels error.\n"); return 0;}
   
+  isSettingFilledinMemeory = false; /// unlock the ReadAllSettingsFromBoard();
   ReadAllSettingsFromBoard();
   return ret;
 }
