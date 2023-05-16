@@ -334,7 +334,7 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
           if ( DecodePHADualChannelBlock(chMask, fastDecode, verbose) < 0 ) break;
         }
         if( DPPType == V1730_DPP_PSD_CODE ) {
-          if ( DecodePHADualChannelBlock(chMask, fastDecode, verbose) < 0 ) break;
+          if ( DecodePSDDualChannelBlock(chMask, fastDecode, verbose) < 0 ) break;
         }
       }
     }else{
@@ -412,6 +412,8 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
 //*=================================================
 inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDecode, int verbose){
   
+  //printf("======= %s\n", __func__);
+
   nw = nw + 1; 
   unsigned int word = ReadBuffer(nw, verbose);
 
@@ -647,6 +649,8 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
 //*=================================================
 inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDecode, int verbose){
   
+  //printf("======= %s\n", __func__);
+
   nw = nw + 1; 
   unsigned int word = ReadBuffer(nw, verbose);
   
@@ -746,7 +750,7 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
       nw += nSample/2;
     }else{
       for( unsigned int wi = 0; wi < nSample/2; wi++){
-        nw = nw +1 ; word = ReadBuffer(nw, verbose - 2);
+        nw = nw +1 ; word = ReadBuffer(nw, verbose-4);
         bool dp2b = (( word >> 31 ) & 0x1 );
         bool dp1b = (( word >> 30 ) & 0x1 );
         unsigned short waveb = (( word >> 16) & 0x3FFF);
@@ -786,9 +790,9 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
     nw = nw +1 ; word = ReadBuffer(nw, verbose);
     unsigned int Qlong  = (( word >> 16) & 0xFFFF);
     unsigned int Qshort = (word & 0x7FFF);
-    bool isEnergyCorrect = ((word >> 15) & 0x1);
+    bool isEnergyCorrect = ((word >> 15) & 0x1); // the PUR, either pileup or saturated
     
-    if( isEnergyCorrect == 1 ) {
+    if( isEnergyCorrect == 0 ) {
       EventIndex[channel] ++; 
       if( EventIndex[channel] > MaxNData ) EventIndex[channel] = 0;
 
@@ -799,8 +803,6 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
       Energy2[channel][EventIndex[channel]] = Qlong;
       Timestamp[channel][EventIndex[channel]] = timeStamp;
 
-      //TODO pile up
-
       if( SaveWaveToMemory ) {
         if( hasDualTrace ){
           Waveform1[channel][EventIndex[channel]] = tempWaveform1;
@@ -810,6 +812,7 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
         }
         DigiWaveform1[channel][EventIndex[channel]] = tempDigiWaveform1;
         DigiWaveform2[channel][EventIndex[channel]] = tempDigiWaveform2;
+
       }
 
     }

@@ -125,6 +125,15 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   layout->addWidget(bnReadSettingsFromBoard, rowID, 2);
   connect(bnReadSettingsFromBoard, &QPushButton::clicked, this, &Scope::ReadSettingsFromBoard);
 
+
+  QPushButton * bnClearMemory = new QPushButton("Clear Memory", this);
+  layout->addWidget(bnClearMemory, rowID, 3);
+  connect(bnClearMemory, &QPushButton::clicked, this, [=](){
+    digiMTX[ID].lock();
+    digi[ID]->GetData()->ClearData();
+    digiMTX[ID].unlock();
+  });
+
   //================ Trace settings
   rowID ++;
   {
@@ -290,11 +299,22 @@ void Scope::UpdateScope(){
     //printf("--- %d | %d \n", index, traceLength );
 
     QVector<QPointF> points[4];
-    for( int i = 0; i < (int) (data->Waveform1[ch][index]).size() ; i++ ) {
-      points[0].append(QPointF(ch2ns * i * factor, (data->Waveform1[ch][index])[i])); 
-      if( i < (int) data->Waveform2[ch][index].size() )  points[1].append(QPointF(ch2ns * i * factor, (data->Waveform2[ch][index])[i]));
-      if( i < (int) data->DigiWaveform1[ch][index].size() )  points[2].append(QPointF(ch2ns * i * factor, (data->DigiWaveform1[ch][index])[i] * 1000));
-      if( i < (int) data->DigiWaveform2[ch][index].size() )  points[3].append(QPointF(ch2ns * i * factor, (data->DigiWaveform2[ch][index])[i] * 1000 + 500));
+    if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) {
+      for( int i = 0; i < (int) (data->Waveform1[ch][index]).size() ; i++ ) {
+        points[0].append(QPointF(ch2ns * i * factor, (data->Waveform1[ch][index])[i])); 
+        points[1].append(QPointF(ch2ns * i * factor, (data->Waveform2[ch][index])[i]));
+        points[2].append(QPointF(ch2ns * i * factor, (data->DigiWaveform1[ch][index])[i] * 1000));
+        points[3].append(QPointF(ch2ns * i * factor, (data->DigiWaveform2[ch][index])[i] * 1000 + 500));
+      }
+    }
+
+    if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) {
+      for( int i = 0; i < (int) (data->DigiWaveform1[ch][index]).size() ; i++ ) {
+        if( i < (int) data->Waveform1[ch][index].size() )  points[0].append(QPointF(ch2ns * i * factor, (data->Waveform1[ch][index])[i])); 
+        if( i < (int) data->Waveform2[ch][index].size() )  points[1].append(QPointF(ch2ns * i * factor, (data->Waveform2[ch][index])[i]));
+        if( i < (int) data->DigiWaveform1[ch][index].size() )  points[2].append(QPointF(ch2ns * i, (data->DigiWaveform1[ch][index])[i] * 1000));
+        if( i < (int) data->DigiWaveform2[ch][index].size() )  points[3].append(QPointF(ch2ns * i, (data->DigiWaveform2[ch][index])[i] * 1000 + 500));
+      }
     }
     dataTrace[0]->replace(points[0]);
     dataTrace[1]->replace(points[1]);
@@ -517,7 +537,7 @@ void Scope::SetUpPHAPanel(){
   }
   connect(cbDigiProbe1, &RComboBox::currentIndexChanged, this, [=](){
     if( !enableSignalSlot ) return;
-    digi[ID]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::DigiProbel1, cbDigiProbe1->currentData().toInt(), cbScopeCh->currentIndex());
+    digi[ID]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::DigiProbel1_PHA, cbDigiProbe1->currentData().toInt(), cbScopeCh->currentIndex());
     dataTrace[2]->setName(cbDigiProbe1->currentText());
   });
 
@@ -566,7 +586,16 @@ void Scope::SetUpPSDPanel(){
   connect(cbAnaProbe1, &RComboBox::currentIndexChanged, this, [=](){
     if( !enableSignalSlot ) return;
     digi[ID]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::AnaProbe_PSD, cbAnaProbe1->currentData().toInt(), cbScopeCh->currentIndex());
-    dataTrace[0]->setName(cbAnaProbe1->currentText());
+    //dataTrace[0]->setName(cbAnaProbe1->currentText());
+
+    switch( cbAnaProbe1->currentIndex() ){
+      case 0 : dataTrace[0]->setName("input"); dataTrace[1]->setName("N/A"); break;
+      case 1 : dataTrace[0]->setName("CFD"); dataTrace[1]->setName("N/A"); break;
+      case 2 : dataTrace[0]->setName("baseline"); dataTrace[1]->setName("input"); break;
+      case 3 : dataTrace[0]->setName("baseline"); dataTrace[1]->setName("CFD"); break;
+      case 4 : dataTrace[0]->setName("CFD"); dataTrace[1]->setName("input"); break;
+    }
+
   });
 
   SetUpComboBoxSimple(cbDigiProbe1, "Digi. Probe 1 ", rowID, 4);
@@ -575,7 +604,7 @@ void Scope::SetUpPSDPanel(){
   }
   connect(cbDigiProbe1, &RComboBox::currentIndexChanged, this, [=](){
     if( !enableSignalSlot ) return;
-    digi[ID]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::DigiProbel1, cbDigiProbe1->currentData().toInt(), cbScopeCh->currentIndex());
+    digi[ID]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::DigiProbel1_PSD, cbDigiProbe1->currentData().toInt(), cbScopeCh->currentIndex());
     dataTrace[2]->setName(cbDigiProbe1->currentText());
   });
 
@@ -585,7 +614,7 @@ void Scope::SetUpPSDPanel(){
   }
   connect(cbDigiProbe2, &RComboBox::currentIndexChanged, this, [=](){
     if( !enableSignalSlot ) return;
-    digi[ID]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::DigiProbel1, cbDigiProbe1->currentData().toInt(), cbScopeCh->currentIndex());
+    digi[ID]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::DigiProbel1_PSD, cbDigiProbe1->currentData().toInt(), cbScopeCh->currentIndex());
     dataTrace[3]->setName(cbDigiProbe2->currentText());
   });
 
@@ -724,7 +753,7 @@ void Scope::UpdatePHAPanel(){
       break;
     }
   }
-  temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::DigiProbel1);
+  temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::DigiProbel1_PHA);
   for(int i = 0; i < cbDigiProbe1->count(); i++){
     if( cbDigiProbe1->itemData(i).toInt() == temp) {
       cbDigiProbe1->setCurrentIndex(i);
@@ -764,7 +793,7 @@ void Scope::UpdatePSDPanel(){
       break;
     }
   }
-  temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::DigiProbel1);
+  temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::DigiProbel1_PSD);
   for( int i = 0; i < cbDigiProbe1->count(); i++){
     if( cbDigiProbe1->itemData(i).toInt() == temp ) {
       cbDigiProbe1->setCurrentIndex(i);
@@ -772,7 +801,7 @@ void Scope::UpdatePSDPanel(){
       break;
     }
   }
-  temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::DigiProbel2);
+  temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::DigiProbel2_PSD);
   for( int i = 0; i < cbDigiProbe2->count(); i++){
     if( cbDigiProbe2->itemData(i).toInt() == temp ) {
       cbDigiProbe2->setCurrentIndex(i);

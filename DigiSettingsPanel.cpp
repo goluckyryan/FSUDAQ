@@ -1278,8 +1278,8 @@ void DigiSettingsPanel::SetUpPHABoard(){
 
   SetUpComboBoxBit(cbAnaProbe1[ID],   "Ana. Probe 1 ", bdCfgLayout[ID], 1, 2, DPP::Bit_BoardConfig::ListAnaProbe1_PHA, DPP::BoardConfiguration, DPP::Bit_BoardConfig::AnalogProbe1, 1, 0);
   SetUpComboBoxBit(cbAnaProbe2[ID],   "Ana. Probe 2 ", bdCfgLayout[ID], 2, 2, DPP::Bit_BoardConfig::ListAnaProbe2_PHA, DPP::BoardConfiguration, DPP::Bit_BoardConfig::AnalogProbe2, 1, 0);
-  SetUpComboBoxBit(cbDigiProbe1[ID], "Digi. Probe 1 ", bdCfgLayout[ID], 3, 2, DPP::Bit_BoardConfig::ListDigiProbe1_PHA, DPP::BoardConfiguration, DPP::Bit_BoardConfig::DigiProbel1, 1, 0);
-  SetUpComboBoxBit(cbDigiProbe2[ID], "Digi. Probe 2 ", bdCfgLayout[ID], 4, 2, DPP::Bit_BoardConfig::ListDigiProbe2_PHA, DPP::BoardConfiguration, DPP::Bit_BoardConfig::DigiProbel2, 1, 0);
+  SetUpComboBoxBit(cbDigiProbe1[ID], "Digi. Probe 1 ", bdCfgLayout[ID], 3, 2, DPP::Bit_BoardConfig::ListDigiProbe1_PHA, DPP::BoardConfiguration, DPP::Bit_BoardConfig::DigiProbel1_PHA, 1, 0);
+  SetUpComboBoxBit(cbDigiProbe2[ID], "Digi. Probe 2 ", bdCfgLayout[ID], 4, 2, DPP::Bit_BoardConfig::ListDigiProbe2_PHA, DPP::BoardConfiguration, DPP::Bit_BoardConfig::DigiProbel2_PHA, 1, 0);
 
 }
 
@@ -1715,14 +1715,14 @@ void DigiSettingsPanel::SetUpPSDBoard(){
 
   SetUpCheckBox(chkAutoDataFlush[ID],        "Auto Data Flush", bdCfgLayout[ID], 1, 0, DPP::BoardConfiguration, DPP::Bit_BoardConfig::EnableAutoDataFlush);
   SetUpCheckBox(chkTrigPropagation[ID],      "Trig. Propagate", bdCfgLayout[ID], 2, 0, DPP::BoardConfiguration, DPP::Bit_BoardConfig::TrigPropagation);  
-  SetUpCheckBox(chkDecimateTrace[ID],    "Disable Digi. Trace", bdCfgLayout[ID], 3, 0, DPP::BoardConfiguration, DPP::Bit_BoardConfig::DisableDigiTrace);
+  SetUpCheckBox(chkDecimateTrace[ID],    "Disable Digi. Trace", bdCfgLayout[ID], 3, 0, DPP::BoardConfiguration, DPP::Bit_BoardConfig::DisableDigiTrace_PSD);
 
   SetUpCheckBox(chkTraceRecording[ID],     "Record Trace", bdCfgLayout[ID], 2, 1, DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace);
   SetUpCheckBox(chkEnableExtra2[ID],       "Enable Extra", bdCfgLayout[ID], 3, 1, DPP::BoardConfiguration, DPP::Bit_BoardConfig::EnableExtra2);
 
   SetUpComboBoxBit(cbAnaProbe1[ID],     "Ana. Probe ", bdCfgLayout[ID], 1, 2, DPP::Bit_BoardConfig::ListAnaProbe_PSD, DPP::BoardConfiguration, DPP::Bit_BoardConfig::AnaProbe_PSD, 1, 0);
-  SetUpComboBoxBit(cbDigiProbe1[ID], "Digi. Probe 1 ", bdCfgLayout[ID], 3, 2, DPP::Bit_BoardConfig::ListDigiProbe1_PSD, DPP::BoardConfiguration, DPP::Bit_BoardConfig::DigiProbel1, 1, 0);
-  SetUpComboBoxBit(cbDigiProbe2[ID], "Digi. Probe 2 ", bdCfgLayout[ID], 4, 2, DPP::Bit_BoardConfig::ListDigiProbe2_PSD, DPP::BoardConfiguration, DPP::Bit_BoardConfig::DigiProbel2, 1, 0);
+  SetUpComboBoxBit(cbDigiProbe1[ID], "Digi. Probe 1 ", bdCfgLayout[ID], 3, 2, DPP::Bit_BoardConfig::ListDigiProbe1_PSD, DPP::BoardConfiguration, DPP::Bit_BoardConfig::DigiProbel1_PHA, 1, 0);
+  SetUpComboBoxBit(cbDigiProbe2[ID], "Digi. Probe 2 ", bdCfgLayout[ID], 4, 2, DPP::Bit_BoardConfig::ListDigiProbe2_PSD, DPP::BoardConfiguration, DPP::Bit_BoardConfig::DigiProbel2_PHA, 1, 0);
 
 }
 
@@ -2371,26 +2371,12 @@ void DigiSettingsPanel::UpdatePanelFromMemory(){
   chkEnableExtra2[ID]->setChecked(    Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::EnableExtra2) );
 
 
-  int temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::DigiProbel1);
-  for(int i = 0; i < cbDigiProbe1[ID]->count(); i++){
-    if( cbDigiProbe1[ID]->itemData(i).toInt() == temp) {
-      cbDigiProbe1[ID]->setCurrentIndex(i);
-      break;
-    }
-  }
-  temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::DigiProbel2);
-  for(int i = 0; i < cbDigiProbe2[ID]->count(); i++){
-    if( cbDigiProbe2[ID]->itemData(i).toInt() == temp) {
-      cbDigiProbe2[ID]->setCurrentIndex(i);
-      break;
-    }
-  }
   
   if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) {
     chkDecimateTrace[ID]->setChecked(   Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::DecimateTrace) );
     chkDualTrace[ID]->setChecked(       Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::DualTrace) );
     
-    temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::AnalogProbe1);
+    int temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::AnalogProbe1);
     for( int i = 0; i < cbAnaProbe1[ID]->count(); i++){
       if( cbAnaProbe1[ID]->itemData(i).toInt() == temp) {
         cbAnaProbe1[ID]->setCurrentIndex(i);
@@ -2405,14 +2391,43 @@ void DigiSettingsPanel::UpdatePanelFromMemory(){
         break;
       }
     }
+    temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::DigiProbel1_PHA);
+    for(int i = 0; i < cbDigiProbe1[ID]->count(); i++){
+      if( cbDigiProbe1[ID]->itemData(i).toInt() == temp) {
+        cbDigiProbe1[ID]->setCurrentIndex(i);
+        break;
+      }
+    }
+    temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::DigiProbel2_PHA);
+    for(int i = 0; i < cbDigiProbe2[ID]->count(); i++){
+      if( cbDigiProbe2[ID]->itemData(i).toInt() == temp) {
+        cbDigiProbe2[ID]->setCurrentIndex(i);
+        break;
+      }
+    }
   }
 
   if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) {
-    chkDecimateTrace[ID]->setChecked(   Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::DisableDigiTrace) );
-    temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::AnaProbe_PSD);
+    chkDecimateTrace[ID]->setChecked(   Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::DisableDigiTrace_PSD) );
+    int temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::AnaProbe_PSD);
     for( int i = 0; i < cbAnaProbe1[ID]->count(); i++){
       if( cbAnaProbe1[ID]->itemData(i).toInt() == temp) {
         cbAnaProbe1[ID]->setCurrentIndex(i);
+        break;
+      }
+    }
+
+    temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::DigiProbel1_PSD);
+    for(int i = 0; i < cbDigiProbe1[ID]->count(); i++){
+      if( cbDigiProbe1[ID]->itemData(i).toInt() == temp) {
+        cbDigiProbe1[ID]->setCurrentIndex(i);
+        break;
+      }
+    }
+    temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::DigiProbel2_PSD);
+    for(int i = 0; i < cbDigiProbe2[ID]->count(); i++){
+      if( cbDigiProbe2[ID]->itemData(i).toInt() == temp) {
+        cbDigiProbe2[ID]->setCurrentIndex(i);
         break;
       }
     }

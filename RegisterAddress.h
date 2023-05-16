@@ -206,9 +206,8 @@ namespace DPP {
     const std::pair<unsigned short, unsigned short> AnalogProbe2 = {2, 14} ; 
     const std::pair<unsigned short, unsigned short> RecordTrace = {1, 16} ; 
     const std::pair<unsigned short, unsigned short> EnableExtra2 = {1, 17} ; 
-    const std::pair<unsigned short, unsigned short> DigiProbel1 = {4, 20} ; 
-    const std::pair<unsigned short, unsigned short> DigiProbel2 = {3, 26} ; 
-    const std::pair<unsigned short, unsigned short> DisableDigiTrace = {1, 31} ; 
+    const std::pair<unsigned short, unsigned short> DigiProbel1_PHA = {4, 20} ; 
+    const std::pair<unsigned short, unsigned short> DigiProbel2_PHA = {3, 26} ; 
 
     const std::vector<std::pair<std::string, unsigned int>> ListAnaProbe1_PHA = {{"Input", 0},
                                                                               {"RC-CR", 1},
@@ -238,6 +237,9 @@ namespace DPP {
     ///--------------------------
 
     const std::pair<unsigned short, unsigned short> AnaProbe_PSD = {3, 11} ; 
+    const std::pair<unsigned short, unsigned short> DigiProbel1_PSD = {3, 23} ; 
+    const std::pair<unsigned short, unsigned short> DigiProbel2_PSD = {3, 26} ; 
+    const std::pair<unsigned short, unsigned short> DisableDigiTrace_PSD = {1, 31} ; 
     const std::vector<std::pair<std::string, unsigned int>> ListAnaProbe_PSD = {{"Input + N/A", 0},
                                                                                 {"CFD + N/A", 2},
                                                                                 {"Input + Baseline",1},

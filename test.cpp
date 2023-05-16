@@ -40,12 +40,14 @@ int main(int argc, char* argv[]){
 
   Data * data =  dig[0]->GetData();
 
+  printf("################# DPP Type : %d , %s\n", data->DPPType, data->DPPTypeStr.c_str());
+
   dig[0]->StartACQ();
 
-  for( int i = 0; i < 50; i ++ ){
+  for( int i = 0; i < 5; i ++ ){
     usleep(100*1000);
     dig[0]->ReadData();
-    data->DecodeBuffer(false, 3);
+    data->DecodeBuffer(false, 5);
     data->PrintStat();
 
     int index = data->NumEventsDecoded[0];

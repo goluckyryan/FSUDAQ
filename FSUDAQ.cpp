@@ -613,6 +613,7 @@ void MainWindow::StartACQ(){
       readDataThread[i]->SetSaveData(chkSaveData->isChecked());
     }
     digi[i]->StartACQ();
+    readDataThread[i]->SetSaveData(false);
     readDataThread[i]->start();
   }
   if( chkSaveData->isChecked() ) SaveLastRunFile();
