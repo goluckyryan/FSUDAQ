@@ -14,7 +14,7 @@
 #include "CAENDigitizerType.h"
 #include "macro.h"
 
-#define MaxNData 10000 /// 10k events per channels
+#define MaxNData 10000 /// store 100k events per channels
 
 class Data{
 
@@ -30,7 +30,6 @@ class Data{
     
     double TriggerRate[MaxNChannels]; /// Hz
     double NonPileUpRate[MaxNChannels]; /// Hz
-    short calIndexes[MaxNChannels][2]; /// the index for trigger rate calculation
     unsigned long TotNumEvents[MaxNChannels];
     unsigned short NumEventsDecoded[MaxNChannels];  /// reset at every decode
     unsigned short NumNonPileUpDecoded[MaxNChannels]; /// reset at every decode
@@ -47,8 +46,8 @@ class Data{
     
     std::vector<short> Waveform1[MaxNChannels][MaxNData];
     std::vector<short> Waveform2[MaxNChannels][MaxNData];
-    std::vector<bool>           DigiWaveform1[MaxNChannels][MaxNData];
-    std::vector<bool>           DigiWaveform2[MaxNChannels][MaxNData];
+    std::vector<bool>  DigiWaveform1[MaxNChannels][MaxNData];
+    std::vector<bool>  DigiWaveform2[MaxNChannels][MaxNData];
 
   public:
     Data();
@@ -57,7 +56,9 @@ class Data{
     void Allocate80MBMemory();
     void AllocateMemory(uint32_t size);
     
-    void SetSaveWaveToMemory(bool OnOff) { this->SaveWaveToMemory = OnOff; }
+    void SetSaveWaveToMemory(bool OnOff) { // store the waveform in memory
+      this->SaveWaveToMemory = OnOff; 
+    }
     
     void ClearData();
     void ClearTriggerRate();
@@ -65,9 +66,8 @@ class Data{
     
     void CopyBuffer( const char * buffer, const unsigned int size); 
         
-    void PrintBuffer() const; //Incorrect
     void DecodeBuffer(bool fastDecode, int verbose = 0); /// fastDecode will not save waveform
-    void DecodeBuffer(char * buffer, unsigned int size, bool fastDecode, int verbose = 0); // for outside data
+    void DecodeBuffer(char * &buffer, unsigned int size, bool fastDecode, int verbose = 0); // for outside data
   
     void PrintStat() const;
 
@@ -99,7 +99,8 @@ class Data{
     std::string outFileName;
     unsigned int outFileSize; // should be max at 2 GB
     
-  
+    short calIndexes[MaxNChannels][2]; /// the index for trigger rate calculation
+
     unsigned int ReadBuffer(unsigned int nWord, int verbose = 0);
 
     int DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDecode, int verbose);
@@ -159,21 +160,24 @@ inline void Data::ClearData(){
   nByte = 0;
   AllocatedSize = 0;
   IsNotRollOverFakeAgg = false;
-  for( int i = 0 ; i < MaxNChannels; i++){
-    NumEvents[i] = 0;
+  for( int ch = 0 ; ch < MaxNChannels; ch++){
+    NumEvents[ch] = 0;
     for( int j = 0; j < MaxNData; j++){
-      Timestamp[i][j] = 0;
-      fineTime[i][j] = 0;
-      Energy[i][j] = 0;
-      Energy2[i][j] = 0;
-      Waveform1[i][j].clear();
-      Waveform2[i][j].clear();
-      DigiWaveform1[i][j].clear();
-      DigiWaveform2[i][j].clear();
+      Timestamp[ch][j] = 0;
+      fineTime[ch][j] = 0;
+      Energy[ch][j] = 0;
+      Energy2[ch][j] = 0;
+      Waveform1[ch][j].clear();
+      Waveform2[ch][j].clear();
+      DigiWaveform1[ch][j].clear();
+      DigiWaveform2[ch][j].clear();
     }
 
-    calIndexes[i][0] = -1;
-    calIndexes[i][1] = -1;
+    NumEventsDecoded[ch] = 0;
+    NumNonPileUpDecoded[ch] = 0;
+
+    calIndexes[ch][0] = -1;
+    calIndexes[ch][1] = -1;
   }
   
   tempWaveform1.clear();
@@ -193,6 +197,8 @@ inline void Data::CopyBuffer(const char * buffer, const unsigned int size){
   std::memcpy(this->buffer, buffer, size);
 }
 
+//^###############################################
+//^############################################### Save fsu file
 inline void Data::OpenSaveFile(std::string fileNamePrefix){
 
   outFilePrefix = fileNamePrefix;
@@ -222,7 +228,6 @@ inline void Data::SaveData(){
   outFileSize = ftell(outFile);
 
 }
-
 inline void Data::CloseSaveFile(){
   if( outFile != NULL ){
     fclose(outFile);
@@ -231,6 +236,8 @@ inline void Data::CloseSaveFile(){
   }
 }
 
+//^#######################################################
+//^####################################################### Print
 inline void Data::PrintStat() const{
 
   if( !IsNotRollOverFakeAgg ) {
@@ -245,13 +252,6 @@ inline void Data::PrintStat() const{
   printf("---+--------+-----------+-----------+----------\n");
 }
 
-inline void Data::PrintBuffer() const{
-  unsigned int length = sizeof(buffer);
-  for( unsigned int i = 0; i < length; i++){
-    printf("%3d | 0x%08x \n", i, buffer[i]);
-  }
-}
-
 inline void Data::PrintAllData() const{
   printf("============================= Print Data\n");
   for( int ch = 0; ch < MaxNChannels ; ch++){
@@ -263,7 +263,8 @@ inline void Data::PrintAllData() const{
   }
 }
 
-//####################################################### Decode
+//^#######################################################
+//^####################################################### Decode
 inline unsigned int Data::ReadBuffer(unsigned int nWord, int verbose){
   if( buffer == NULL ) return 0;
   
@@ -273,7 +274,7 @@ inline unsigned int Data::ReadBuffer(unsigned int nWord, int verbose){
   return word;
 }
 
-inline void Data::DecodeBuffer(char * buffer, unsigned int size, bool fastDecode, int verbose){
+inline void Data::DecodeBuffer(char * &buffer, unsigned int size, bool fastDecode, int verbose){
   this->buffer = buffer;
   this->nByte = size;
   DecodeBuffer(fastDecode, verbose);
@@ -289,8 +290,6 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
 
   if( nByte == 0 ) return;
   nw = 0;
-  //TODO === wen very fast rate, can ClearTriggerRate, but is it nesscary?
-  //ClearTriggerRate();
   
   do{
     if( verbose >= 1 ) printf("Data::DecodeBuffer ######################################### Board Agg.\n");
@@ -321,6 +320,11 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
       nw = nw + 1; 
       unsigned int bdAggTimeTag = ReadBuffer(nw, verbose);
       if( verbose >= 2 ) printf("Agg Counter : %u \n", bdAggTimeTag);
+
+      for( int ch = 0; ch < MaxNChannels; ch ++) {
+        NumEventsDecoded[ch] = 0;
+        NumNonPileUpDecoded[ch] = 0;
+      }
       
       for( int chMask = 0; chMask < MaxNChannels/2 ; chMask ++ ){
         if( ((ChannelMask >> chMask) & 0x1 ) == 0 ) continue;
@@ -356,33 +360,35 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
     }
     
     //TODO ====== when NumEventsDecoded is too small, the trigger rate is not reliable?
-    
-    //TODO ===== for very high rate, use a simpler code.
-    // unsigned long long dTime = Timestamp[ch][NumEvents[ch]-1] - Timestamp[ch][NumEvents[ch] - NumEventsDecoded[ch]]; 
-    // double sec =  dTime * ch2ns / 1e9;
-    // if( sec != 0 && NumEventsDecoded[ch] > 1 ){
-      // TriggerRate[ch] = NumEventsDecoded[ch]/sec;
-      // NonPileUpRate[ch] = NumNonPileUpDecoded[ch]/sec;
-    // }
+    if( NumEventsDecoded[ch] > 4 ){
 
-    if( calIndexes[ch][0] == -1 ) calIndexes[ch][0] = 0;
-    if( calIndexes[ch][0] > -1 && calIndexes[ch][1] == -1 ) calIndexes[ch][1] = NumEvents[ch]-1;
+      printf("%d %d| %d %d \n", NumEvents[ch], NumEventsDecoded[ch], NumEvents[ch] - NumEventsDecoded[ch], NumEvents[ch]-1);
 
-    short nEvent = calIndexes[ch][1] - calIndexes[ch][0];
-    //printf("ch %2d ----- %d %d | %d \n", ch, calIndexes[ch][0], calIndexes[ch][1], nEvent);
-    
-    if( calIndexes[ch][0] > -1 && calIndexes[ch][1] > -1 && nEvent > 10 ){
-        unsigned long long dTime = Timestamp[ch][calIndexes[ch][1]] - Timestamp[ch][calIndexes[ch][0]];
-        double sec = dTime * ch2ns / 1e9;
+      unsigned long long dTime = Timestamp[ch][NumEvents[ch]-1] - Timestamp[ch][NumEvents[ch] - NumEventsDecoded[ch]]; 
+      double sec =  dTime * ch2ns / 1e9;
+
+      TriggerRate[ch] = NumEventsDecoded[ch]/sec;
+      NonPileUpRate[ch] = NumNonPileUpDecoded[ch]/sec;
+
+    }else{ // look in to the data in the memory, not just this agg.
+
+      if( calIndexes[ch][0] == -1 ) calIndexes[ch][0] = 0;
+      if( calIndexes[ch][0] > -1 && calIndexes[ch][1] == -1 ) calIndexes[ch][1] = NumEvents[ch]-1;
+
+      short nEvent = calIndexes[ch][1] - calIndexes[ch][0];
+      //printf("ch %2d ----- %d %d | %d \n", ch, calIndexes[ch][0], calIndexes[ch][1], nEvent);
       
-        //printf(" %10llu  %10llu, %f = %f sec, rate = %f \n", Timestamp[ch][calIndexes[ch][0]], Timestamp[ch][calIndexes[ch][1]], ch2ns, sec, nEvent / sec);
+      if( calIndexes[ch][0] > -1 && calIndexes[ch][1] > -1 && nEvent > 10 ){
+          unsigned long long dTime = Timestamp[ch][calIndexes[ch][1]] - Timestamp[ch][calIndexes[ch][0]];
+          double sec = dTime * ch2ns / 1e9;
+        
+          //printf(" %10llu  %10llu, %f = %f sec, rate = %f \n", Timestamp[ch][calIndexes[ch][0]], Timestamp[ch][calIndexes[ch][1]], ch2ns, sec, nEvent / sec);
 
-        if( sec > 0.1 ){ /// at least 100 msec
           TriggerRate[ch] = nEvent / sec;
 
           short pileUpCount = 0;
           for( int i = calIndexes[ch][0] ; i <= calIndexes[ch][1]; i++ ) {
-            if( PileUp[ch][i] ) pileUpCount ++;
+            if( PileUp[ch][i]  ) pileUpCount ++;
           }
 
           NonPileUpRate[ch] = (nEvent - pileUpCount)/sec;
@@ -390,15 +396,16 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
           calIndexes[ch][0] = calIndexes[ch][1];
           calIndexes[ch][1] = -1;
 
-        }
-    }else{
-      calIndexes[ch][1] = -1;
+      }else{
+        calIndexes[ch][1] = -1;
+      }
     }
 
   }
   
 }
 
+//*=================================================
 inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDecode, int verbose){
   
   nw = nw + 1; 
@@ -591,7 +598,7 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
       printf("PileUp or RollOver : %d\n", pileUpOrRollOver);
       printf("PileUp : %d , extra : 0x%03x, energy : %d \n", pileUp, extra, energy);      
       printf("     lost event : %d \n", ((extra >>  0) & 0x1) );
-      printf("      roll-over : %d (is fake event)\n", ((extra >>  1) & 0x1) );
+      printf("      roll-over : %d (is fake event ?)\n", ((extra >>  1) & 0x1) );
       printf("     fake-event : %d \n", ((extra >>  3) & 0x1) );
       printf("     input sat. : %d \n", ((extra >>  4) & 0x1) );
       printf("       lost trg : %d \n", ((extra >>  5) & 0x1) );
@@ -617,9 +624,9 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
       }
     }
 
-    if( NumEvents[channel] >= MaxNData ) ClearData();
+    if( NumEvents[channel] >= MaxNData ) ClearData(); // if any channel has more data then MaxNData, clear all stored data
     
-    if( verbose >= 1 ) printf("%4d | ch : %2d, PileUp : %d , energy : %5d, rollOver: %d,  timestamp : %10llu, triggerAt : %d, nSample : %d, %f sec\n", 
+    if( verbose >= 1 ) printf("evt %4d | ch : %2d, PileUp : %d , energy : %5d, rollOver: %d,  timestamp : %10llu, triggerAt : %d, nSample : %d, %f sec\n", 
                                 NumEvents[channel], channel, pileUp, energy, rollOver, timeStamp, triggerAtSample, nSample , timeStamp * 4. / 1e9);
     
   }
@@ -631,6 +638,7 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
   return nw;
 }
 
+//*=================================================
 inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDecode, int verbose){
   
   nw = nw + 1; 
