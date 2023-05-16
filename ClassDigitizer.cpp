@@ -323,7 +323,7 @@ int Digitizer::ProgramPHABoard(){
   address = DPP::PHA::TriggerHoldOffWidth;     ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 0x3E );
   address = DPP::PHA::RiseTimeValidationWindow;ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 0x0 );
   
-  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::ChannelDCOffset) + 0x7000 , 0xEEEE );
+  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::ChannelDCOffset) + 0x7000 , 0x0CCC );
   ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PreTrigger) + 0x7000 , 32 );
   ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::InputDynamicRange) + 0x7000 , 0x0 );
   

@@ -365,7 +365,7 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
       int indexStart = EventIndex[ch] - NumEventsDecoded[ch] + 1;
       if( indexStart < 0  ) indexStart += MaxNData;
 
-      printf("%d %d| %d %d \n", EventIndex[ch], NumEventsDecoded[ch], indexStart, EventIndex[ch] );
+      //printf("%d %d| %d %d \n", EventIndex[ch], NumEventsDecoded[ch], indexStart, EventIndex[ch] );
 
       unsigned long long dTime = Timestamp[ch][EventIndex[ch]] - Timestamp[ch][indexStart]; 
       double sec =  dTime * ch2ns / 1e9;

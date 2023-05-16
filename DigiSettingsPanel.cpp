@@ -724,6 +724,11 @@ void DigiSettingsPanel::SetUpSpinBox(RSpinBox * &sb, QString label, QGridLayout 
     sb->setSingleStep(para.GetPartialStep() * digi[ID]->GetCh2ns());
   }
 
+  if( para == DPP::DPPAlgorithmControl ) {
+    sb->setSingleStep(1);
+    sb->setMaximum(0x3F);
+  }
+
   connect(sb, &RSpinBox::valueChanged, this, [=](){
     if( !enableSignalSlot ) return;
     sb->setStyleSheet("color : blue;");
@@ -752,6 +757,12 @@ void DigiSettingsPanel::SetUpSpinBox(RSpinBox * &sb, QString label, QGridLayout 
 
     if( para == DPP::PSD::CFDSetting ){
       digi[ID]->SetBits(para, DPP::PSD::Bit_CFDSetting::CFDDealy, sb->value()/digi[ID]->GetCh2ns(), chID);
+      UpdatePanelFromMemory();
+      return;
+    }
+
+    if( para == DPP::DPPAlgorithmControl ){
+      digi[ID]->SetBits(para, {5,0}, sb->value(), chID);
       UpdatePanelFromMemory();
       return;
     }
@@ -1366,7 +1377,7 @@ void DigiSettingsPanel::SetUpPHAChannel(){
     SetUpSpinBox(sbTrapRiseTime[ID][MaxNChannels],          "Rise Time [ns] : ", trapLayout, 0, 0, DPP::PHA::TrapezoidRiseTime);
     SetUpSpinBox(sbTrapFlatTop[ID][MaxNChannels],            "Flat Top [ns] : ", trapLayout, 0, 2, DPP::PHA::TrapezoidFlatTop);
     SetUpSpinBox(sbDecay[ID][MaxNChannels],                     "Decay [ns] : ", trapLayout, 1, 0, DPP::PHA::DecayTime);
-    SetUpSpinBox(sbTrapScaling[ID][MaxNChannels],                "Rescaling : ", trapLayout, 1, 2, DPP::PHA::DPPAlgorithmControl2_G);
+    SetUpSpinBox(sbTrapScaling[ID][MaxNChannels],                "Rescaling : ", trapLayout, 1, 2, DPP::DPPAlgorithmControl);
     SetUpSpinBox(sbPeaking[ID][MaxNChannels],                 "Peaking [ns] : ", trapLayout, 2, 0, DPP::PHA::PeakingTime);
     SetUpSpinBox(sbPeakingHoldOff[ID][MaxNChannels],    "Peak Hold-off [ns] : ", trapLayout, 2, 2, DPP::PHA::PeakHoldOff);
     SetUpComboBoxBit(cbPeakAvg[ID][MaxNChannels],                "Peak Avg. : ", trapLayout, 3, 0, DPP::Bit_DPPAlgorithmControl_PHA::ListPeakMean, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PHA::PeakMean);
@@ -2551,6 +2562,11 @@ void DigiSettingsPanel::UpdateSpinBox(RSpinBox * &sb, Reg para, int ch){
 
   if( para == DPP::PSD::CFDSetting ){
     sb->setValue( ( value & DPP::PSD::CFDSetting.GetMaxBit() ) * ch2ns );
+    return;
+  }
+
+  if( para == DPP::DPPAlgorithmControl ){
+    sb->setValue( value & 0x3F );
     return;
   }
 

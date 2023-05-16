@@ -40,11 +40,10 @@ public:
         break;
       }
     }
+    printf("ReadDataThread stopped.\n");
   }
 signals:
   void sendMsg(const QString &msg);
-  //void endOfLastData();
-  //void checkFileSize();
 private:
   Digitizer * digi; 
   int ID;

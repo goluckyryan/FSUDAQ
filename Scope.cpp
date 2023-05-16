@@ -236,6 +236,8 @@ void Scope::StartScope(){
 
   EnableControl(false);
 
+  TellACQOnOff(true);
+
 }
 
 void Scope::StopScope(){
@@ -247,8 +249,9 @@ void Scope::StopScope(){
 
 
   for( unsigned int iDigi = 0; iDigi < nDigi; iDigi ++){
-
+    digiMTX[iDigi].lock();
     digi[iDigi]->StopACQ();
+    digiMTX[iDigi].unlock();
 
     readDataThread[iDigi]->quit();
     readDataThread[iDigi]->wait();
@@ -258,6 +261,8 @@ void Scope::StopScope(){
   bnScopeStop->setEnabled(false);
 
   EnableControl(true);
+
+  TellACQOnOff(false);
 
 }
 
@@ -269,6 +274,7 @@ void Scope::UpdateScope(){
 
   int ch = cbScopeCh->currentIndex();
   int ch2ns = digi[ID]->GetCh2ns();
+  int factor = digi[ID]->IsDualTrace() ? 2 : 1;
 
   Data * data = digi[ID]->GetData();
 
@@ -285,10 +291,10 @@ void Scope::UpdateScope(){
 
     QVector<QPointF> points[4];
     for( int i = 0; i < (int) (data->Waveform1[ch][index]).size() ; i++ ) {
-      points[0].append(QPointF(ch2ns * i, (data->Waveform1[ch][index])[i])); 
-      if( i < (int) data->Waveform2[ch][index].size() )  points[1].append(QPointF(ch2ns * i, (data->Waveform2[ch][index])[i]));
-      if( i < (int) data->DigiWaveform1[ch][index].size() )  points[2].append(QPointF(ch2ns * i, (data->DigiWaveform1[ch][index])[i] * 1000));
-      if( i < (int) data->DigiWaveform2[ch][index].size() )  points[3].append(QPointF(ch2ns * i, (data->DigiWaveform2[ch][index])[i] * 1000 + 500));
+      points[0].append(QPointF(ch2ns * i * factor, (data->Waveform1[ch][index])[i])); 
+      if( i < (int) data->Waveform2[ch][index].size() )  points[1].append(QPointF(ch2ns * i * factor, (data->Waveform2[ch][index])[i]));
+      if( i < (int) data->DigiWaveform1[ch][index].size() )  points[2].append(QPointF(ch2ns * i * factor, (data->DigiWaveform1[ch][index])[i] * 1000));
+      if( i < (int) data->DigiWaveform2[ch][index].size() )  points[3].append(QPointF(ch2ns * i * factor, (data->DigiWaveform2[ch][index])[i] * 1000 + 500));
     }
     dataTrace[0]->replace(points[0]);
     dataTrace[1]->replace(points[1]);
@@ -297,8 +303,7 @@ void Scope::UpdateScope(){
   }
   digiMTX[ID].unlock();
 
-  plot->axes(Qt::Horizontal).first()->setRange(0, ch2ns * traceLength);
-  //plotView->SetHRange(0, ch2ns * traceLength);
+  plot->axes(Qt::Horizontal).first()->setRange(0, ch2ns * traceLength * factor);
 
 }
 
@@ -384,7 +389,7 @@ void Scope::SetUpSpinBox(RSpinBox * &sb, QString str, int row, int col, const Re
 
     uint32_t value = sb->value() / ch2ns / abs(para.GetPartialStep());
 
-    if( para == DPP::RecordLength_G || para == DPP::PreTrigger){
+    if( para == DPP::RecordLength_G){
       int factor = digi[ID]->IsDualTrace() ? 2 : 1;
       value = value * factor;
     }
@@ -628,6 +633,7 @@ void Scope::UpdateSpinBox(RSpinBox * &sb, const Reg para){
 
   enableSignalSlot = false;
   unsigned int haha = digi[ID]->GetSettingFromMemory(para, ch);
+
   if( para.GetPartialStep() >   0 ) sb->setValue(haha * para.GetPartialStep() * ch2ns);
   if( para.GetPartialStep() == -1 ) sb->setValue(haha);
   //enableSignalSlot = true;
@@ -642,13 +648,13 @@ void Scope::UpdatePanelFromMomeory(){
   int ch = cbScopeCh->currentIndex();
 
   unsigned int haha = digi[ID]->GetSettingFromMemory(DPP::RecordLength_G, ch);
+  sbReordLength->setValue(haha * DPP::RecordLength_G.GetPartialStep() * ch2ns);
 
-  if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ){
-    int factor = digi[ID]->IsDualTrace() ? 2 : 1; // if dual trace, 
-    sbReordLength->setValue(haha * DPP::RecordLength_G.GetPartialStep() * ch2ns / factor);
-  }else{
-    sbReordLength->setValue(haha * DPP::RecordLength_G.GetPartialStep() * ch2ns);
-  }
+  // if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ){
+  //   int factor = digi[ID]->IsDualTrace() ? 2 : 1; // if dual trace, 
+  //   sbReordLength->setValue(haha * DPP::RecordLength_G.GetPartialStep() * ch2ns / factor);
+  // }else{
+  // }
 
   haha = digi[ID]->GetSettingFromMemory(DPP::ChannelDCOffset, ch);
   sbDCOffset->setValue((1.0 - haha * 1.0 / 0xFFFF) * 100 );

@@ -24,6 +24,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
   digi = nullptr;
   nDigi = 0;
 
+  scalar = nullptr;
   scope = nullptr;
   digiSettings = nullptr;
 
@@ -182,7 +183,6 @@ MainWindow::~MainWindow(){
     scalarThread->exit();
     delete scalarThread;
   }
-  
 
 }
 
@@ -448,7 +448,6 @@ void MainWindow::WaitForDigitizersOpen(bool onOff){
   bnStopACQ->setEnabled(!onOff);
   chkSaveData->setEnabled(!onOff);
 
-
 }
 
 //***************************************************************
@@ -609,9 +608,11 @@ void MainWindow::StartACQ(){
   if( commentResult == false) return;
 
   for( unsigned int i = 0; i < nDigi ; i++){
-    digi[i]->GetData()->OpenSaveFile((rawDataPath + "/" + prefix).toStdString());
+    if( chkSaveData->isChecked() ) {
+      digi[i]->GetData()->OpenSaveFile((rawDataPath + "/" + prefix).toStdString());
+      readDataThread[i]->SetSaveData(chkSaveData->isChecked());
+    }
     digi[i]->StartACQ();
-    readDataThread[i]->SetSaveData(chkSaveData->isChecked());
     readDataThread[i]->start();
   }
   if( chkSaveData->isChecked() ) SaveLastRunFile();
@@ -626,6 +627,7 @@ void MainWindow::StartACQ(){
 
   bnStartACQ->setEnabled(false);
   bnStopACQ->setEnabled(true);
+  bnOpenScope->setEnabled(false);
 
 }
 
@@ -656,6 +658,7 @@ void MainWindow::StopACQ(){
 
   bnStartACQ->setEnabled(true);
   bnStopACQ->setEnabled(false);
+  bnOpenScope->setEnabled(true);
 }
 
 void MainWindow::AutoRun(){
@@ -764,11 +767,18 @@ void MainWindow::OpenScope(){
   if( scope == nullptr ) {
     scope = new Scope(digi, nDigi, readDataThread);
     connect(scope, &Scope::SendLogMsg, this, &MainWindow::LogMsg);
+    connect(scope, &Scope::CloseWindow, this, [=](){
+      bnStartACQ->setEnabled(true);
+      bnStopACQ->setEnabled(false);  
+    });
     scope->show();
   }else{
     scope->show();
     scope->activateWindow();
   }
+
+  bnStartACQ->setEnabled(false);
+  bnStopACQ->setEnabled(false);  
 
 }
 

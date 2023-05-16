@@ -31,6 +31,12 @@ public:
   Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataThread, QMainWindow * parent = nullptr);
   ~Scope();
 
+  void closeEvent(QCloseEvent * event){
+    StopScope();
+    emit CloseWindow();
+    event->accept();
+  }
+
 private slots:
   void StartScope();
   void StopScope();
@@ -39,7 +45,9 @@ private slots:
 
 signals:
 
+  void CloseWindow();
   void SendLogMsg(const QString &msg);
+  void TellACQOnOff(const bool onOff);
 
 private:
 
