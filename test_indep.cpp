@@ -292,7 +292,7 @@ int main(int argc, char* argv[]){
   
   int Nb;                                  /// number of byte
   char *buffer = NULL;                     /// readout buffer
-  uint32_t NumEvents[MaxNChannels];
+  uint32_t EventIndex[MaxNChannels];
   uint32_t AllocatedSize, BufferSize;
   CAEN_DGTZ_DPP_PHA_Event_t  *Events[MaxNChannels];  /// events buffer
   CAEN_DGTZ_DPP_PHA_Waveforms_t   *Waveform[MaxNChannels];     /// waveforms buffer
@@ -327,15 +327,15 @@ int main(int argc, char* argv[]){
   if (Nb == 0 || ret) {
      return 0;
   }
-  ret |= (CAEN_DGTZ_ErrorCode) CAEN_DGTZ_GetDPPEvents(handle, buffer, BufferSize, reinterpret_cast<void**>(&Events), NumEvents);
+  ret |= (CAEN_DGTZ_ErrorCode) CAEN_DGTZ_GetDPPEvents(handle, buffer, BufferSize, reinterpret_cast<void**>(&Events), EventIndex);
   if (ret) {
     printf("Error when getting events from data %d\n", ret);
     return 0;
   }
 
   for (int ch = 0; ch < NChannel; ch++) {
-    if( NumEvents[ch] > 0 ) printf("------------------------ %d, %d\n", ch, NumEvents[ch]);
-    for (int ev = 0; ev < NumEvents[ch]; ev++) {
+    if( EventIndex[ch] > 0 ) printf("------------------------ %d, %d\n", ch, EventIndex[ch]);
+    for (int ev = 0; ev < EventIndex[ch]; ev++) {
       ///TrgCnt[ch]++;
       
       if( ev == 0 ){

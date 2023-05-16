@@ -102,7 +102,7 @@ int main(int argc, char* argv[]){
       data->SaveBuffer("test");
       data->DecodeBuffer(0);
       
-      unsigned short nData = data->NumEvents[0]; //channel-0
+      unsigned short nData = data->EventIndex[0]; //channel-0
       haha = data->Waveform1[0][nData-1];
       for( int i = 0; i < waveFormLength; i++) g1->SetPoint(i, i*ch2ns, haha[i]);
 
@@ -122,10 +122,10 @@ int main(int argc, char* argv[]){
       data->PrintStat();
       
       for(int i = 0; i < dig[0]->GetNChannel(); i++){
-        h1->Fill(i, data->NumEvents[i]);
+        h1->Fill(i, data->EventIndex[i]);
       }
       
-      for( int i = 0; i < data->NumEvents[0]; i++){
+      for( int i = 0; i < data->EventIndex[0]; i++){
         h2->Fill( data->Energy[0][i]);
       }
       data->ClearData();
