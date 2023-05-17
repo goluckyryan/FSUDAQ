@@ -355,7 +355,7 @@ void MainWindow::OpenDigitizers(){
     //digi[i]->Reset();
 
     ///============== load settings 
-    QString fileName = rawDataPath + "/Digi-" + QString::number(digi[i]->GetSerialNumber()) + ".bin"; //TODO add DPP Type in File Name
+    QString fileName = rawDataPath + "/Digi-" + QString::number(digi[i]->GetSerialNumber()) + "_" + QString::fromStdString(digi[i]->GetData()->DPPTypeStr) + ".bin";
     QFile file(fileName);
     if( !file.open(QIODevice::Text | QIODevice::ReadOnly) ) {
 
@@ -375,7 +375,7 @@ void MainWindow::OpenDigitizers(){
       LogMsg("Found <b>" + fileName + "</b> for digitizer settings.");
       
       if( digi[i]->LoadSettingBinaryToMemory(fileName.toStdString().c_str()) == 0 ){
-        LogMsg("Loaded settings file " + fileName + " for Digi-" + QString::number(digi[i]->GetSerialNumber()));
+        LogMsg("Loaded settings file <b>" + fileName + "</b> for Digi-" + QString::number(digi[i]->GetSerialNumber()));
         digi[i]->ProgramSettingsToBoard();
         
       }else{
