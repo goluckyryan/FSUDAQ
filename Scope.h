@@ -48,6 +48,7 @@ signals:
   void CloseWindow();
   void SendLogMsg(const QString &msg);
   void TellACQOnOff(const bool onOff);
+  void UpdateScaler();
 
 private:
 

@@ -325,6 +325,8 @@ void Scope::UpdateScope(){
 
   plot->axes(Qt::Horizontal).first()->setRange(0, ch2ns * traceLength * factor);
 
+  emit UpdateScaler();
+
 }
 
 //*=======================================================

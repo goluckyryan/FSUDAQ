@@ -39,6 +39,15 @@ public:
         digi->StopACQ();
         break;
       }
+
+      if( isSaveData ) {
+        clock_gettime(CLOCK_REALTIME, &tb);
+        if( tb.tv_sec - ta.tv_sec > 2 ) {
+          emit sendMsg("FileSize ("+ QString::number(digi->GetSerialNumber()) +"): " +  QString::number(digi->GetData()->GetTotalFileSize()/1024./1024.) + " MB");
+          ta = tb;
+        }
+      }
+
     }
     printf("ReadDataThread stopped.\n");
   }

@@ -115,7 +115,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     lbComment->setAlignment(Qt::AlignRight | Qt::AlignCenter);
 
     leComment = new QLineEdit(this);
-    leComment->setEnabled(false);
+    leComment->setReadOnly(true);
 
     bnOpenScaler = new QPushButton("Scalar", this);
     connect(bnOpenScaler, &QPushButton::clicked, this, &MainWindow::OpenScalar);
@@ -478,7 +478,7 @@ void MainWindow::SetupScalar(){
   scalarThread = new TimingThread();
   connect(scalarThread, &TimingThread::timeUp, this, &MainWindow::UpdateScalar);
 
-  scalar->setGeometry(0, 0, 10 + nDigi * 180, 110 + MaxNChannels * 20);
+  scalar->setGeometry(0, 0, 10 + nDigi * 200, 110 + MaxNChannels * 25);
 
   if( lbLastUpdateTime == nullptr ){
     lbLastUpdateTime = new QLabel("Last update : NA", scalar);
@@ -583,6 +583,8 @@ void MainWindow::OpenScalar(){
 
 void MainWindow::UpdateScalar(){
   if( digi == nullptr ) return;
+  if( scalar == nullptr ) return;
+  if( !scalar->isVisible() ) return;
   
   lbLastUpdateTime->setText("Last update: " + QDateTime::currentDateTime().toString("MM.dd hh:mm:ss"));
 
@@ -607,13 +609,18 @@ void MainWindow::StartACQ(){
   if( chkSaveData->isChecked() ) commentResult = CommentDialog(true);
   if( commentResult == false) return;
 
+  LogMsg("===================== Start a new Run-" + QString::number(runID));
+
   for( unsigned int i = 0; i < nDigi ; i++){
     if( chkSaveData->isChecked() ) {
-      digi[i]->GetData()->OpenSaveFile((rawDataPath + "/" + prefix).toStdString());
-      readDataThread[i]->SetSaveData(chkSaveData->isChecked());
+      if( digi[i]->GetData()->OpenSaveFile((rawDataPath + "/" + prefix + "_" + QString::number(runID).rightJustified(3, '0')).toStdString()) == false ) {
+        LogMsg("Cannot open save file : " + QString::fromStdString(digi[i]->GetData()->GetOutFileName() ) + ". Probably read-only?");
+       continue; 
+      };
     }
+    readDataThread[i]->SetSaveData(chkSaveData->isChecked());
+    LogMsg("Digi-" + QString::number(digi[i]->GetSerialNumber()) + " is starting ACQ." );
     digi[i]->StartACQ();
-    readDataThread[i]->SetSaveData(false);
     readDataThread[i]->start();
   }
   if( chkSaveData->isChecked() ) SaveLastRunFile();
@@ -629,17 +636,19 @@ void MainWindow::StartACQ(){
   bnStartACQ->setEnabled(false);
   bnStopACQ->setEnabled(true);
   bnOpenScope->setEnabled(false);
-
 }
 
 void MainWindow::StopACQ(){
   if( digi == nullptr ) return;
+
+  LogMsg("===================== Stop Run-" + QString::number(runID));
 
   bool commentResult = true;
   if( chkSaveData->isChecked() ) commentResult = CommentDialog(true);
   if( commentResult == false) return;
 
   for( unsigned int i = 0; i < nDigi; i++){
+    LogMsg("Digi-" + QString::number(digi[i]->GetSerialNumber()) + " is stoping ACQ." );
     digi[i]->StopACQ();
     if( chkSaveData->isChecked() ) digi[i]->GetData()->CloseSaveFile();
 
@@ -703,6 +712,7 @@ bool MainWindow::CommentDialog(bool isStartRun){
       if( startComment == "") startComment = "No commet was typed.";
       startComment = "Start Comment: " + startComment;
       leComment->setText(startComment);
+      leRunID->setText(QString::number(runID));
     }else{
       stopComment = lineEdit->text();
       if( stopComment == "") stopComment = "No commet was typed.";
@@ -772,6 +782,16 @@ void MainWindow::OpenScope(){
       bnStartACQ->setEnabled(true);
       bnStopACQ->setEnabled(false);  
     });
+    connect(scope, &Scope::TellACQOnOff, this, [=](bool onOff){
+      if( scope == nullptr ) return;
+      if( onOff ) {
+        lbScalarACQStatus->setText("<font style=\"color: green;\"><b>ACQ On</b></font>");
+      }else{
+        lbScalarACQStatus->setText("<font style=\"color: red;\"><b>ACQ Off</b></font>");
+      }
+    });
+
+    connect(scope, &Scope::UpdateScaler, this, &MainWindow::UpdateScalar);
     scope->show();
   }else{
     scope->show();

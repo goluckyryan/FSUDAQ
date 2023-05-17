@@ -74,7 +74,8 @@ class Data{
     void PrintAllData() const;
 
     //^================= Saving data
-    void OpenSaveFile(std::string fileNamePrefix);
+    bool OpenSaveFile(std::string fileNamePrefix); // return false when fail
+    std::string GetOutFileName() const {return outFileName;}
     void SaveData();
     void CloseSaveFile();
     unsigned int GetFileSize() const {return outFileSize;}
@@ -199,7 +200,7 @@ inline void Data::CopyBuffer(const char * buffer, const unsigned int size){
 
 //^###############################################
 //^############################################### Save fsu file
-inline void Data::OpenSaveFile(std::string fileNamePrefix){
+inline bool Data::OpenSaveFile(std::string fileNamePrefix){
 
   outFilePrefix = fileNamePrefix;
   char saveFileName[100];
@@ -207,9 +208,16 @@ inline void Data::OpenSaveFile(std::string fileNamePrefix){
 
   outFileName = saveFileName;
   outFile = fopen(saveFileName, "wb"); // overwrite binary
+  
+  if (outFile == NULL) {
+    printf("Failed to open the file. Probably Read-ONLY.\n");
+    return false;
+  } 
+
   fseek(outFile, 0L, SEEK_END);
   outFileSize = ftell(outFile);
-
+    
+  return true;
 }
 
 inline void Data::SaveData(){
@@ -797,6 +805,7 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
       if( EventIndex[channel] > MaxNData ) EventIndex[channel] = 0;
 
       NumEventsDecoded[channel] ++; 
+      NumNonPileUpDecoded[channel] ++; 
       TotNumEvents[channel] ++;
 
       Energy[channel][EventIndex[channel]] = Qshort;
