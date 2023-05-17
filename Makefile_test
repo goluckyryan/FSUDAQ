@@ -13,7 +13,7 @@ ROOTLIBS = `root-config --cflags --glibs`
 
 OBJS = ClassDigitizer.o
 
-ALL = test test_indep 
+ALL = test test_indep EventBuilder
 
 #########################################################################
 
@@ -32,3 +32,7 @@ test	:	test.cpp ClassDigitizer.o
 test_indep : test_indep.cpp RegisterAddress.h macro.h
 		@echo "--------- making test_indep"
 		$(CC) $(COPTS) -o test_indep test_indep.cpp $(CAENLIBS) 
+
+EventBuilder : EventBuilder.cpp ClassData.h
+		@echo "--------- making EventBuilder"
+		$(CC) $(COPTS) -o EventBuilder EventBuilder.cpp $(CAENLIBS) $(ROOTLIBS) 

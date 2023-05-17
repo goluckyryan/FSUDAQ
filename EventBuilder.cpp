@@ -45,9 +45,10 @@ TGraph * trace = NULL;
 template<typename T> void swap(T * a, T *b );
 int partition(int arr[], int kaka[], TString file[], int start, int end);
 void quickSort(int arr[], int kaka[], TString file[], int start, int end);
-unsigned long get_time();
 void EventBuilder(Data * data, const unsigned int timeWin, bool traceOn = false, bool isLastData = false, unsigned int verbose = 0);
 
+//*#############################################################
+//*#############################################################
 int main(int argc, char **argv) {
   
   printf("=====================================\n");
@@ -99,12 +100,20 @@ int main(int argc, char **argv) {
   int ID[nFile]; /// serial+ order*1000;
   int type[nFile];
   for( int i = 0; i < nFile; i++){
-    int snPos = inFileName[i].Index("_");
-    snPos = inFileName[i].Index("_", snPos+1);
-    int sn = atoi(&inFileName[i][snPos+1]);
-    type[i] = atoi(&inFileName[i][snPos+5]);
-    int order = atoi(&inFileName[i][snPos+9]);
+    int snPos = inFileName[i].Index("_"); // first "_"
+    //snPos = inFileName[i].Index("_", snPos + 1);
+    int sn = atoi(&inFileName[i][snPos+5]);
+    TString typeStr = &inFileName[i][snPos+9];
+    typeStr.Resize(3);
+
+    if( typeStr == "PHA" ) type[i] = V1730_DPP_PHA_CODE;
+    if( typeStr == "PSD" ) type[i] = V1730_DPP_PSD_CODE;
+
+    int order = atoi(&inFileName[i][snPos+13]);
     ID[i] = sn + order * 1000;
+
+    //printf("sn:%d, type:%d (%s), order:%d \n", sn, type[i], typeStr.Data(), order);
+
   }
   quickSort(&(ID[0]), &(type[0]), &(inFileName[0]), 0, nFile-1);
   for( int i = 0 ; i < nFile; i++){
@@ -243,7 +252,7 @@ void EventBuilder(Data * data, const unsigned int timeWin, bool traceOn, bool is
   
   if( verbose)  {
     printf("======================== Event Builder \n");
-    data->PrintData();
+    data->PrintAllData();
   }
 
   /// find the last event timestamp;
@@ -252,12 +261,12 @@ void EventBuilder(Data * data, const unsigned int timeWin, bool traceOn, bool is
   unsigned long long smallestLastTimeStamp = -1;
   unsigned int maxNumEvent = 0;
   for( int chI = 0; chI < MaxNChannels ; chI ++){
-    if( data->NumEvents[chI] == 0 ) continue;
+    if( data->EventIndex[chI] == 0 ) continue;
     
     if( data->Timestamp[chI][0] < firstTimeStamp ) { 
       firstTimeStamp = data->Timestamp[chI][0];
     }
-    unsigned short ev = data->NumEvents[chI]-1;
+    unsigned short ev = data->EventIndex[chI]-1;
     if( data->Timestamp[chI][ev] > lastTimeStamp ) { 
       lastTimeStamp = data->Timestamp[chI][ev]; 
     }
@@ -280,8 +289,8 @@ void EventBuilder(Data * data, const unsigned int timeWin, bool traceOn, bool is
     int ch1st = -1;
     unsigned long long time1st = -1;
     for( int chI = 0; chI < MaxNChannels ; chI ++){
-      if( data->NumEvents[chI] == 0 ) continue;
-      if( data->NumEvents[chI] <= lastEv[chI] )  continue; 
+      if( data->EventIndex[chI] == 0 ) continue;
+      if( data->EventIndex[chI] <= lastEv[chI] )  continue; 
       if( data->Timestamp[chI][lastEv[chI]] < time1st ) { 
         time1st = data->Timestamp[chI][lastEv[chI]]; 
         ch1st = chI;
@@ -314,17 +323,17 @@ void EventBuilder(Data * data, const unsigned int timeWin, bool traceOn, bool is
     singleChannelExhaustedFlag = false;
     for( int chI = ch1st; chI < ch1st + MaxNChannels; chI ++){
       unsigned short chX = chI % MaxNChannels;
-      if( data->NumEvents[chX] == 0 ) {
+      if( data->EventIndex[chX] == 0 ) {
         exhaustedCh ++;
         continue;
       }
-      if( data->NumEvents[chX] <= lastEv[chX] )  {
+      if( data->EventIndex[chX] <= lastEv[chX] )  {
         exhaustedCh ++;
         singleChannelExhaustedFlag = true;
         continue; 
       }
       if( timeWin == 0 ) continue;
-      for( int ev  = lastEv[chX]; ev < data->NumEvents[chX] ; ev++){
+      for( int ev  = lastEv[chX]; ev < data->EventIndex[chX] ; ev++){
         if( data->Timestamp[chX][ev] > 0 &&  (data->Timestamp[chX][ev] - e_t[0] ) < timeWin ) {
           multi ++;
           bd[multi-1] = data->boardSN;
@@ -341,7 +350,7 @@ void EventBuilder(Data * data, const unsigned int timeWin, bool traceOn, bool is
             }
           }
           lastEv[chX] = ev + 1;
-          if( lastEv[chX] == data->NumEvents[chX] ) exhaustedCh ++;
+          if( lastEv[chX] == data->EventIndex[chX] ) exhaustedCh ++;
         }
       }
     }
@@ -355,7 +364,7 @@ void EventBuilder(Data * data, const unsigned int timeWin, bool traceOn, bool is
       printf("=============== Last Ev , exhaustedCh %d \n", exhaustedCh);
       for( int chI = 0; chI < MaxNChannels ; chI++){
         if( lastEv[chI] == 0 ) continue;
-        printf("%2d, %d %d\n", chI, lastEv[chI], data->NumEvents[chI]);
+        printf("%2d, %d %d\n", chI, lastEv[chI], data->EventIndex[chI]);
       }
     }
     
@@ -370,35 +379,27 @@ void EventBuilder(Data * data, const unsigned int timeWin, bool traceOn, bool is
   ///========== clear built data
   /// move the last data to the top, 
   for( int chI = 0; chI < MaxNChannels; chI++){
-    if( data->NumEvents[chI] == 0 ) continue;
+    if( data->EventIndex[chI] == 0 ) continue;
     int count = 0;
-    for( int ev = lastEv[chI] ; ev < data->NumEvents[chI] ; ev++){
+    for( int ev = lastEv[chI] ; ev < data->EventIndex[chI] ; ev++){
       data->Energy[chI][count] = data->Energy[chI][ev];
       data->Timestamp[chI][count] = data->Timestamp[chI][ev];
       data->fineTime[chI][count] = data->fineTime[chI][ev];
       count++;
     }
-    int lala = data->NumEvents[chI] - lastEv[chI];
-    data->NumEvents[chI] = (lala >= 0 ? lala: 0);
+    int lala = data->EventIndex[chI] - lastEv[chI];
+    data->EventIndex[chI] = (lala >= 0 ? lala: 0);
   }
 
   if( verbose > 0 ) {
     printf("&&&&&&&&&&&&&&&&&&&&&&&&&& end of one event build loop\n");
-    data->PrintData(); 
+    data->PrintAllData(); 
   }
 
 }
 
-unsigned long get_time(){
-  unsigned long time_us;
-  struct timeval t1;
-  struct timezone tz;
-  gettimeofday(&t1, &tz);
-  time_us = (t1.tv_sec) * 1000000 + t1.tv_usec;
-  return time_us;
-}
-
-
+//*#############################################################
+//*#############################################################
 template<typename T> void swap(T * a, T *b ){
   T temp = * b;
   *b = *a;

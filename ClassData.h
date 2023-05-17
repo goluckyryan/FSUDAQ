@@ -23,7 +23,7 @@ class Data{
     int DPPType;
     std::string DPPTypeStr;
     unsigned short boardSN;
-    float ch2ns;
+    float ch2ns;  /// only use in TriggerRate calculation
     
     unsigned int nByte;               /// number of byte from read buffer
     uint32_t AllocatedSize;      
@@ -266,7 +266,8 @@ inline void Data::PrintAllData() const{
     if( EventIndex[ch] < 0  ) continue;
     printf("------------ ch : %d, %d \n", ch, EventIndex[ch]);
     for( int ev = 0; ev <= EventIndex[ch] ; ev++){
-      printf("%4d, %5u, %15llu, %5u \n", ev, Energy[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
+      if( DPPType == V1730_DPP_PHA_CODE ) printf("%4d, %5u, %15llu, %5u \n", ev, Energy[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
+      if( DPPType == V1730_DPP_PSD_CODE ) printf("%4d, %5u, %5u, %15llu, %5u \n", ev, Energy[ch][ev], Energy2[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
     }
   }
 }

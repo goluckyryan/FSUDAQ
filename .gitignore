@@ -5,6 +5,7 @@ FSUDAQ_Qt6
 test
 test_indep
 programSettings.txt
+EventBuilder
 
 data
 
