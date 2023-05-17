@@ -14,7 +14,7 @@
 #include <QMouseEvent>
 #include <QGestureEvent>
 
-//^=======================================
+//^====================================================
 class RSpinBox : public QDoubleSpinBox{
   Q_OBJECT
   public : 
@@ -46,7 +46,7 @@ class RSpinBox : public QDoubleSpinBox{
     }
 };
 
-//^=======================================
+//^====================================================
 class RComboBox : public QComboBox{
   public : 
     RComboBox(QWidget * parent = nullptr): QComboBox(parent){
@@ -162,6 +162,8 @@ private:
   int hRangeMax;
   QLabel * m_coordinateLabel;
 };
+
+//^====================================================
 
 
 

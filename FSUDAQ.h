@@ -15,6 +15,7 @@
 #include "CustomThreads.h"
 #include "Scope.h"
 #include "DigiSettingsPanel.h"
+#include "CanvasClass.h"
 
 //^#===================================================== MainWindow
 class MainWindow : public QMainWindow{
@@ -26,6 +27,7 @@ public:
   void closeEvent(QCloseEvent * event){
     if( scope ) scope->close();
     if( digiSettings ) digiSettings->close();
+    if( canvas ) canvas->close();
     event->accept();
   }
 
@@ -56,6 +58,8 @@ private slots:
 
   void OpenDigiSettings();
 
+  void OpenCanvas();
+
 private:
 
   Digitizer ** digi;
@@ -75,6 +79,8 @@ private:
   QPushButton * bnOpenScaler;
   QPushButton * bnStartACQ;
   QPushButton * bnStopACQ;
+
+  QPushButton * bnCanvas;
 
   //@----- log msg
   QPlainTextEdit * logInfo;
@@ -110,6 +116,9 @@ private:
 
   //@----- DigiSettings
   DigiSettingsPanel * digiSettings;
+
+  //@----- Canvas
+  Canvas * canvas;
 
 };
 

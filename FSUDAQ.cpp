@@ -12,8 +12,6 @@
 #include <QFileDialog>
 #include <QScrollArea>
 
-#include <TH1.h>
-
 #include "CustomWidgets.h"
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
@@ -27,6 +25,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
   scalar = nullptr;
   scope = nullptr;
   digiSettings = nullptr;
+  canvas = nullptr;
 
   QWidget * mainLayoutWidget = new QWidget(this);
   setCentralWidget(mainLayoutWidget);
@@ -53,6 +52,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     bnDigiSettings = new QPushButton("Digitizers Settings", this);
     layout->addWidget(bnDigiSettings, 1, 1);
     connect(bnDigiSettings, &QPushButton::clicked, this, &MainWindow::OpenDigiSettings);
+
+    bnCanvas = new QPushButton("Canvas", this);
+    layout->addWidget(bnCanvas, 2, 0);
+    connect(bnCanvas, &QPushButton::clicked, this, &MainWindow::OpenCanvas);
 
   }
 
@@ -175,6 +178,8 @@ MainWindow::~MainWindow(){
   if( scope ) delete scope;
 
   if( digiSettings ) delete digiSettings;
+
+  if( canvas ) delete canvas;
 
   if( scalar ) {
     CleanUpScalar();
@@ -814,6 +819,20 @@ void MainWindow::OpenDigiSettings(){
   }else{
     digiSettings->show();
     digiSettings->activateWindow();
+  }
+
+}
+
+//***************************************************************
+//***************************************************************
+void MainWindow::OpenCanvas(){
+
+  if( canvas == nullptr ) {
+    canvas = new Canvas(digi, nDigi, readDataThread);
+    canvas->show();
+  }else{
+    canvas->show();
+    canvas->activateWindow();
   }
 
 }

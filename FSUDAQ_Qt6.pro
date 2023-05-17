@@ -27,9 +27,11 @@ HEADERS += ClassData.h \
            FSUDAQ.h \
            macro.h \
            RegisterAddress.h \
-           Scope.h
+           Scope.h \
+           CanvasClass.h
 SOURCES += ClassDigitizer.cpp \
            DigiSettingsPanel.cpp \
            FSUDAQ.cpp \
            main.cpp \
-           Scope.cpp
+           Scope.cpp \
+           CanvasClass.cpp

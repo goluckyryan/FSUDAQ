@@ -150,6 +150,7 @@
     "cinttypes": "cpp",
     "typeinfo": "cpp",
     "variant": "cpp",
-    "qmainwindow": "cpp"
+    "qmainwindow": "cpp",
+    "qchartview": "cpp"
   }
 }
