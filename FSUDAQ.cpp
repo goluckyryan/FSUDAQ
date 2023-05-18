@@ -12,8 +12,6 @@
 #include <QFileDialog>
 #include <QScrollArea>
 
-#include "CustomWidgets.h"
-
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
 
   setWindowTitle("FSU DAQ");
@@ -91,7 +89,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     leRunID->setAlignment(Qt::AlignHCenter);
 
     chkSaveData = new QCheckBox("Save Data", this);
-    cbAutoRun = new QComboBox(this);
+    cbAutoRun = new RComboBox(this);
     cbAutoRun->addItem("Single Infinite", 0);
     cbAutoRun->addItem("Single 30 mins", 30);
     cbAutoRun->addItem("Single 60 mins", 60);
@@ -828,7 +826,7 @@ void MainWindow::OpenDigiSettings(){
 void MainWindow::OpenCanvas(){
 
   if( canvas == nullptr ) {
-    canvas = new Canvas(digi, nDigi, readDataThread);
+    canvas = new Canvas(digi, nDigi);
     canvas->show();
   }else{
     canvas->show();

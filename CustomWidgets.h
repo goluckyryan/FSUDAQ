@@ -13,6 +13,9 @@
 #include <QRubberBand>
 #include <QMouseEvent>
 #include <QGestureEvent>
+#include <QLineSeries>
+#include <QAreaSeries>
+#include <QValueAxis>
 
 //^====================================================
 class RSpinBox : public QDoubleSpinBox{
@@ -90,6 +93,7 @@ private:
 
 };
 
+//^====================================================
 class TraceView : public QChartView{
 public:
   TraceView(QChart * chart, QWidget * parent = nullptr): QChartView(chart, parent){
@@ -101,6 +105,8 @@ public:
     m_coordinateLabel->setVisible(false);
     m_coordinateLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     setMouseTracking(true);
+
+    setRenderHints(QPainter::Antialiasing);
   }
 
   void SetHRange(int min, int max) {
@@ -164,7 +170,97 @@ private:
 };
 
 //^====================================================
+class Histogram {
+public:
+  Histogram(QString title, double xMin, double xMax, int nBin){
+  
+    plot = new Trace();
+    dataSeries = new QLineSeries();
 
+    this->xMin = xMin;
+    this->xMax = xMax;
+    this->nBin = nBin;
+    dX = (xMax-xMin)/nBin;
+    Clear();
 
+    maxBin = -1;
+    maxBinValue = 0;
+
+    //dataSeries->setPen(QPen(Qt::blue, 1));
+    areaSeries = new QAreaSeries(dataSeries);
+    areaSeries->setName(title);
+    areaSeries->setBrush(Qt::blue);
+
+    plot->addSeries(areaSeries);
+
+    plot->setAnimationDuration(1); // msec
+    plot->setAnimationOptions(QChart::NoAnimation);
+    plot->createDefaultAxes();
+
+    QValueAxis * xaxis = qobject_cast<QValueAxis*> (plot->axes(Qt::Horizontal).first());
+    xaxis->setRange(xMin, xMax);
+    xaxis->setTickCount( nBin +  1 > 11 ? 11 : nBin + 1);
+    //xaxis->setLabelFormat("%.1f");
+    //xaxis->setTitleText("Time [ns]");
+
+  }
+  ~Histogram(){
+    delete areaSeries;
+    delete dataSeries;
+    delete plot;
+  }
+
+  Trace * GetTrace() { return plot;} 
+
+  void Clear(){
+    for( int i = 0; i <= nBin; i++) {
+      dataSeries->append(xMin + i * dX, 0 );
+      dataSeries->append(xMin + i * dX, 0 );
+    }
+  }
+
+  void SetColor(Qt::GlobalColor color){ areaSeries->setBrush(color);}
+
+  void Fill(double value){
+
+    double bin = (value - xMin)/dX;
+    if( bin < 0 || bin >= nBin ) return;
+
+    int index1 = 2*qFloor(bin) + 1;
+    int index2 = index1 + 1;
+
+    QPointF point1 = dataSeries->at(index1);
+    dataSeries->replace(index1, point1.x(), point1.y() + 1);
+
+    QPointF point2 = dataSeries->at(index2);
+    dataSeries->replace(index2, point2.x(), point2.y() + 1);
+
+    if( point2.y() + 1 > maxBinValue ){
+      maxBinValue = point2.y() + 1;
+      maxBin = index2/2;
+    }
+
+    QValueAxis * yaxis = qobject_cast<QValueAxis*> (plot->axes(Qt::Vertical).first());
+    //yaxis->setTickInterval(1);
+    yaxis->setRange(0, ((double)maxBinValue) * 1.2 );
+    //yaxis->setTickCount(10);
+    //yaxis->setLabelFormat("%.0f");
+
+  }
+
+private:
+  Trace * plot;
+  QLineSeries * dataSeries;
+  QAreaSeries * areaSeries;
+
+  double dX, xMin, xMax;
+  int nBin;
+
+  int maxBin;
+  int maxBinValue;
+
+};
+
+//^====================================================
 
 #endif

@@ -150,7 +150,6 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   //================ Plot view
   rowID ++;
   plotView = new TraceView(plot, this);
-  plotView->setRenderHints(QPainter::Antialiasing);
   layout->addWidget(plotView, rowID, 0, 1, 6);
 
   

@@ -13,6 +13,7 @@
 
 #include "ClassDigitizer.h"
 #include "CustomThreads.h"
+#include "CustomWidgets.h"
 #include "Scope.h"
 #include "DigiSettingsPanel.h"
 #include "CanvasClass.h"
@@ -94,7 +95,7 @@ private:
   QLineEdit * leRunID;
 
   QCheckBox * chkSaveData;
-  QComboBox * cbAutoRun;
+  RComboBox * cbAutoRun;
 
   QString startComment;
   QString stopComment;

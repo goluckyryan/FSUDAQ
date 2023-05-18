@@ -23,34 +23,23 @@
 #include "CustomWidgets.h"
 
 
-#include <QWidget>
-#include <QChart>
-#include <QChartView>
-#include <QBarSeries>
-#include <QBarSet>
-#include <QBarCategoryAxis>
-
-
 //^====================================================
 //^====================================================
 class Canvas : public QMainWindow{
   Q_OBJECT
 
 public:
-  Canvas(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataThread, QMainWindow * parent = nullptr);
+  Canvas(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent = nullptr);
   ~Canvas();
 
+public slots:
+  void UpdateCanvas();
 
 private:
 
   Digitizer ** digi;
   unsigned short nDigi;
-  ReadDataThread ** readDataThread;   
 
-  QChartView *chartView;
-  QChart *chart;
-  QBarSeries *barSeries;
-  QBarCategoryAxis *axisX;
 
 };
 

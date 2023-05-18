@@ -6,76 +6,59 @@
 #include <QStandardItemModel>
 #include <QLabel>
 
-Canvas::Canvas(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataThread, QMainWindow * parent) : QMainWindow(parent){
+Canvas::Canvas(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent) : QMainWindow(parent){
 
   this->digi = digi;
   this->nDigi = nDigi;
-  this->readDataThread = readDataThread;
 
   setWindowTitle("Canvas");
   setGeometry(0, 0, 1000, 800);  
   //setWindowFlags( this->windowFlags() & ~Qt::WindowCloseButtonHint );
 
+  QWidget * layoutWidget = new QWidget(this);
+  setCentralWidget(layoutWidget);
+  QVBoxLayout * layout = new QVBoxLayout(layoutWidget);
+  layoutWidget->setLayout(layout);
 
-  QVector<int> data = {1, 1, 2, 2, 3, 1, 2, 4, 5, 6, 5, 3, 4, 1, 3};
-  double xMax = 5;
-  double xMin = -1;
-  double binSize = 0.5;
 
-  // Calculate the number of bins based on the X-axis range and bin size
-  int numBins = static_cast<int>((xMax - xMin) / binSize) + 1;
+  //========================
+  QGroupBox * controlBox = new QGroupBox("Control", this);
+  layout->addWidget(controlBox);
+  QGridLayout * ctrlLayout = new QGridLayout(controlBox);
+  controlBox->setLayout(ctrlLayout);
 
-  // Create a bar series
-  barSeries = new QBarSeries();
+  QPushButton * bnClearHist = new QPushButton("Clear Hist.", this);
+  ctrlLayout->addWidget(bnClearHist, 0, 0);
 
-  // Create a histogram data array with the number of bins
-  QVector<int> histogramData(numBins, 0);
+  //========================
+  QGroupBox * histBox = new QGroupBox("Histgrams", this);
+  layout->addWidget(histBox);
+  QGridLayout * histLayout = new QGridLayout(histBox);
+  histBox->setLayout(histLayout);
 
-  // Calculate the histogram bin counts
-  for (double value : data) {
-      int binIndex = static_cast<int>((value - xMin) / binSize);
-      if (binIndex >= 0 && binIndex < numBins) {
-          histogramData[binIndex]++;
-      }
-  }
+  double xMax = 4000;
+  double xMin = 0;
+  double nBin = 100;
 
-  // Create bar sets and add them to the series
-  for (int i = 0; i < numBins; ++i) {
-      double binStart = xMin + i * binSize;
-      double binEnd = binStart + binSize;
-      QString binLabel = QString("%1-%2").arg(binStart).arg(binEnd);
+  Histogram * hist = new Histogram("test", xMin, xMax, nBin);
 
-      QBarSet *barSet = new QBarSet(binLabel);
-      *barSet << histogramData[i];
-      barSeries->append(barSet);
-  }
+  hist->Fill(1);
+  hist->Fill(300);
+  hist->Fill(350);
 
-  // Create the chart and set the series
-  chart = new QChart();
-  chart->addSeries(barSeries);
+  TraceView * plotView = new TraceView(hist->GetTrace(), this);
+  histLayout->addWidget(plotView, 0, 0);
 
-  // Create the X-axis category axis
-  axisX = new QBarCategoryAxis();
-  chart->setAxisX(axisX, barSeries);
-
-  // Create category labels for the bins
-  QStringList categories;
-  for (int i = 0; i < numBins; ++i) {
-      double binStart = xMin + i * binSize;
-      double binEnd = binStart + binSize;
-      QString binLabel = QString("%1-%2").arg(binStart).arg(binEnd);
-      categories.append(binLabel);
-      axisX->append(binLabel);
-  }
-
-  // Create a chart view and set the chart
-  chartView = new QChartView(chart);
-  chartView->setRenderHint(QPainter::Antialiasing);
-
-  // Set the chart view as the main widget
-  setCentralWidget(chartView);
 }
 
 Canvas::~Canvas(){
+
+}
+
+void Canvas::UpdateCanvas(){
+
+
+  
+
 
 }
