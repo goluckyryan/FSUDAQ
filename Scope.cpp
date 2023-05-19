@@ -125,7 +125,6 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   layout->addWidget(bnReadSettingsFromBoard, rowID, 2);
   connect(bnReadSettingsFromBoard, &QPushButton::clicked, this, &Scope::ReadSettingsFromBoard);
 
-
   QPushButton * bnClearMemory = new QPushButton("Clear Memory", this);
   layout->addWidget(bnClearMemory, rowID, 3);
   connect(bnClearMemory, &QPushButton::clicked, this, [=](){

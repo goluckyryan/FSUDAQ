@@ -394,7 +394,7 @@ void MainWindow::OpenDigitizers(){
   }
 
   histThread = new TimingThread(this);
-  histThread->SetWaitTimeinSec(1);
+  histThread->SetWaitTimeinSec(0.5);
   connect(histThread, &TimingThread::timeUp, this, [=](){
     if( canvas == nullptr ) return; 
     canvas->UpdateCanvas();
@@ -457,6 +457,7 @@ void MainWindow::WaitForDigitizersOpen(bool onOff){
   bnStartACQ->setEnabled(!onOff);
   bnStopACQ->setEnabled(!onOff);
   chkSaveData->setEnabled(!onOff);
+  bnCanvas->setEnabled(!onOff);
 
 }
 
@@ -809,11 +810,24 @@ void MainWindow::OpenScope(){
       bnStopACQ->setEnabled(false);  
     });
     connect(scope, &Scope::TellACQOnOff, this, [=](bool onOff){
-      if( scope == nullptr ) return;
-      if( onOff ) {
-        lbScalarACQStatus->setText("<font style=\"color: green;\"><b>ACQ On</b></font>");
-      }else{
-        lbScalarACQStatus->setText("<font style=\"color: red;\"><b>ACQ Off</b></font>");
+      if( scope  ) {
+        if( onOff ) {
+          lbScalarACQStatus->setText("<font style=\"color: green;\"><b>ACQ On</b></font>");
+        }else{
+          lbScalarACQStatus->setText("<font style=\"color: red;\"><b>ACQ Off</b></font>");
+        }
+      }
+
+      if( canvas ){
+        if( onOff ) {
+          histThread->start();
+        }else{
+          if( histThread->isRunning()){
+            histThread->Stop();
+            histThread->quit();
+            histThread->wait();
+          }
+        }
       }
     });
 
