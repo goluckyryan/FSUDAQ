@@ -34,12 +34,24 @@ public:
 
 public slots:
   void UpdateCanvas();
+  void ChangeHistView();
 
 private:
 
   Digitizer ** digi;
   unsigned short nDigi;
 
+  Histogram * hist[MaxNDigitizer][MaxNChannels];
+  TraceView * histView[MaxNDigitizer][MaxNChannels];
+
+  RComboBox * cbDivision;
+
+  RComboBox * cbDigi;
+  RComboBox * cbCh;
+
+  QGroupBox * histBox;
+  QGridLayout * histLayout;
+  int oldBd, oldCh;
 
 };
 

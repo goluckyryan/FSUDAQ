@@ -5,6 +5,7 @@
 #include <QGroupBox>
 #include <QStandardItemModel>
 #include <QLabel>
+#include <QRandomGenerator>
 
 Canvas::Canvas(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent) : QMainWindow(parent){
 
@@ -20,7 +21,6 @@ Canvas::Canvas(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent) : QM
   QVBoxLayout * layout = new QVBoxLayout(layoutWidget);
   layoutWidget->setLayout(layout);
 
-
   //========================
   QGroupBox * controlBox = new QGroupBox("Control", this);
   layout->addWidget(controlBox);
@@ -29,36 +29,112 @@ Canvas::Canvas(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent) : QM
 
   QPushButton * bnClearHist = new QPushButton("Clear Hist.", this);
   ctrlLayout->addWidget(bnClearHist, 0, 0);
+  connect(bnClearHist, &QPushButton::clicked, this, [=](){
+    for( int i = 0; i < MaxNDigitizer; i++){
+      for( int j = 0; j < MaxNChannels; j++){
+        if( hist[i][j] ) hist[i][j]->Clear();
+      }
+    }
+  });
+
+  QPushButton * bnAddRandom = new QPushButton("Add Random", this);
+  ctrlLayout->addWidget(bnAddRandom, 0, 1);
+  connect(bnAddRandom, &QPushButton::clicked, this, [=](){
+
+    double mean = 2000.0;  // Mean of the distribution
+    double standardDeviation = 1000.0;  // Standard deviation of the distribution
+
+    double randomNumber = QRandomGenerator::global()->generateDouble();  // Generate a random number between 0 and 1
+    double gaussianNumber = qSqrt(-2 * qLn(randomNumber)) * qCos(2 * M_PI * randomNumber);  // Transform the number to follow a Gaussian distribution
+
+    // Scale and shift the number to match the desired mean and standard deviation
+    gaussianNumber = (gaussianNumber * standardDeviation) + mean;
+
+    int bd = cbDigi->currentIndex();
+    int ch = cbCh->currentIndex();
+
+    hist[bd][ch]->Fill(gaussianNumber);
+  });
+
+  cbDigi = new RComboBox(this);
+  for( unsigned int i = 0; i < nDigi; i++) cbDigi->addItem("Digi-" + QString::number( digi[i]->GetSerialNumber() ), i);
+  ctrlLayout->addWidget(cbDigi, 1, 0);
+  connect( cbDigi, &RComboBox::currentIndexChanged, this, &Canvas::ChangeHistView);
+
+  cbCh   = new RComboBox(this);
+  for( int i = 0; i < MaxNChannels; i++) cbCh->addItem("ch-" + QString::number( i ), i);
+  ctrlLayout->addWidget(cbCh, 1, 1);
+  connect( cbCh, &RComboBox::currentIndexChanged, this, &Canvas::ChangeHistView);
 
   //========================
-  QGroupBox * histBox = new QGroupBox("Histgrams", this);
+  histBox = new QGroupBox("Histgrams", this);
   layout->addWidget(histBox);
-  QGridLayout * histLayout = new QGridLayout(histBox);
+  histLayout = new QGridLayout(histBox);
   histBox->setLayout(histLayout);
 
   double xMax = 4000;
   double xMin = 0;
   double nBin = 100;
 
-  Histogram * hist = new Histogram("test", xMin, xMax, nBin);
+  for( unsigned int i = 0; i < MaxNDigitizer; i++){
+    for( int j = 0; j < MaxNChannels; j++){
+      if( i < nDigi ) {
+        hist[i][j] = new Histogram("Digi-" + QString::number(digi[i]->GetSerialNumber()) +", Ch-" +  QString::number(j), xMin, xMax, nBin);
+        histView[i][j] = new TraceView(hist[i][j]->GetTrace());
+        histView[i][j]->SetVRange(0, 10);
+      }else{
+        hist[i][j] = nullptr;
+      }
+    }
+  }
 
-  hist->Fill(1);
-  hist->Fill(300);
-  hist->Fill(350);
 
-  TraceView * plotView = new TraceView(hist->GetTrace(), this);
-  histLayout->addWidget(plotView, 0, 0);
+  histLayout->addWidget(histView[0][0], 0, 0);
+  oldBd = -1;
+  oldCh = -1;
 
 }
 
 Canvas::~Canvas(){
+  for( int i = 0; i < MaxNDigitizer; i++){
+    for( int j = 0; j < MaxNChannels; j++){
+      if( hist[i][j] ) {
+        delete hist[i][j];
+        delete histView[i][j];
+      }
+    }
+  }
+}
 
+void Canvas::ChangeHistView(){
+
+  if( oldCh >= 0 ) {
+    histLayout->removeWidget(histView[oldBd][oldCh]);
+    histView[oldBd][oldCh]->setParent(nullptr);
+  }
+  int bd = cbDigi->currentIndex();
+  int ch = cbCh->currentIndex();
+
+  histLayout->addWidget(histView[bd][ch], 0, 0);
+
+  oldBd = bd;
+  oldCh = ch;
 }
 
 void Canvas::UpdateCanvas(){
 
+  for( int i = 0; i < nDigi; i++){
 
-  
+    digiMTX[i].lock();
+    for( int ch = 0; ch < digi[i]->GetNChannels(); ch ++ ){
+      int lastIndex = digi[i]->GetData()->EventIndex[ch];
+      int nDecoded = digi[i]->GetData()->NumEventsDecoded[ch];
+    
+      for( int j = lastIndex - nDecoded + 1; j <= lastIndex; j ++){
+        hist[i][ch]->Fill( digi[i]->GetData()->Energy[ch][j]);
+      }
+    }
+    digiMTX[i].unlock();
 
-
+  }
 }

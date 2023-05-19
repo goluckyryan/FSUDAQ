@@ -120,6 +120,7 @@ private:
 
   //@----- Canvas
   Canvas * canvas;
+  TimingThread * histThread;
 
 };
 

@@ -51,7 +51,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     layout->addWidget(bnDigiSettings, 1, 1);
     connect(bnDigiSettings, &QPushButton::clicked, this, &MainWindow::OpenDigiSettings);
 
-    bnCanvas = new QPushButton("Canvas", this);
+    bnCanvas = new QPushButton("Online Histograms", this);
     layout->addWidget(bnCanvas, 2, 0);
     connect(bnCanvas, &QPushButton::clicked, this, &MainWindow::OpenCanvas);
 
@@ -393,6 +393,13 @@ void MainWindow::OpenDigitizers(){
     QCoreApplication::processEvents(); //to prevent Qt said application not responding.
   }
 
+  histThread = new TimingThread(this);
+  histThread->SetWaitTimeinSec(1);
+  connect(histThread, &TimingThread::timeUp, this, [=](){
+    if( canvas == nullptr ) return; 
+    canvas->UpdateCanvas();
+  });
+
   LogMsg(QString("Done. Opened %1 digitizer(s).").arg(nDigi));
 
   WaitForDigitizersOpen(false);
@@ -612,7 +619,11 @@ void MainWindow::StartACQ(){
   if( chkSaveData->isChecked() ) commentResult = CommentDialog(true);
   if( commentResult == false) return;
 
-  LogMsg("===================== Start a new Run-" + QString::number(runID));
+  if( chkSaveData->isChecked() ) {
+    LogMsg("===================== Start a new Run-" + QString::number(runID));
+  }else{
+    LogMsg("===================== Start a non-save Run");
+  }
 
   for( unsigned int i = 0; i < nDigi ; i++){
     if( chkSaveData->isChecked() ) {
@@ -636,6 +647,8 @@ void MainWindow::StartACQ(){
   }
   lbScalarACQStatus->setText("<font style=\"color: green;\"><b>ACQ On</b></font>");
 
+  if( canvas != nullptr ) histThread->start();
+
   bnStartACQ->setEnabled(false);
   bnStopACQ->setEnabled(true);
   bnOpenScope->setEnabled(false);
@@ -644,7 +657,11 @@ void MainWindow::StartACQ(){
 void MainWindow::StopACQ(){
   if( digi == nullptr ) return;
 
-  LogMsg("===================== Stop Run-" + QString::number(runID));
+  if( chkSaveData->isChecked() ) {
+    LogMsg("===================== Stop Run-" + QString::number(runID));
+  }else{
+    LogMsg("===================== Stop a non-save Run");
+  }
 
   bool commentResult = true;
   if( chkSaveData->isChecked() ) commentResult = CommentDialog(true);
@@ -665,6 +682,12 @@ void MainWindow::StopACQ(){
     scalarThread->Stop();
     scalarThread->quit();
     scalarThread->wait();
+  }
+
+  if( histThread->isRunning()){
+    histThread->Stop();
+    histThread->quit();
+    histThread->wait();
   }
   
   lbScalarACQStatus->setText("<font style=\"color: red;\"><b>ACQ Off</b></font>");

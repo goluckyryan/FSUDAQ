@@ -107,13 +107,19 @@ public:
     setMouseTracking(true);
 
     setRenderHints(QPainter::Antialiasing);
+
+    vRangeMin = -(0x1FFF);
+    vRangeMax = 0x1FFF;
   }
 
   void SetHRange(int min, int max) {
     this->hRangeMin = min;
     this->hRangeMax = max;
+  }  
+  void SetVRange(int min, int max) {
+    this->vRangeMin = min;
+    this->vRangeMax = max;
   }
-
 protected:
   bool viewportEvent(QEvent *event) override{
     if (event->type() == QEvent::TouchBegin) {
@@ -127,7 +133,6 @@ protected:
     QChartView::mousePressEvent(event);
   }
   void mouseMoveEvent(QMouseEvent *event) override{
-
     QPointF chartPoint = this->chart()->mapToValue(event->pos());
     QString coordinateText = QString("x: %1, y: %2").arg(QString::number(chartPoint.x(), 'f', 0)).arg(QString::number(chartPoint.y(), 'f', 0));
     m_coordinateLabel->setText(coordinateText);
@@ -135,7 +140,6 @@ protected:
     m_coordinateLabel->setVisible(true);
     if (m_isTouching) return;
     QChartView::mouseMoveEvent(event);
-
   }
   void mouseReleaseEvent(QMouseEvent *event) override{
     if (m_isTouching)  m_isTouching = false;
@@ -155,17 +159,20 @@ protected:
       case Qt::Key_Up: chart()->scroll(0, 10); break;
       case Qt::Key_Down: chart()->scroll(0, -10);  break;
       case Qt::Key_R : 
-        chart()->axes(Qt::Vertical).first()->setRange(-(0x1FFF), 0x1FFF);
+        //chart()->axes(Qt::Vertical).first()->setRange(-(0x1FFF), 0x1FFF);
+        chart()->axes(Qt::Vertical).first()->setRange(vRangeMin, vRangeMax);
         //chart()->axes(Qt::Horizontal).first()->setRange(hRangeMin, hRangeMax);
         break;
       default: QGraphicsView::keyPressEvent(event); break;
     }
   }
-  
+
 private:
   bool m_isTouching;
   int hRangeMin;
   int hRangeMax;
+  int vRangeMin;
+  int vRangeMax;
   QLabel * m_coordinateLabel;
 };
 
@@ -181,7 +188,10 @@ public:
     this->xMax = xMax;
     this->nBin = nBin;
     dX = (xMax-xMin)/nBin;
-    Clear();
+    for( int i = 0; i <= nBin; i++) {
+      dataSeries->append(xMin + i * dX, 0 );
+      dataSeries->append(xMin + i * dX, 0 );
+    }
 
     maxBin = -1;
     maxBinValue = 0;
@@ -203,6 +213,9 @@ public:
     //xaxis->setLabelFormat("%.1f");
     //xaxis->setTitleText("Time [ns]");
 
+    QValueAxis * yaxis = qobject_cast<QValueAxis*> (plot->axes(Qt::Vertical).first());
+    yaxis->setRange(0, 10);
+
   }
   ~Histogram(){
     delete areaSeries;
@@ -214,8 +227,8 @@ public:
 
   void Clear(){
     for( int i = 0; i <= nBin; i++) {
-      dataSeries->append(xMin + i * dX, 0 );
-      dataSeries->append(xMin + i * dX, 0 );
+      dataSeries->replace(2*i, xMin + i * dX, 0);
+      dataSeries->replace(2*i+1, xMin + i * dX, 0);
     }
   }
 
@@ -241,8 +254,8 @@ public:
     }
 
     QValueAxis * yaxis = qobject_cast<QValueAxis*> (plot->axes(Qt::Vertical).first());
+    yaxis->setRange(0, maxBinValue < 10 ? 10 : ((double)maxBinValue) * 1.2 );
     //yaxis->setTickInterval(1);
-    yaxis->setRange(0, ((double)maxBinValue) * 1.2 );
     //yaxis->setTickCount(10);
     //yaxis->setLabelFormat("%.0f");
 

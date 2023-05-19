@@ -451,7 +451,6 @@ void Scope::CleanUpSettingsGroupBox(){
 
 }
 
-
 void Scope::SetUpPHAPanel(){
   printf("--- %s \n", __func__);
 
