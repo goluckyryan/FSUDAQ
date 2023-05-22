@@ -51,7 +51,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     layout->addWidget(bnDigiSettings, 1, 1);
     connect(bnDigiSettings, &QPushButton::clicked, this, &MainWindow::OpenDigiSettings);
 
-    bnCanvas = new QPushButton("Online Histograms", this);
+    bnCanvas = new QPushButton("Online 1D Histograms", this);
     layout->addWidget(bnCanvas, 2, 0);
     connect(bnCanvas, &QPushButton::clicked, this, &MainWindow::OpenCanvas);
 
@@ -599,13 +599,15 @@ void MainWindow::UpdateScalar(){
   
   lbLastUpdateTime->setText("Last update: " + QDateTime::currentDateTime().toString("MM.dd hh:mm:ss"));
 
+  //printf("----------------------\n");
   for( unsigned int iDigi = 0; iDigi < nDigi; iDigi++){
-    Data * data = digi[iDigi]->GetData();
-
+    digiMTX[iDigi].lock();
     for( int i = 0; i < digi[iDigi]->GetNChannels(); i++){
-      leTrigger[iDigi][i]->setText(QString::number(data->TriggerRate[i]));
-      leAccept[iDigi][i]->setText(QString::number(data->NonPileUpRate[i]));
+      //printf(" %3d %2d | %7.2f %7.2f \n", digi[iDigi]->GetSerialNumber(), i, digi[iDigi]->GetData()->TriggerRate[i], digi[iDigi]->GetData()->NonPileUpRate[i]);
+      leTrigger[iDigi][i]->setText(QString::number(digi[iDigi]->GetData()->TriggerRate[i], 'f', 2));
+      leAccept[iDigi][i]->setText(QString::number(digi[iDigi]->GetData()->NonPileUpRate[i], 'f', 2));
     }
+    digiMTX[iDigi].unlock();
   }
 
 }
@@ -621,9 +623,9 @@ void MainWindow::StartACQ(){
   if( commentResult == false) return;
 
   if( chkSaveData->isChecked() ) {
-    LogMsg("===================== Start a new Run-" + QString::number(runID));
+    LogMsg("<font style=\"color: orange;\">===================== <b>Start a new Run-" + QString::number(runID) + "</b></font>");
   }else{
-    LogMsg("===================== Start a non-save Run");
+    LogMsg("<font style=\"color: orange;\">===================== <b>Start a non-save Run</b></font>");
   }
 
   for( unsigned int i = 0; i < nDigi ; i++){
@@ -639,6 +641,7 @@ void MainWindow::StartACQ(){
     readDataThread[i]->start();
   }
   if( chkSaveData->isChecked() ) SaveLastRunFile();
+  
   scalarThread->start();
 
   if( !scalar->isVisible() ) {
@@ -648,7 +651,7 @@ void MainWindow::StartACQ(){
   }
   lbScalarACQStatus->setText("<font style=\"color: green;\"><b>ACQ On</b></font>");
 
-  if( canvas != nullptr ) histThread->start();
+  //if( canvas != nullptr ) histThread->start();
 
   bnStartACQ->setEnabled(false);
   bnStopACQ->setEnabled(true);
@@ -658,25 +661,28 @@ void MainWindow::StartACQ(){
 void MainWindow::StopACQ(){
   if( digi == nullptr ) return;
 
+  bool commentResult = true;
+  if( chkSaveData->isChecked() ) commentResult = CommentDialog(true);
+  if( commentResult == false) return;
+
   if( chkSaveData->isChecked() ) {
     LogMsg("===================== Stop Run-" + QString::number(runID));
   }else{
     LogMsg("===================== Stop a non-save Run");
   }
 
-  bool commentResult = true;
-  if( chkSaveData->isChecked() ) commentResult = CommentDialog(true);
-  if( commentResult == false) return;
-
   for( unsigned int i = 0; i < nDigi; i++){
     LogMsg("Digi-" + QString::number(digi[i]->GetSerialNumber()) + " is stoping ACQ." );
-    digi[i]->StopACQ();
-    if( chkSaveData->isChecked() ) digi[i]->GetData()->CloseSaveFile();
 
     if( readDataThread[i]->isRunning() ) {
+      readDataThread[i]->Stop();
       readDataThread[i]->quit();
       readDataThread[i]->wait();
     }
+    digiMTX[i].lock();
+    digi[i]->StopACQ();
+    digiMTX[i].unlock();
+    if( chkSaveData->isChecked() ) digi[i]->GetData()->CloseSaveFile();
   }
 
   if( scalarThread->isRunning()){
@@ -698,7 +704,7 @@ void MainWindow::StopACQ(){
   bnOpenScope->setEnabled(true);
 }
 
-void MainWindow::AutoRun(){
+void MainWindow::AutoRun(){ //TODO
 
 }
 
@@ -883,6 +889,6 @@ void MainWindow::LogMsg(QString msg){
   }
   QScrollBar *v = logInfo->verticalScrollBar();
   v->setValue(v->maximum());
-  //qDebug() << msg;
+  //qDebug() << outputStr;
   logInfo->repaint();
 }

@@ -174,6 +174,7 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
       leSaveFilePath[iDigi] = new QLineEdit(this);
       leSaveFilePath[iDigi]->setReadOnly(true);
       buttonLayout->addWidget(leSaveFilePath[iDigi], rowID, 1, 1, 3);
+      leSaveFilePath[iDigi]->setText(QString::fromStdString(digi[ID]->GetSettingFileName()));
 
       rowID ++; //---------------------------
       bnRefreshSetting = new QPushButton("Refresh Settings", this);
@@ -395,6 +396,14 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
       });
 
       cbBdReg->currentIndexChanged(0);
+
+      connect(cbCh, &RComboBox::currentIndexChanged, this, [=](int index){
+        if( !enableSignalSlot ) return;
+        int regIndex = cbChReg->currentIndex();
+
+        uint32_t value = digi[ cbDigi->currentIndex() ] ->ReadRegister(chRegList[regIndex], cbCh->currentIndex(), index);
+        leChRegValue->setText( "0x" + QString::number(value, 16).toUpper());
+      });
     
       connect(cbChReg, &RComboBox::currentIndexChanged, this, [=](int index){
         if( !enableSignalSlot ) return;
@@ -457,7 +466,8 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
           uint32_t value = std::stoul(text.toStdString(), nullptr, 16);
           int index = cbDigi->currentIndex();
           int regID = cbChReg->currentIndex();
-          digi[index]->WriteRegister(chRegList[regID], value);
+          int ch = cbCh->currentIndex();
+          digi[index]->WriteRegister(chRegList[regID], value, ch);
           leChRegSet->setStyleSheet("");
 
           cbChReg->currentIndexChanged(regID);
@@ -2092,10 +2102,10 @@ void DigiSettingsPanel::SetUpPSDChannel(){
             QLabel * lb4 = new QLabel("Local Trig. Valid. [G]", this); lb4->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb4, 0, 9);
           }
           SetUpCheckBox(chkDisableSelfTrigger[ID][ch],  "Disable Self Trigger", tabLayout, ch + 1, 1, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PHA::DisableSelfTrigger, ch);
-          SetUpSpinBox(sbThreshold[ID][ch],                                 "", tabLayout, ch + 1, 2, DPP::PHA::TriggerThreshold, ch);
+          SetUpSpinBox(sbThreshold[ID][ch],                                 "", tabLayout, ch + 1, 2, DPP::PSD::TriggerThreshold, ch);
           SetUpComboBoxBit(cbTrigMode[ID][ch],                              "", tabLayout, ch + 1, 4, DPP::Bit_DPPAlgorithmControl_PHA::ListTrigMode, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PHA::TriggerMode, 1, ch);
-          SetUpSpinBox(sbTriggerHoldOff[ID][ch],                            "", tabLayout, ch + 1, 6, DPP::PHA::TriggerHoldOffWidth, ch);
-          SetUpComboBoxBit(cbLocalTriggerValid[ID][ch],                     "", tabLayout, ch + 1, 8, DPP::PHA::Bit_DPPAlgorithmControl2::ListLocalTrigValidMode, DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::LocalTrigValidMode, 1, ch);
+          SetUpSpinBox(sbTriggerHoldOff[ID][ch],                            "", tabLayout, ch + 1, 6, DPP::PSD::TriggerHoldOffWidth, ch);
+          SetUpComboBoxBit(cbLocalTriggerValid[ID][ch],                     "", tabLayout, ch + 1, 8, DPP::PSD::Bit_DPPAlgorithmControl2::ListLocalTrigValidMode, DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::LocalTrigValidMode, 1, ch);
         }
 
         if( i == 1 ){
@@ -2105,9 +2115,8 @@ void DigiSettingsPanel::SetUpPSDChannel(){
             QLabel * lb1 = new QLabel("Trig. Counter Flag [G]", this); lb1->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb1, 0, 6);
           }
           SetUpSpinBox(sbShapedTrigWidth[ID][ch],        "", tabLayout, ch + 1, 1, DPP::PSD::ShapedTriggerWidth, ch);
-          SetUpComboBoxBit(cbLocalShapedTrigger[ID][ch], "", tabLayout, ch + 1, 3, DPP::PHA::Bit_DPPAlgorithmControl2::ListLocalShapeTrigMode, DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::LocalShapeTriggerMode, 1, ch);
-          SetUpComboBoxBit(cbTrigCount[ID][ch],          "", tabLayout, ch + 1, 5, DPP::PHA::Bit_DPPAlgorithmControl2::ListTrigCounter, DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::TriggerCounterFlag, 1, ch);
-
+          SetUpComboBoxBit(cbLocalShapedTrigger[ID][ch], "", tabLayout, ch + 1, 3, DPP::PSD::Bit_DPPAlgorithmControl2::ListLocalShapeTrigMode, DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::LocalShapeTriggerMode, 1, ch);
+          SetUpComboBoxBit(cbTrigCount[ID][ch],          "", tabLayout, ch + 1, 5, DPP::PSD::Bit_DPPAlgorithmControl2::ListTrigCounter, DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::TriggerCounterFlag, 1, ch);
         }
 
         if( i == 2 ){

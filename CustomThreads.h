@@ -18,47 +18,70 @@ public:
     this->ID = digiID;
     isSaveData = false;
     isScope = false;
+    readCount = 0;
+    stop = false;
   }
+  void Stop() { this->stop = true;}
   void SetSaveData(bool onOff)  {this->isSaveData = onOff;}
   void SetScopeMode(bool onOff) {this->isScope = onOff;}
   void run(){
     clock_gettime(CLOCK_REALTIME, &ta);
-    while(true){
+    // clock_gettime(CLOCK_REALTIME, &t1);
+    stop = false;
+    do{
+      
+      if( stop) break;
+
       digiMTX[ID].lock();
       int ret = digi->ReadData();
       digiMTX[ID].unlock();
+      readCount ++;
 
-      if( ret == CAEN_DGTZ_Success ){
+      if( stop) break;
+      if( ret == CAEN_DGTZ_Success && !stop){
         digiMTX[ID].lock();
-        digi->GetData()->DecodeBuffer(!isScope);
+        digi->GetData()->DecodeBuffer(!isScope, 0);
         if( isSaveData ) digi->GetData()->SaveData();
         digiMTX[ID].unlock();
+        
+        // clock_gettime(CLOCK_REALTIME, &t2);
+        // if( t2.tv_sec - t1.tv_sec > 2 )  {
+        //   printf("----Digi-%d read %ld / sec.\n", ID, readCount / 2);
+        //   readCount = 0;
+        //   t1 = t2;
+        // }
 
       }else{
         printf("ReadDataThread::%s------------ ret : %d \n", __func__, ret);
+        digiMTX[ID].lock();
         digi->StopACQ();
+        digiMTX[ID].unlock();
         break;
       }
 
-      if( isSaveData ) {
+      if( isSaveData && !stop ) {
         clock_gettime(CLOCK_REALTIME, &tb);
         if( tb.tv_sec - ta.tv_sec > 2 ) {
-          emit sendMsg("FileSize ("+ QString::number(digi->GetSerialNumber()) +"): " +  QString::number(digi->GetData()->GetTotalFileSize()/1024./1024.) + " MB");
+          digiMTX[ID].lock();
+          emit sendMsg("FileSize ("+ QString::number(digi->GetSerialNumber()) +"): " +  QString::number(digi->GetData()->GetTotalFileSize()/1024./1024., 'f', 4) + " MB");
+          digiMTX[ID].unlock();
           ta = tb;
         }
       }
-
-    }
+    
+    }while(!stop);
     printf("ReadDataThread stopped.\n");
   }
 signals:
   void sendMsg(const QString &msg);
 private:
   Digitizer * digi; 
+  bool stop;
   int ID;
-  timespec ta, tb;
+  timespec ta, tb, t1, t2;
   bool isSaveData;
   bool isScope;
+  unsigned long readCount;
 };
 
 //^#======================================================= Timing Thread

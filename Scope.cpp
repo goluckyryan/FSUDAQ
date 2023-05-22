@@ -116,8 +116,13 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
     if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) SetUpPHAPanel();
     if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) SetUpPSDPanel();
 
-    //ReadSettingsFromBoard();
+    ReadSettingsFromBoard();
 
+  });
+
+  connect(cbScopeCh, &RComboBox::currentIndexChanged, this, [=](){
+    if( !enableSignalSlot ) return;
+    ReadSettingsFromBoard();
   });
 
 
@@ -229,11 +234,14 @@ void Scope::StartScope(){
 
     digi[iDigi]->StartACQ();
 
+    printf("----- readDataThread running ? %d.\n", readDataThread[iDigi]->isRunning());
+    if( readDataThread[iDigi]->isRunning() ){
+      readDataThread[iDigi]->quit();
+      readDataThread[iDigi]->wait();
+    }
     readDataThread[iDigi]->SetScopeMode(true);
     readDataThread[iDigi]->SetSaveData(false);
-
     readDataThread[iDigi]->start();
-
   }
 
   updateTraceThread->start();
@@ -250,18 +258,21 @@ void Scope::StartScope(){
 void Scope::StopScope(){
   if( !digi ) return;
 
+  // printf("------ Scope::%s \n", __func__);
   updateTraceThread->Stop();
   updateTraceThread->quit();
   updateTraceThread->exit();
 
-
   for( unsigned int iDigi = 0; iDigi < nDigi; iDigi ++){
+
+    if( readDataThread[iDigi]->isRunning() ){
+      readDataThread[iDigi]->Stop();
+      readDataThread[iDigi]->quit();
+      readDataThread[iDigi]->wait();
+    }
     digiMTX[iDigi].lock();
     digi[iDigi]->StopACQ();
     digiMTX[iDigi].unlock();
-
-    readDataThread[iDigi]->quit();
-    readDataThread[iDigi]->wait();
   }
 
   bnScopeStart->setEnabled(true);
@@ -271,11 +282,11 @@ void Scope::StopScope(){
 
   TellACQOnOff(false);
 
+  // printf("----- end of %s\n", __func__);
+
 }
 
 void Scope::UpdateScope(){
-
-  //printf("---- %s \n", __func__);
 
   if( !digi ) return;
 
@@ -283,9 +294,9 @@ void Scope::UpdateScope(){
   int ch2ns = digi[ID]->GetCh2ns();
   int factor = digi[ID]->IsDualTrace() ? 2 : 1;
 
+  digiMTX[ID].lock();
   Data * data = digi[ID]->GetData();
 
-  digiMTX[ID].lock();
   //leTriggerRate->setText(QString::number(data->TriggerRate[ch]) + " [" + QString::number(data->NumEventsDecoded[ch]) + "]");
   leTriggerRate->setText(QString::number(data->TriggerRate[ch]));
 
