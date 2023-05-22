@@ -1211,6 +1211,9 @@ void DigiSettingsPanel::SetUpChannelMask(){
          bnChEnableMask[ID][i]->setStyleSheet("");
          digi[ID]->SetBits(DPP::ChannelEnableMask, {1, i}, 0, i);
       }
+
+      if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) UpdatePHASetting();
+      if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) UpdatePSDSetting();
     });
   }
   
@@ -2379,8 +2382,6 @@ void DigiSettingsPanel::UpdatePanelFromMemory(){
   chkTraceRecording[ID]->setChecked(  Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::RecordTrace) );
   chkEnableExtra2[ID]->setChecked(    Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::EnableExtra2) );
 
-
-  
   if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) {
     chkDecimateTrace[ID]->setChecked(   Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::DecimateTrace) );
     chkDualTrace[ID]->setChecked(       Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::DualTrace) );
@@ -2562,8 +2563,6 @@ void DigiSettingsPanel::UpdatePanelFromMemory(){
     }
   }
 
-
-
   if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) UpdatePHASetting();
   if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) UpdatePSDSetting();
 
@@ -2641,6 +2640,8 @@ void DigiSettingsPanel::SyncSpinBox(RSpinBox *(&spb)[][MaxNChannels+1]){
     const int value = spb[ID][0]->value();
     for( int i = 1; i < nCh; i ++){
       if( spb[ID][i]->value() == value ) count++;
+
+      spb[ID][i]->setEnabled(bnChEnableMask[ID][i]->styleSheet() == "" ? false : true );
     }
 
     //printf("%d =? %d , %d, %f\n", count, nCh, value, spb[ID][0]->value());
@@ -2672,6 +2673,7 @@ void DigiSettingsPanel::SyncComboBox(RComboBox *(&cb)[][MaxNChannels+1]){
     const QString text = cb[ID][0]->currentText();
     for( int i = 1; i < nCh; i ++){
       if( cb[ID][i]->currentText() == text ) count++;
+      cb[ID][i]->setEnabled(bnChEnableMask[ID][i]->styleSheet() == "" ? false : true );
     }
 
     //printf("%d =? %d , %s\n", count, nCh, text.toStdString().c_str());
@@ -2700,6 +2702,7 @@ void DigiSettingsPanel::SyncCheckBox(QCheckBox *(&chk)[][MaxNChannels+1]){
     const Qt::CheckState state = chk[ID][0]->checkState();
     for( int i = 1; i < nCh; i ++){
       if( chk[ID][i]->checkState() == state ) count++;
+      chk[ID][i]->setEnabled(bnChEnableMask[ID][i]->styleSheet() == "" ? false : true );
     }
 
     //printf("%d =? %d , %s\n", count, nCh, text.toStdString().c_str());
@@ -2762,7 +2765,7 @@ void DigiSettingsPanel::UpdatePHASetting(){
 
   enableSignalSlot = false;
 
-  printf("------ %s \n", __func__);
+  //printf("------ %s \n", __func__);
 
   for( int ch = 0; ch < digi[ID]->GetNChannels(); ch ++){
     UpdateSpinBox(sbRecordLength[ID][ch],     DPP::RecordLength_G, ch);
@@ -2814,8 +2817,8 @@ void DigiSettingsPanel::UpdatePHASetting(){
     uint32_t vetoBit = digi[ID]->GetSettingFromMemory(DPP::VetoWidth, ch);
 
     UpdateComboBoxBit(cbVetoStep[ID][ch], vetoBit, DPP::Bit_VetoWidth::VetoStep);
-  }
 
+  }
 
   enableSignalSlot = true;
 
@@ -2885,7 +2888,7 @@ void DigiSettingsPanel::UpdatePSDSetting(){
 
   enableSignalSlot = false;
 
-  printf("------ %s \n", __func__);
+  //printf("------ %s \n", __func__);
 
   for(int ch = 0; ch < digi[ID]->GetNChannels(); ch ++){
 
