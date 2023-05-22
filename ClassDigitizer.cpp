@@ -406,6 +406,7 @@ void Digitizer::StopACQ(){
   AcqRun = false;
   data->ClearTriggerRate();
   data->ClearBuffer();
+  data->ZeroTotalFileSize();
 }
 
 unsigned int Digitizer::CalByteForBuffer(){

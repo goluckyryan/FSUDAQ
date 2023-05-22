@@ -2882,7 +2882,6 @@ void DigiSettingsPanel::SyncAllChannelsTab_PSD(){
     SyncComboBox(cbVetoMode);
     SyncComboBox(cbVetoStep);
 
-
 }
 void DigiSettingsPanel::UpdatePSDSetting(){
 

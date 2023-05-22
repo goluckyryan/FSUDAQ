@@ -184,14 +184,7 @@ public:
     plot = new Trace();
     dataSeries = new QLineSeries();
 
-    this->xMin = xMin;
-    this->xMax = xMax;
-    this->nBin = nBin;
-    dX = (xMax-xMin)/nBin;
-    for( int i = 0; i <= nBin; i++) {
-      dataSeries->append(xMin + i * dX, 0 );
-      dataSeries->append(xMin + i * dX, 0 );
-    }
+    Rebin(xMin, xMax, nBin);
 
     maxBin = -1;
     maxBinValue = 0;
@@ -233,6 +226,18 @@ public:
   }
 
   void SetColor(Qt::GlobalColor color){ areaSeries->setBrush(color);}
+
+  void Rebin(double xMin, double xMax, int nBin){
+    dataSeries->clear();
+    this->xMin = xMin;
+    this->xMax = xMax;
+    this->nBin = nBin;
+    dX = (xMax-xMin)/nBin;
+    for( int i = 0; i <= nBin; i++) {
+      dataSeries->append(xMin + i * dX, 0 );
+      dataSeries->append(xMin + i * dX, 0 );
+    }
+  }
 
   void Fill(double value){
 

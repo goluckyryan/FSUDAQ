@@ -80,7 +80,7 @@ class Data{
     void CloseSaveFile();
     unsigned int GetFileSize() const {return outFileSize;}
     uint64_t GetTotalFileSize() const {return FinishedOutFilesSize + outFileSize;}
-
+    void ZeroTotalFileSize() { FinishedOutFilesSize = 0; }
   
   protected:
     
