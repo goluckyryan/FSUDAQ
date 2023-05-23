@@ -223,6 +223,11 @@ inline bool Data::OpenSaveFile(std::string fileNamePrefix){
 
 inline void Data::SaveData(){
 
+  if( buffer == nullptr) {
+    printf("buffer is null.\n");
+    return;
+  }
+
   if( outFileSize > (unsigned int) MaxSaveFileSize){
     FinishedOutFilesSize += ftell(outFile);
     CloseSaveFile();

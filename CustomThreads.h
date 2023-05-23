@@ -25,7 +25,8 @@ public:
   void SetSaveData(bool onOff)  {this->isSaveData = onOff;}
   void SetScopeMode(bool onOff) {this->isScope = onOff;}
   void run(){
-    clock_gettime(CLOCK_REALTIME, &ta);
+    clock_gettime(CLOCK_REALTIME, &t0);
+    ta = t0;
     // clock_gettime(CLOCK_REALTIME, &t1);
     stop = false;
     do{
@@ -46,7 +47,7 @@ public:
         
         // clock_gettime(CLOCK_REALTIME, &t2);
         // if( t2.tv_sec - t1.tv_sec > 2 )  {
-        //   printf("----Digi-%d read %ld / sec.\n", ID, readCount / 2);
+        //   printf("----Digi-%d read %ld / sec.\n", ID, readCount / 3);
         //   readCount = 0;
         //   t1 = t2;
         // }
@@ -63,7 +64,8 @@ public:
         clock_gettime(CLOCK_REALTIME, &tb);
         if( tb.tv_sec - ta.tv_sec > 2 ) {
           digiMTX[ID].lock();
-          emit sendMsg("FileSize ("+ QString::number(digi->GetSerialNumber()) +"): " +  QString::number(digi->GetData()->GetTotalFileSize()/1024./1024., 'f', 4) + " MB");
+          emit sendMsg("FileSize ("+ QString::number(digi->GetSerialNumber()) +"): " +  QString::number(digi->GetData()->GetTotalFileSize()/1024./1024., 'f', 4) + " MB [" + QString::number(tb.tv_sec-t0.tv_sec) + " sec]");
+          //digi->GetData()->PrintStat();
           digiMTX[ID].unlock();
           ta = tb;
         }
@@ -78,7 +80,7 @@ private:
   Digitizer * digi; 
   bool stop;
   int ID;
-  timespec ta, tb, t1, t2;
+  timespec ta, tb, t1, t2, t0;
   bool isSaveData;
   bool isScope;
   unsigned long readCount;

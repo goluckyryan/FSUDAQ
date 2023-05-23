@@ -645,6 +645,7 @@ void MainWindow::StartACQ(){
     readDataThread[i]->SetSaveData(chkSaveData->isChecked());
     LogMsg("Digi-" + QString::number(digi[i]->GetSerialNumber()) + " is starting ACQ." );
     digi[i]->WriteRegister(DPP::SoftwareClear_W, 1);
+    digi[i]->GetData()->SetSaveWaveToMemory(false);
     digi[i]->StartACQ();
     readDataThread[i]->start();
   }
@@ -855,6 +856,8 @@ void MainWindow::OpenScope(){
   bnStartACQ->setEnabled(false);
   bnStopACQ->setEnabled(false);  
 
+  chkSaveData->setChecked(false);
+
 }
 
 //***************************************************************
@@ -897,6 +900,6 @@ void MainWindow::LogMsg(QString msg){
   }
   QScrollBar *v = logInfo->verticalScrollBar();
   v->setValue(v->maximum());
-  //qDebug() << outputStr;
+  qDebug() << outputStr;
   logInfo->repaint();
 }
