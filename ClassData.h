@@ -188,6 +188,7 @@ inline void Data::ClearData(){
 }
 
 inline void Data::ClearBuffer(){
+  printf("==== %s \n", __func__);
   delete buffer;
   buffer = nullptr;
   AllocatedSize = 0;

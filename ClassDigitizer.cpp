@@ -662,7 +662,7 @@ void Digitizer::ProgramSettingsToBoard(){
     if( DPPType == V1730_DPP_PSD_CODE ){
       for( int p = 0; p < (int) RegisterPSDList.size(); p++){
         if( RegisterPSDList[p].GetType() == RW::ReadWrite){
-          haha = RegisterPHAList[p];
+          haha = RegisterPSDList[p];
           WriteRegister(haha, GetSettingFromMemory(haha, ch), ch, false); 
           usleep(1 * 1000);
         }
@@ -731,13 +731,13 @@ int Digitizer::LoadSettingBinaryToMemory(std::string fileName){
     }else{
       /// load binary to memoery
       DPPType = fileDPP;
-      printf("DPPType in the file is %s(0x%X). \n", GetDPPString(fileDPP).c_str(), fileDPP);
+      printf("DPPType in the file is %s(0x%X). Board Type is %s \n", GetDPPString(fileDPP).c_str(), fileDPP, GetDPPString().c_str());
 
       settingFile = fopen(fileName.c_str(), "r");
       size_t dummy = fread( setting, SETTINGSIZE * sizeof(unsigned int), 1, settingFile);
       fclose (settingFile);
 
-      if( dummy == 0 ) printf("reach the end of file\n");
+      if( dummy != 0 ) printf("reach the end of file (read %ld).\n", dummy);
       
       uint32_t boardInfo = GetSettingFromMemory(DPP::BoardInfo_R);
       if( (boardInfo & 0xFF) == 0x0E ) ch2ns = 4.0;

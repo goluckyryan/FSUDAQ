@@ -194,7 +194,7 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
 
       bnClearBuffer = new QPushButton("Clear Buffer/FIFO", this);
       buttonLayout->addWidget(bnClearBuffer, rowID, 2);
-      connect(bnClearBuffer, &QPushButton::clicked, this, [=](){ digi[ID]->WriteRegister(DPP::SoftwareClear_W, 1);});
+      connect(bnClearBuffer, &QPushButton::clicked, this, [=](){ digi[ID]->WriteRegister(DPP::SoftwareClear_W, 1); UpdateBoardAndChannelsStatus();});
 
       bnLoadSettings = new QPushButton("Load Settings", this);
       buttonLayout->addWidget(bnLoadSettings, rowID, 3);
@@ -203,11 +203,11 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
       rowID ++; //---------------------------
       bnSendSoftwareTriggerSignal = new QPushButton("Send SW Trigger Signal", this);
       buttonLayout->addWidget(bnSendSoftwareTriggerSignal, rowID, 0);
-      connect(bnSendSoftwareTriggerSignal, &QPushButton::clicked, this, [=](){ digi[ID]->WriteRegister(DPP::SoftwareTrigger_W, 1);});
+      connect(bnSendSoftwareTriggerSignal, &QPushButton::clicked, this, [=](){ digi[ID]->WriteRegister(DPP::SoftwareTrigger_W, 1); UpdateBoardAndChannelsStatus();});
 
       bnSendSoftwareClockSyncSignal = new QPushButton("Send SW Clock-Sync Signal", this);
       buttonLayout->addWidget(bnSendSoftwareClockSyncSignal, rowID, 1);
-      connect(bnSendSoftwareClockSyncSignal, &QPushButton::clicked, this, [=](){ digi[ID]->WriteRegister(DPP::SoftwareClockSync_W, 1);});
+      connect(bnSendSoftwareClockSyncSignal, &QPushButton::clicked, this, [=](){ digi[ID]->WriteRegister(DPP::SoftwareClockSync_W, 1); UpdateBoardAndChannelsStatus();});
 
       bnSaveSettings = new QPushButton("Save Settings (bin)", this);
       buttonLayout->addWidget(bnSaveSettings, rowID, 2);
@@ -2226,7 +2226,7 @@ void DigiSettingsPanel::SetUpPSDChannel(){
     QTabWidget * othersTab = new QTabWidget(this);
     otherLayout->addWidget(othersTab);
 
-    QStringList tabName = {"Tab-1", "Test Pulse", "Veto", "Extra2"};
+    QStringList tabName = {"Tab-1", "Test Pulse", "Veto", "Extra"};
 
     const int nTab = tabName.count();
 
@@ -2285,7 +2285,7 @@ void DigiSettingsPanel::SetUpPSDChannel(){
 
         if( i == 3 ){
           if( ch == 0 ){
-            QLabel * lb2 = new QLabel("Extra2 Option [G]", this); lb2->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb2, 0, 2);
+            QLabel * lb2 = new QLabel("Extra Option [G]", this); lb2->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb2, 0, 2);
           }
           SetUpComboBoxBit(cbExtra2Option[ID][ch],  "", tabLayout, ch + 1, 1, DPP::PHA::Bit_DPPAlgorithmControl2::ListExtra2, DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::Extra2Option, 2, ch);
         }

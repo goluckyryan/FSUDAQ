@@ -432,6 +432,13 @@ void MainWindow::CloseDigitizers(){
   for(unsigned int i = 0; i < nDigi; i ++){
     digi[i]->CloseDigitizer();
     delete digi[i];
+
+    if(readDataThread[i]->isRunning()){
+      readDataThread[i]->Stop();
+      readDataThread[i]->quit();
+      readDataThread[i]->wait();
+    }
+
     delete readDataThread[i];
   }
   delete [] digi;
@@ -637,6 +644,7 @@ void MainWindow::StartACQ(){
     }
     readDataThread[i]->SetSaveData(chkSaveData->isChecked());
     LogMsg("Digi-" + QString::number(digi[i]->GetSerialNumber()) + " is starting ACQ." );
+    digi[i]->WriteRegister(DPP::SoftwareClear_W, 1);
     digi[i]->StartACQ();
     readDataThread[i]->start();
   }
