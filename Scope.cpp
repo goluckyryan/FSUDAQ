@@ -13,6 +13,8 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   this->nDigi = nDigi;
   this->readDataThread = readDataThread;
 
+  for( unsigned int i = 0; i < nDigi; i++){ traceOn[i] = digi[i]->IsRecordTrace();}
+
   setWindowTitle("Scope");
   setGeometry(0, 0, 1000, 800);  
   setWindowFlags( this->windowFlags() & ~Qt::WindowCloseButtonHint );
@@ -230,6 +232,7 @@ void Scope::StartScope(){
 
   for( unsigned int iDigi = 0; iDigi < nDigi; iDigi ++){
 
+    digi[iDigi]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, 1, -1);
     digi[iDigi]->GetData()->SetSaveWaveToMemory(true);
 
     digi[iDigi]->StartACQ();
@@ -243,6 +246,8 @@ void Scope::StartScope(){
     readDataThread[iDigi]->SetSaveData(false);
     readDataThread[iDigi]->start();
   }
+
+  emit UpdateOtherPanels();
 
   updateTraceThread->start();
 
@@ -273,7 +278,11 @@ void Scope::StopScope(){
     digiMTX[iDigi].lock();
     digi[iDigi]->StopACQ();
     digiMTX[iDigi].unlock();
+
+    digi[iDigi]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, traceOn[iDigi], -1);
   }
+
+  emit UpdateOtherPanels();
 
   bnScopeStart->setEnabled(true);
   bnScopeStop->setEnabled(false);
@@ -292,7 +301,7 @@ void Scope::UpdateScope(){
 
   int ch = cbScopeCh->currentIndex();
   int ch2ns = digi[ID]->GetCh2ns();
-  int factor = digi[ID]->IsDualTrace() ? 2 : 1;
+  int factor = digi[ID]->IsDualTrace_PHA() ? 2 : 1;
 
   digiMTX[ID].lock();
   Data * data = digi[ID]->GetData();
@@ -374,6 +383,7 @@ void Scope::SetUpComboBox(RComboBox * &cb, QString str, int row, int col, const 
     if( digi[ID]->GetErrorCode() == CAEN_DGTZ_Success ){
       SendLogMsg(msg + " | OK.");
       cb->setStyleSheet("");
+      emit UpdateOtherPanels();
     }else{
       SendLogMsg(msg + " | Fail.");
       cb->setStyleSheet("color:red;");
@@ -421,7 +431,7 @@ void Scope::SetUpSpinBox(RSpinBox * &sb, QString str, int row, int col, const Re
     uint32_t value = sb->value() / ch2ns / abs(para.GetPartialStep());
 
     if( para == DPP::RecordLength_G){
-      int factor = digi[ID]->IsDualTrace() ? 2 : 1;
+      int factor = digi[ID]->IsDualTrace_PHA() ? 2 : 1;
       value = value * factor;
     }
 
@@ -441,6 +451,7 @@ void Scope::SetUpSpinBox(RSpinBox * &sb, QString str, int row, int col, const Re
     if( digi[ID]->GetErrorCode() == CAEN_DGTZ_Success ){
       SendLogMsg(msg + " | OK.");
       sb->setStyleSheet("");
+      emit UpdateOtherPanels();
     }else{
       SendLogMsg(msg + " | Fail.");
       sb->setStyleSheet("color:red;");

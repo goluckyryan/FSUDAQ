@@ -37,11 +37,12 @@ public:
     event->accept();
   }
 
-private slots:
+public slots:
   void StartScope();
   void StopScope();
   void UpdateScope();
   void ReadSettingsFromBoard();
+  void UpdatePanelFromMomeory();
 
 signals:
 
@@ -49,6 +50,7 @@ signals:
   void SendLogMsg(const QString &msg);
   void TellACQOnOff(const bool onOff);
   void UpdateScaler();
+  void UpdateOtherPanels();
 
 private:
 
@@ -63,7 +65,6 @@ private:
 
   void UpdateComobox(RComboBox * &cb, const Reg para);
   void UpdateSpinBox(RSpinBox * &sb, const Reg para);
-  void UpdatePanelFromMomeory();
   void UpdatePHAPanel();
   void UpdatePSDPanel();
 
@@ -71,6 +72,7 @@ private:
   unsigned short nDigi;
   unsigned short ID; // the id of digi, index of cbScopeDigi
   int ch2ns;
+  bool traceOn[MaxNDigitizer];
 
   ReadDataThread ** readDataThread;   
   TimingThread * updateTraceThread;

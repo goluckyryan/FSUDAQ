@@ -152,10 +152,10 @@ class Digitizer{
     // bool IsEnabledAutoDataFlush()   {return (  GetSettingFromMemory(DPP::BoardConfiguration) & 0x1 );}
     // bool IsDecimateTrace()          {return ( (GetSettingFromMemory(DPP::BoardConfiguration) >>  1) & 0x1 );}
     // bool IsTriggerPropagate()       {return ( (GetSettingFromMemory(DPP::BoardConfiguration) >>  2) & 0x1 );}
-    bool IsDualTrace()              {return ( (GetSettingFromMemory(DPP::BoardConfiguration) >> 11) & 0x1 );}
+    bool IsDualTrace_PHA()           {return ( (GetSettingFromMemory(DPP::BoardConfiguration) >> 11) & 0x1 );}
     // unsigned short AnaProbe1Type()  {return ( (GetSettingFromMemory(DPP::BoardConfiguration) >> 12) & 0x3 );}
     // unsigned short AnaProbe2Type()  {return ( (GetSettingFromMemory(DPP::BoardConfiguration) >> 14) & 0x3 );}
-    // bool IsRecordTrace()            {return ( (GetSettingFromMemory(DPP::BoardConfiguration) >> 16) & 0x1 );}
+    bool IsRecordTrace()             {return ( (GetSettingFromMemory(DPP::BoardConfiguration) >> 16) & 0x1 );}
     // bool IsEnabledExtra2()          {return ( (GetSettingFromMemory(DPP::BoardConfiguration) >> 17) & 0x1 );}
     // bool IsRecordTimeStamp()        {return ( (GetSettingFromMemory(DPP::BoardConfiguration) >> 18) & 0x1 );}
     // bool IsRecordEnergy()           {return ( (GetSettingFromMemory(DPP::BoardConfiguration) >> 19) & 0x1 );}

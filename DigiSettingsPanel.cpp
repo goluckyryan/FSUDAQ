@@ -655,6 +655,7 @@ void DigiSettingsPanel::SetUpCheckBox(QCheckBox * &chkBox, QString label, QGridL
     digi[ID]->SetBits(para, bit, state ? 1 : 0, chID);
     if( para.IsCoupled() == true && chID >= 0 ) digi[ID]->SetBits(para, bit, state ? 1 : 0, chID%2 == 0 ? chID + 1 : chID - 1);
     UpdatePanelFromMemory();
+    emit UpdateOtherPanels();
   });
 
 }
@@ -683,6 +684,7 @@ void DigiSettingsPanel::SetUpComboBoxBit(RComboBox * &cb, QString label, QGridLa
     digi[ID]->SetBits(para, bit, cb->currentData().toUInt(), chID);
     if( para.IsCoupled() == true && chID >= 0  ) digi[ID]->SetBits(para, bit, cb->currentData().toUInt(), chID%2 == 0 ? chID + 1 : chID - 1);
     UpdatePanelFromMemory();
+    emit UpdateOtherPanels();
   });
 
 }
@@ -711,6 +713,7 @@ void DigiSettingsPanel::SetUpComboBox(RComboBox * &cb, QString label, QGridLayou
     digi[ID]->WriteRegister(para, cb->currentData().toUInt(), chID);
     if( para.IsCoupled() == true && chID >= 0  ) digi[ID]->WriteRegister(para, cb->currentData().toUInt(), chID%2 == 0 ? chID + 1 : chID - 1);
     UpdatePanelFromMemory();
+    emit UpdateOtherPanels();
   });
 
 }
@@ -762,18 +765,21 @@ void DigiSettingsPanel::SetUpSpinBox(RSpinBox * &sb, QString label, QGridLayout 
     if( para == DPP::ChannelDCOffset ){
       digi[ID]->WriteRegister(para, 0xFFFF * (1.0 - sb->value() / 100. ), chID);
       UpdatePanelFromMemory();
+      emit UpdateOtherPanels();
       return;
     }
 
     if( para == DPP::PSD::CFDSetting ){
       digi[ID]->SetBits(para, DPP::PSD::Bit_CFDSetting::CFDDealy, sb->value()/digi[ID]->GetCh2ns(), chID);
       UpdatePanelFromMemory();
+      emit UpdateOtherPanels();
       return;
     }
 
     if( para == DPP::DPPAlgorithmControl ){
       digi[ID]->SetBits(para, {5,0}, sb->value(), chID);
       UpdatePanelFromMemory();
+      emit UpdateOtherPanels();
       return;
     }
 
@@ -783,6 +789,7 @@ void DigiSettingsPanel::SetUpSpinBox(RSpinBox * &sb, QString label, QGridLayout 
     if( para.IsCoupled() == true  && chID >= 0 ) digi[ID]->WriteRegister(para, bit, chID%2 == 0 ? chID + 1 : chID - 1);
 
     UpdatePanelFromMemory();
+    emit UpdateOtherPanels();
   });
 
 }

@@ -61,6 +61,8 @@ private slots:
 
   void OpenCanvas();
 
+  void UpdateAllPanels(int panelID);
+
 private:
 
   Digitizer ** digi;

@@ -21,7 +21,7 @@ public:
   DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QString rawDataPath, QMainWindow * parent = nullptr);
   ~DigiSettingsPanel();
 
-private slots:
+public slots:
   void UpdatePanelFromMemory();
   void ReadSettingsFromBoard();
 
@@ -30,6 +30,7 @@ private slots:
 
 signals:
   void SendLogMsg(const QString &msg);
+  void UpdateOtherPanels();
 
 private:
 
@@ -67,7 +68,6 @@ private:
   void UpdatePSDSetting();
 
   void CheckRadioAndCheckedButtons();
-
 
   Digitizer ** digi;
   unsigned int nDigi;

@@ -8,8 +8,11 @@ INCLUDEPATH += .
 
 QT += core widgets charts
 
-QMAKE_CXXFLAGS += `root-config --cflags --glibs`
-LIBS += -lCAENDigitizer  `root-config --cflags --glibs`
+#QMAKE_CXXFLAGS += `root-config --cflags --glibs`
+#LIBS += -lCAENDigitizer  `root-config --cflags --glibs`
+
+#QMAKE_CXXFLAGS += -g
+LIBS += -lCAENDigitizer 
 
 # You can make your code fail to compile if you use deprecated APIs.
 # In order to do so, uncomment the following line.

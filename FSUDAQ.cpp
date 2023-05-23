@@ -393,6 +393,7 @@ void MainWindow::OpenDigitizers(){
     QCoreApplication::processEvents(); //to prevent Qt said application not responding.
   }
 
+  canvas = new Canvas(digi, nDigi);
   histThread = new TimingThread(this);
   histThread->SetWaitTimeinSec(0.5);
   connect(histThread, &TimingThread::timeUp, this, [=](){
@@ -660,7 +661,7 @@ void MainWindow::StartACQ(){
   }
   lbScalarACQStatus->setText("<font style=\"color: green;\"><b>ACQ On</b></font>");
 
-  //if( canvas != nullptr ) histThread->start();
+  if( canvas != nullptr ) histThread->start();
 
   bnStartACQ->setEnabled(false);
   bnStopACQ->setEnabled(true);
@@ -847,6 +848,9 @@ void MainWindow::OpenScope(){
     });
 
     connect(scope, &Scope::UpdateScaler, this, &MainWindow::UpdateScalar);
+
+    connect(scope, &Scope::UpdateOtherPanels, this, [=](){ UpdateAllPanels(1); });
+
     scope->show();
   }else{
     scope->show();
@@ -867,6 +871,8 @@ void MainWindow::OpenDigiSettings(){
   if( digiSettings == nullptr ) {
     digiSettings = new DigiSettingsPanel(digi, nDigi, rawDataPath);
     //connect(scope, &Scope::SendLogMsg, this, &MainWindow::LogMsg);
+    connect(digiSettings, &DigiSettingsPanel::UpdateOtherPanels, this, [=](){ UpdateAllPanels(2); });
+
     digiSettings->show();
   }else{
     digiSettings->show();
@@ -885,6 +891,24 @@ void MainWindow::OpenCanvas(){
   }else{
     canvas->show();
     canvas->activateWindow();
+  }
+
+}
+
+//***************************************************************
+//***************************************************************
+void MainWindow::UpdateAllPanels(int panelID){
+
+  //panelID is the source panel that call
+  // scope = 1;
+  // digiSetting = 2;
+
+  if( panelID == 1 ){ // from scope
+    if( digiSettings && digiSettings->isVisible() ) digiSettings->UpdatePanelFromMemory();
+  }
+
+  if( panelID == 2 ){
+    if(scope && scope->isVisible() ) scope->UpdatePanelFromMomeory();
   }
 
 }
