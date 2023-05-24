@@ -1221,6 +1221,8 @@ void DigiSettingsPanel::SetUpChannelMask(){
 
       if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) UpdatePHASetting();
       if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) UpdatePSDSetting();
+
+      emit UpdateOtherPanels();
     });
   }
   

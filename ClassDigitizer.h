@@ -103,8 +103,8 @@ class Digitizer{
     CAEN_DGTZ_BoardInfo_t GetBoardInfo()     const {return BoardInfo;}
     std::string GetModelName()               const {return BoardInfo.ModelName;}
     int         GetSerialNumber()            const {return BoardInfo.SerialNumber;}
-    int         GetChannelMask()             const {return channelMask;}
-    bool        GetChannelOnOff(unsigned ch) const {return (channelMask & ( 1 << ch) );} 
+    int         GetChannelMask()             { channelMask = GetSettingFromMemory(DPP::ChannelEnableMask); return channelMask;}
+    bool        GetChannelOnOff(unsigned ch) { channelMask = GetSettingFromMemory(DPP::ChannelEnableMask); return (channelMask & ( 1 << ch) );} 
     float       GetCh2ns()                   const {return ch2ns;}
     int         GetNChannels()               const {return NChannel;}
     int         GetHandle()                  const {return handle;}

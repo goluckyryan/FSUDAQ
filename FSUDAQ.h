@@ -17,6 +17,7 @@
 #include "Scope.h"
 #include "DigiSettingsPanel.h"
 #include "CanvasClass.h"
+#include "influxdb.h"
 
 //^#===================================================== MainWindow
 class MainWindow : public QMainWindow{
@@ -84,6 +85,9 @@ private:
   QPushButton * bnStopACQ;
 
   QPushButton * bnCanvas;
+
+  //@----- influx
+  InfluxDB * influx;
 
   //@----- log msg
   QPlainTextEdit * logInfo;

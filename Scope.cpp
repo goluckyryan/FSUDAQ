@@ -13,8 +13,6 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   this->nDigi = nDigi;
   this->readDataThread = readDataThread;
 
-  for( unsigned int i = 0; i < nDigi; i++){ traceOn[i] = digi[i]->IsRecordTrace();}
-
   setWindowTitle("Scope");
   setGeometry(0, 0, 1000, 800);  
   setWindowFlags( this->windowFlags() & ~Qt::WindowCloseButtonHint );
@@ -232,6 +230,8 @@ void Scope::StartScope(){
 
   for( unsigned int iDigi = 0; iDigi < nDigi; iDigi ++){
 
+    traceOn[iDigi] = digi[iDigi]->IsRecordTrace(); //remember setting
+
     digi[iDigi]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, 1, -1);
     digi[iDigi]->GetData()->SetSaveWaveToMemory(true);
 
@@ -300,6 +300,9 @@ void Scope::UpdateScope(){
   if( !digi ) return;
 
   int ch = cbScopeCh->currentIndex();
+
+  if( digi[ID]->GetChannelOnOff(ch) == false) return;
+
   int ch2ns = digi[ID]->GetCh2ns();
   int factor = digi[ID]->IsDualTrace_PHA() ? 2 : 1;
 
@@ -714,6 +717,8 @@ void Scope::UpdatePanelFromMomeory(){
 
   if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) UpdatePHAPanel();
   if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) UpdatePSDPanel();
+
+  settingGroup->setEnabled(digi[ID]->GetChannelOnOff(ch));
 
 }
 

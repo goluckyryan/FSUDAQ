@@ -12,6 +12,10 @@
 #include <QFileDialog>
 #include <QScrollArea>
 
+//TODO make the address in config file
+const std::string influxIP = "https://fsunuc.physics.fsu.edu/influx/";
+const std::string dataBaseName = "testing";
+
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
 
   setWindowTitle("FSU DAQ");
@@ -166,6 +170,43 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
   //=========== disable widget
   WaitForDigitizersOpen(true);
 
+
+  {//^====================== database
+    influx = new InfluxDB(influxIP, false);
+
+      if( influx->TestingConnection() ){
+        LogMsg("<font style=\"color : green;\"> InfluxDB URL (<b>"+ QString::fromStdString(influxIP) + "</b>) is Valid </font>");
+        //==== chck database exist
+        LogMsg("List of database:");
+        std::vector<std::string> databaseList = influx->GetDatabaseList();
+        bool foundDatabase = false;
+        for( int i = 0; i < (int) databaseList.size(); i++){
+          if( databaseList[i] == dataBaseName ) foundDatabase = true;
+          //LogMsg(QString::number(i) + "|" + QString::fromStdString(databaseList[i]));
+        }
+        if( foundDatabase ){
+          LogMsg("<font style=\"color : green;\"> Database <b>" + QString::fromStdString(dataBaseName) + "</b> found.");
+          influx->AddDataPoint("ProgramStart value=1");
+          influx->WriteData(dataBaseName);
+          influx->ClearDataPointsBuffer();
+          if( influx->IsWriteOK() ){
+            LogMsg("<font style=\"color : green;\">test write database OK.</font>");
+          }else{
+            LogMsg("<font style=\"color : red;\">test write database FAIL.</font>");
+          }
+        }else{
+          LogMsg("<font style=\"color : red;\"> Database <b>" + QString::fromStdString(dataBaseName) + "</b> NOT found.");
+          delete influx;
+          influx = nullptr;
+        }
+    }else{
+      LogMsg("<font style=\"color : red;\"> InfluxDB URL (<b>"+ QString::fromStdString(influxIP) + "</b>) is NOT Valid </font>");
+      delete influx;
+      influx = nullptr;
+    }
+
+  }
+
 }
 
 MainWindow::~MainWindow(){
@@ -186,6 +227,8 @@ MainWindow::~MainWindow(){
     scalarThread->exit();
     delete scalarThread;
   }
+
+  delete influx;
 
 }
 
@@ -497,7 +540,7 @@ void MainWindow::SetupScalar(){
   scalarThread = new TimingThread();
   connect(scalarThread, &TimingThread::timeUp, this, &MainWindow::UpdateScalar);
 
-  scalar->setGeometry(0, 0, 10 + nDigi * 200, 110 + MaxNChannels * 25);
+  scalar->setGeometry(0, 0, 10 + nDigi * 200, 110 + MaxNChannels * 20);
 
   if( lbLastUpdateTime == nullptr ){
     lbLastUpdateTime = new QLabel("Last update : NA", scalar);
@@ -534,6 +577,7 @@ void MainWindow::SetupScalar(){
     rowID = 2;
     leTrigger[iDigi] = new QLineEdit *[digi[iDigi]->GetNChannels()];
     leAccept[iDigi] = new QLineEdit *[digi[iDigi]->GetNChannels()];
+    uint32_t chMask =  digi[iDigi]->GetChannelMask();
     for( int ch = 0; ch < MaxNChannels; ch++){
 
       if( ch == 0 ){
@@ -552,7 +596,6 @@ void MainWindow::SetupScalar(){
       }
     
       rowID ++;
-      
       leTrigger[iDigi][ch] = new QLineEdit(scalar);
       leTrigger[iDigi][ch]->setReadOnly(true);
       leTrigger[iDigi][ch]->setAlignment(Qt::AlignRight);
@@ -562,6 +605,10 @@ void MainWindow::SetupScalar(){
       leAccept[iDigi][ch]->setReadOnly(true);
       leAccept[iDigi][ch]->setAlignment(Qt::AlignRight);
       leAccept[iDigi][ch]->setStyleSheet("background-color: #F0F0F0;");
+
+      leTrigger[iDigi][ch]->setEnabled( (chMask >> ch) & 0x1 );
+      leAccept[iDigi][ch]->setEnabled( (chMask >> ch) & 0x1 );
+      
       scalarLayout->addWidget(leAccept[iDigi][ch], rowID, 2*iDigi+2);
     }
   }
@@ -603,7 +650,7 @@ void MainWindow::OpenScalar(){
 void MainWindow::UpdateScalar(){
   if( digi == nullptr ) return;
   if( scalar == nullptr ) return;
-  if( !scalar->isVisible() ) return;
+  //if( !scalar->isVisible() ) return;
   
   lbLastUpdateTime->setText("Last update: " + QDateTime::currentDateTime().toString("MM.dd hh:mm:ss"));
 
@@ -611,11 +658,24 @@ void MainWindow::UpdateScalar(){
   for( unsigned int iDigi = 0; iDigi < nDigi; iDigi++){
     digiMTX[iDigi].lock();
     for( int i = 0; i < digi[iDigi]->GetNChannels(); i++){
-      //printf(" %3d %2d | %7.2f %7.2f \n", digi[iDigi]->GetSerialNumber(), i, digi[iDigi]->GetData()->TriggerRate[i], digi[iDigi]->GetData()->NonPileUpRate[i]);
-      leTrigger[iDigi][i]->setText(QString::number(digi[iDigi]->GetData()->TriggerRate[i], 'f', 2));
-      leAccept[iDigi][i]->setText(QString::number(digi[iDigi]->GetData()->NonPileUpRate[i], 'f', 2));
+      if( digi[iDigi]->GetChannelOnOff(i) == true ) {
+        //printf(" %3d %2d | %7.2f %7.2f \n", digi[iDigi]->GetSerialNumber(), i, digi[iDigi]->GetData()->TriggerRate[i], digi[iDigi]->GetData()->NonPileUpRate[i]);
+        leTrigger[iDigi][i]->setText(QString::number(digi[iDigi]->GetData()->TriggerRate[i], 'f', 2));
+        leAccept[iDigi][i]->setText(QString::number(digi[iDigi]->GetData()->NonPileUpRate[i], 'f', 2));
+
+        if( influx ){
+          influx->AddDataPoint("Rate,Bd="+std::to_string(digi[iDigi]->GetSerialNumber()) + ",Ch=" + QString::number(i).rightJustified(2, '0').toStdString() + " value=" +  QString::number(digi[iDigi]->GetData()->TriggerRate[i], 'f', 2).toStdString());
+        }
+
+      }
     }
     digiMTX[iDigi].unlock();
+  }
+
+
+  if( influx ){
+    influx->WriteData(dataBaseName);
+    influx->ClearDataPointsBuffer();
   }
 
 }
@@ -909,6 +969,16 @@ void MainWindow::UpdateAllPanels(int panelID){
 
   if( panelID == 2 ){
     if(scope && scope->isVisible() ) scope->UpdatePanelFromMomeory();
+
+    if(scalar) {
+      for( unsigned int iDigi = 0; iDigi < nDigi; iDigi++){
+        uint32_t chMask =  digi[iDigi]->GetChannelMask();
+        for( int i = 0; i < digi[iDigi]->GetNChannels(); i++){
+          leTrigger[iDigi][i]->setEnabled( (chMask >> i) & 0x1 );
+          leAccept[iDigi][i]->setEnabled( (chMask >> i) & 0x1 );
+        }
+      } 
+    }
   }
 
 }

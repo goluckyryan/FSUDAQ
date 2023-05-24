@@ -12,7 +12,7 @@ QT += core widgets charts
 #LIBS += -lCAENDigitizer  `root-config --cflags --glibs`
 
 #QMAKE_CXXFLAGS += -g
-LIBS += -lCAENDigitizer 
+LIBS += -lCAENDigitizer -lcurl
 
 # You can make your code fail to compile if you use deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -30,11 +30,13 @@ HEADERS += ClassData.h \
            FSUDAQ.h \
            macro.h \
            RegisterAddress.h \
+           influxdb.h\
            Scope.h \
            CanvasClass.h
 SOURCES += ClassDigitizer.cpp \
            DigiSettingsPanel.cpp \
            FSUDAQ.cpp \
            main.cpp \
+           influxdb.cpp\
            Scope.cpp \
            CanvasClass.cpp
