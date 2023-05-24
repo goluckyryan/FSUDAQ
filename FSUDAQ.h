@@ -64,6 +64,8 @@ private slots:
 
   void UpdateAllPanels(int panelID);
 
+  void SetUpInflux();
+
 private:
 
   Digitizer ** digi;
@@ -74,6 +76,9 @@ private:
   QString prefix;
   unsigned int runID;
   unsigned int elogID;
+  QString influxIP;
+  QString dataBaseName;
+  QString elogIP;
 
   QPushButton * bnOpenDigitizers;
   QPushButton * bnCloseDigitizers;
@@ -88,6 +93,13 @@ private:
 
   //@----- influx
   InfluxDB * influx;
+
+  QLineEdit * leInfluxIP;
+  QLineEdit * leDatabaseName;
+  QPushButton * bnLock;
+  
+  //@----- Elog
+  QLineEdit * leElogIP;
 
   //@----- log msg
   QPlainTextEdit * logInfo;

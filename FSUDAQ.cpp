@@ -12,10 +12,6 @@
 #include <QFileDialog>
 #include <QScrollArea>
 
-//TODO make the address in config file
-const std::string influxIP = "https://fsunuc.physics.fsu.edu/influx/";
-const std::string dataBaseName = "testing";
-
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
 
   setWindowTitle("FSU DAQ");
@@ -44,20 +40,92 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     connect(bnOpenDigitizers, &QPushButton::clicked, this, &MainWindow::OpenDigitizers);
     
     bnCloseDigitizers = new QPushButton("Close Digitizers", this);
-    layout->addWidget(bnCloseDigitizers, 0, 1);
+    layout->addWidget(bnCloseDigitizers, 1, 0);
     connect(bnCloseDigitizers, &QPushButton::clicked, this, &MainWindow::CloseDigitizers);
 
-    bnOpenScope = new QPushButton("Open Scope", this);
-    layout->addWidget(bnOpenScope, 1, 0);
-    connect(bnOpenScope, &QPushButton::clicked, this, &MainWindow::OpenScope);
-
     bnDigiSettings = new QPushButton("Digitizers Settings", this);
-    layout->addWidget(bnDigiSettings, 1, 1);
+    layout->addWidget(bnDigiSettings, 0, 1);
     connect(bnDigiSettings, &QPushButton::clicked, this, &MainWindow::OpenDigiSettings);
 
+    bnOpenScope = new QPushButton("Open Scope", this);
+    layout->addWidget(bnOpenScope, 1, 1);
+    connect(bnOpenScope, &QPushButton::clicked, this, &MainWindow::OpenScope);
+
     bnCanvas = new QPushButton("Online 1D Histograms", this);
-    layout->addWidget(bnCanvas, 2, 0);
+    layout->addWidget(bnCanvas, 1, 2);
     connect(bnCanvas, &QPushButton::clicked, this, &MainWindow::OpenCanvas);
+
+  }
+
+  {//^====================== influx and Elog
+    QGroupBox * otherBox = new QGroupBox("Misc.", mainLayoutWidget);
+    layoutMain->addWidget(otherBox);
+    QGridLayout * layout = new QGridLayout(otherBox);
+    layout->setSpacing(2);
+
+
+    QLabel * lbInfluxIP = new QLabel("Influx IP : ", this);
+    lbInfluxIP->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+    layout->addWidget(lbInfluxIP, 0, 0);
+
+    leInfluxIP = new QLineEdit(this);
+    leInfluxIP->setReadOnly(true);
+    layout->addWidget(leInfluxIP, 0, 1);
+
+    QLabel * lbDatabaseName = new QLabel("Database Name : ", this);
+    lbDatabaseName->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+    layout->addWidget(lbDatabaseName, 0, 2);
+
+    leDatabaseName = new QLineEdit(this);
+    leDatabaseName->setReadOnly(true);
+    layout->addWidget(leDatabaseName, 0, 3);
+
+
+    QLabel * lbElogIP = new QLabel("Elog IP : ", this);
+    lbElogIP->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+    layout->addWidget(lbElogIP, 1, 0);
+
+    leElogIP = new QLineEdit(this);
+    leElogIP->setReadOnly(true);
+    layout->addWidget(leElogIP, 1, 1);
+
+    bnLock = new QPushButton("Unlock", this);
+    bnLock->setChecked(true);
+    layout->addWidget(bnLock, 1, 3);
+
+    connect(bnLock, &QPushButton::clicked, this, [=](){
+      if( leInfluxIP->isReadOnly() ){
+        bnLock->setText("Lock and Set");
+
+        leInfluxIP->setReadOnly(false);
+        leDatabaseName->setReadOnly(false);
+        leElogIP->setReadOnly(false);
+
+        leInfluxIP->setStyleSheet("color : blue;");
+        leDatabaseName->setStyleSheet("color : blue;");
+        leElogIP->setStyleSheet("color : blue;");
+
+      }else{
+        bnLock->setText("Unlock");
+
+        leInfluxIP->setReadOnly(true);
+        leDatabaseName->setReadOnly(true);
+        leElogIP->setReadOnly(true);
+
+        leInfluxIP->setStyleSheet("");
+        leDatabaseName->setStyleSheet("");
+        leElogIP->setStyleSheet("");
+
+        influxIP = leInfluxIP->text();
+        dataBaseName = leDatabaseName->text();
+        elogIP = leElogIP->text();
+
+        SaveProgramSettings();
+
+        SetUpInflux();
+      }
+
+    });
 
   }
 
@@ -150,7 +218,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     layoutMain->setStretchFactor(box3, 1);
     QVBoxLayout * layout3 = new QVBoxLayout(box3);
     logInfo = new QPlainTextEdit(this);
-    logInfo->isReadOnly();
+    logInfo->setReadOnly(true);
     QFont font; 
     font.setFamily("Courier New");
     logInfo->setFont(font);
@@ -170,42 +238,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
   //=========== disable widget
   WaitForDigitizersOpen(true);
 
-
-  {//^====================== database
-    influx = new InfluxDB(influxIP, false);
-
-      if( influx->TestingConnection() ){
-        LogMsg("<font style=\"color : green;\"> InfluxDB URL (<b>"+ QString::fromStdString(influxIP) + "</b>) is Valid </font>");
-        //==== chck database exist
-        LogMsg("List of database:");
-        std::vector<std::string> databaseList = influx->GetDatabaseList();
-        bool foundDatabase = false;
-        for( int i = 0; i < (int) databaseList.size(); i++){
-          if( databaseList[i] == dataBaseName ) foundDatabase = true;
-          //LogMsg(QString::number(i) + "|" + QString::fromStdString(databaseList[i]));
-        }
-        if( foundDatabase ){
-          LogMsg("<font style=\"color : green;\"> Database <b>" + QString::fromStdString(dataBaseName) + "</b> found.");
-          influx->AddDataPoint("ProgramStart value=1");
-          influx->WriteData(dataBaseName);
-          influx->ClearDataPointsBuffer();
-          if( influx->IsWriteOK() ){
-            LogMsg("<font style=\"color : green;\">test write database OK.</font>");
-          }else{
-            LogMsg("<font style=\"color : red;\">test write database FAIL.</font>");
-          }
-        }else{
-          LogMsg("<font style=\"color : red;\"> Database <b>" + QString::fromStdString(dataBaseName) + "</b> NOT found.");
-          delete influx;
-          influx = nullptr;
-        }
-    }else{
-      LogMsg("<font style=\"color : red;\"> InfluxDB URL (<b>"+ QString::fromStdString(influxIP) + "</b>) is NOT Valid </font>");
-      delete influx;
-      influx = nullptr;
-    }
-
-  }
+  SetUpInflux();
 
 }
 
@@ -247,6 +280,8 @@ void MainWindow::OpenDataPath(){
     leDataPath->clear();
   }
 
+  SaveProgramSettings();
+
 }
 
 void MainWindow::LoadProgramSettings(){
@@ -266,12 +301,19 @@ void MainWindow::LoadProgramSettings(){
       if( line.left(6) == "//----") break;
 
       if( count == 0 ) rawDataPath = line;
+      if( count == 1 ) influxIP = line;
+      if( count == 2 ) dataBaseName = line;
+      if( count == 3 ) elogIP = line;
+
       count ++;
       line = in.readLine();
     }
 
     //looking for the lastRun.sh for 
     leDataPath->setText(rawDataPath);
+    leInfluxIP->setText(influxIP);
+    leDatabaseName->setText(dataBaseName);
+    leElogIP->setText(elogIP);
 
     //check is rawDataPath exist, if not, create one
     QDir rawDataDir;
@@ -298,7 +340,10 @@ void MainWindow::SaveProgramSettings(){
   file.open(QIODevice::Text | QIODevice::WriteOnly);
 
   file.write((rawDataPath+"\n").toStdString().c_str());
-  file.write("//------------end of file.");
+  file.write((influxIP+"\n").toStdString().c_str());
+  file.write((dataBaseName+"\n").toStdString().c_str());
+  file.write((elogIP+"\n").toStdString().c_str());
+  file.write("//------------end of file.\n");
   
   file.close();
   LogMsg("Saved program settings to <b>"+ programSettingsFilePath + "<b>.");
@@ -672,9 +717,8 @@ void MainWindow::UpdateScalar(){
     digiMTX[iDigi].unlock();
   }
 
-
   if( influx ){
-    influx->WriteData(dataBaseName);
+    influx->WriteData(dataBaseName.toStdString());
     influx->ClearDataPointsBuffer();
   }
 
@@ -979,6 +1023,52 @@ void MainWindow::UpdateAllPanels(int panelID){
         }
       } 
     }
+  }
+
+}
+
+//***************************************************************
+//***************************************************************
+void MainWindow::SetUpInflux(){
+
+  if( influxIP == "" ) return;
+
+  if( influx ) {
+    delete influx;
+    influx = nullptr;
+  }
+
+  influx = new InfluxDB(influxIP.toStdString(), false);
+
+  if( influx->TestingConnection() ){
+    LogMsg("<font style=\"color : green;\"> InfluxDB URL (<b>"+ influxIP + "</b>) is Valid </font>");
+    //==== chck database exist
+    //LogMsg("List of database:");
+    std::vector<std::string> databaseList = influx->GetDatabaseList();
+    bool foundDatabase = false;
+    for( int i = 0; i < (int) databaseList.size(); i++){
+      if( databaseList[i] == dataBaseName.toStdString() ) foundDatabase = true;
+      //LogMsg(QString::number(i) + "|" + QString::fromStdString(databaseList[i]));
+    }
+    if( foundDatabase ){
+      LogMsg("<font style=\"color : green;\"> Database <b>" + dataBaseName + "</b> found.");
+      influx->AddDataPoint("ProgramStart value=1");
+      influx->WriteData(dataBaseName.toStdString());
+      influx->ClearDataPointsBuffer();
+      if( influx->IsWriteOK() ){
+        LogMsg("<font style=\"color : green;\">test write database OK.</font>");
+      }else{
+        LogMsg("<font style=\"color : red;\">test write database FAIL.</font>");
+      }
+    }else{
+      LogMsg("<font style=\"color : red;\"> Database <b>" + dataBaseName + "</b> NOT found.");
+      delete influx;
+      influx = nullptr;
+    }
+  }else{
+    LogMsg("<font style=\"color : red;\"> InfluxDB URL (<b>"+ influxIP + "</b>) is NOT Valid </font>");
+    delete influx;
+    influx = nullptr;
   }
 
 }
