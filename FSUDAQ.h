@@ -66,6 +66,10 @@ private slots:
 
   void SetUpInflux();
 
+  void CheckElog();
+  void WriteElog(QString htmlText, QString subject, QString category, int runNumber);
+  void AppendElog(QString appendHtmlText);
+
 private:
 
   Digitizer ** digi;
@@ -75,10 +79,7 @@ private:
   QString rawDataPath;
   QString prefix;
   unsigned int runID;
-  unsigned int elogID;
-  QString influxIP;
-  QString dataBaseName;
-  QString elogIP;
+  int elogID;
 
   QPushButton * bnOpenDigitizers;
   QPushButton * bnCloseDigitizers;
@@ -94,12 +95,19 @@ private:
   //@----- influx
   InfluxDB * influx;
 
+  QString influxIP;
+  QString dataBaseName;
   QLineEdit * leInfluxIP;
   QLineEdit * leDatabaseName;
   QPushButton * bnLock;
   
   //@----- Elog
+  QString elogIP;
+  QString elogName;
+  QString elogUser;
+  QString elogPWD;
   QLineEdit * leElogIP;
+  QLineEdit * leElogName;
 
   //@----- log msg
   QPlainTextEdit * logInfo;

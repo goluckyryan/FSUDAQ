@@ -11,7 +11,7 @@ QT += core widgets charts
 #QMAKE_CXXFLAGS += `root-config --cflags --glibs`
 #LIBS += -lCAENDigitizer  `root-config --cflags --glibs`
 
-#QMAKE_CXXFLAGS += -g
+QMAKE_CXXFLAGS += -g
 LIBS += -lCAENDigitizer -lcurl
 
 # You can make your code fail to compile if you use deprecated APIs.

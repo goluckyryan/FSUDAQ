@@ -11,6 +11,8 @@
 #include <QDialog>
 #include <QFileDialog>
 #include <QScrollArea>
+#include <QProcess>
+#include <QMessageBox>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
 
@@ -58,40 +60,48 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
   }
 
   {//^====================== influx and Elog
-    QGroupBox * otherBox = new QGroupBox("Misc.", mainLayoutWidget);
+    QGroupBox * otherBox = new QGroupBox("Database and Elog", mainLayoutWidget);
     layoutMain->addWidget(otherBox);
     QGridLayout * layout = new QGridLayout(otherBox);
-    layout->setSpacing(2);
+    layout->setVerticalSpacing(1);
 
+    int rowID = 0;
+    bnLock = new QPushButton("Unlock", this);
+    bnLock->setChecked(true);
+    layout->addWidget(bnLock, rowID, 0);
 
     QLabel * lbInfluxIP = new QLabel("Influx IP : ", this);
     lbInfluxIP->setAlignment(Qt::AlignRight | Qt::AlignCenter);
-    layout->addWidget(lbInfluxIP, 0, 0);
+    layout->addWidget(lbInfluxIP, rowID, 1);
 
     leInfluxIP = new QLineEdit(this);
     leInfluxIP->setReadOnly(true);
-    layout->addWidget(leInfluxIP, 0, 1);
+    layout->addWidget(leInfluxIP, rowID, 2);
 
     QLabel * lbDatabaseName = new QLabel("Database Name : ", this);
     lbDatabaseName->setAlignment(Qt::AlignRight | Qt::AlignCenter);
-    layout->addWidget(lbDatabaseName, 0, 2);
+    layout->addWidget(lbDatabaseName, rowID, 3);
 
     leDatabaseName = new QLineEdit(this);
     leDatabaseName->setReadOnly(true);
-    layout->addWidget(leDatabaseName, 0, 3);
+    layout->addWidget(leDatabaseName, rowID, 4);
 
-
+    rowID ++;
     QLabel * lbElogIP = new QLabel("Elog IP : ", this);
     lbElogIP->setAlignment(Qt::AlignRight | Qt::AlignCenter);
-    layout->addWidget(lbElogIP, 1, 0);
+    layout->addWidget(lbElogIP, rowID, 1);
 
     leElogIP = new QLineEdit(this);
     leElogIP->setReadOnly(true);
-    layout->addWidget(leElogIP, 1, 1);
+    layout->addWidget(leElogIP, rowID, 2);
 
-    bnLock = new QPushButton("Unlock", this);
-    bnLock->setChecked(true);
-    layout->addWidget(bnLock, 1, 3);
+    QLabel * lbElogName = new QLabel("Elog Name : ", this);
+    lbElogName->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+    layout->addWidget(lbElogName, rowID, 3);
+
+    leElogName = new QLineEdit(this);
+    leElogName->setReadOnly(true);
+    layout->addWidget(leElogName, rowID, 4);
 
     connect(bnLock, &QPushButton::clicked, this, [=](){
       if( leInfluxIP->isReadOnly() ){
@@ -100,10 +110,17 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
         leInfluxIP->setReadOnly(false);
         leDatabaseName->setReadOnly(false);
         leElogIP->setReadOnly(false);
+        leElogName->setReadOnly(false);
+
+        leInfluxIP->setEnabled(true);
+        leDatabaseName->setEnabled(true);
+        leElogIP->setEnabled(true);
+        leElogName->setEnabled(true);
 
         leInfluxIP->setStyleSheet("color : blue;");
         leDatabaseName->setStyleSheet("color : blue;");
         leElogIP->setStyleSheet("color : blue;");
+        leElogName->setStyleSheet("color : blue;");
 
       }else{
         bnLock->setText("Unlock");
@@ -111,18 +128,23 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
         leInfluxIP->setReadOnly(true);
         leDatabaseName->setReadOnly(true);
         leElogIP->setReadOnly(true);
+        leElogName->setReadOnly(true);
 
         leInfluxIP->setStyleSheet("");
         leDatabaseName->setStyleSheet("");
         leElogIP->setStyleSheet("");
+        leElogName->setStyleSheet("");
 
         influxIP = leInfluxIP->text();
         dataBaseName = leDatabaseName->text();
         elogIP = leElogIP->text();
+        elogName = leElogName->text();
 
         SaveProgramSettings();
 
         SetUpInflux();
+
+        if( elogName != "" ) CheckElog();
       }
 
     });
@@ -232,6 +254,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
   prefix = "temp";
   runID = 0;
   elogID = 0;
+  elogName = "";
+  elogUser = "";
+  elogPWD = "";
+  influxIP = "";
+  dataBaseName = "";
   programSettingsFilePath = QDir::current().absolutePath() + "/programSettings.txt";
   LoadProgramSettings();
 
@@ -239,6 +266,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
   WaitForDigitizersOpen(true);
 
   SetUpInflux();
+
+  CheckElog();
 
 }
 
@@ -276,8 +305,12 @@ void MainWindow::OpenDataPath(){
   //qDebug() << fileDialog.selectedFiles();
   if( result > 0 ) {
     leDataPath->setText(fileDialog.selectedFiles().at(0));
+    rawDataPath = leDataPath->text();
+    bnStartACQ->setEnabled(true);
   }else{
     leDataPath->clear();
+    rawDataPath = "";
+    bnStartACQ->setEnabled(false);
   }
 
   SaveProgramSettings();
@@ -304,6 +337,9 @@ void MainWindow::LoadProgramSettings(){
       if( count == 1 ) influxIP = line;
       if( count == 2 ) dataBaseName = line;
       if( count == 3 ) elogIP = line;
+      if( count == 4 ) elogName = line;
+      if( count == 5 ) elogUser = line;
+      if( count == 6 ) elogPWD = line;
 
       count ++;
       line = in.readLine();
@@ -314,6 +350,17 @@ void MainWindow::LoadProgramSettings(){
     leInfluxIP->setText(influxIP);
     leDatabaseName->setText(dataBaseName);
     leElogIP->setText(elogIP);
+    leElogName->setText(elogName);
+
+    logMsgHTMLMode = false;
+    LogMsg("Raw Data Path : " + rawDataPath);
+    LogMsg("    Influx IP : " + influxIP);
+    LogMsg("Database Name : " + dataBaseName);
+    LogMsg("      Elog IP : " + elogIP);
+    LogMsg("    Elog Name : " + elogName);
+    LogMsg("    Elog User : " + elogUser);
+    LogMsg("     Elog PWD : " + elogPWD);
+    logMsgHTMLMode = true;
 
     //check is rawDataPath exist, if not, create one
     QDir rawDataDir;
@@ -343,6 +390,9 @@ void MainWindow::SaveProgramSettings(){
   file.write((influxIP+"\n").toStdString().c_str());
   file.write((dataBaseName+"\n").toStdString().c_str());
   file.write((elogIP+"\n").toStdString().c_str());
+  file.write((elogName+"\n").toStdString().c_str());
+  file.write((elogUser+"\n").toStdString().c_str());
+  file.write((elogPWD+"\n").toStdString().c_str());
   file.write("//------------end of file.\n");
   
   file.close();
@@ -493,6 +543,8 @@ void MainWindow::OpenDigitizers(){
 
   WaitForDigitizersOpen(false);
   bnStopACQ->setEnabled(false);
+
+  if( rawDataPath == "" ) bnStartACQ->setEnabled(false);
 
   SetupScalar();
 
@@ -700,8 +752,11 @@ void MainWindow::UpdateScalar(){
   lbLastUpdateTime->setText("Last update: " + QDateTime::currentDateTime().toString("MM.dd hh:mm:ss"));
 
   //printf("----------------------\n");
+  uint64_t totalFileSize = 0;
   for( unsigned int iDigi = 0; iDigi < nDigi; iDigi++){
     digiMTX[iDigi].lock();
+
+    if( chkSaveData->isChecked() ) totalFileSize += digi[iDigi]->GetData()->GetTotalFileSize();
     for( int i = 0; i < digi[iDigi]->GetNChannels(); i++){
       if( digi[iDigi]->GetChannelOnOff(i) == true ) {
         //printf(" %3d %2d | %7.2f %7.2f \n", digi[iDigi]->GetSerialNumber(), i, digi[iDigi]->GetData()->TriggerRate[i], digi[iDigi]->GetData()->NonPileUpRate[i]);
@@ -718,6 +773,7 @@ void MainWindow::UpdateScalar(){
   }
 
   if( influx ){
+    if( chkSaveData->isChecked() ) influx->AddDataPoint("FileSize value=" + std::to_string(totalFileSize));
     influx->WriteData(dataBaseName.toStdString());
     influx->ClearDataPointsBuffer();
   }
@@ -726,7 +782,6 @@ void MainWindow::UpdateScalar(){
 
 //***************************************************************
 //***************************************************************
-
 void MainWindow::StartACQ(){
   if( digi == nullptr ) return;
 
@@ -770,13 +825,31 @@ void MainWindow::StartACQ(){
   bnStartACQ->setEnabled(false);
   bnStopACQ->setEnabled(true);
   bnOpenScope->setEnabled(false);
+
+  {//^=== elog and database
+    if( influx ){
+      influx->AddDataPoint("RunID value=" + std::to_string(runID));
+      influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=1");
+      influx->WriteData(dataBaseName.toStdString());
+      influx->ClearDataPointsBuffer();
+    }
+
+    if( elogID > 0 && chkSaveData->isChecked() ){
+      QString msg = "================================= Run-" + QString::number(runID).rightJustified(3, '0') + "<p>" 
+                    + QDateTime::currentDateTime().toString("MM.dd hh:mm:ss") + "<p>"
+                    + startComment + "<p>"
+                    "---------------------------------<p>";
+      WriteElog(msg, "Run Log", "Run", runID);
+    }
+  }
+
 }
 
 void MainWindow::StopACQ(){
   if( digi == nullptr ) return;
 
   bool commentResult = true;
-  if( chkSaveData->isChecked() ) commentResult = CommentDialog(true);
+  if( chkSaveData->isChecked() ) commentResult = CommentDialog(false);
   if( commentResult == false) return;
 
   if( chkSaveData->isChecked() ) {
@@ -816,6 +889,29 @@ void MainWindow::StopACQ(){
   bnStartACQ->setEnabled(true);
   bnStopACQ->setEnabled(false);
   bnOpenScope->setEnabled(true);
+
+  {//^=== elog and database
+    if( influx ){
+      influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=0");
+      influx->WriteData(dataBaseName.toStdString());
+      influx->ClearDataPointsBuffer();
+    }
+
+    if( elogID > 0 && chkSaveData->isChecked()){
+      QString msg = QDateTime::currentDateTime().toString("MM.dd hh:mm:ss") + "<p>" + stopComment + "<p>";
+      uint64_t totalFileSize = 0;
+      for(unsigned int i = 0 ; i < nDigi; i++){
+        uint64_t fileSize = digi[i]->GetData()->GetTotalFileSize();
+        totalFileSize += fileSize;
+        msg += "Digi-" + QString::number(digi[i]->GetSerialNumber()) + " Size : " + QString::number(fileSize/1024./1024., 'f', 2) + " MB<p>";
+      }
+
+      msg += "..... Total File Size : " + QString::number(totalFileSize/1024./1024., 'f', 2) + "MB<p>" +              
+             "=================================<p>";  
+      AppendElog(msg);
+    }
+  }
+
 }
 
 void MainWindow::AutoRun(){ //TODO
@@ -1071,6 +1167,98 @@ void MainWindow::SetUpInflux(){
     influx = nullptr;
   }
 
+  if( influx == nullptr ){
+    leInfluxIP->setEnabled(false);
+    leDatabaseName->setEnabled(false);
+  }
+
+}
+
+void MainWindow::CheckElog(){
+
+  if( elogIP != "" && elogName != "" &&  elogUser != "" && elogPWD != "" ){
+    WriteElog("Testing communication.", "Testing communication.", "Other", 0);
+    AppendElog("test append elog.");
+  }
+
+  if( elogID >= 0 ) {
+    LogMsg("Elog testing OK.");
+    return;
+  }
+
+  //QMessageBox::information(nullptr, "Information", "Elog write Fail.\nPlease set the elog User and PWD in the programSettings.txt.\nline 6 = user.\nline 7 = pwd.");
+  LogMsg("Elog testing Fail");
+  if( elogIP == "" ) LogMsg("no elog IP");
+  if( elogName == "" ) LogMsg("no elog Name");
+  if( elogUser == "" ) LogMsg("no elog User name. Please set it in the programSettings.txt, line 6.");
+  if( elogPWD == "" ) LogMsg("no elog User pwd. Please set it in the programSettings.txt, line 7.");
+  if( elogID < 0 ) LogMsg("Possible elog IP, Name, User name, or pwd incorrect");
+  leElogIP->setEnabled(false);
+  leElogName->setEnabled(false);
+  
+}
+
+void MainWindow::WriteElog(QString htmlText, QString subject, QString category, int runNumber){
+
+  //if( elogID < 0 ) return;
+  if( elogName == "" ) return;
+  if( elogUser == "" ) return;
+  if( elogPWD == "" ) return;
+  QStringList arg;
+  arg << "-h" << elogIP << "-p" << "8080" << "-l" << elogName << "-u" << elogUser << elogPWD << "-a" << "Author=FSUDAQ";
+  if( runNumber > 0 ) arg << "-a" << "RunNo=" + QString::number(runNumber);
+  if( category != "" ) arg << "-a" << "Category=" + category;
+  arg << "-a" << "Subject=" + subject 
+      << "-n " << "2" <<  htmlText  ;
+  QProcess elogBash(this);
+  elogBash.start("elog", arg); 
+  elogBash.waitForFinished();
+  QString output = QString::fromUtf8(elogBash.readAllStandardOutput());
+
+  QRegularExpression regex("ID=(\\d+)");
+
+  QRegularExpressionMatch match = regex.match(output);
+  if (match.hasMatch()) {
+    QString id = match.captured(1);
+    elogID = id.toInt();
+  } else {
+    elogID = -1;
+  }
+
+}
+
+void MainWindow::AppendElog(QString appendHtmlText){
+  if( elogID < 1 ) return;
+  if( elogName == "" ) return;
+  
+  QProcess elogBash(this);
+  QStringList arg;
+  arg << "-h" << elogIP << "-p" << "8080" << "-l" << elogName << "-u" << elogUser << elogPWD << "-w" << QString::number(elogID);
+  //retrevie the elog
+  elogBash.start("elog", arg); 
+  elogBash.waitForFinished();
+  QString output = QString::fromUtf8(elogBash.readAllStandardOutput());
+  //qDebug() << output;
+  QString separator = "========================================";
+  int index = output.indexOf(separator);
+  if( index != -1){
+    QString originalHtml = output.mid(index + separator.length());
+    arg.clear();
+    arg << "-h" << elogIP << "-p" << "8080" << "-l" << elogName << "-u" << elogUser << elogPWD << "-e" << QString::number(elogID)
+        << "-n" << "2" << originalHtml + "<br>" + appendHtmlText;
+    
+    elogBash.start("elog", arg); 
+    elogBash.waitForFinished();
+    output = QString::fromUtf8(elogBash.readAllStandardOutput());
+    index = output.indexOf("ID=");
+    if( index != -1 ){
+      elogID = output.mid(index+3).toInt();
+    }else{
+      elogID = -1;
+    }
+  }else{
+    elogID = -1;
+  }
 }
 
 //***************************************************************
