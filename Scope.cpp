@@ -312,7 +312,7 @@ void Scope::UpdateScope(){
   //leTriggerRate->setText(QString::number(data->TriggerRate[ch]) + " [" + QString::number(data->NumEventsDecoded[ch]) + "]");
   leTriggerRate->setText(QString::number(data->TriggerRate[ch]));
 
-  unsigned short index = data->EventIndex[ch];
+  unsigned short index = data->DataIndex[ch];
   unsigned short traceLength = data->Waveform1[ch][index].size();
 
   if( data->TriggerRate[ch] > 0 ){

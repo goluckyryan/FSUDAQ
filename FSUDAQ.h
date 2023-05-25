@@ -85,6 +85,7 @@ private:
   QPushButton * bnCloseDigitizers;
   QPushButton * bnOpenScope;
   QPushButton * bnDigiSettings;
+  QPushButton * bnAnalyzer;
 
   QPushButton * bnOpenScaler;
   QPushButton * bnStartACQ;

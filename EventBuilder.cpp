@@ -261,12 +261,12 @@ void EventBuilder(Data * data, const unsigned int timeWin, bool traceOn, bool is
   unsigned long long smallestLastTimeStamp = -1;
   unsigned int maxNumEvent = 0;
   for( int chI = 0; chI < MaxNChannels ; chI ++){
-    if( data->EventIndex[chI] == 0 ) continue;
+    if( data->DataIndex[chI] == 0 ) continue;
     
     if( data->Timestamp[chI][0] < firstTimeStamp ) { 
       firstTimeStamp = data->Timestamp[chI][0];
     }
-    unsigned short ev = data->EventIndex[chI]-1;
+    unsigned short ev = data->DataIndex[chI]-1;
     if( data->Timestamp[chI][ev] > lastTimeStamp ) { 
       lastTimeStamp = data->Timestamp[chI][ev]; 
     }
@@ -289,8 +289,8 @@ void EventBuilder(Data * data, const unsigned int timeWin, bool traceOn, bool is
     int ch1st = -1;
     unsigned long long time1st = -1;
     for( int chI = 0; chI < MaxNChannels ; chI ++){
-      if( data->EventIndex[chI] == 0 ) continue;
-      if( data->EventIndex[chI] <= lastEv[chI] )  continue; 
+      if( data->DataIndex[chI] == 0 ) continue;
+      if( data->DataIndex[chI] <= lastEv[chI] )  continue; 
       if( data->Timestamp[chI][lastEv[chI]] < time1st ) { 
         time1st = data->Timestamp[chI][lastEv[chI]]; 
         ch1st = chI;
@@ -323,17 +323,17 @@ void EventBuilder(Data * data, const unsigned int timeWin, bool traceOn, bool is
     singleChannelExhaustedFlag = false;
     for( int chI = ch1st; chI < ch1st + MaxNChannels; chI ++){
       unsigned short chX = chI % MaxNChannels;
-      if( data->EventIndex[chX] == 0 ) {
+      if( data->DataIndex[chX] == 0 ) {
         exhaustedCh ++;
         continue;
       }
-      if( data->EventIndex[chX] <= lastEv[chX] )  {
+      if( data->DataIndex[chX] <= lastEv[chX] )  {
         exhaustedCh ++;
         singleChannelExhaustedFlag = true;
         continue; 
       }
       if( timeWin == 0 ) continue;
-      for( int ev  = lastEv[chX]; ev < data->EventIndex[chX] ; ev++){
+      for( int ev  = lastEv[chX]; ev < data->DataIndex[chX] ; ev++){
         if( data->Timestamp[chX][ev] > 0 &&  (data->Timestamp[chX][ev] - e_t[0] ) < timeWin ) {
           multi ++;
           bd[multi-1] = data->boardSN;
@@ -350,7 +350,7 @@ void EventBuilder(Data * data, const unsigned int timeWin, bool traceOn, bool is
             }
           }
           lastEv[chX] = ev + 1;
-          if( lastEv[chX] == data->EventIndex[chX] ) exhaustedCh ++;
+          if( lastEv[chX] == data->DataIndex[chX] ) exhaustedCh ++;
         }
       }
     }
@@ -364,7 +364,7 @@ void EventBuilder(Data * data, const unsigned int timeWin, bool traceOn, bool is
       printf("=============== Last Ev , exhaustedCh %d \n", exhaustedCh);
       for( int chI = 0; chI < MaxNChannels ; chI++){
         if( lastEv[chI] == 0 ) continue;
-        printf("%2d, %d %d\n", chI, lastEv[chI], data->EventIndex[chI]);
+        printf("%2d, %d %d\n", chI, lastEv[chI], data->DataIndex[chI]);
       }
     }
     
@@ -379,16 +379,16 @@ void EventBuilder(Data * data, const unsigned int timeWin, bool traceOn, bool is
   ///========== clear built data
   /// move the last data to the top, 
   for( int chI = 0; chI < MaxNChannels; chI++){
-    if( data->EventIndex[chI] == 0 ) continue;
+    if( data->DataIndex[chI] == 0 ) continue;
     int count = 0;
-    for( int ev = lastEv[chI] ; ev < data->EventIndex[chI] ; ev++){
+    for( int ev = lastEv[chI] ; ev < data->DataIndex[chI] ; ev++){
       data->Energy[chI][count] = data->Energy[chI][ev];
       data->Timestamp[chI][count] = data->Timestamp[chI][ev];
       data->fineTime[chI][count] = data->fineTime[chI][ev];
       count++;
     }
-    int lala = data->EventIndex[chI] - lastEv[chI];
-    data->EventIndex[chI] = (lala >= 0 ? lala: 0);
+    int lala = data->DataIndex[chI] - lastEv[chI];
+    data->DataIndex[chI] = (lala >= 0 ? lala: 0);
   }
 
   if( verbose > 0 ) {

@@ -2,6 +2,8 @@
 #include "ClassData.h"
 #include "ClassDigitizer.h"
 
+#include "OnlineEventBuilder.h"
+
 #include <TROOT.h>
 #include <TSystem.h>
 #include <TApplication.h>
@@ -35,8 +37,15 @@ int main(int argc, char* argv[]){
     dig[i] = new Digitizer(board, port, false, true);
   }
 
-  const float ch2ns = dig[0]->GetCh2ns();
+  dig[0]->StopACQ();
+  // dig[0]->WriteRegister(DPP::SoftwareClear_W, 1);
 
+  // dig[0]->ProgramBoard();
+  // dig[0]->ProgramPSDBoard();
+
+  // const float ch2ns = dig[0]->GetCh2ns();
+
+  OnlineEventBuilder * eb = new OnlineEventBuilder( dig[0] );
 
   Data * data =  dig[0]->GetData();
 
@@ -46,16 +55,18 @@ int main(int argc, char* argv[]){
 
   dig[0]->StartACQ();
 
-  for( int i = 0; i < 5; i ++ ){
+  for( int i = 0; i < 3; i ++ ){
     usleep(100*1000);
     dig[0]->ReadData();
-    data->DecodeBuffer(false, 5);
+    data->DecodeBuffer(false, 1);
     data->PrintStat();
 
     data->SaveData();
 
-    int index = data->NumEventsDecoded[0];
-    printf("-------------- %ld \n", data->Waveform1[0][index].size());
+    // int index = data->NumEventsDecoded[0];
+    // printf("-------------- %ld \n", data->Waveform1[0][index].size());
+
+    eb->BuildEvents(100);
 
   }
 
@@ -108,7 +119,7 @@ int main(int argc, char* argv[]){
       data->SaveBuffer("test");
       data->DecodeBuffer(0);
       
-      unsigned short nData = data->EventIndex[0]; //channel-0
+      unsigned short nData = data->DataIndex[0]; //channel-0
       haha = data->Waveform1[0][nData-1];
       for( int i = 0; i < waveFormLength; i++) g1->SetPoint(i, i*ch2ns, haha[i]);
 
@@ -128,10 +139,10 @@ int main(int argc, char* argv[]){
       data->PrintStat();
       
       for(int i = 0; i < dig[0]->GetNChannel(); i++){
-        h1->Fill(i, data->EventIndex[i]);
+        h1->Fill(i, data->DataIndex[i]);
       }
       
-      for( int i = 0; i < data->EventIndex[0]; i++){
+      for( int i = 0; i < data->DataIndex[0]; i++){
         h2->Fill( data->Energy[0][i]);
       }
       data->ClearData();

@@ -6,13 +6,13 @@
 CC	=	g++
 
 #COPTS	=	-fPIC -DLINUX -O2 -std=c++17 -lpthread
-COPTS	=	-fPIC -DLINUX -g -std=c++17 -lpthread
+COPTS	=	-fPIC -DLINUX -g -O2 -Wall -std=c++17 -lpthread
 
 CAENLIBS	=	-lCAENDigitizer
 
 ROOTLIBS = `root-config --cflags --glibs`
 
-OBJS = ClassDigitizer.o
+OBJS = ClassDigitizer.o OnlineEventBuilder.o
 
 ALL = test test_indep EventBuilder
 
@@ -23,12 +23,15 @@ all	:	$(ALL)
 clean	:
 		/bin/rm -f $(OBJS) $(ALL)
 
+OnlineEventBuilder.o : OnlineEventBuilder.cpp OnlineEventBuilder.h
+		$(CC) $(COPTS) -c OnlineEventBuilder.cpp
+
 ClassDigitizer.o : ClassDigitizer.cpp ClassDigitizer.h RegisterAddress.h macro.h ClassData.h
 		$(CC) $(COPTS) -c ClassDigitizer.cpp
 
-test	:	test.cpp ClassDigitizer.o
+test	:	test.cpp ClassDigitizer.o OnlineEventBuilder.o
 		@echo "--------- making test"
-		$(CC) $(COPTS) -o test test.cpp ClassDigitizer.o   $(CAENLIBS)  $(ROOTLIBS)
+		$(CC) $(COPTS) -o test test.cpp ClassDigitizer.o  OnlineEventBuilder.o $(CAENLIBS)  $(ROOTLIBS)
 
 test_indep : test_indep.cpp RegisterAddress.h macro.h
 		@echo "--------- making test_indep"

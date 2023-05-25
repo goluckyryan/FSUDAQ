@@ -35,9 +35,10 @@ class Data{
     unsigned short NumNonPileUpDecoded[MaxNChannels]; /// reset at every decode
 
     /// store data for event building and deduce the trigger rate.
-    //TODO... make it a circular memory
+    //it is a circular memory
     bool IsNotRollOverFakeAgg;
-    int                EventIndex[MaxNChannels];
+    int                LoopIndex[MaxNChannels];     /// number of loop in the circular memory
+    int                DataIndex[MaxNChannels];
     unsigned long long Timestamp[MaxNChannels][MaxNData]; /// 47 bit
     unsigned short     fineTime[MaxNChannels][MaxNData];  /// 10 bits, in unit of ch2ns / 1000 = ps
     unsigned short     Energy[MaxNChannels][MaxNData];   /// 15 bit
@@ -162,7 +163,8 @@ inline void Data::ClearData(){
   AllocatedSize = 0;
   IsNotRollOverFakeAgg = false;
   for( int ch = 0 ; ch < MaxNChannels; ch++){
-    EventIndex[ch] = -1;
+    LoopIndex[ch] = 0;
+    DataIndex[ch] = -1;
     for( int j = 0; j < MaxNData; j++){
       Timestamp[ch][j] = 0;
       fineTime[ch][j] = 0;
@@ -269,9 +271,9 @@ inline void Data::PrintStat() const{
 inline void Data::PrintAllData() const{
   printf("============================= Print Data\n");
   for( int ch = 0; ch < MaxNChannels ; ch++){
-    if( EventIndex[ch] < 0  ) continue;
-    printf("------------ ch : %d, %d \n", ch, EventIndex[ch]);
-    for( int ev = 0; ev <= EventIndex[ch] ; ev++){
+    if( DataIndex[ch] < 0  ) continue;
+    printf("------------ ch : %d, %d \n", ch, DataIndex[ch]);
+    for( int ev = 0; ev <= DataIndex[ch] ; ev++){
       if( DPPType == V1730_DPP_PHA_CODE ) printf("%4d, %5u, %15llu, %5u \n", ev, Energy[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
       if( DPPType == V1730_DPP_PSD_CODE ) printf("%4d, %5u, %5u, %15llu, %5u \n", ev, Energy[ch][ev], Energy2[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
     }
@@ -368,7 +370,7 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
       continue;
     }
 
-    if( EventIndex[ch] < 0 ){
+    if( DataIndex[ch] < 0 ){
       TriggerRate[ch] = 0;
       NonPileUpRate[ch] = 0;
       continue;
@@ -377,12 +379,12 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
     //TODO ====== when NumEventsDecoded is too small, the trigger rate is not reliable?
     if( NumEventsDecoded[ch] > 4 ){
 
-      int indexStart = EventIndex[ch] - NumEventsDecoded[ch] + 1;
+      int indexStart = DataIndex[ch] - NumEventsDecoded[ch] + 1;
       if( indexStart < 0  ) indexStart += MaxNData;
 
-      //printf("%d %d| %d %d \n", EventIndex[ch], NumEventsDecoded[ch], indexStart, EventIndex[ch] );
+      //printf("%d %d| %d %d \n", DataIndex[ch], NumEventsDecoded[ch], indexStart, DataIndex[ch] );
 
-      unsigned long long dTime = Timestamp[ch][EventIndex[ch]] - Timestamp[ch][indexStart]; 
+      unsigned long long dTime = Timestamp[ch][DataIndex[ch]] - Timestamp[ch][indexStart]; 
       double sec =  dTime * ch2ns / 1e9;
 
       TriggerRate[ch] = NumEventsDecoded[ch]/sec;
@@ -391,7 +393,7 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
     }else{ // look in to the data in the memory, not just this agg.
 
       if( calIndexes[ch][0] == -1 ) calIndexes[ch][0] = 0;
-      if( calIndexes[ch][0] > -1 && calIndexes[ch][1] == -1 ) calIndexes[ch][1] = EventIndex[ch];
+      if( calIndexes[ch][0] > -1 && calIndexes[ch][1] == -1 ) calIndexes[ch][1] = DataIndex[ch];
 
       short nEvent = calIndexes[ch][1] - calIndexes[ch][0] ;
       if( nEvent < 0 ) nEvent += MaxNData;
@@ -622,13 +624,16 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
 
 
     if( rollOver == 0 ) { // non-time roll over fake event
-      EventIndex[channel] ++; 
-      if( EventIndex[channel] > MaxNData ) EventIndex[channel] = 0;
+      DataIndex[channel] ++; 
+      if( DataIndex[channel] > MaxNData ) {
+        LoopIndex[channel] ++;
+        DataIndex[channel] = 0;
+      }
 
-      Energy[channel][EventIndex[channel]] = energy;
-      Timestamp[channel][EventIndex[channel]] = timeStamp;
-      if(extra2Option == 0 || extra2Option == 2 ) fineTime[channel][EventIndex[channel]] = (extra2 & 0x07FF );
-      PileUp[channel][EventIndex[channel]] = pileUp;
+      Energy[channel][DataIndex[channel]] = energy;
+      Timestamp[channel][DataIndex[channel]] = timeStamp;
+      if(extra2Option == 0 || extra2Option == 2 ) fineTime[channel][DataIndex[channel]] = (extra2 & 0x07FF );
+      PileUp[channel][DataIndex[channel]] = pileUp;
       NumEventsDecoded[channel] ++; 
       TotNumEvents[channel] ++;
 
@@ -638,19 +643,19 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
 
       if( SaveWaveToMemory ) {
         if( hasDualTrace ){
-          Waveform1[channel][EventIndex[channel]] = tempWaveform1;
-          Waveform2[channel][EventIndex[channel]] = tempWaveform2;
+          Waveform1[channel][DataIndex[channel]] = tempWaveform1;
+          Waveform2[channel][DataIndex[channel]] = tempWaveform2;
         }else{
-          Waveform1[channel][EventIndex[channel]] = tempWaveform1;
+          Waveform1[channel][DataIndex[channel]] = tempWaveform1;
         }
-        DigiWaveform1[channel][EventIndex[channel]] = tempDigiWaveform1;
+        DigiWaveform1[channel][DataIndex[channel]] = tempDigiWaveform1;
       }  
     }
 
-    //if( EventIndex[channel] > MaxNData ) ClearData(); // if any channel has more data then MaxNData, clear all stored data
+    //if( DataIndex[channel] > MaxNData ) ClearData(); // if any channel has more data then MaxNData, clear all stored data
 
     if( verbose >= 1 ) printf("evt %4d | ch : %2d, PileUp : %d , energy : %5d, rollOver: %d,  timestamp : %10llu, triggerAt : %d, nSample : %d, %f sec\n", 
-                                EventIndex[channel], channel, pileUp, energy, rollOver, timeStamp, triggerAtSample, nSample , timeStamp * 4. / 1e9);
+                                DataIndex[channel], channel, pileUp, energy, rollOver, timeStamp, triggerAtSample, nSample , timeStamp * 4. / 1e9);
     
   }
   
@@ -808,32 +813,35 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
     bool isEnergyCorrect = ((word >> 15) & 0x1); // the PUR, either pileup or saturated
     
     if( isEnergyCorrect == 0 ) {
-      EventIndex[channel] ++; 
-      if( EventIndex[channel] > MaxNData ) EventIndex[channel] = 0;
+      DataIndex[channel] ++; 
+      if( DataIndex[channel] > MaxNData ) {
+        LoopIndex[channel] ++;
+        DataIndex[channel] = 0;
+      }
 
       NumEventsDecoded[channel] ++; 
       NumNonPileUpDecoded[channel] ++; 
       TotNumEvents[channel] ++;
 
-      Energy[channel][EventIndex[channel]] = Qshort;
-      Energy2[channel][EventIndex[channel]] = Qlong;
-      Timestamp[channel][EventIndex[channel]] = timeStamp;
+      Energy[channel][DataIndex[channel]] = Qshort;
+      Energy2[channel][DataIndex[channel]] = Qlong;
+      Timestamp[channel][DataIndex[channel]] = timeStamp;
 
       if( SaveWaveToMemory ) {
         if( hasDualTrace ){
-          Waveform1[channel][EventIndex[channel]] = tempWaveform1;
-          Waveform2[channel][EventIndex[channel]] = tempWaveform2;
+          Waveform1[channel][DataIndex[channel]] = tempWaveform1;
+          Waveform2[channel][DataIndex[channel]] = tempWaveform2;
         }else{
-          Waveform1[channel][EventIndex[channel]] = tempWaveform1;
+          Waveform1[channel][DataIndex[channel]] = tempWaveform1;
         }
-        DigiWaveform1[channel][EventIndex[channel]] = tempDigiWaveform1;
-        DigiWaveform2[channel][EventIndex[channel]] = tempDigiWaveform2;
+        DigiWaveform1[channel][DataIndex[channel]] = tempDigiWaveform1;
+        DigiWaveform2[channel][DataIndex[channel]] = tempDigiWaveform2;
 
       }
 
     }
 
-    //if( EventIndex[channel] >= MaxNData ) ClearData();
+    //if( DataIndex[channel] >= MaxNData ) ClearData();
      
     if( verbose >= 2 ) printf("extra : 0x%08x, Qshort : %d, Qlong : %d \n", extra, Qshort, Qlong);
     

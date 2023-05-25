@@ -107,7 +107,7 @@ void Canvas::UpdateCanvas(){
 
     digiMTX[i].lock();
     for( int ch = 0; ch < digi[i]->GetNChannels(); ch ++ ){
-      int lastIndex = digi[i]->GetData()->EventIndex[ch];
+      int lastIndex = digi[i]->GetData()->DataIndex[ch];
       int nDecoded = digi[i]->GetData()->NumEventsDecoded[ch];
     
       for( int j = lastIndex - nDecoded + 1; j <= lastIndex; j ++){

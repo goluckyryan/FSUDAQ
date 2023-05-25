@@ -53,6 +53,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     layout->addWidget(bnOpenScope, 1, 1);
     connect(bnOpenScope, &QPushButton::clicked, this, &MainWindow::OpenScope);
 
+    bnAnalyzer = new QPushButton("Online Analyzer", this);
+    layout->addWidget(bnAnalyzer, 0, 2);
+    connect(bnAnalyzer, &QPushButton::clicked, this, &MainWindow::OpenScope);
+    bnAnalyzer->setEnabled(false);
+
     bnCanvas = new QPushButton("Online 1D Histograms", this);
     layout->addWidget(bnCanvas, 1, 2);
     connect(bnCanvas, &QPushButton::clicked, this, &MainWindow::OpenCanvas);
@@ -773,7 +778,10 @@ void MainWindow::UpdateScalar(){
   }
 
   if( influx ){
-    if( chkSaveData->isChecked() ) influx->AddDataPoint("FileSize value=" + std::to_string(totalFileSize));
+    if( chkSaveData->isChecked() ) {
+      influx->AddDataPoint("RunID value=" + std::to_string(runID));
+      influx->AddDataPoint("FileSize value=" + std::to_string(totalFileSize));
+    }
     influx->WriteData(dataBaseName.toStdString());
     influx->ClearDataPointsBuffer();
   }

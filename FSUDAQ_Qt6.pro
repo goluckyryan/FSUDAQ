@@ -32,11 +32,13 @@ HEADERS += ClassData.h \
            RegisterAddress.h \
            influxdb.h\
            Scope.h \
-           CanvasClass.h
+           CanvasClass.h \
+           OnlineEventBuilder.h
 SOURCES += ClassDigitizer.cpp \
            DigiSettingsPanel.cpp \
            FSUDAQ.cpp \
            main.cpp \
            influxdb.cpp\
            Scope.cpp \
-           CanvasClass.cpp
+           CanvasClass.cpp \
+           OnlineEventBuilder.cpp \
