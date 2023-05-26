@@ -41,7 +41,6 @@ private:
   Data * data;
 
   unsigned short timeWindow;
-  bool isNeverBuild;
   int nextIndex[MaxNChannels];
 
   int nExhaushedCh;
@@ -49,6 +48,8 @@ private:
   unsigned long long earlistTime;
   int earlistCh;
   void FindEarlistTimeAndCh();
+  unsigned long long latestTime;
+  void FindLatestTime();
 
 };
 

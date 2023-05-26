@@ -14,7 +14,7 @@
 #include "CAENDigitizerType.h"
 #include "macro.h"
 
-#define MaxNData 10000 /// store 100k events per channels
+#define MaxNData 10000 /// store 10k events per channels
 
 class Data{
 
@@ -272,8 +272,8 @@ inline void Data::PrintAllData() const{
   printf("============================= Print Data\n");
   for( int ch = 0; ch < MaxNChannels ; ch++){
     if( DataIndex[ch] < 0  ) continue;
-    printf("------------ ch : %d, %d \n", ch, DataIndex[ch]);
-    for( int ev = 0; ev <= DataIndex[ch] ; ev++){
+    printf("------------ ch : %d, DataIndex : %d, loop : %d\n", ch, DataIndex[ch], LoopIndex[ch]);
+    for( int ev = 0; ev <= (LoopIndex[ch] > 0 ? MaxNData : DataIndex[ch]) ; ev++){
       if( DPPType == V1730_DPP_PHA_CODE ) printf("%4d, %5u, %15llu, %5u \n", ev, Energy[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
       if( DPPType == V1730_DPP_PSD_CODE ) printf("%4d, %5u, %5u, %15llu, %5u \n", ev, Energy[ch][ev], Energy2[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
     }
