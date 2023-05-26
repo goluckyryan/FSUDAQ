@@ -151,6 +151,7 @@
     "typeinfo": "cpp",
     "variant": "cpp",
     "qmainwindow": "cpp",
-    "qchartview": "cpp"
+    "qchartview": "cpp",
+    "qthread": "cpp"
   }
 }

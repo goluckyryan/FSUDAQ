@@ -79,8 +79,8 @@ private:
 
   bool enableSignalSlot;
 
-  Trace * plot;
-  TraceView * plotView;
+  RChart * plot;
+  RChartView * plotView;
   QLineSeries * dataTrace[MaxNumberOfTrace]; // 2 analog, 2 digi
 
   RComboBox * cbScopeDigi;

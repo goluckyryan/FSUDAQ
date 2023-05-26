@@ -33,7 +33,8 @@ HEADERS += ClassData.h \
            influxdb.h\
            Scope.h \
            CanvasClass.h \
-           OnlineEventBuilder.h
+           OnlineEventBuilder.h \
+           OnlineAnalyser.h
 SOURCES += ClassDigitizer.cpp \
            DigiSettingsPanel.cpp \
            FSUDAQ.cpp \
@@ -42,3 +43,4 @@ SOURCES += ClassDigitizer.cpp \
            Scope.cpp \
            CanvasClass.cpp \
            OnlineEventBuilder.cpp \
+           OnlineAnalyser.cpp

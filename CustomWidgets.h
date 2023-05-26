@@ -60,14 +60,14 @@ class RComboBox : public QComboBox{
 };
 
 //^====================================================
-class Trace : public QChart{
+class RChart : public QChart{
 public:
-  explicit Trace(QGraphicsItem *parent = nullptr, Qt::WindowFlags wFlags = {})
+  explicit RChart(QGraphicsItem *parent = nullptr, Qt::WindowFlags wFlags = {})
     : QChart(QChart::ChartTypeCartesian, parent, wFlags){
     grabGesture(Qt::PanGesture);
     grabGesture(Qt::PinchGesture);
   }
-  ~Trace(){}
+  ~RChart(){}
 
 protected:
   bool sceneEvent(QEvent *event){
@@ -94,9 +94,9 @@ private:
 };
 
 //^====================================================
-class TraceView : public QChartView{
+class RChartView : public QChartView{
 public:
-  TraceView(QChart * chart, QWidget * parent = nullptr): QChartView(chart, parent){
+  RChartView(QChart * chart, QWidget * parent = nullptr): QChartView(chart, parent){
     m_isTouching = false;
     this->setRubberBand(QChartView::RectangleRubberBand);
 
@@ -110,6 +110,9 @@ public:
 
     vRangeMin = -(0x1FFF);
     vRangeMax = 0x1FFF;
+
+    hRangeMin = 0;
+    hRangeMax = 0;
   }
 
   void SetHRange(int min, int max) {
@@ -161,7 +164,7 @@ protected:
       case Qt::Key_R : 
         //chart()->axes(Qt::Vertical).first()->setRange(-(0x1FFF), 0x1FFF);
         chart()->axes(Qt::Vertical).first()->setRange(vRangeMin, vRangeMax);
-        //chart()->axes(Qt::Horizontal).first()->setRange(hRangeMin, hRangeMax);
+        if( hRangeMax != hRangeMin ) chart()->axes(Qt::Horizontal).first()->setRange(hRangeMin, hRangeMax);
         break;
       default: QGraphicsView::keyPressEvent(event); break;
     }
@@ -181,7 +184,7 @@ class Histogram {
 public:
   Histogram(QString title, double xMin, double xMax, int nBin){
   
-    plot = new Trace();
+    plot = new RChart();
     dataSeries = new QLineSeries();
 
     Rebin(xMin, xMax, nBin);
@@ -216,7 +219,7 @@ public:
     delete plot;
   }
 
-  Trace * GetTrace() { return plot;} 
+  RChart * GetChart() { return plot;} 
 
   void Clear(){
     for( int i = 0; i <= nBin; i++) {
@@ -267,7 +270,7 @@ public:
   }
 
 private:
-  Trace * plot;
+  RChart * plot;
   QLineSeries * dataSeries;
   QAreaSeries * areaSeries;
 

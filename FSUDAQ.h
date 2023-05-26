@@ -18,6 +18,7 @@
 #include "DigiSettingsPanel.h"
 #include "CanvasClass.h"
 #include "influxdb.h"
+#include "OnlineAnalyser.h"
 
 //^#===================================================== MainWindow
 class MainWindow : public QMainWindow{
@@ -30,6 +31,7 @@ public:
     if( scope ) scope->close();
     if( digiSettings ) digiSettings->close();
     if( canvas ) canvas->close();
+    if( onlineAnalyzer ) onlineAnalyzer->close();
     event->accept();
   }
 
@@ -62,6 +64,8 @@ private slots:
 
   void OpenCanvas();
 
+  void OpenAnalyzer();
+
   void UpdateAllPanels(int panelID);
 
   void SetUpInflux();
@@ -69,6 +73,7 @@ private slots:
   void CheckElog();
   void WriteElog(QString htmlText, QString subject, QString category, int runNumber);
   void AppendElog(QString appendHtmlText);
+
 
 private:
 
@@ -148,6 +153,10 @@ private:
   //@----- Canvas
   Canvas * canvas;
   TimingThread * histThread;
+
+  //@----- Analyzer
+  OnlineAnalyzer * onlineAnalyzer;
+  
 
 };
 

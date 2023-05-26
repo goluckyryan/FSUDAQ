@@ -27,7 +27,6 @@ OnlineEventBuilder::~OnlineEventBuilder(){
 
 }
 
-
 void OnlineEventBuilder::FindEarlistTimeAndCh(){
 
   earlistTime = -1;
@@ -38,7 +37,7 @@ void OnlineEventBuilder::FindEarlistTimeAndCh(){
     chExhaused[i] = false;
   }
 
-  for(unsigned int ch = 0; ch < nCh; ch ++){    
+  for(unsigned int ch = 0; ch < nCh; ch ++){
     if( data->DataIndex[ch] == -1 || nextIndex[ch] > data->DataIndex[ch]) {
       nExhaushedCh ++;
       chExhaused[ch] = true;

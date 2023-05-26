@@ -39,6 +39,7 @@ public:
       readCount ++;
 
       if( stop) break;
+
       if( ret == CAEN_DGTZ_Success && !stop){
         digiMTX[ID].lock();
         digi->GetData()->DecodeBuffer(!isScope, 0);

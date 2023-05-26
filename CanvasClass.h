@@ -4,18 +4,12 @@
 #include <QMainWindow>
 #include <QChart>
 #include <QChartView>
-#include <QSpinBox>
 #include <QLabel>
 #include <QPushButton>
 #include <QCheckBox>
 #include <QLineEdit>
-#include <QComboBox>
 #include <QGridLayout>
 #include <QGroupBox>
-#include <QLineSeries>
-#include <QRubberBand>
-#include <QMouseEvent>
-#include <QGestureEvent>
 
 #include "macro.h"
 #include "ClassDigitizer.h"
@@ -42,7 +36,7 @@ private:
   unsigned short nDigi;
 
   Histogram * hist[MaxNDigitizer][MaxNChannels];
-  TraceView * histView[MaxNDigitizer][MaxNChannels];
+  RChartView * histView[MaxNDigitizer][MaxNChannels];
 
   RComboBox * cbDivision;
 
@@ -54,6 +48,4 @@ private:
   int oldBd, oldCh;
 
 };
-
-
 #endif

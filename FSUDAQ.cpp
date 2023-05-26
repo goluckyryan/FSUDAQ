@@ -26,6 +26,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
   scope = nullptr;
   digiSettings = nullptr;
   canvas = nullptr;
+  onlineAnalyzer = nullptr;
 
   QWidget * mainLayoutWidget = new QWidget(this);
   setCentralWidget(mainLayoutWidget);
@@ -55,8 +56,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
 
     bnAnalyzer = new QPushButton("Online Analyzer", this);
     layout->addWidget(bnAnalyzer, 0, 2);
-    connect(bnAnalyzer, &QPushButton::clicked, this, &MainWindow::OpenScope);
-    bnAnalyzer->setEnabled(false);
+    connect(bnAnalyzer, &QPushButton::clicked, this, &MainWindow::OpenAnalyzer);
 
     bnCanvas = new QPushButton("Online 1D Histograms", this);
     layout->addWidget(bnCanvas, 1, 2);
@@ -286,6 +286,8 @@ MainWindow::~MainWindow(){
   if( digiSettings ) delete digiSettings;
 
   if( canvas ) delete canvas;
+
+  if( onlineAnalyzer ) delete onlineAnalyzer;
 
   if( scalar ) {
     CleanUpScalar();
@@ -611,6 +613,7 @@ void MainWindow::WaitForDigitizersOpen(bool onOff){
   bnStopACQ->setEnabled(!onOff);
   chkSaveData->setEnabled(!onOff);
   bnCanvas->setEnabled(!onOff);
+  bnAnalyzer->setEnabled(!onOff);
 
 }
 
@@ -813,7 +816,6 @@ void MainWindow::StartACQ(){
     readDataThread[i]->SetSaveData(chkSaveData->isChecked());
     LogMsg("Digi-" + QString::number(digi[i]->GetSerialNumber()) + " is starting ACQ." );
     digi[i]->WriteRegister(DPP::SoftwareClear_W, 1);
-    digi[i]->GetData()->SetSaveWaveToMemory(false);
     digi[i]->StartACQ();
     readDataThread[i]->start();
   }
@@ -1067,7 +1069,6 @@ void MainWindow::OpenScope(){
 
   bnStartACQ->setEnabled(false);
   bnStopACQ->setEnabled(false);  
-
   chkSaveData->setChecked(false);
 
 }
@@ -1099,6 +1100,19 @@ void MainWindow::OpenCanvas(){
   }else{
     canvas->show();
     canvas->activateWindow();
+  }
+
+}
+//***************************************************************
+//***************************************************************
+void MainWindow::OpenAnalyzer(){
+
+  if( onlineAnalyzer == nullptr ) {
+    onlineAnalyzer = new OnlineAnalyzer(digi, nDigi);
+    onlineAnalyzer->show();
+  }else{
+    onlineAnalyzer->show();
+    onlineAnalyzer->activateWindow();
   }
 
 }

@@ -19,7 +19,7 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
 
   enableSignalSlot = false;
 
-  plot = new Trace();
+  plot = new RChart();
   for( int i = 0; i < MaxNumberOfTrace; i++) {
     dataTrace[i] = new QLineSeries();
     dataTrace[i]->setName("Trace " + QString::number(i));
@@ -153,7 +153,7 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   }
   //================ Plot view
   rowID ++;
-  plotView = new TraceView(plot, this);
+  plotView = new RChartView(plot, this);
   layout->addWidget(plotView, rowID, 0, 1, 6);
 
   
@@ -233,8 +233,6 @@ void Scope::StartScope(){
     traceOn[iDigi] = digi[iDigi]->IsRecordTrace(); //remember setting
 
     digi[iDigi]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, 1, -1);
-    digi[iDigi]->GetData()->SetSaveWaveToMemory(true);
-
     digi[iDigi]->StartACQ();
 
     printf("----- readDataThread running ? %d.\n", readDataThread[iDigi]->isRunning());

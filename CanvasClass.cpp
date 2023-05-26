@@ -61,7 +61,7 @@ Canvas::Canvas(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent) : QM
     for( int j = 0; j < MaxNChannels; j++){
       if( i < nDigi ) {
         hist[i][j] = new Histogram("Digi-" + QString::number(digi[i]->GetSerialNumber()) +", Ch-" +  QString::number(j), xMin, xMax, nBin);
-        histView[i][j] = new TraceView(hist[i][j]->GetTrace());
+        histView[i][j] = new RChartView(hist[i][j]->GetChart());
         histView[i][j]->SetVRange(0, 10);
       }else{
         hist[i][j] = nullptr;

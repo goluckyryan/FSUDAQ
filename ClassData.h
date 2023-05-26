@@ -57,10 +57,6 @@ class Data{
     void Allocate80MBMemory();
     void AllocateMemory(uint32_t size);
     
-    void SetSaveWaveToMemory(bool OnOff) { // store the waveform in memory
-      this->SaveWaveToMemory = OnOff; 
-    }
-    
     void ClearData();
     void ClearTriggerRate();
     void ClearBuffer();
@@ -86,7 +82,7 @@ class Data{
   protected:
     
     unsigned int nw;
-    bool SaveWaveToMemory;
+    //bool SaveWaveToMemory;
 
     ///for temperary
     std::vector<short> tempWaveform1; 
@@ -123,7 +119,6 @@ inline Data::Data(){
   for ( int i = 0; i < MaxNChannels; i++) TotNumEvents[i] = 0;
   ClearData();
   ClearTriggerRate();
-  SaveWaveToMemory = true;
   nw = 0;
 
   outFileIndex = 0;
@@ -376,7 +371,6 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
       continue;
     }
     
-    //TODO ====== when NumEventsDecoded is too small, the trigger rate is not reliable?
     if( NumEventsDecoded[ch] > 4 ){
 
       int indexStart = DataIndex[ch] - NumEventsDecoded[ch] + 1;
@@ -523,9 +517,8 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
     int channel = ChannelMask*2 + channelTag;
     if( verbose >= 2 ) printf("ch : %d, timeStamp0 %u \n", channel, timeStamp0);
     
-    //TODO Skip
     ///===== read waveform
-    if( !fastDecode && SaveWaveToMemory ) {
+    if( !fastDecode ) {
       tempWaveform1.clear();
       tempWaveform2.clear();
       tempDigiWaveform1.clear();
@@ -561,18 +554,16 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
           trace0 = static_cast<short>(wave0);
         }
         
-        if( SaveWaveToMemory){
-          if( hasDualTrace ){
-            tempWaveform1.push_back(trace1);
-            tempWaveform2.push_back(trace0);
-            tempDigiWaveform1.push_back(dp1);
-            tempDigiWaveform2.push_back(dp0);
-          }else{
-            tempWaveform1.push_back(trace1);          
-            tempWaveform1.push_back(trace0);
-            tempDigiWaveform1.push_back(dp1);
-            tempDigiWaveform1.push_back(dp0);
-          }
+        if( hasDualTrace ){
+          tempWaveform1.push_back(trace1);
+          tempWaveform2.push_back(trace0);
+          tempDigiWaveform1.push_back(dp1);
+          tempDigiWaveform2.push_back(dp0);
+        }else{
+          tempWaveform1.push_back(trace1);          
+          tempWaveform1.push_back(trace0);
+          tempDigiWaveform1.push_back(dp1);
+          tempDigiWaveform1.push_back(dp0);
         }
 
         if( isTrigger0 == 1 ) triggerAtSample = 2*wi ;      
@@ -641,7 +632,7 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
         NumNonPileUpDecoded[channel] ++;
       }
 
-      if( SaveWaveToMemory ) {
+      if( !fastDecode ) {
         if( hasDualTrace ){
           Waveform1[channel][DataIndex[channel]] = tempWaveform1;
           Waveform2[channel][DataIndex[channel]] = tempWaveform2;
@@ -759,7 +750,7 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
     if( verbose >= 2 ) printf("ch : %d, timeStamp %u \n", channel, timeStamp0);
     
     ///===== read waveform
-    if( !fastDecode && SaveWaveToMemory ) {
+    if( !fastDecode ) {
       tempWaveform1.clear();
       tempWaveform2.clear();
       tempDigiWaveform1.clear();
@@ -779,19 +770,17 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
         bool dp1a = (( word >> 14 ) & 0x1 );
         unsigned short wavea = ( word & 0x3FFF);
         
-        if( SaveWaveToMemory){
-          if( hasDualTrace ){
-            tempWaveform1.push_back(wavea);
-            tempWaveform2.push_back(waveb);
-          }else{
-            tempWaveform1.push_back(wavea);          
-            tempWaveform1.push_back(waveb);          
-          }
-          tempDigiWaveform1.push_back(dp1a);
-          tempDigiWaveform1.push_back(dp1b);
-          tempDigiWaveform2.push_back(dp2a);
-          tempDigiWaveform2.push_back(dp2b);
+        if( hasDualTrace ){
+          tempWaveform1.push_back(wavea);
+          tempWaveform2.push_back(waveb);
+        }else{
+          tempWaveform1.push_back(wavea);          
+          tempWaveform1.push_back(waveb);          
         }
+        tempDigiWaveform1.push_back(dp1a);
+        tempDigiWaveform1.push_back(dp1b);
+        tempDigiWaveform2.push_back(dp2a);
+        tempDigiWaveform2.push_back(dp2b);
         
         if( verbose >= 3 ){
           printf("%4d| %5d, %d, %d \n",   2*wi, wavea, dp1a, dp2a);
@@ -827,7 +816,7 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
       Energy2[channel][DataIndex[channel]] = Qlong;
       Timestamp[channel][DataIndex[channel]] = timeStamp;
 
-      if( SaveWaveToMemory ) {
+      if( !fastDecode ) {
         if( hasDualTrace ){
           Waveform1[channel][DataIndex[channel]] = tempWaveform1;
           Waveform2[channel][DataIndex[channel]] = tempWaveform2;
