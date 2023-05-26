@@ -1,5 +1,7 @@
 #include "OnlineEventBuilder.h"
 
+#include <algorithm>
+
 OnlineEventBuilder::OnlineEventBuilder(Digitizer * digi){
 
   data = digi->GetData();
@@ -29,10 +31,8 @@ OnlineEventBuilder::~OnlineEventBuilder(){
 
 void OnlineEventBuilder::FindEarlistTimeAndCh(){
 
-  if( isNeverBuild ){
-    earlistTime = -1;
-    earlistCh = -1;
-  }
+  earlistTime = -1;
+  earlistCh = -1;
 
   nExhaushedCh = 0;
   for( int i = 0; i < MaxNChannels; i++ ){
@@ -53,14 +53,14 @@ void OnlineEventBuilder::FindEarlistTimeAndCh(){
     if( time < earlistTime ) {
       earlistTime = time;
       earlistCh = ch;
-      printf("ch: %d , nextIndex : %d, %llu\n", ch, nextIndex[ch] , earlistTime);
+      //printf("ch: %d , nextIndex : %d, %llu\n", ch, nextIndex[ch] , earlistTime);
     }
   }
 
 }
 
 
-void OnlineEventBuilder::BuildEvents(unsigned short timeWindow){
+void OnlineEventBuilder::BuildEvents(unsigned short timeWindow, bool verbose = false){
 
   this->timeWindow = timeWindow;
 
@@ -109,32 +109,34 @@ void OnlineEventBuilder::BuildEvents(unsigned short timeWindow){
 
     }
 
+
     isNeverBuild = false;
 
-    //===== print
+    std::sort(events[eventIndex].begin(), events[eventIndex].end(), [](const dataPoint& a, const dataPoint& b) {
+      return a.timeStamp < b.timeStamp;
+    });
     
-    printf("######################################### Event ID : %ld\n", eventIndex);
-    for( int i = 0; i <(int) events[eventIndex].size(); i++){
-      printf("%02d | %5d %llu \n", events[eventIndex][i].ch, events[eventIndex][i].energy, events[eventIndex][i].timeStamp); 
+    if( verbose ){
+    //===== print
+      printf("&&&&&&&&&&&&&&&&&&&&&&&&& Event ID : %ld\n", eventIndex);
+      for( int i = 0; i <(int) events[eventIndex].size(); i++){
+        printf("%02d | %5d %llu \n", events[eventIndex][i].ch, events[eventIndex][i].energy, events[eventIndex][i].timeStamp); 
+      }
     }
 
 
     ///Find the next earlist 
-    earlistTime = data->Timestamp[dp.ch][nextIndex[dp.ch]];
     FindEarlistTimeAndCh();
 
-    if( nExhaushedCh == nCh ) {
-      printf("######################### no more eevent to be built\n"); 
-      break;
+    if( verbose ){
+      if( nExhaushedCh == nCh ) {
+        printf("######################### no more eevent to be built\n"); 
+        break;
+      }  
+      printf("----- next ch : %d, next earlist Time : %llu \n", earlistCh, earlistTime);
     }
-    
-    printf("----- next ch : %d, next earlist Time : %llu \n", earlistCh, earlistTime);
 
   }while(nExhaushedCh < nCh);
-
-  for( unsigned int i = 0; i < nCh; i ++ ) printf("%d | exhaushed ? %d \n", i, chExhaused[i] ); 
-  printf("------ nExhaushedCh = %d \n", nExhaushedCh);
-
 
   //TODO ----- to speed up continue with data->DataIndex
   data->ClearData();

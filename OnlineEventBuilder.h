@@ -28,7 +28,7 @@ public:
   OnlineEventBuilder(Digitizer * digi);
   ~OnlineEventBuilder();
 
-  void BuildEvents(unsigned short timeWindow);
+  void BuildEvents(unsigned short timeWindow, bool verbose = false);
 
   long eventIndex;
   std::vector<dataPoint> events[MaxNEvent]; // should be a cirular memory, store energy
