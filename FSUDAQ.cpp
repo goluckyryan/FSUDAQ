@@ -1298,6 +1298,6 @@ void MainWindow::LogMsg(QString msg){
   }
   QScrollBar *v = logInfo->verticalScrollBar();
   v->setValue(v->maximum());
-  qDebug() << outputStr;
+  //qDebug() << outputStr;
   logInfo->repaint();
 }

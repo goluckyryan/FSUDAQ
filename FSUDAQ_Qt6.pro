@@ -6,11 +6,13 @@ TEMPLATE = app
 TARGET = FSUDAQ_Qt6
 INCLUDEPATH += .
 
-#QT += core widgets charts webenginewidgets
-QT += core widgets charts
+QT += core widgets charts printsupport
 
-QMAKE_CXXFLAGS += -g `root-config --cflags --glibs`
-LIBS += -lCAENDigitizer -lcurl `root-config --cflags --glibs`
+#QMAKE_CXXFLAGS += -g `root-config --cflags --glibs`
+#LIBS += -lCAENDigitizer -lcurl `root-config --cflags --glibs`
+
+QMAKE_CXXFLAGS += -g
+LIBS += -lCAENDigitizer -lcurl
 
 # You can make your code fail to compile if you use deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -32,7 +34,8 @@ HEADERS += ClassData.h \
            Scope.h \
            CanvasClass.h \
            OnlineEventBuilder.h \
-           OnlineAnalyser.h
+           OnlineAnalyser.h \
+           qcustomplot.h
 SOURCES += ClassDigitizer.cpp \
            DigiSettingsPanel.cpp \
            FSUDAQ.cpp \
@@ -41,4 +44,5 @@ SOURCES += ClassDigitizer.cpp \
            Scope.cpp \
            CanvasClass.cpp \
            OnlineEventBuilder.cpp \
-           OnlineAnalyser.cpp
+           OnlineAnalyser.cpp \
+           qcustomplot.cpp
