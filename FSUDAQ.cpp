@@ -54,9 +54,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     layout->addWidget(bnOpenScope, 1, 1);
     connect(bnOpenScope, &QPushButton::clicked, this, &MainWindow::OpenScope);
 
-    bnAnalyzer = new QPushButton("Online Analyzer", this);
-    layout->addWidget(bnAnalyzer, 0, 2);
-    connect(bnAnalyzer, &QPushButton::clicked, this, &MainWindow::OpenAnalyzer);
+    // bnAnalyzer = new QPushButton("Online Analyzer", this);
+    // layout->addWidget(bnAnalyzer, 0, 2);
+    // connect(bnAnalyzer, &QPushButton::clicked, this, &MainWindow::OpenAnalyzer);
 
     bnCanvas = new QPushButton("Online 1D Histograms", this);
     layout->addWidget(bnCanvas, 1, 2);
@@ -613,7 +613,7 @@ void MainWindow::WaitForDigitizersOpen(bool onOff){
   bnStopACQ->setEnabled(!onOff);
   chkSaveData->setEnabled(!onOff);
   bnCanvas->setEnabled(!onOff);
-  bnAnalyzer->setEnabled(!onOff);
+  // bnAnalyzer->setEnabled(!onOff);
 
 }
 
@@ -1294,6 +1294,6 @@ void MainWindow::LogMsg(QString msg){
   }
   QScrollBar *v = logInfo->verticalScrollBar();
   v->setValue(v->maximum());
-  qDebug() << outputStr;
+  //qDebug() << outputStr;
   logInfo->repaint();
 }
