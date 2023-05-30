@@ -31,6 +31,7 @@ public:
   void BuildEvents(unsigned short timeWindow, bool verbose = false);
 
   long eventIndex;
+  long eventbuilt;
   std::vector<dataPoint> events[MaxNEvent]; // should be a cirular memory, store energy
 
   unsigned short GetTimeWindow() const { return timeWindow;}

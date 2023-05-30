@@ -6,13 +6,11 @@ TEMPLATE = app
 TARGET = FSUDAQ_Qt6
 INCLUDEPATH += .
 
+#QT += core widgets charts webenginewidgets
 QT += core widgets charts
 
-#QMAKE_CXXFLAGS += `root-config --cflags --glibs`
-#LIBS += -lCAENDigitizer  `root-config --cflags --glibs`
-
-QMAKE_CXXFLAGS += -g
-LIBS += -lCAENDigitizer -lcurl
+QMAKE_CXXFLAGS += -g `root-config --cflags --glibs`
+LIBS += -lCAENDigitizer -lcurl `root-config --cflags --glibs`
 
 # You can make your code fail to compile if you use deprecated APIs.
 # In order to do so, uncomment the following line.

@@ -16,11 +16,13 @@ CAENCOmm_v1.5.3
 
 CAENDigitizer_v2.17.1
 
-`sudo apt install qt6-base-dev libcurl4-openssl-dev libqt6charts6-dev elog`
+`sudo apt install qt6-base-dev libcurl4-openssl-dev libqt6charts6-dev qt6-webengine-dev elog`
 
 The elog installed using apt is 3.1.3. If a higher version is needed. Please go to https://elog.psi.ch/elog/
 
 The libcurl4 is need for pushing data to InfluxDB v1.8
+
+
 
 # Compile
 

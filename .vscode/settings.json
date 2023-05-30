@@ -152,6 +152,7 @@
     "variant": "cpp",
     "qmainwindow": "cpp",
     "qchartview": "cpp",
-    "qthread": "cpp"
+    "qthread": "cpp",
+    "qrandomgenerator": "cpp"
   }
 }

@@ -34,7 +34,7 @@ derivative class should define the SetUpCanvas() and UpdateHistogram();
 
 //^==============================================
 //^==============================================
-class Histogram2D{
+class Histogram2D{ //TODO, cannot handle more then 3000 datapoint
 public:
   Histogram2D(QString title, double xMin, double xMax, double yMin, double yMax){
 
@@ -113,6 +113,9 @@ private:
   TimingThread * buildTimerThread;
 
   QGridLayout * layout;
+
+  //======================== custom histograms
+  Histogram2D * h2;
 
 };
 #endif

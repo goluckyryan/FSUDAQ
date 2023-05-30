@@ -79,11 +79,15 @@ void OnlineEventBuilder::BuildEvents(unsigned short timeWindow, bool verbose){
 
   if( earlistCh == -1 || nExhaushedCh == nCh) return; /// no data
 
+  eventbuilt = 0;
+
   //======= Start building event
   do{
 
     eventIndex ++;
     if( eventIndex >= MaxNEvent ) eventIndex = 0;
+
+    eventbuilt ++;
     
     unsigned long long dT =0;
     dataPoint dp = {0, 0, 0};

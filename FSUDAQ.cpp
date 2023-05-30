@@ -836,6 +836,8 @@ void MainWindow::StartACQ(){
   bnStopACQ->setEnabled(true);
   bnOpenScope->setEnabled(false);
 
+  if( onlineAnalyzer ) onlineAnalyzer->StartThread();
+
   {//^=== elog and database
     if( influx ){
       influx->AddDataPoint("RunID value=" + std::to_string(runID));
@@ -887,6 +889,8 @@ void MainWindow::StopACQ(){
     scalarThread->quit();
     scalarThread->wait();
   }
+
+  if( onlineAnalyzer ) onlineAnalyzer->StopThread();
 
   if( histThread->isRunning()){
     histThread->Stop();
