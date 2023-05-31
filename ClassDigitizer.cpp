@@ -347,8 +347,7 @@ int Digitizer::ProgramPSDBoard(){
   //ret = CAEN_DGTZ_Reset(handle);
   Reset();
 
-  ret = CAEN_DGTZ_WriteRegister(handle, DPP::RecordLength_G + 0x7000, 62);  
-  ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardConfiguration, 0x0F3911);  /// has Extra2, dual trace, input and CFD
+  ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardConfiguration, 0x0F0115);  /// has Extra2, dual trace, input and CFD
 
   ret = CAEN_DGTZ_SetAcquisitionMode(handle, CAEN_DGTZ_SW_CONTROLLED); /// software command
   ret |= CAEN_DGTZ_SetIOLevel(handle, CAEN_DGTZ_IOLevel_NIM);
@@ -358,12 +357,12 @@ int Digitizer::ProgramPSDBoard(){
 
   ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::ChannelDCOffset) + 0x7000 , 0xEEEE );
 
-  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PreTrigger) + 0x7000 , 32 );
-  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::RecordLength_G) + 0x7000 , 128 );
+  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PreTrigger) + 0x7000 , 20 );
+  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::RecordLength_G) + 0x7000 , 80 );
   
-  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PSD::ShortGateWidth) + 0x7000 , 10 );
-  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PSD::LongGateWidth) + 0x7000 , 30 );
-  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PSD::GateOffset) + 0x7000 , 3 );
+  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PSD::ShortGateWidth) + 0x7000 , 32 );
+  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PSD::LongGateWidth) + 0x7000 , 64 );
+  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PSD::GateOffset) + 0x7000 , 19 );
 
   if( ret != 0 ) { printf("==== set channels error.\n"); return 0;}
   

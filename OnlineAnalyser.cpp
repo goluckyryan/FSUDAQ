@@ -51,8 +51,11 @@ void OnlineAnalyzer::StopThread(){
 
 void OnlineAnalyzer::SetUpCanvas(){
 
-  h2 = new Histogram2D("testing", "x", "y", 100, 0, 4000, 100, 0, 4000, this);
+  h2 = new Histogram2D("testing", "x", "y", 400, 0, 4000, 400, 0, 4000, this);
   layout->addWidget(h2);
+
+  h1 = new Histogram1D("testing", "x", 400, 0, 4000, this);
+  layout->addWidget(h1);
 
 
   //Histogram * h1 = new Histogram("h1", 0, 5000, 200);
@@ -60,10 +63,13 @@ void OnlineAnalyzer::SetUpCanvas(){
 
   std::random_device rd;
   std::mt19937 gen(rd());
-  std::normal_distribution<double> distribution(2000.0, 500);
+  std::normal_distribution<double> distribution(2000.0, 1000);
   for( int i = 0; i < 1000 ; i++ ){
-    h2->Fill(distribution(gen), distribution(gen));
+    //h2->Fill(distribution(gen), distribution(gen));
+    h1->Fill(distribution(gen));
   }
+
+  h1->UpdatePlot();
 
 }
 
@@ -71,13 +77,11 @@ void OnlineAnalyzer::UpdateHistograms(){
 
   //Set with digitizer to be event build
   digiMTX[0].lock();
-  //digi[0]->GetData()->PrintAllData();
   oeb[0]->BuildEvents(100, false);
   digiMTX[0].unlock();
 
   //============ Get events, and do analysis
   long eventBuilt = oeb[0]->eventbuilt;
-  printf("------------- eventBuilt %ld \n", eventBuilt);
   if( eventBuilt == 0 ) return;
 
   long eventIndex = oeb[0]->eventIndex;
@@ -87,7 +91,6 @@ void OnlineAnalyzer::UpdateHistograms(){
 
   unsigned short e1 = 0, e2 = 0;
 
-  int count = 0;
   for( long i = eventStart ; i <= eventIndex; i ++ ){
     std::vector<dataPoint> event = oeb[0]->events[i];
 
@@ -97,8 +100,10 @@ void OnlineAnalyzer::UpdateHistograms(){
     }
 
     h2->Fill(e1, e2);
-    count ++;
-    if( count > 500 ) break;
+
+    //h1->Fill(e1);
   }
+
+  h2->UpdatePlot();
 
 }

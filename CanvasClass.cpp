@@ -58,30 +58,25 @@ Canvas::Canvas(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent) : QM
   double nBin = 100;
 
   for( unsigned int i = 0; i < MaxNDigitizer; i++){
-    for( int j = 0; j < MaxNChannels; j++){
+    for( int j = 0; j < digi[i]->GetNChannels(); j++){
       if( i < nDigi ) {
-        hist[i][j] = new Histogram("Digi-" + QString::number(digi[i]->GetSerialNumber()) +", Ch-" +  QString::number(j), xMin, xMax, nBin);
-        histView[i][j] = new RChartView(hist[i][j]->GetChart());
-        histView[i][j]->SetVRange(0, 10);
+        hist[i][j] = new Histogram1D("Digi-" + QString::number(digi[i]->GetSerialNumber()) +", Ch-" +  QString::number(j), "Raw Energy [ch]", nBin, xMin, xMax);
       }else{
         hist[i][j] = nullptr;
       }
     }
   }
 
-  histLayout->addWidget(histView[0][0], 0, 0);
+  histLayout->addWidget(hist[0][0], 0, 0);
   oldBd = -1;
   oldCh = -1;
 
 }
 
 Canvas::~Canvas(){
-  for( int i = 0; i < MaxNDigitizer; i++){
-    for( int j = 0; j < MaxNChannels; j++){
-      if( hist[i][j] ) {
-        delete hist[i][j];
-        delete histView[i][j];
-      }
+  for( unsigned int i = 0; i < nDigi; i++ ){
+    for( int ch = 0; ch < digi[i]->GetNChannels(); ch++){
+      delete hist[i][ch];
     }
   }
 }
@@ -89,13 +84,13 @@ Canvas::~Canvas(){
 void Canvas::ChangeHistView(){
 
   if( oldCh >= 0 ) {
-    histLayout->removeWidget(histView[oldBd][oldCh]);
-    histView[oldBd][oldCh]->setParent(nullptr);
+    histLayout->removeWidget(hist[oldBd][oldCh]);
+    hist[oldBd][oldCh]->setParent(nullptr);
   }
   int bd = cbDigi->currentIndex();
   int ch = cbCh->currentIndex();
 
-  histLayout->addWidget(histView[bd][ch], 0, 0);
+  histLayout->addWidget(hist[bd][ch], 0, 0);
 
   oldBd = bd;
   oldCh = ch;
@@ -110,9 +105,14 @@ void Canvas::UpdateCanvas(){
       int lastIndex = digi[i]->GetData()->DataIndex[ch];
       int nDecoded = digi[i]->GetData()->NumEventsDecoded[ch];
     
+      if( nDecoded == 0 ) continue;
+
       for( int j = lastIndex - nDecoded + 1; j <= lastIndex; j ++){
         hist[i][ch]->Fill( digi[i]->GetData()->Energy[ch][j]);
       }
+
+      hist[i][ch]->UpdatePlot();
+
     }
     digiMTX[i].unlock();
 

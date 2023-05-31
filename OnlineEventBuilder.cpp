@@ -57,7 +57,6 @@ void OnlineEventBuilder::FindEarlistTimeAndCh(){
 }
 
 void OnlineEventBuilder::FindLatestTime(){
-
   latestTime = 0;
   for( unsigned ch = 0; ch < nCh; ch++ ){
     int index = data->DataIndex[ch];
@@ -66,8 +65,7 @@ void OnlineEventBuilder::FindLatestTime(){
       latestTime = data->Timestamp[ch][index];
     }
   }
-
-  printf("--- latest time %lld \n", latestTime);
+  //printf("--- latest time %lld \n", latestTime);
 }
 
 void OnlineEventBuilder::BuildEvents(unsigned short timeWindow, bool verbose){

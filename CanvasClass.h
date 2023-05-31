@@ -15,6 +15,7 @@
 #include "ClassDigitizer.h"
 #include "CustomThreads.h"
 #include "CustomWidgets.h"
+#include "CustomHistogram.h"
 
 
 //^====================================================
@@ -35,8 +36,7 @@ private:
   Digitizer ** digi;
   unsigned short nDigi;
 
-  Histogram * hist[MaxNDigitizer][MaxNChannels];
-  RChartView * histView[MaxNDigitizer][MaxNChannels];
+  Histogram1D * hist[MaxNDigitizer][MaxNChannels];
 
   RComboBox * cbDivision;
 
