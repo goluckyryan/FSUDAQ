@@ -283,11 +283,11 @@ MainWindow::~MainWindow(){
 
   if( scope ) delete scope;
 
-  if( digiSettings ) delete digiSettings;
-
   if( canvas ) delete canvas;
 
   if( onlineAnalyzer ) delete onlineAnalyzer;
+
+  if( digiSettings ) delete digiSettings;
 
   if( scalar ) {
     CleanUpScalar();
@@ -551,7 +551,10 @@ void MainWindow::OpenDigitizers(){
   WaitForDigitizersOpen(false);
   bnStopACQ->setEnabled(false);
 
-  if( rawDataPath == "" ) bnStartACQ->setEnabled(false);
+  if( rawDataPath == "" ) {
+    chkSaveData->setChecked(false);
+    chkSaveData->setEnabled(false);
+  }
 
   SetupScalar();
 
@@ -567,6 +570,12 @@ void MainWindow::CloseDigitizers(){
     scope->close();
     delete scope;
     scope = nullptr;
+  }
+
+  if( canvas ){
+    canvas->close();
+    delete canvas;
+    canvas = nullptr;
   }
 
   if( digiSettings ){
@@ -774,7 +783,6 @@ void MainWindow::UpdateScalar(){
         if( influx ){
           influx->AddDataPoint("Rate,Bd="+std::to_string(digi[iDigi]->GetSerialNumber()) + ",Ch=" + QString::number(i).rightJustified(2, '0').toStdString() + " value=" +  QString::number(digi[iDigi]->GetData()->TriggerRate[i], 'f', 2).toStdString());
         }
-
       }
     }
     digiMTX[iDigi].unlock();
@@ -802,9 +810,11 @@ void MainWindow::StartACQ(){
 
   if( chkSaveData->isChecked() ) {
     LogMsg("<font style=\"color: orange;\">===================== <b>Start a new Run-" + QString::number(runID) + "</b></font>");
+    WriteRunTimestamp(true);
   }else{
     LogMsg("<font style=\"color: orange;\">===================== <b>Start a non-save Run</b></font>");
   }
+
 
   for( unsigned int i = 0; i < nDigi ; i++){
     if( chkSaveData->isChecked() ) {
@@ -866,6 +876,7 @@ void MainWindow::StopACQ(){
 
   if( chkSaveData->isChecked() ) {
     LogMsg("===================== Stop Run-" + QString::number(runID));
+    WriteRunTimestamp(false);
   }else{
     LogMsg("===================== Stop a non-save Run");
   }

@@ -6,6 +6,21 @@ It has scope (updated every half-sec), allow full control of the digitizer (exce
 
 It can be connected to InfluxDB v1.8 and Elog.
 
+# Operation
+
+When programSettings.txt is presented in the same folder as the FSUDAQ_Qt, the program will load it can config the following 
+
+- (line 1) raw data path, where the data will be stored.
+- (line 2) the influxDB v1.8 IP
+- (line 3) the database name
+- (line 4) the elog IP
+- (line 5) the elog logbook name
+- (line 6) elog user name
+- (line 7) elog user password
+
+If no programSettings.txt is found. The program can still search for all digitizers that connected using optical cable. 
+Missing the raw data path will disable save data run, but still can start the ACQ. Missing InfluxDB (elog) variables will disable influxDB (elog). 
+
 # Undergoing
 
 the following additional functions are planned and I am working on them
@@ -19,10 +34,10 @@ the following additional functions are planned and I am working on them
 
 Ubuntu 22.04
 
-- CAENVMELib_v3.3
-- CAENCOmm_v1.5.3
-- CAENDigitizer_v2.17.1
-- CAEN A3818 Driver
+- CAENVMELib v3.3
+- CAENCOmm v1.5.3
+- CAENDigitizer v2.17.1
+- CAEN A3818 Driver v1.6.8
 
 - qt6-base-dev
 - libqt6charts6-dec

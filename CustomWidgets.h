@@ -16,6 +16,7 @@
 #include <QLineSeries>
 #include <QAreaSeries>
 #include <QValueAxis>
+#include <QMenu>
 
 //^====================================================
 class RSpinBox : public QDoubleSpinBox{
@@ -108,20 +109,6 @@ public:
 
     setRenderHints(QPainter::Antialiasing);
 
-    vRangeMin = -(0x1FFF);
-    vRangeMax = 0x1FFF;
-
-    hRangeMin = 0;
-    hRangeMax = 0;
-  }
-
-  void SetHRange(int min, int max) {
-    this->hRangeMin = min;
-    this->hRangeMax = max;
-  }  
-  void SetVRange(int min, int max) {
-    this->vRangeMin = min;
-    this->vRangeMax = max;
   }
 protected:
   bool viewportEvent(QEvent *event) override{
@@ -134,7 +121,23 @@ protected:
   void mousePressEvent(QMouseEvent *event) override{
     if (m_isTouching) return;
     QChartView::mousePressEvent(event);
+
+    if (event->button() == Qt::RightButton) {
+      QMenu *menu = new QMenu(this);
+      menu->setAttribute(Qt::WA_DeleteOnClose);
+
+      QAction * a1 = menu->addAction("UnZoom");
+      QAction *selectedAction = menu->exec(event->globalPosition().toPoint());
+      if( selectedAction == a1 ) chart()->zoomReset();
+
+    }
   }
+
+  void wheelEvent(QWheelEvent * event) override{
+    qreal zoomFactor = event->angleDelta().y() > 0 ? 0.9 : 1.1;
+    chart()->zoom(zoomFactor);
+  }
+  
   void mouseMoveEvent(QMouseEvent *event) override{
     QPointF chartPoint = this->chart()->mapToValue(event->pos());
     QString coordinateText = QString("x: %1, y: %2").arg(QString::number(chartPoint.x(), 'f', 0)).arg(QString::number(chartPoint.y(), 'f', 0));
@@ -162,9 +165,9 @@ protected:
       case Qt::Key_Up: chart()->scroll(0, 10); break;
       case Qt::Key_Down: chart()->scroll(0, -10);  break;
       case Qt::Key_R : 
+        chart()->zoomReset();
         //chart()->axes(Qt::Vertical).first()->setRange(-(0x1FFF), 0x1FFF);
-        chart()->axes(Qt::Vertical).first()->setRange(vRangeMin, vRangeMax);
-        if( hRangeMax != hRangeMin ) chart()->axes(Qt::Horizontal).first()->setRange(hRangeMin, hRangeMax);
+        //chart()->axes(Qt::Vertical).first()->setRange(vRangeMin, vRangeMax);
         break;
       default: QGraphicsView::keyPressEvent(event); break;
     }
@@ -172,10 +175,6 @@ protected:
 
 private:
   bool m_isTouching;
-  int hRangeMin;
-  int hRangeMax;
-  int vRangeMin;
-  int vRangeMax;
   QLabel * m_coordinateLabel;
 };
 

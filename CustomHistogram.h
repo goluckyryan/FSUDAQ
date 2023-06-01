@@ -7,8 +7,8 @@
 //^==============================================
 class Histogram1D : public QCustomPlot{
 public:
-  Histogram1D(QString title, QString xLabel, int xBin, double xMin, double xMax, QWidget * parent = nullptr) : QCustomPlot(parent){
-    Rebin(xBin, xMin, xMax);
+  Histogram1D(QString title, QString xLabel, int xbin, double xmin, double xmax, QWidget * parent = nullptr) : QCustomPlot(parent){
+    Rebin(xbin, xmin, xmax);
 
     xAxis->setLabel(xLabel);
 
@@ -31,7 +31,7 @@ public:
     graph(0)->setData(xList, yList);
 
     //setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
-    setInteractions( QCP::iRangeZoom );
+    setInteractions( QCP::iRangeDrag | QCP::iRangeZoom );
 
     rescaleAxes();
     yAxis->setRangeLower(0);
@@ -39,10 +39,10 @@ public:
 
     connect(this, &QCustomPlot::mouseMove, this, [=](QMouseEvent *event){
       double x = this->xAxis->pixelToCoord(event->pos().x());
-      int bin = (x - xMin)/dX;
+      double bin = (x - xMin)/dX;
       double z = yList[2*qFloor(bin) + 1];
 
-      QString coordinates = QString("Bin: %1, Value: %2").arg(bin).arg(z);
+      QString coordinates = QString("Bin: %1, Value: %2").arg(qFloor(bin)).arg(z);
       QToolTip::showText(event->globalPosition().toPoint(), coordinates, this);
     });
 
@@ -52,24 +52,28 @@ public:
         menu->setAttribute(Qt::WA_DeleteOnClose);
 
         QAction * a1 = menu->addAction("UnZoom");
+        //TODO QAction * a2 = menu->addAction("Fit Guass");
 
         QAction *selectedAction = menu->exec(event->globalPosition().toPoint());
-
         if( selectedAction == a1 ){
-          xAxis->setRangeLower(0);
+          xAxis->setRangeLower(xMin);
           xAxis->setRangeUpper(xMax);
           yAxis->setRangeLower(0);
-          yAxis->setRangeUpper(yMax * 1.2);
+          yAxis->setRangeUpper(yMax * 1.2 > 10 ? yMax * 1.2 : 10);
           replot();
         }
-
       }
     });
+
   }
+
+  int    GetNBin() const {return xBin;}
+  double GetXMin() const {return xMin;}
+  double GetXMax() const {return xMax;}
 
   void UpdatePlot(){
     graph(0)->setData(xList, yList);
-    xAxis->setRangeLower(0);
+    xAxis->setRangeLower(xMin);
     xAxis->setRangeUpper(xMax);
     yAxis->setRangeLower(0);
     yAxis->setRangeUpper(yMax * 1.2 > 10 ? yMax * 1.2 : 10);
@@ -77,14 +81,15 @@ public:
   }
 
   void Clear(){
-    for( int i = 0; i <= xBin; i++) yList[i] = 0;
-    graph(0)->setData(xList, yList);
+    for( int i = 0; i <= yList.count(); i++) yList[i] = 0;
+    yMax = 0;
+    UpdatePlot();
   }
 
-  void Rebin(int xBin, double xMin, double xMax){
-    this->xMin = xMin;
-    this->xMax = xMax;
-    this->xBin = xBin;
+  void Rebin(int xbin, double xmin, double xmax){
+    xMin = xmin;
+    xMax = xmax;
+    xBin = xbin;
 
     dX = (xMax - xMin)/(xBin);
 
@@ -92,8 +97,8 @@ public:
     yList.clear();
 
     for( int i = 0; i <= xBin; i ++ ){
-      xList.append(i*dX-(dX)*0.000001); 
-      xList.append(i*dX); 
+      xList.append(xMin + i*dX-(dX)*0.000001); 
+      xList.append(xMin + i*dX); 
       yList.append(0); 
       yList.append(0); 
     }
@@ -107,7 +112,6 @@ public:
   }
 
   void Fill(double value){
-
     totalEntry ++;
     if( value < xMin ) underFlow ++;
     if( value > xMax ) overFlow ++;
@@ -115,6 +119,7 @@ public:
     double bin = (value - xMin)/dX;
     int index1 = 2*qFloor(bin) + 1;
     int index2 = index1 + 1;
+
     if( 0 <= index1 && index1 <= 2*xBin) yList[index1] += 1;
     if( 0 <= index1 && index2 <= 2*xBin) yList[index2] += 1;
 
@@ -145,19 +150,19 @@ private:
 //^==============================================
 class Histogram2D : public QCustomPlot{
 public:
-  Histogram2D(QString title, QString xLabel, QString yLabel, int xBin, double xMin, double xMax, int yBin, double yMin, double yMax, QWidget * parent = nullptr) : QCustomPlot(parent){
-    this->xMin = xMin;
-    this->xMax = xMax;
-    this->yMin = yMin;
-    this->yMax = yMax;
-    this->xBin = xBin;
-    this->yBin = yBin;
+  Histogram2D(QString title, QString xLabel, QString yLabel, int xbin, double xmin, double xmax, int ybin, double ymin, double ymax, QWidget * parent = nullptr) : QCustomPlot(parent){
+    xMin = xmin;
+    xMax = xmax;
+    yMin = ymin;
+    yMax = ymax;
+    xBin = xbin;
+    yBin = ybin;
 
     axisRect()->setupFullAxesBox(true);
     xAxis->setLabel(xLabel);
     yAxis->setLabel(yLabel);
 
-    colorMap = new QCPColorMap(this->xAxis, this->yAxis);
+    colorMap = new QCPColorMap(xAxis, yAxis);
     colorMap->data()->setSize(xBin, yBin);
     colorMap->data()->setRange(QCPRange(xMin, xMax), QCPRange(yMin, yMax));
     colorMap->setInterpolate(false);
@@ -180,14 +185,34 @@ public:
     rescaleAxes();
 
     connect(this, &QCustomPlot::mouseMove, this, [=](QMouseEvent *event){
-      double x = this->xAxis->pixelToCoord(event->pos().x());
-      double y = this->yAxis->pixelToCoord(event->pos().y());
+      double x = xAxis->pixelToCoord(event->pos().x());
+      double y = yAxis->pixelToCoord(event->pos().y());
       int xI, yI;
       colorMap->data()->coordToCell(x, y, &xI, &yI);
       double z = colorMap->data()->cell(xI, yI);
 
       QString coordinates = QString("X: %1, Y: %2, Z: %3").arg(x).arg(y).arg(z);
       QToolTip::showText(event->globalPosition().toPoint(), coordinates, this);
+    });
+
+
+    connect(this, &QCustomPlot::mousePress, this, [=](QMouseEvent * event){
+      if (event->button() == Qt::RightButton) {
+        QMenu *menu = new QMenu(this);
+        menu->setAttribute(Qt::WA_DeleteOnClose);
+
+        QAction * a1 = menu->addAction("UnZoom");
+
+        QAction *selectedAction = menu->exec(event->globalPosition().toPoint());
+
+        if( selectedAction == a1 ){
+          xAxis->setRangeLower(xMin);
+          xAxis->setRangeUpper(xMax);
+          yAxis->setRangeLower(yMin);
+          yAxis->setRangeUpper(yMax);
+          replot();
+        }
+      }
     });
 
   }

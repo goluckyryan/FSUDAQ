@@ -42,10 +42,20 @@ private:
 
   RComboBox * cbDigi;
   RComboBox * cbCh;
+  
+  bool enableSignalSlot;
+
+  RSpinBox * sbNBin;
+  RSpinBox * sbXMin;
+  RSpinBox * sbXMax;
+  QPushButton * bnReBin;
 
   QGroupBox * histBox;
   QGridLayout * histLayout;
   int oldBd, oldCh;
+
+  int lastFilledIndex[MaxNDigitizer][MaxNChannels];
+  int loopFilledIndex[MaxNDigitizer][MaxNChannels];
 
 };
 #endif

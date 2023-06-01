@@ -206,6 +206,15 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
 
   UpdatePanelFromMomeory();
 
+  if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) {
+    QValueAxis * yaxis = qobject_cast<QValueAxis*> (plot->axes(Qt::Vertical).first());
+    yaxis->setRange(-(0x1FFF), 0x1FFF);
+  }
+  if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) {
+    QValueAxis * yaxis = qobject_cast<QValueAxis*> (plot->axes(Qt::Vertical).first());
+    yaxis->setRange(0, 0x3FFF);
+  }
+
   enableSignalSlot = true;
 
 }
