@@ -1,9 +1,9 @@
-#include "OnlineAnalyser.h"
+#include "Analyser.h"
 
 #include <QRandomGenerator>
 #include <random>
 
-OnlineAnalyzer::OnlineAnalyzer(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent ): QMainWindow(parent){
+Analyzer::Analyzer(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent ): QMainWindow(parent){
 
   this->digi = digi;
   this->nDigi = nDigi;
@@ -13,7 +13,7 @@ OnlineAnalyzer::OnlineAnalyzer(Digitizer ** digi, unsigned int nDigi, QMainWindo
 
   buildTimerThread = new TimingThread(this);
   buildTimerThread->SetWaitTimeinSec(1.0); //^Set event build interval
-  connect( buildTimerThread, &TimingThread::timeUp, this, &OnlineAnalyzer::UpdateHistograms);
+  connect( buildTimerThread, &TimingThread::timeUp, this, &Analyzer::UpdateHistograms);
 
   setWindowTitle("Online Analyzer");
   setGeometry(0, 0, 1000, 800);  
@@ -30,18 +30,18 @@ OnlineAnalyzer::OnlineAnalyzer(Digitizer ** digi, unsigned int nDigi, QMainWindo
 
 }
 
-OnlineAnalyzer::~OnlineAnalyzer(){
+Analyzer::~Analyzer(){
 
   for( unsigned int i = 0; i < nDigi; i++ ) delete oeb[i];
   delete [] oeb;
 
 }
 
-void OnlineAnalyzer::StartThread(){
+void Analyzer::StartThread(){
   buildTimerThread->start();
 }
 
-void OnlineAnalyzer::StopThread(){
+void Analyzer::StopThread(){
 
   buildTimerThread->Stop();
   buildTimerThread->quit();
@@ -49,7 +49,7 @@ void OnlineAnalyzer::StopThread(){
 
 }
 
-void OnlineAnalyzer::SetUpCanvas(){
+void Analyzer::SetUpCanvas(){
 
   h2 = new Histogram2D("testing", "x", "y", 400, 0, 4000, 400, 0, 4000, this);
   layout->addWidget(h2);
@@ -65,7 +65,7 @@ void OnlineAnalyzer::SetUpCanvas(){
   std::mt19937 gen(rd());
   std::normal_distribution<double> distribution(2000.0, 1000);
   for( int i = 0; i < 1000 ; i++ ){
-    //h2->Fill(distribution(gen), distribution(gen));
+    h2->Fill(distribution(gen), distribution(gen));
     h1->Fill(distribution(gen));
   }
 
@@ -73,7 +73,7 @@ void OnlineAnalyzer::SetUpCanvas(){
 
 }
 
-void OnlineAnalyzer::UpdateHistograms(){
+void Analyzer::UpdateHistograms(){
 
   //Set with digitizer to be event build
   digiMTX[0].lock();

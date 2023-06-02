@@ -16,9 +16,9 @@
 #include "CustomWidgets.h"
 #include "Scope.h"
 #include "DigiSettingsPanel.h"
-#include "CanvasClass.h"
+#include "SingleSpectra.h"
 #include "influxdb.h"
-#include "OnlineAnalyser.h"
+#include "Analyser.h"
 
 //^#===================================================== MainWindow
 class MainWindow : public QMainWindow{
@@ -150,12 +150,12 @@ private:
   //@----- DigiSettings
   DigiSettingsPanel * digiSettings;
 
-  //@----- Canvas
-  Canvas * canvas;
+  //@----- SingleSpectra
+  SingleSpectra * canvas;
   TimingThread * histThread;
 
   //@----- Analyzer
-  OnlineAnalyzer * onlineAnalyzer;
+  Analyzer * onlineAnalyzer;
   
 
 };

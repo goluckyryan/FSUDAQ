@@ -1,5 +1,5 @@
-#ifndef ONLINE_ANALYZER_H
-#define ONLINE_ANALYZER_H
+#ifndef ANALYZER_H
+#define ANALYZER_H
 
 #include <QMainWindow>
 #include <QChart>
@@ -32,12 +32,12 @@ derivative class should define the SetUpCanvas() and UpdateHistogram();
 
 //^==============================================
 //^==============================================
-class OnlineAnalyzer : public QMainWindow{
+class Analyzer : public QMainWindow{
   Q_OBJECT
 
 public:
-  OnlineAnalyzer(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent = nullptr);
-  virtual ~OnlineAnalyzer();
+  Analyzer(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent = nullptr);
+  virtual ~Analyzer();
 
   virtual void SetUpCanvas();
 

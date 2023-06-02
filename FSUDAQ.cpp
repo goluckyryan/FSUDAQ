@@ -520,15 +520,15 @@ void MainWindow::OpenDigitizers(){
       }
 
     }else{
-      LogMsg("Found <b>" + fileName + "</b> for digitizer settings.");
+      // LogMsg("Found <b>" + fileName + "</b> for digitizer settings.");
       
-      if( digi[i]->LoadSettingBinaryToMemory(fileName.toStdString().c_str()) == 0 ){
-        LogMsg("Loaded settings file <b>" + fileName + "</b> for Digi-" + QString::number(digi[i]->GetSerialNumber()));
-        digi[i]->ProgramSettingsToBoard();
+      // if( digi[i]->LoadSettingBinaryToMemory(fileName.toStdString().c_str()) == 0 ){
+      //   LogMsg("Loaded settings file <b>" + fileName + "</b> for Digi-" + QString::number(digi[i]->GetSerialNumber()));
+      //   digi[i]->ProgramSettingsToBoard();
         
-      }else{
-        LogMsg("Fail to Loaded settings file " + fileName + " for Digi-" + QString::number(digi[i]->GetSerialNumber()));
-      }
+      // }else{
+      //   LogMsg("Fail to Loaded settings file " + fileName + " for Digi-" + QString::number(digi[i]->GetSerialNumber()));
+      // }
     }    
     digi[i]->ReadAllSettingsFromBoard(true);
 
@@ -538,12 +538,12 @@ void MainWindow::OpenDigitizers(){
     QCoreApplication::processEvents(); //to prevent Qt said application not responding.
   }
 
-  canvas = new Canvas(digi, nDigi);
+  canvas = new SingleSpectra(digi, nDigi, rawDataPath);
   histThread = new TimingThread(this);
   histThread->SetWaitTimeinSec(0.5);
   connect(histThread, &TimingThread::timeUp, this, [=](){
-    if( canvas == nullptr ) return; 
-    canvas->UpdateCanvas();
+    if( canvas == nullptr &&   !canvas->IsFillHistograms()) return; 
+    canvas->FillHistograms();
   });
 
   LogMsg(QString("Done. Opened %1 digitizer(s).").arg(nDigi));
@@ -1060,7 +1060,7 @@ void MainWindow::OpenScope(){
       }
 
       if( canvas ){
-        if( onOff ) {
+        if( onOff) {
           histThread->start();
         }else{
           if( histThread->isRunning()){
@@ -1110,7 +1110,7 @@ void MainWindow::OpenDigiSettings(){
 void MainWindow::OpenCanvas(){
 
   if( canvas == nullptr ) {
-    canvas = new Canvas(digi, nDigi);
+    canvas = new SingleSpectra(digi, nDigi, rawDataPath);
     canvas->show();
   }else{
     canvas->show();
@@ -1123,7 +1123,7 @@ void MainWindow::OpenCanvas(){
 void MainWindow::OpenAnalyzer(){
 
   if( onlineAnalyzer == nullptr ) {
-    onlineAnalyzer = new OnlineAnalyzer(digi, nDigi);
+    onlineAnalyzer = new Analyzer(digi, nDigi);
     onlineAnalyzer->show();
   }else{
     onlineAnalyzer->show();

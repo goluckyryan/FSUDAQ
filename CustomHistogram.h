@@ -13,6 +13,10 @@ public:
     xAxis->setLabel(xLabel);
 
     legend->setVisible(true);
+    QPen borderPen = legend->borderPen();
+    borderPen.setWidth(0);
+    borderPen.setColor(Qt::transparent);
+    legend->setBorderPen(borderPen);
     legend->setFont(QFont("Helvetica", 9));
 
     addGraph();
@@ -31,11 +35,36 @@ public:
     graph(0)->setData(xList, yList);
 
     //setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
-    setInteractions( QCP::iRangeDrag | QCP::iRangeZoom );
+    //setInteractions( QCP::iRangeDrag | QCP::iRangeZoom );
+
+    //setSelectionRectMode(QCP::SelectionRectMode::srmZoom);
 
     rescaleAxes();
     yAxis->setRangeLower(0);
     yAxis->setRangeUpper(10);
+
+    txtTotEntry = new QCPItemText(this);
+    txtTotEntry->setPositionAlignment(Qt::AlignLeft);
+    txtTotEntry->position->setType(QCPItemPosition::ptAxisRectRatio);
+    txtTotEntry->position->setCoords(0.1, 0.1);;
+    txtTotEntry->setText("Total Entry : 0");
+    txtTotEntry->setFont(QFont("Helvetica", 9));
+
+    txtUnderFlow = new QCPItemText(this);
+    txtUnderFlow->setPositionAlignment(Qt::AlignLeft);
+    txtUnderFlow->position->setType(QCPItemPosition::ptAxisRectRatio);
+    txtUnderFlow->position->setCoords(0.1, 0.15);;
+    txtUnderFlow->setText("Under Flow : 0");
+    txtUnderFlow->setFont(QFont("Helvetica", 9));
+
+    txtOverFlow = new QCPItemText(this);
+    txtOverFlow->setPositionAlignment(Qt::AlignLeft);
+    txtOverFlow->position->setType(QCPItemPosition::ptAxisRectRatio);
+    txtOverFlow->position->setCoords(0.1, 0.2);;
+    txtOverFlow->setText("Over Flow : 0");
+    txtOverFlow->setFont(QFont("Helvetica", 9));
+
+    usingMenu = false;
 
     connect(this, &QCustomPlot::mouseMove, this, [=](QMouseEvent *event){
       double x = this->xAxis->pixelToCoord(event->pos().x());
@@ -47,7 +76,12 @@ public:
     });
 
     connect(this, &QCustomPlot::mousePress, this, [=](QMouseEvent * event){
+      if (event->button() == Qt::LeftButton && !usingMenu){
+        setSelectionRectMode(QCP::SelectionRectMode::srmZoom);
+      }
       if (event->button() == Qt::RightButton) {
+        usingMenu = true;
+        setSelectionRectMode(QCP::SelectionRectMode::srmNone);
         QMenu *menu = new QMenu(this);
         menu->setAttribute(Qt::WA_DeleteOnClose);
 
@@ -61,6 +95,7 @@ public:
           yAxis->setRangeLower(0);
           yAxis->setRangeUpper(yMax * 1.2 > 10 ? yMax * 1.2 : 10);
           replot();
+          usingMenu = false;
         }
       }
     });
@@ -113,8 +148,18 @@ public:
 
   void Fill(double value){
     totalEntry ++;
-    if( value < xMin ) underFlow ++;
-    if( value > xMax ) overFlow ++;
+    txtTotEntry->setText("Total Entry : "+ QString::number(totalEntry));
+
+    if( value < xMin ) {
+      underFlow ++;
+      txtUnderFlow->setText("Under Flow : "+ QString::number(underFlow));
+      return;
+    }
+    if( value > xMax ) {
+      overFlow ++;
+      txtOverFlow->setText("Over Flow : "+ QString::number(overFlow));
+      return;
+    }
 
     double bin = (value - xMin)/dX;
     int index1 = 2*qFloor(bin) + 1;
@@ -143,6 +188,12 @@ private:
   int overFlow;
 
   QVector<double> xList, yList;
+
+  QCPItemText * txtTotEntry;
+  QCPItemText * txtUnderFlow;
+  QCPItemText * txtOverFlow;
+
+  bool usingMenu;
 
 };
 
@@ -184,6 +235,8 @@ public:
 
     rescaleAxes();
 
+    usingMenu = false;
+
     connect(this, &QCustomPlot::mouseMove, this, [=](QMouseEvent *event){
       double x = xAxis->pixelToCoord(event->pos().x());
       double y = yAxis->pixelToCoord(event->pos().y());
@@ -195,9 +248,14 @@ public:
       QToolTip::showText(event->globalPosition().toPoint(), coordinates, this);
     });
 
-
     connect(this, &QCustomPlot::mousePress, this, [=](QMouseEvent * event){
+      if (event->button() == Qt::LeftButton && !usingMenu){
+        setSelectionRectMode(QCP::SelectionRectMode::srmZoom);
+      }
       if (event->button() == Qt::RightButton) {
+        usingMenu = true;
+        setSelectionRectMode(QCP::SelectionRectMode::srmNone);
+
         QMenu *menu = new QMenu(this);
         menu->setAttribute(Qt::WA_DeleteOnClose);
 
@@ -211,6 +269,7 @@ public:
           yAxis->setRangeLower(yMin);
           yAxis->setRangeUpper(yMax);
           replot();
+          usingMenu = false;
         }
       }
     });
@@ -218,17 +277,8 @@ public:
   }
 
   void UpdatePlot(){
-    // rescale the data dimension (color) such that all data points lie in the span visualized by the color gradient:
     colorMap->rescaleDataRange();
-  
-    // make sure the axis rect and color scale synchronize their bottom and top margins (so they line up):
-    // QCPMarginGroup *marginGroup = new QCPMarginGroup(this);
-    // this->axisRect()->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
-    // colorScale->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
-    
-    // rescale the key (x) and value (y) axes so the whole color map is visible:
     rescaleAxes();
-
     replot();
   }
 
@@ -247,6 +297,8 @@ private:
 
   QCPColorMap * colorMap;
   QCPColorScale *colorScale;
+
+  bool usingMenu;
 
 };
 

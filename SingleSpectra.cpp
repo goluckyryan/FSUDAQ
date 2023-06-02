@@ -1,4 +1,4 @@
-#include "CanvasClass.h"
+#include "SingleSpectra.h"
 
 #include <QValueAxis>
 #include <QRandomGenerator>
@@ -7,14 +7,15 @@
 #include <QLabel>
 #include <QRandomGenerator>
 
-Canvas::Canvas(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent) : QMainWindow(parent){
+SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawDataPath, QMainWindow * parent) : QMainWindow(parent){
 
   this->digi = digi;
   this->nDigi = nDigi;
+  this->rawDataPath = rawDataPath;
 
   enableSignalSlot = false;
 
-  setWindowTitle("Canvas");
+  setWindowTitle("1-D Histograms");
   setGeometry(0, 0, 1000, 800);  
   //setWindowFlags( this->windowFlags() & ~Qt::WindowCloseButtonHint );
 
@@ -32,12 +33,12 @@ Canvas::Canvas(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent) : QM
     cbDigi = new RComboBox(this);
     for( unsigned int i = 0; i < nDigi; i++) cbDigi->addItem("Digi-" + QString::number( digi[i]->GetSerialNumber() ), i);
     ctrlLayout->addWidget(cbDigi, 0, 0, 1, 2);
-    connect( cbDigi, &RComboBox::currentIndexChanged, this, &Canvas::ChangeHistView);
+    connect( cbDigi, &RComboBox::currentIndexChanged, this, &SingleSpectra::ChangeHistView);
 
     cbCh   = new RComboBox(this);
     for( int i = 0; i < MaxNChannels; i++) cbCh->addItem("ch-" + QString::number( i ), i);
     ctrlLayout->addWidget(cbCh, 0, 2, 1, 2);
-    connect( cbCh, &RComboBox::currentIndexChanged, this, &Canvas::ChangeHistView);
+    connect( cbCh, &RComboBox::currentIndexChanged, this, &SingleSpectra::ChangeHistView);
 
     QPushButton * bnClearHist = new QPushButton("Clear Hist.", this);
     ctrlLayout->addWidget(bnClearHist, 0, 4, 1, 2);
@@ -48,6 +49,12 @@ Canvas::Canvas(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent) : QM
         }
       }
     });
+
+    QCheckBox * chkIsFillHistogram = new QCheckBox("Fill Histograms", this);
+    ctrlLayout->addWidget(chkIsFillHistogram, 0, 6);
+    connect(chkIsFillHistogram, &QCheckBox::stateChanged, this, [=](int state){ fillHistograms = state;});
+    chkIsFillHistogram->setChecked(false);
+    fillHistograms = false;
 
     QLabel * lbNBin = new QLabel("#Bin:", this);
     lbNBin->setAlignment(Qt::AlignRight | Qt::AlignCenter );
@@ -82,29 +89,20 @@ Canvas::Canvas(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent) : QM
     sbXMax->setMinimum(-0x3FFF);
     sbXMax->setMaximum(0x3FFF);
     ctrlLayout->addWidget(sbXMax, 1, 5);
-    connect(sbXMin, &RSpinBox::valueChanged, this, [=](){
+    connect(sbXMax, &RSpinBox::valueChanged, this, [=](){
       if( !enableSignalSlot ) return;
-      sbXMin->setStyleSheet("color : blue;");
+      sbXMax->setStyleSheet("color : blue;");
       bnReBin->setEnabled(true);
     });
+
+    connect(sbNBin, &RSpinBox::returnPressed, this, &SingleSpectra::RebinHistogram);
+    connect(sbXMin, &RSpinBox::returnPressed, this, &SingleSpectra::RebinHistogram);
+    connect(sbXMax, &RSpinBox::returnPressed, this, &SingleSpectra::RebinHistogram);
 
     bnReBin = new QPushButton("Rebin and Clear Histogram", this);
     ctrlLayout->addWidget(bnReBin, 1, 6);
     bnReBin->setEnabled(false);
-    connect(bnReBin, &QPushButton::clicked, this, [=](){
-      if( !enableSignalSlot ) return;
-      int bd = cbDigi->currentIndex();
-      int ch = cbCh->currentIndex();
-      hist[bd][ch]->Rebin( sbNBin->value(), sbXMin->value(), sbXMax->value());
-
-      sbNBin->setStyleSheet("");
-      sbXMin->setStyleSheet("");
-      sbXMax->setStyleSheet("");
-      bnReBin->setEnabled(false);
-
-      hist[bd][ch]->UpdatePlot();
-
-    });
+    connect(bnReBin, &QPushButton::clicked, this, &SingleSpectra::RebinHistogram);
 
   }
 
@@ -114,9 +112,9 @@ Canvas::Canvas(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent) : QM
     histLayout = new QGridLayout(histBox);
     histBox->setLayout(histLayout);
 
-    double xMax = 4000;
+    double xMax = 5000;
     double xMin = 0;
-    double nBin = 100;
+    double nBin = 200;
 
     for( unsigned int i = 0; i < MaxNDigitizer; i++){
       if( i >= nDigi ) continue;
@@ -128,6 +126,8 @@ Canvas::Canvas(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent) : QM
         }
       }
     }
+
+    LoadSetting();
 
     histLayout->addWidget(hist[0][0], 0, 0);
 
@@ -153,7 +153,10 @@ Canvas::Canvas(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent) : QM
 
 }
 
-Canvas::~Canvas(){
+SingleSpectra::~SingleSpectra(){
+
+  SaveSetting();
+
   for( unsigned int i = 0; i < nDigi; i++ ){
     for( int ch = 0; ch < digi[i]->GetNChannels(); ch++){
       delete hist[i][ch];
@@ -161,7 +164,7 @@ Canvas::~Canvas(){
   }
 }
 
-void Canvas::ChangeHistView(){
+void SingleSpectra::ChangeHistView(){
 
   if( oldCh >= 0 ) {
     histLayout->removeWidget(hist[oldBd][oldCh]);
@@ -188,7 +191,8 @@ void Canvas::ChangeHistView(){
   oldCh = ch;
 }
 
-void Canvas::UpdateCanvas(){
+void SingleSpectra::FillHistograms(){
+  if( !fillHistograms ) return;
 
   for( int i = 0; i < nDigi; i++){
 
@@ -218,4 +222,95 @@ void Canvas::UpdateCanvas(){
     digiMTX[i].unlock();
 
   }
+}
+
+void SingleSpectra::RebinHistogram(){
+
+  if( !enableSignalSlot ) return;
+  int bd = cbDigi->currentIndex();
+  int ch = cbCh->currentIndex();
+  hist[bd][ch]->Rebin( sbNBin->value(), sbXMin->value(), sbXMax->value());
+
+  sbNBin->setStyleSheet("");
+  sbXMin->setStyleSheet("");
+  sbXMax->setStyleSheet("");
+  bnReBin->setEnabled(false);
+
+  hist[bd][ch]->UpdatePlot();
+
+}
+
+void SingleSpectra::SaveSetting(){
+
+  QFile file(rawDataPath + "/singleSpectraSetting.txt");
+
+  file.open(QIODevice::Text | QIODevice::WriteOnly);
+
+  for( unsigned int i = 0; i < nDigi; i++){
+    file.write(("======= " + QString::number(digi[i]->GetSerialNumber()) + "\n").toStdString().c_str());
+    for( int ch = 0; ch < digi[i]->GetNChannels() ; ch++){
+      QString a = QString::number(ch).rightJustified(2, ' ');
+      QString b = QString::number(hist[i][ch]->GetNBin()).rightJustified(6, ' ');
+      QString c = QString::number(hist[i][ch]->GetXMin()).rightJustified(6, ' ');
+      QString d = QString::number(hist[i][ch]->GetXMax()).rightJustified(6, ' ');
+      file.write( QString("%1 %2 %3 %4\n").arg(a).arg(b).arg(c).arg(d).toStdString().c_str() );
+    }
+  }
+
+  file.write("//========== End of file\n");
+  file.close();
+}
+
+void SingleSpectra::LoadSetting(){
+
+  QFile file(rawDataPath + "/singleSpectraSetting.txt");
+
+  if( file.open(QIODevice::Text | QIODevice::ReadOnly) ){
+
+    QTextStream in(&file);
+    QString line = in.readLine();
+
+    int digiSN = 0;
+    int digiID = -1;
+
+    while ( !line.isNull() ){
+      if( line.contains("//========== ") ) break;
+      if( line.contains("//") ) continue;
+      if( line.contains("======= ") ){
+        digiSN = line.mid(7).toInt();
+
+        digiID = -1;
+        for( unsigned int i = 0; i < nDigi; i++){
+          if( digiSN == digi[i]->GetSerialNumber() ) {
+            digiID = i;
+            break;
+          }
+        }
+        line = in.readLine();
+        continue;
+      }
+
+      if( digiID >= 0 ){
+
+        QStringList list = line.split(QRegularExpression("\\s+"));
+        list.removeAll("");
+        if( list.count() != 4 ) {
+          line = in.readLine();
+          continue;
+        }
+        QVector<int> data;
+        for( int i = 0; i < list.count(); i++){   
+          data.push_back(list[i].toInt());
+        }
+
+        hist[digiID][data[0]]->Rebin(data[1], data[2], data[3]);
+      }
+
+      line = in.readLine();
+    }
+
+  }else{
+
+  }
+
 }

@@ -33,9 +33,9 @@ HEADERS += ClassData.h \
            RegisterAddress.h \
            influxdb.h\
            Scope.h \
-           CanvasClass.h \
+           SingleSpectra.h \
            OnlineEventBuilder.h \
-           OnlineAnalyser.h \
+           Analyser.h \
            qcustomplot.h
 SOURCES += ClassDigitizer.cpp \
            DigiSettingsPanel.cpp \
@@ -43,7 +43,7 @@ SOURCES += ClassDigitizer.cpp \
            main.cpp \
            influxdb.cpp\
            Scope.cpp \
-           CanvasClass.cpp \
+           SingleSpectra.cpp \
            OnlineEventBuilder.cpp \
-           OnlineAnalyser.cpp \
+           Analyser.cpp \
            qcustomplot.cpp

@@ -6,6 +6,8 @@ It has scope (updated every half-sec), allow full control of the digitizer (exce
 
 It can be connected to InfluxDB v1.8 and Elog.
 
+Each channel has it own 1D histogram. It will not be filled by default, but can enable it in the "Online 1D histgram" panel.
+
 # Operation
 
 When programSettings.txt is presented in the same folder as the FSUDAQ_Qt, the program will load it can config the following 

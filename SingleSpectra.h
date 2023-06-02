@@ -1,5 +1,5 @@
-#ifndef CANVAS_H
-#define CANVAS_H
+#ifndef SINGLE_SPECTR_H
+#define SINGLE_SPECTR_H
 
 #include <QMainWindow>
 #include <QChart>
@@ -20,16 +20,23 @@
 
 //^====================================================
 //^====================================================
-class Canvas : public QMainWindow{
+class SingleSpectra : public QMainWindow{
   Q_OBJECT
 
 public:
-  Canvas(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent = nullptr);
-  ~Canvas();
+  SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawDataPath, QMainWindow * parent = nullptr);
+  ~SingleSpectra();
+
+  void SetFillHistograms(bool onOff) { fillHistograms = onOff;}
+  bool IsFillHistograms() const {return fillHistograms;}
+
+  void LoadSetting();
+  void SaveSetting();
 
 public slots:
-  void UpdateCanvas();
+  void FillHistograms();
   void ChangeHistView();
+  void RebinHistogram();
 
 private:
 
@@ -56,6 +63,10 @@ private:
 
   int lastFilledIndex[MaxNDigitizer][MaxNChannels];
   int loopFilledIndex[MaxNDigitizer][MaxNChannels];
+
+  bool fillHistograms;
+
+  QString rawDataPath;
 
 };
 #endif
