@@ -27,14 +27,11 @@ Analyzer::Analyzer(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent )
   // layout->addWidget(bnSetting);
 
   SetUpCanvas();
-
 }
 
 Analyzer::~Analyzer(){
-
   for( unsigned int i = 0; i < nDigi; i++ ) delete oeb[i];
   delete [] oeb;
-
 }
 
 void Analyzer::StartThread(){
@@ -51,22 +48,22 @@ void Analyzer::StopThread(){
 
 void Analyzer::SetUpCanvas(){
 
+  setGeometry(0, 0, 1600, 800);  
+
   h2 = new Histogram2D("testing", "x", "y", 400, 0, 4000, 400, 0, 4000, this);
-  layout->addWidget(h2);
+  layout->addWidget(h2, 0, 0);
 
   h1 = new Histogram1D("testing", "x", 400, 0, 4000, this);
-  layout->addWidget(h1);
-
-
-  //Histogram * h1 = new Histogram("h1", 0, 5000, 200);
-
+  layout->addWidget(h1, 0, 1);
 
   std::random_device rd;
   std::mt19937 gen(rd());
   std::normal_distribution<double> distribution(2000.0, 1000);
   for( int i = 0; i < 1000 ; i++ ){
-    h2->Fill(distribution(gen), distribution(gen));
-    h1->Fill(distribution(gen));
+    double x = distribution(gen);
+    double y = distribution(gen);
+    h2->Fill(x, y);
+    h1->Fill(x);
   }
 
   h1->UpdatePlot();

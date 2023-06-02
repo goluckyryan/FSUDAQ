@@ -28,7 +28,8 @@ This is the mother of all other derivative analysis class.
 derivative class should define the SetUpCanvas() and UpdateHistogram();
 
 ***************************************/
-#include "CustomHistogram.h"
+#include "Histogram1D.h"
+#include "Histogram2D.h"
 
 //^==============================================
 //^==============================================

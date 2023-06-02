@@ -15,7 +15,7 @@
 #include "ClassDigitizer.h"
 #include "CustomThreads.h"
 #include "CustomWidgets.h"
-#include "CustomHistogram.h"
+#include "Histogram1D.h"
 
 
 //^====================================================

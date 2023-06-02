@@ -26,7 +26,8 @@ HEADERS += ClassData.h \
            ClassDigitizer.h \
            CustomThreads.h \
            CustomWidgets.h \
-           CustomHistogram.h \
+           Histogram1D.h \
+           Histogram2D.h \
            DigiSettingsPanel.h \
            FSUDAQ.h \
            macro.h \
