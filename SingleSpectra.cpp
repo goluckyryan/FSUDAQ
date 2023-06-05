@@ -121,6 +121,13 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
       for( int j = 0; j < digi[i]->GetNChannels(); j++){
         if( i < nDigi ) {
           hist[i][j] = new Histogram1D("Digi-" + QString::number(digi[i]->GetSerialNumber()) +", Ch-" +  QString::number(j), "Raw Energy [ch]", nBin, xMin, xMax);
+          connect(hist[i][j], &Histogram1D::ReBinned , this, [=](){
+            enableSignalSlot = false;
+            sbNBin->setValue(hist[i][j]->GetNBin());
+            sbXMin->setValue(hist[i][j]->GetXMin());
+            sbXMax->setValue(hist[i][j]->GetXMax());
+            enableSignalSlot = true;
+          });
         }else{
           hist[i][j] = nullptr;
         }

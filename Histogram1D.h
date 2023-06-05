@@ -6,6 +6,7 @@
 //^==============================================
 //^==============================================
 class Histogram1D : public QCustomPlot{
+  Q_OBJECT
 public:
   Histogram1D(QString title, QString xLabel, int xbin, double xmin, double xmax, QWidget * parent = nullptr) : QCustomPlot(parent){
     Rebin(xbin, xmin, xmax);
@@ -78,8 +79,7 @@ public:
         QAction * a1 = menu.addAction("UnZoom");
         QAction * a2 = menu.addAction("Clear hist.");
         QAction * a3 = menu.addAction("Toggle Stat.");
-
-        //TODO rebin 
+        QAction * a4 = menu.addAction("Rebin (clear histogram)");
         //TODO fitGuass
 
         QAction *selectedAction = menu.exec(event->globalPosition().toPoint());
@@ -103,6 +103,65 @@ public:
           }
           replot();
           usingMenu = false;
+        }
+        if( selectedAction == a4 ){
+          QDialog dialog(this);
+          dialog.setWindowTitle("Rebin histogram");
+
+          QFormLayout layout(&dialog);
+          layout.setAlignment(Qt::AlignRight);
+
+          QLabel * info = new QLabel(&dialog);
+          info->setStyleSheet("color:red;");
+          info->setText("This will also clear histogram!!");
+          layout.addRow(info);
+
+          QStringList nameList = {"Num. Bin", "x-Min", "x-Max"};
+          QLineEdit* lineEdit[3];
+
+          for (int i = 0; i < 3; ++i) {
+              lineEdit[i] = new QLineEdit(&dialog);
+              layout.addRow(nameList[i] + " : ", lineEdit[i]);
+          }
+
+          QLabel * msg = new QLabel(&dialog);
+          msg->setStyleSheet("color:red;");
+          layout.addRow(msg);
+
+          QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dialog);
+          layout.addRow(&buttonBox);
+
+          double number[3];
+
+          QObject::connect(&buttonBox, &QDialogButtonBox::accepted, [&]() {
+              int OKcount = 0;
+              bool conversionOk = true;
+              for( int i = 0; i < 3; i++ ){
+                number[i] = lineEdit[i]->text().toDouble(&conversionOk);
+                if( conversionOk ){
+                  OKcount++;
+                }else{
+                  msg->setText(nameList[i] + " is invalid.");
+                  return;
+                }
+              }
+
+              if( OKcount == 3 ) {
+                if( number[2] > number[1] ) {
+                  dialog.accept();
+                }else{
+                  msg->setText(nameList[2] + " is smaller than " + nameList[1]);
+                }
+              }
+          });
+          QObject::connect(&buttonBox, &QDialogButtonBox::rejected, [&]() { dialog.reject();});
+
+          if( dialog.exec() == QDialog::Accepted ){
+            Rebin((int)number[0], number[1], number[2]);
+            emit ReBinned();
+            UpdatePlot();
+          }
+
         }
       }
     });
@@ -186,6 +245,9 @@ public:
       printf("%f  %f\n", xList[i], yList[i]);
     }
   }
+
+signals:
+  void ReBinned(); //ONLY for right click rebin
 
 private:
   double xMin, xMax, dX;
