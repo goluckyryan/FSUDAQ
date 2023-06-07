@@ -3,14 +3,15 @@
 
 #include "qcustomplot.h"
 
-const QList<QColor> colorCycle = { QColor(Qt::red),
-                                   QColor(Qt::blue), 
-                                   QColor(Qt::darkGreen), 
-                                   QColor(Qt::darkCyan), 
-                                   QColor(Qt::darkYellow), 
-                                   QColor(Qt::magenta), 
-                                   QColor(Qt::darkMagenta),
-                                   QColor(Qt::gray)}; 
+const QList<QPair<QColor, QString>> colorCycle = { {QColor(Qt::red), "Red"},
+                                                   {QColor(Qt::blue), "Blue"},
+                                                   {QColor(Qt::darkGreen), "Dark Geen"},
+                                                   {QColor(Qt::darkCyan), "Dark Cyan"}, 
+                                                   {QColor(Qt::darkYellow), "Drak Yellow"}, 
+                                                   {QColor(Qt::magenta),  "Magenta"},
+                                                   {QColor(Qt::darkMagenta), "Dark Magenta"},
+                                                   {QColor(Qt::gray), "Gray"}}; 
+
 
 //^==============================================
 //^==============================================
@@ -78,11 +79,13 @@ public:
       }
     }
 
-
     rescaleAxes();
 
     usingMenu = false;
     isDrawCut = false;
+    tempCutID = -1;
+    numCut = 0;
+    lastPlottableID = -1;
 
     line = new QCPItemLine(this);
     line->setPen(QPen(Qt::gray, 1, Qt::DashLine));
@@ -126,6 +129,7 @@ public:
         DrawCut();
       }
 
+      //^================= right click
       if (event->button() == Qt::RightButton) {
         usingMenu = true;
         setSelectionRectMode(QCP::SelectionRectMode::srmNone);
@@ -137,8 +141,15 @@ public:
         QAction * a2 = menu->addAction("Clear hist.");
         QAction * a3 = menu->addAction("Toggle Stat.");
         QAction * a4 = menu->addAction("Create a Cut");
+        if( numCut > 0 ) {
+          menu->addSeparator();
+          menu->addAction("Add/Edit names to Cuts");
+          menu->addAction("Clear all Cuts");
+        }
         for( int i = 0; i < cutList.size(); i++){
-          menu->addAction("Delete Cut-" + QString::number(i));
+          if( cutList[i].isEmpty()) continue;
+          QString haha = "";
+          menu->addAction("Delete " + cutNameList[i] + " ["+ colorCycle[cutIDList[i]%colorCycle.count()].second+"]");
         }
 
         QAction *selectedAction = menu->exec(event->globalPosition().toPoint());
@@ -170,25 +181,133 @@ public:
 
         if( selectedAction == a4 ){
           tempCut.clear();
+          tempCutID ++;
           isDrawCut= true;
           usingMenu = false;
-          qDebug() << "Create Cut Plottable count : " <<  plottableCount()  << ", cutList.count :" << cutList.count() << ", " << lastPlottableID;
+          numCut ++;
+          qDebug() << "#### Create Cut Plottable count : " <<  plottableCount()  << ", numCut :" << numCut << ", " << lastPlottableID; 
         }
 
-        // if( selectedAction->text().contains("Delete Cut") ){
-        //   qDebug() << "delete Cut";
-        // }
+        if( selectedAction && selectedAction->text().contains("Delete ") ){
+          QString haha = selectedAction->text();
+          int index1 = haha.indexOf("-");
+          int index2 = haha.indexOf("[");
+          int cutID = haha.mid(index1+1, index2-index1-1).remove(' ').toInt();
+          
+          removeItem(cutTextIDList[cutID]);
+          removePlottable(plottableIDList[cutID]);
+          replot();
 
-      }
+          numCut --;
+          cutList[cutID].clear();
+          cutIDList[cutID] = -1;
+          cutTextIDList[cutID] = -1;
+          plottableIDList[cutID] = -1;
+          cutNameList[cutID] = "";
+
+          for( int i = cutID + 1; i < cutTextIDList.count() ; i++){
+              cutTextIDList[i] --;
+              plottableIDList[i] --;
+          }
+
+          if( numCut == 0 ){
+            cutList.clear();
+            cutIDList.clear();
+            cutTextIDList.clear();
+            plottableIDList.clear();
+            cutNameList.clear();
+          }
+
+          qDebug() << "================= delete Cut-" << cutID;
+          qDebug() << "      cutIDList " << cutIDList ;
+          qDebug() << "plottableIDList " << plottableIDList << ", " << plottableCount();
+          qDebug() << "  cutTextIDList "  << cutTextIDList << ", " << itemCount();
+
+        }
+
+        if( selectedAction && selectedAction->text().contains("Clear all Cuts") ){
+          numCut = 0;
+          tempCutID = -1;
+          lastPlottableID = -1;
+          cutList.clear();
+          cutIDList.clear();
+          for( int i = cutTextIDList.count() - 1; i >= 0 ; i--){
+            if( cutTextIDList[i] < 0 ) continue;
+            removeItem(cutTextIDList[i]);
+            removePlottable(plottableIDList[i]);
+          }
+          replot();
+
+          cutTextIDList.clear();
+          plottableIDList.clear();
+          cutNameList.clear();
+
+        }
+
+        if( selectedAction && selectedAction->text().contains("Add/Edit names to Cuts") ){
+          
+          QDialog dialog(this);
+          dialog.setWindowTitle("Add/Edit name of cuts ");
+
+          QFormLayout layout(&dialog);
+
+          for(int i = 0; i < cutTextIDList.count(); i++){
+            if( cutTextIDList[i] < 0 ) continue;
+            QLineEdit * le = new QLineEdit(&dialog);
+            layout.addRow(colorCycle[i%colorCycle.count()].second, le);
+            le->setText( cutNameList[i] );
+            connect(le, &QLineEdit::textChanged, this, [=](){
+              le->setStyleSheet("color : blue;");
+            });
+            connect(le, &QLineEdit::returnPressed, this, [=](){
+              le->setStyleSheet("");
+              cutNameList[i] = le->text();
+              ((QCPItemText *) this->item(cutTextIDList[i]))->setText(le->text());
+              replot();
+            });
+          }
+
+          // QDialogButtonBox buttonBox(QDialogButtonBox::Cancel, Qt::Horizontal, &dialog);
+          // layout.addRow(&buttonBox);
+
+          // QObject::connect(&buttonBox, &QDialogButtonBox::rejected, [&]() { dialog.reject();});
+
+          dialog.exec();
+        }
+
+      }///================= end of right click
     });
 
     //connect( this, &QCustomPlot::mouseDoubleClick, this, [=](QMouseEvent *event){
     connect( this, &QCustomPlot::mouseDoubleClick, this, [=](){
-      tempCut.push_back(tempCut[0]);
-      DrawCut();
-      isDrawCut = false;
-      cutList.push_back(tempCut);
-      line->setVisible(false);
+      if( isDrawCut) {
+        tempCut.push_back(tempCut[0]);
+        DrawCut();
+        isDrawCut = false;
+        line->setVisible(false);
+
+        plottableIDList.push_back(plottableCount() -1 );
+
+        cutNameList.push_back("Cut-" + QString::number(cutList.count()));
+        //QCPItemText is not a plottable
+        QCPItemText * text = new QCPItemText(this);
+        text->setText(cutNameList.last());
+        text->position->setCoords(tempCut[0].rx(), tempCut[0].ry());
+        int colorID = tempCutID% colorCycle.count();
+        text->setColor(colorCycle[colorID].first);
+        cutTextIDList.push_back(itemCount() - 1);
+
+        replot();
+
+        cutList.push_back(tempCut);
+        cutIDList.push_back(tempCutID);
+
+        qDebug() << "----------- end of create cut";
+        qDebug() << "      cutIDList " << cutIDList ;
+        qDebug() << "plottableIDList " << plottableIDList << ", " << plottableCount();
+        qDebug() << "  cutTextIDList "  << cutTextIDList << ", " << itemCount();
+
+      }
     });
 
     connect(this, &QCustomPlot::mouseRelease, this, [=](){
@@ -236,15 +355,9 @@ public:
 
   void DrawCut(){
 
-    //TODO how to delete cut from plot and from QList
-    int pCount = plottableCount();
-
-    //The histogram is 1 plottable.
-
-    qDebug() << "Plottable count : " <<  pCount << ", cutList.count :" << cutList.count() << ", cutID :" << lastPlottableID;
-
-    if( lastPlottableID != cutList.count()){
-      qDebug() << "---- delete plot : " << lastPlottableID;
+    //The histogram is the 1st plottable.
+    // the lastPlottableID should be numCut+ 1
+    if( lastPlottableID != numCut ){
       removePlottable(lastPlottableID);
     }
     
@@ -252,8 +365,8 @@ public:
         QCPCurve *polygon = new QCPCurve(xAxis, yAxis);
         lastPlottableID = plottableCount() - 1;
 
-        int colorID = (cutList.count() + (isDrawCut == false ? -1 : 0))% colorCycle.count();
-        QPen pen(colorCycle[colorID]);
+        int colorID = tempCutID% colorCycle.count();
+        QPen pen(colorCycle[colorID].first);
         pen.setWidth(1);
         polygon->setPen(pen);
 
@@ -263,11 +376,12 @@ public:
         }
         polygon->data()->set(dataPoints, false);
     }
-
     replot();
+
+    qDebug() << "Plottable count : " <<  plottableCount() << ", cutList.count :" << cutList.count() << ", cutID :" << lastPlottableID;
   }
 
-  QList<QPolygonF> GetCutList() const{return cutList;}
+  QList<QPolygonF> GetCutList() const{return cutList;} // this list may contain empty element
 
 private:
   double xMin, xMax, yMin, yMax;
@@ -284,9 +398,15 @@ private:
   QCPItemText * txt[3][3];
   
   QPolygonF tempCut;
+  int tempCutID; // only incresing;
   QList<QPolygonF> cutList;
+  QList<int> cutIDList;
+  int numCut;
   bool isDrawCut;
   int lastPlottableID;
+  QList<int> cutTextIDList;
+  QList<int> plottableIDList;
+  QList<QString> cutNameList;
 
   QCPItemLine * line;
   double oldMouseX = 0.0, oldMouseY = 0.0;

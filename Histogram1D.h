@@ -109,7 +109,6 @@ public:
           dialog.setWindowTitle("Rebin histogram");
 
           QFormLayout layout(&dialog);
-          layout.setAlignment(Qt::AlignRight);
 
           QLabel * info = new QLabel(&dialog);
           info->setStyleSheet("color:red;");
