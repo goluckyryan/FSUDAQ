@@ -15,6 +15,7 @@ const QList<QColor> colorCycle = { QColor(Qt::red),
 //^==============================================
 //^==============================================
 class Histogram2D : public QCustomPlot{
+  
 public:
   Histogram2D(QString title, QString xLabel, QString yLabel, int xbin, double xmin, double xmax, int ybin, double ymin, double ymax, QWidget * parent = nullptr) : QCustomPlot(parent){
     xMin = xmin;
@@ -44,9 +45,10 @@ public:
 
     QCPColorGradient color;
     color.clearColorStops();
-    color.setColorStopAt( 0,  QColor("white" ));
-    color.setColorStopAt( 0.5,  QColor("blue"));
-    color.setColorStopAt( 1,  QColor("yellow"));
+    color.setColorStopAt( 0.0, QColor("white" ));
+    color.setColorStopAt( 0.3, QColor("blue"));
+    color.setColorStopAt( 0.4, QColor("green"));
+    color.setColorStopAt( 1.0, QColor("yellow"));
     colorMap->setGradient(color);
 
     cutList.clear();
@@ -82,6 +84,11 @@ public:
     usingMenu = false;
     isDrawCut = false;
 
+    line = new QCPItemLine(this);
+    line->setPen(QPen(Qt::gray, 1, Qt::DashLine));
+    line->setVisible(false);
+
+
     connect(this, &QCustomPlot::mouseMove, this, [=](QMouseEvent *event){
       double x = xAxis->pixelToCoord(event->pos().x());
       double y = yAxis->pixelToCoord(event->pos().y());
@@ -92,8 +99,12 @@ public:
       QString coordinates = QString("X: %1, Y: %2, Z: %3").arg(x).arg(y).arg(z);
       QToolTip::showText(event->globalPosition().toPoint(), coordinates, this);
 
-      //TODO, when drawing cut, show dashhed line
-
+      //when drawing cut, show dashhed line
+      if( isDrawCut && tempCut.size() > 0  ){ 
+        line->end->setCoords(x,y); 
+        line->setVisible(true); 
+        replot();
+      }
 
     });
 
@@ -103,10 +114,14 @@ public:
       }
       if (event->button() == Qt::LeftButton && isDrawCut){
 
-        double x = xAxis->pixelToCoord(event->pos().x());
-        double y = yAxis->pixelToCoord(event->pos().y());
+        oldMouseX = xAxis->pixelToCoord(event->pos().x());
+        oldMouseY = yAxis->pixelToCoord(event->pos().y());
 
-        tempCut.push_back(QPointF(x,y));
+        tempCut.push_back(QPointF(oldMouseX,oldMouseY));
+
+        line->start->setCoords(oldMouseX, oldMouseY);
+        line->end->setCoords(oldMouseX, oldMouseY);
+        line->setVisible(true);
 
         DrawCut();
       }
@@ -157,6 +172,7 @@ public:
           tempCut.clear();
           isDrawCut= true;
           usingMenu = false;
+          qDebug() << "Create Cut Plottable count : " <<  plottableCount()  << ", cutList.count :" << cutList.count() << ", " << lastPlottableID;
         }
 
         // if( selectedAction->text().contains("Delete Cut") ){
@@ -168,10 +184,11 @@ public:
 
     //connect( this, &QCustomPlot::mouseDoubleClick, this, [=](QMouseEvent *event){
     connect( this, &QCustomPlot::mouseDoubleClick, this, [=](){
-      isDrawCut = false;
       tempCut.push_back(tempCut[0]);
-      cutList.push_back(tempCut);
       DrawCut();
+      isDrawCut = false;
+      cutList.push_back(tempCut);
+      line->setVisible(false);
     });
 
     connect(this, &QCustomPlot::mouseRelease, this, [=](){
@@ -220,15 +237,23 @@ public:
   void DrawCut(){
 
     //TODO how to delete cut from plot and from QList
+    int pCount = plottableCount();
 
-    plottableCount();
+    //The histogram is 1 plottable.
 
-    //TODO how to not double plot?
+    qDebug() << "Plottable count : " <<  pCount << ", cutList.count :" << cutList.count() << ", cutID :" << lastPlottableID;
 
-    if(tempCut.size() > 1) {
+    if( lastPlottableID != cutList.count()){
+      qDebug() << "---- delete plot : " << lastPlottableID;
+      removePlottable(lastPlottableID);
+    }
+    
+    if(tempCut.size() > 0) {
         QCPCurve *polygon = new QCPCurve(xAxis, yAxis);
+        lastPlottableID = plottableCount() - 1;
 
-        QPen pen(Qt::blue);
+        int colorID = (cutList.count() + (isDrawCut == false ? -1 : 0))% colorCycle.count();
+        QPen pen(colorCycle[colorID]);
         pen.setWidth(1);
         polygon->setPen(pen);
 
@@ -261,6 +286,10 @@ private:
   QPolygonF tempCut;
   QList<QPolygonF> cutList;
   bool isDrawCut;
+  int lastPlottableID;
+
+  QCPItemLine * line;
+  double oldMouseX = 0.0, oldMouseY = 0.0;
 
 };
 
