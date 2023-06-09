@@ -283,7 +283,7 @@ inline void Data::PrintAllData(bool tableMode) const{
         if( DataIndex[ch] > MaxEntry ) MaxEntry = DataIndex[ch];
       }
       if( DataIndex[ch] < 0 ) continue;
-      printf(" %5s-%02d,%-9d |", "ch", ch, DataIndex[ch]);
+      printf(" %5s-%02d,%2d,%-6d |", "ch", ch, LoopIndex[ch], DataIndex[ch]);
     }
     printf("\n");
     

@@ -51,10 +51,10 @@ void Analyzer::SetUpCanvas(){
 
   setGeometry(0, 0, 1600, 800);  
 
-  h2 = new Histogram2D("testing", "x", "y", 400, 0, 4000, 400, 0, 4000, this);
+  h2 = new Histogram2D("testing", "x", "y", 400, 0, 10000, 400, 0, 10000, this);
   layout->addWidget(h2, 0, 0);
 
-  h1 = new Histogram1D("testing", "x", 400, 0, 4000, this);
+  h1 = new Histogram1D("testing", "x", 400, 0, 10000, this);
   layout->addWidget(h1, 0, 1);
 
   // std::random_device rd;
@@ -74,11 +74,13 @@ void Analyzer::UpdateHistograms(){
 
   //Set with digitizer to be event build
   digiMTX[0].lock();
-  oeb[0]->BuildEvents(100, true);
+  oeb[0]->BuildEvents(100, false);
   digiMTX[0].unlock();
 
+  oeb[0]->PrintStat();
+
   //============ Get events, and do analysis
-  long eventBuilt = oeb[0]->eventbuilt;
+  long eventBuilt = oeb[0]->eventBuilt;
   if( eventBuilt == 0 ) return;
 
   long eventIndex = oeb[0]->eventIndex;

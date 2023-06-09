@@ -766,7 +766,7 @@ void MainWindow::UpdateScalar(){
   if( scalar == nullptr ) return;
   //if( !scalar->isVisible() ) return;
   
-  digi[0]->GetData()->PrintAllData();
+  // digi[0]->GetData()->PrintAllData();
 
   lbLastUpdateTime->setText("Last update: " + QDateTime::currentDateTime().toString("MM.dd hh:mm:ss"));
 

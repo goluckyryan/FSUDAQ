@@ -56,19 +56,19 @@ int main(int argc, char* argv[]){
 
   dig[0]->StartACQ();
 
-  for( int i = 0; i < 3; i ++ ){
-    usleep(100*1000);
+  for( int i = 0; i < 9; i ++ ){
+    usleep(1000*1000);
     dig[0]->ReadData();
-    data->DecodeBuffer(false, 1);
-    data->PrintStat();
+    data->DecodeBuffer(false, 0);
+    //data->PrintStat();
 
-    data->SaveData();
+    //data->SaveData();
 
     // int index = data->NumEventsDecoded[0];
     // printf("-------------- %ld \n", data->Waveform1[0][index].size());
 
-    data->PrintAllData();
-    eb->BuildEvents(100);
+    //data->PrintAllData();
+    eb->BuildEvents(100, false);
 
   }
 

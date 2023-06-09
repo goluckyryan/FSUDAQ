@@ -32,10 +32,13 @@ public:
   void BuildEvents(unsigned short timeWindow, bool verbose = false);
 
   long eventIndex;
-  long eventbuilt;
+  long eventBuilt; // reset once call BuildEvents()
+  long totalEventBuilt;
   std::vector<dataPoint> events[MaxNEvent]; // should be a cirular memory, store energy
 
   unsigned short GetTimeWindow() const { return timeWindow;}
+
+  void PrintStat();
 
 private:
 
@@ -43,6 +46,7 @@ private:
   Data * data;
 
   unsigned short timeWindow;
+  int loopIndex[MaxNChannels];
   int nextIndex[MaxNChannels];
 
   int nExhaushedCh;
