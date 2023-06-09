@@ -35,6 +35,7 @@ Analyzer::~Analyzer(){
 }
 
 void Analyzer::StartThread(){
+  for( unsigned int i = 0; i < nDigi; i++) oeb[i]->ClearEvents();
   buildTimerThread->start();
 }
 
@@ -56,17 +57,16 @@ void Analyzer::SetUpCanvas(){
   h1 = new Histogram1D("testing", "x", 400, 0, 4000, this);
   layout->addWidget(h1, 0, 1);
 
-  std::random_device rd;
-  std::mt19937 gen(rd());
-  std::normal_distribution<double> distribution(2000.0, 1000);
-  for( int i = 0; i < 1000 ; i++ ){
-    double x = distribution(gen);
-    double y = distribution(gen);
-    h2->Fill(x, y);
-    h1->Fill(x);
-  }
-
-  h1->UpdatePlot();
+  // std::random_device rd;
+  // std::mt19937 gen(rd());
+  // std::normal_distribution<double> distribution(2000.0, 1000);
+  // for( int i = 0; i < 1000 ; i++ ){
+  //   double x = distribution(gen);
+  //   double y = distribution(gen);
+  //   h2->Fill(x, y);
+  //   h1->Fill(x);
+  // }
+  // h1->UpdatePlot();
 
 }
 
@@ -74,7 +74,7 @@ void Analyzer::UpdateHistograms(){
 
   //Set with digitizer to be event build
   digiMTX[0].lock();
-  oeb[0]->BuildEvents(100, false);
+  oeb[0]->BuildEvents(100, true);
   digiMTX[0].unlock();
 
   //============ Get events, and do analysis
@@ -92,15 +92,18 @@ void Analyzer::UpdateHistograms(){
     std::vector<dataPoint> event = oeb[0]->events[i];
 
     for( int k = 0; k < (int) event.size(); k++ ){
-      if( event[k].ch == 3 ) e1 = event[k].energy;
-      if( event[k].ch == 4 ) e2 = event[k].energy;
+      if( event[k].ch ==  9 ) e1 = event[k].energy;
+      if( event[k].ch == 10 ) e2 = event[k].energy;
     }
 
     h2->Fill(e1, e2);
-
-    //h1->Fill(e1);
+    h1->Fill(e1);
   }
 
   h2->UpdatePlot();
+  h1->UpdatePlot();
+
+  h2->PrintCutEntry();
+
 
 }

@@ -183,7 +183,6 @@ int main(int argc, char **argv) {
   Data * data = new Data();  
   data->DPPType = typeCat[0][0];
   data->boardSN = idCat[0];
-  data->SetSaveWaveToMemory(true);
   
   ///============= Main Loop
   haha = fopen(inFileName[0], "r"); 

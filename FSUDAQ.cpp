@@ -766,6 +766,8 @@ void MainWindow::UpdateScalar(){
   if( scalar == nullptr ) return;
   //if( !scalar->isVisible() ) return;
   
+  digi[0]->GetData()->PrintAllData();
+
   lbLastUpdateTime->setText("Last update: " + QDateTime::currentDateTime().toString("MM.dd hh:mm:ss"));
 
   //printf("----------------------\n");
@@ -826,6 +828,8 @@ void MainWindow::StartACQ(){
     readDataThread[i]->SetSaveData(chkSaveData->isChecked());
     LogMsg("Digi-" + QString::number(digi[i]->GetSerialNumber()) + " is starting ACQ." );
     digi[i]->WriteRegister(DPP::SoftwareClear_W, 1);
+    digi[i]->GetData()->ClearData();
+
     digi[i]->StartACQ();
     readDataThread[i]->start();
   }

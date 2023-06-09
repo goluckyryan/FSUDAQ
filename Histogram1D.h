@@ -9,6 +9,8 @@ class Histogram1D : public QCustomPlot{
   Q_OBJECT
 public:
   Histogram1D(QString title, QString xLabel, int xbin, double xmin, double xmax, QWidget * parent = nullptr) : QCustomPlot(parent){
+
+    for( int i = 0; i < 3; i ++) txt[i] = nullptr;
     Rebin(xbin, xmin, xmax);
 
     xAxis->setLabel(xLabel);
@@ -50,10 +52,10 @@ public:
       txt[i]->position->setType(QCPItemPosition::ptAxisRectRatio);
       txt[i]->position->setCoords(0.1, 0.1 + 0.1*i);;
       txt[i]->setFont(QFont("Helvetica", 9));
-      if( i == 0 ) txt[i]->setText("Under Flow : 0");
-      if( i == 1 ) txt[i]->setText("Total Entry : 0");
-      if( i == 2 ) txt[i]->setText("Over Flow : 0");
     }
+    txt[0]->setText("Under Flow : 0");
+    txt[1]->setText("Total Entry : 0");
+    txt[2]->setText("Over Flow : 0");
 
     usingMenu = false;
 
@@ -122,6 +124,9 @@ public:
               lineEdit[i] = new QLineEdit(&dialog);
               layout.addRow(nameList[i] + " : ", lineEdit[i]);
           }
+          lineEdit[0]->setText(QString::number(xBin));
+          lineEdit[1]->setText(QString::number(xMin));
+          lineEdit[2]->setText(QString::number(xMax));
 
           QLabel * msg = new QLabel(&dialog);
           msg->setStyleSheet("color:red;");
@@ -211,7 +216,10 @@ public:
     totalEntry = 0;
     underFlow = 0;
     overFlow = 0;
-    
+
+    if( txt[0] ) txt[0]->setText("Under Flow : 0");
+    if( txt[1] ) txt[1]->setText("Total Entry : 0");
+    if( txt[2] ) txt[2]->setText("Over Flow : 0");
   }
 
   void Fill(double value){

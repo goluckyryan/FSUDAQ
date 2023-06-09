@@ -7,6 +7,15 @@ OnlineEventBuilder::OnlineEventBuilder(Digitizer * digi){
   data = digi->GetData();
   nCh = digi->GetNChannels();
 
+  ClearEvents();
+}
+
+OnlineEventBuilder::~OnlineEventBuilder(){
+
+
+}
+
+void OnlineEventBuilder::ClearEvents(){
   eventIndex = -1;
   for( int i = 0; i < MaxNEvent; i++ ) events[i].clear();
   
@@ -19,12 +28,6 @@ OnlineEventBuilder::OnlineEventBuilder(Digitizer * digi){
   earlistCh = -1;
 
   nExhaushedCh = 0;
-
-}
-
-OnlineEventBuilder::~OnlineEventBuilder(){
-
-
 }
 
 void OnlineEventBuilder::FindEarlistTimeAndCh(){
@@ -79,11 +82,15 @@ void OnlineEventBuilder::BuildEvents(unsigned short timeWindow, bool verbose){
 
   eventbuilt = 0;
 
+  data->PrintAllData();
+
   //======= Start building event
   do{
 
     eventIndex ++;
     if( eventIndex >= MaxNEvent ) eventIndex = 0;
+    
+    events[eventIndex].clear();
 
     eventbuilt ++;
     
@@ -91,7 +98,7 @@ void OnlineEventBuilder::BuildEvents(unsigned short timeWindow, bool verbose){
     dataPoint dp = {0, 0, 0};
     for( unsigned int i = 0; i < nCh; i++){
       int ch = (i + earlistCh ) % nCh;
-
+      //printf("------ %d | %d | %d | %d\n", ch, data->DataIndex[ch], nextIndex[ch], chExhaused[ch]);
       if( chExhaused[ch] ) continue;
       if( nextIndex[ch] > data->DataIndex[ch]) {
         nExhaushedCh ++;
@@ -103,7 +110,7 @@ void OnlineEventBuilder::BuildEvents(unsigned short timeWindow, bool verbose){
 
         unsigned long long time = data->Timestamp[ch][nextIndex[ch]];
 
-        if(  time - earlistTime <  timeWindow ){
+        if( time >= earlistTime && (time - earlistTime <  timeWindow) ){
           dp.ch = ch;
           dp.energy = data->Energy[ch][nextIndex[ch]];
           dp.timeStamp = time;
@@ -127,21 +134,23 @@ void OnlineEventBuilder::BuildEvents(unsigned short timeWindow, bool verbose){
     FindEarlistTimeAndCh();
 
     if( verbose ){
-      printf(">>>>>>>>>>>>>>>>>>>>>>>>> Event ID : %ld\n", eventIndex);
+      printf(">>>>>>>>>>>>>>>>>>>>>>>>> Event ID : %ld, multiplicity : %ld\n", eventIndex, events[eventIndex].size());
       for( int i = 0; i <(int) events[eventIndex].size(); i++){
-        printf("%02d | %5d %llu \n", events[eventIndex][i].ch, events[eventIndex][i].energy, events[eventIndex][i].timeStamp); 
+        int chxxx = events[eventIndex][i].ch;
+        printf("%02d | %d |  %5d %llu \n", chxxx, nextIndex[chxxx], events[eventIndex][i].energy, events[eventIndex][i].timeStamp); 
       }
 
       if( nExhaushedCh == nCh ) {
         printf("######################### no more event to be built\n"); 
         break;
-      }  
-      printf("----- next ch : %d, next earlist Time : %llu \n", earlistCh, earlistTime);
+      } 
+      printf("----- next ch : %d, next earlist Time : %llu.\n", earlistCh, earlistTime);
+
     }
 
     if( latestTime - earlistTime <= timeWindow ) {
       if( verbose ) {
-        printf("######################### left over data for next build\n"); 
+        printf("######################### left over data for next build, latesTime : %llu.\n", latestTime); 
       } 
       break;
     }

@@ -14,7 +14,7 @@
 #include "CAENDigitizerType.h"
 #include "macro.h"
 
-#define MaxNData 10000 /// store 10k events per channels
+#define MaxNData 50 /// store 10k events per channels
 
 class Data{
 
@@ -37,8 +37,10 @@ class Data{
     /// store data for event building and deduce the trigger rate.
     //it is a circular memory
     bool IsNotRollOverFakeAgg;
+
     int                LoopIndex[MaxNChannels];     /// number of loop in the circular memory
     int                DataIndex[MaxNChannels];
+
     unsigned long long Timestamp[MaxNChannels][MaxNData]; /// 47 bit
     unsigned short     fineTime[MaxNChannels][MaxNData];  /// 10 bits, in unit of ch2ns / 1000 = ps
     unsigned short     Energy[MaxNChannels][MaxNData];   /// 15 bit
@@ -68,7 +70,7 @@ class Data{
   
     void PrintStat() const;
 
-    void PrintAllData() const;
+    void PrintAllData(bool tableMode = true) const;
 
     //^================= Saving data
     bool OpenSaveFile(std::string fileNamePrefix); // return false when fail
@@ -83,6 +85,7 @@ class Data{
     
     unsigned int nw;
     //bool SaveWaveToMemory;
+
 
     ///for temperary
     std::vector<short> tempWaveform1; 
@@ -225,6 +228,8 @@ inline void Data::SaveData(){
     return;
   }
 
+  if( outFile == nullptr ) return;
+
   if( outFileSize > (unsigned int) MaxSaveFileSize){
     FinishedOutFilesSize += ftell(outFile);
     CloseSaveFile();
@@ -263,14 +268,44 @@ inline void Data::PrintStat() const{
   printf("---+--------+-----------+-----------+----------\n");
 }
 
-inline void Data::PrintAllData() const{
+inline void Data::PrintAllData(bool tableMode) const{
   printf("============================= Print Data\n");
-  for( int ch = 0; ch < MaxNChannels ; ch++){
-    if( DataIndex[ch] < 0  ) continue;
-    printf("------------ ch : %d, DataIndex : %d, loop : %d\n", ch, DataIndex[ch], LoopIndex[ch]);
-    for( int ev = 0; ev <= (LoopIndex[ch] > 0 ? MaxNData : DataIndex[ch]) ; ev++){
-      if( DPPType == V1730_DPP_PHA_CODE ) printf("%4d, %5u, %15llu, %5u \n", ev, Energy[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
-      if( DPPType == V1730_DPP_PSD_CODE ) printf("%4d, %5u, %5u, %15llu, %5u \n", ev, Energy[ch][ev], Energy2[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
+
+  if( tableMode ){
+    int entry = 0;
+
+    int MaxEntry = 0;
+    printf("%4s|", "");
+    for( int ch = 0; ch < MaxNChannels; ch++){
+      if( LoopIndex[ch] > 0 ) {
+        MaxEntry = MaxNData-1;
+      }else{
+        if( DataIndex[ch] > MaxEntry ) MaxEntry = DataIndex[ch];
+      }
+      if( DataIndex[ch] < 0 ) continue;
+      printf(" %5s-%02d,%-9d |", "ch", ch, DataIndex[ch]);
+    }
+    printf("\n");
+    
+
+    do{
+      printf("%4d|", entry ); 
+      for( int ch = 0; ch < MaxNChannels; ch++){
+        if( DataIndex[ch] < 0 ) continue;
+        printf(" %5d,%12lld |", Energy[ch][entry], Timestamp[ch][entry]);
+      }
+      printf("\n");
+      entry ++;
+    }while(entry <= MaxEntry);
+
+  }else{
+    for( int ch = 0; ch < MaxNChannels ; ch++){
+      if( DataIndex[ch] < 0  ) continue;
+      printf("------------ ch : %d, DataIndex : %d, loop : %d\n", ch, DataIndex[ch], LoopIndex[ch]);
+      for( int ev = 0; ev <= (LoopIndex[ch] > 0 ? MaxNData : DataIndex[ch]) ; ev++){
+        if( DPPType == V1730_DPP_PHA_CODE ) printf("%4d, %5u, %15llu, %5u \n", ev, Energy[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
+        if( DPPType == V1730_DPP_PSD_CODE ) printf("%4d, %5u, %5u, %15llu, %5u \n", ev, Energy[ch][ev], Energy2[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
+      }
     }
   }
 }
@@ -616,7 +651,7 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
 
     if( rollOver == 0 ) { // non-time roll over fake event
       DataIndex[channel] ++; 
-      if( DataIndex[channel] > MaxNData ) {
+      if( DataIndex[channel] >= MaxNData ) {
         LoopIndex[channel] ++;
         DataIndex[channel] = 0;
       }
@@ -803,7 +838,7 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
     
     if( isEnergyCorrect == 0 ) {
       DataIndex[channel] ++; 
-      if( DataIndex[channel] > MaxNData ) {
+      if( DataIndex[channel] >= MaxNData ) {
         LoopIndex[channel] ++;
         DataIndex[channel] = 0;
       }

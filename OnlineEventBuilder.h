@@ -14,7 +14,7 @@ Use another class to hold the event data and methods.
 #include "macro.h"
 #include "ClassDigitizer.h"
 
-#define MaxNEvent 10000
+#define MaxNEvent 30
 
 struct dataPoint{
   unsigned short ch;
@@ -28,6 +28,7 @@ public:
   OnlineEventBuilder(Digitizer * digi);
   ~OnlineEventBuilder();
 
+  void ClearEvents();
   void BuildEvents(unsigned short timeWindow, bool verbose = false);
 
   long eventIndex;

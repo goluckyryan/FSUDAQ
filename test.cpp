@@ -48,10 +48,11 @@ int main(int argc, char* argv[]){
   OnlineEventBuilder * eb = new OnlineEventBuilder( dig[0] );
 
   Data * data =  dig[0]->GetData();
+  data->ClearData();
 
-  data->OpenSaveFile("haha");
+  // data->OpenSaveFile("haha");
 
-  printf("################# DPP Type : %d , %s\n", data->DPPType, data->DPPTypeStr.c_str());
+  // printf("################# DPP Type : %d , %s\n", data->DPPType, data->DPPTypeStr.c_str());
 
   dig[0]->StartACQ();
 
@@ -66,6 +67,7 @@ int main(int argc, char* argv[]){
     // int index = data->NumEventsDecoded[0];
     // printf("-------------- %ld \n", data->Waveform1[0][index].size());
 
+    data->PrintAllData();
     eb->BuildEvents(100);
 
   }
@@ -73,7 +75,6 @@ int main(int argc, char* argv[]){
   dig[0]->StopACQ();
 
 
-  data->PrintAllData();
 
   
 

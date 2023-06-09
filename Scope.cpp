@@ -240,7 +240,7 @@ void Scope::StartScope(){
   for( unsigned int iDigi = 0; iDigi < nDigi; iDigi ++){
 
     traceOn[iDigi] = digi[iDigi]->IsRecordTrace(); //remember setting
-
+    digi[iDigi]->GetData()->ClearData();
     digi[iDigi]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, 1, -1);
     digi[iDigi]->StartACQ();
 
@@ -330,15 +330,15 @@ void Scope::UpdateScope(){
     if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) {
       for( int i = 0; i < (int) (data->Waveform1[ch][index]).size() ; i++ ) {
         points[0].append(QPointF(ch2ns * i * factor, (data->Waveform1[ch][index])[i])); 
-        points[1].append(QPointF(ch2ns * i * factor, (data->Waveform2[ch][index])[i]));
-        points[2].append(QPointF(ch2ns * i * factor, (data->DigiWaveform1[ch][index])[i] * 1000));
-        points[3].append(QPointF(ch2ns * i * factor, (data->DigiWaveform2[ch][index])[i] * 1000 + 500));
+        if( i < (int) data->Waveform2[ch][index].size() )  points[1].append(QPointF(ch2ns * i * factor, (data->Waveform2[ch][index])[i]));
+        if( i < (int) data->DigiWaveform1[ch][index].size() )  points[2].append(QPointF(ch2ns * i * factor, (data->DigiWaveform1[ch][index])[i] * 1000));
+        if( i < (int) data->DigiWaveform2[ch][index].size() )  points[3].append(QPointF(ch2ns * i * factor, (data->DigiWaveform2[ch][index])[i] * 1000 + 500));
       }
     }
 
     if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) {
       for( int i = 0; i < (int) (data->DigiWaveform1[ch][index]).size() ; i++ ) {
-        if( i < (int) data->Waveform1[ch][index].size() )  points[0].append(QPointF(ch2ns * i * factor, (data->Waveform1[ch][index])[i])); 
+        points[0].append(QPointF(ch2ns * i * factor, (data->Waveform1[ch][index])[i])); 
         if( i < (int) data->Waveform2[ch][index].size() )  points[1].append(QPointF(ch2ns * i * factor, (data->Waveform2[ch][index])[i]));
         if( i < (int) data->DigiWaveform1[ch][index].size() )  points[2].append(QPointF(ch2ns * i, (data->DigiWaveform1[ch][index])[i] * 1000));
         if( i < (int) data->DigiWaveform2[ch][index].size() )  points[3].append(QPointF(ch2ns * i, (data->DigiWaveform2[ch][index])[i] * 1000 + 500));

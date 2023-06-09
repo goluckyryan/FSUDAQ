@@ -19,20 +19,20 @@ class Histogram2D : public QCustomPlot{
   
 public:
   Histogram2D(QString title, QString xLabel, QString yLabel, int xbin, double xmin, double xmax, int ybin, double ymin, double ymax, QWidget * parent = nullptr) : QCustomPlot(parent){
-    xMin = xmin;
-    xMax = xmax;
-    yMin = ymin;
-    yMax = ymax;
-    xBin = xbin;
-    yBin = ybin;
+
+    for( int i = 0; i < 3; i ++ ){
+      for( int j = 0; j < 3; j ++ ){
+        box[i][j] = nullptr;
+        txt[i][j] = nullptr;       
+      }
+    }
 
     axisRect()->setupFullAxesBox(true);
     xAxis->setLabel(xLabel);
     yAxis->setLabel(yLabel);
 
     colorMap = new QCPColorMap(xAxis, yAxis);
-    colorMap->data()->setSize(xBin, yBin);
-    colorMap->data()->setRange(QCPRange(xMin, xMax), QCPRange(yMin, yMax));
+    Rebin(xbin, xmin, xmax, ybin, ymin, ymax);
     colorMap->setInterpolate(false);
 
     QCPTextElement *titleEle = new QCPTextElement(this, title, QFont("sans", 12));
@@ -52,8 +52,6 @@ public:
     color.setColorStopAt( 1.0, QColor("yellow"));
     colorMap->setGradient(color);
 
-    cutList.clear();
-
     double xPosStart = 0.02;
     double xPosStep = 0.07;
     double yPosStart = 0.02;
@@ -61,7 +59,6 @@ public:
 
     for( int i = 0; i < 3; i ++ ){
       for( int j = 0; j < 3; j ++ ){
-        entry[i][j] = 0;
         box[i][j] = new QCPItemRect(this);
 
         box[i][j]->topLeft->setType(QCPItemPosition::ptAxisRectRatio);
@@ -79,6 +76,9 @@ public:
       }
     }
 
+    cutList.clear();
+    cutEntryList.clear();
+
     rescaleAxes();
 
     usingMenu = false;
@@ -91,6 +91,7 @@ public:
     line->setPen(QPen(Qt::gray, 1, Qt::DashLine));
     line->setVisible(false);
 
+    isBusy = false;
 
     connect(this, &QCustomPlot::mouseMove, this, [=](QMouseEvent *event){
       double x = xAxis->pixelToCoord(event->pos().x());
@@ -112,9 +113,11 @@ public:
     });
 
     connect(this, &QCustomPlot::mousePress, this, [=](QMouseEvent * event){
+      
       if (event->button() == Qt::LeftButton && !usingMenu && !isDrawCut){
         setSelectionRectMode(QCP::SelectionRectMode::srmZoom);
       }
+
       if (event->button() == Qt::LeftButton && isDrawCut){
 
         oldMouseX = xAxis->pixelToCoord(event->pos().x());
@@ -140,7 +143,8 @@ public:
         QAction * a1 = menu->addAction("UnZoom");
         QAction * a2 = menu->addAction("Clear hist.");
         QAction * a3 = menu->addAction("Toggle Stat.");
-        QAction * a4 = menu->addAction("Create a Cut");
+        QAction * a4 = menu->addAction("Rebin (clear histogram)");
+        QAction * a5 = menu->addAction("Create a Cut");
         if( numCut > 0 ) {
           menu->addSeparator();
           menu->addAction("Add/Edit names to Cuts");
@@ -179,16 +183,21 @@ public:
           usingMenu = false;
         }
 
-        if( selectedAction == a4 ){
+        if( selectedAction == a4){
+          rightMouseClickRebin();
+          usingMenu = false;
+        }
+
+        if( selectedAction == a5 ){
           tempCut.clear();
           tempCutID ++;
           isDrawCut= true;
           usingMenu = false;
           numCut ++;
-          qDebug() << "#### Create Cut Plottable count : " <<  plottableCount()  << ", numCut :" << numCut << ", " << lastPlottableID; 
         }
 
-        if( selectedAction && selectedAction->text().contains("Delete ") ){
+        if( selectedAction && numCut > 0 && selectedAction->text().contains("Delete ") ){
+
           QString haha = selectedAction->text();
           int index1 = haha.indexOf("-");
           int index2 = haha.indexOf("[");
@@ -204,6 +213,7 @@ public:
           cutTextIDList[cutID] = -1;
           plottableIDList[cutID] = -1;
           cutNameList[cutID] = "";
+          cutEntryList[cutID] = -1;
 
           for( int i = cutID + 1; i < cutTextIDList.count() ; i++){
               cutTextIDList[i] --;
@@ -211,21 +221,19 @@ public:
           }
 
           if( numCut == 0 ){
+            tempCutID = -1;
+            lastPlottableID = -1;
             cutList.clear();
             cutIDList.clear();
             cutTextIDList.clear();
             plottableIDList.clear();
             cutNameList.clear();
+            cutEntryList.clear();
           }
-
-          qDebug() << "================= delete Cut-" << cutID;
-          qDebug() << "      cutIDList " << cutIDList ;
-          qDebug() << "plottableIDList " << plottableIDList << ", " << plottableCount();
-          qDebug() << "  cutTextIDList "  << cutTextIDList << ", " << itemCount();
 
         }
 
-        if( selectedAction && selectedAction->text().contains("Clear all Cuts") ){
+        if( selectedAction && numCut > 0 && selectedAction->text().contains("Clear all Cuts") ){
           numCut = 0;
           tempCutID = -1;
           lastPlottableID = -1;
@@ -241,10 +249,11 @@ public:
           cutTextIDList.clear();
           plottableIDList.clear();
           cutNameList.clear();
+          cutEntryList.clear();
 
         }
 
-        if( selectedAction && selectedAction->text().contains("Add/Edit names to Cuts") ){
+        if( selectedAction && numCut > 0 && selectedAction->text().contains("Add/Edit names to Cuts") ){
           
           QDialog dialog(this);
           dialog.setWindowTitle("Add/Edit name of cuts ");
@@ -266,12 +275,6 @@ public:
               replot();
             });
           }
-
-          // QDialogButtonBox buttonBox(QDialogButtonBox::Cancel, Qt::Horizontal, &dialog);
-          // layout.addRow(&buttonBox);
-
-          // QObject::connect(&buttonBox, &QDialogButtonBox::rejected, [&]() { dialog.reject();});
-
           dialog.exec();
         }
 
@@ -289,7 +292,8 @@ public:
         plottableIDList.push_back(plottableCount() -1 );
 
         cutNameList.push_back("Cut-" + QString::number(cutList.count()));
-        //QCPItemText is not a plottable
+        cutEntryList.push_back(0);
+
         QCPItemText * text = new QCPItemText(this);
         text->setText(cutNameList.last());
         text->position->setCoords(tempCut[0].rx(), tempCut[0].ry());
@@ -302,10 +306,10 @@ public:
         cutList.push_back(tempCut);
         cutIDList.push_back(tempCutID);
 
-        qDebug() << "----------- end of create cut";
-        qDebug() << "      cutIDList " << cutIDList ;
-        qDebug() << "plottableIDList " << plottableIDList << ", " << plottableCount();
-        qDebug() << "  cutTextIDList "  << cutTextIDList << ", " << itemCount();
+        // qDebug() << "----------- end of create cut";
+        // qDebug() << "      cutIDList " << cutIDList ;
+        // qDebug() << "plottableIDList " << plottableIDList << ", " << plottableCount();
+        // qDebug() << "  cutTextIDList "  << cutTextIDList << ", " << itemCount();
 
       }
     });
@@ -316,14 +320,37 @@ public:
     });
   }
 
+  //^===================================
+
+  void Rebin(int xbin, double xmin, double xmax, int ybin, double ymin, double ymax){
+    xMin = xmin;
+    xMax = xmax;
+    yMin = ymin;
+    yMax = ymax;
+    xBin = xbin;
+    yBin = ybin;
+
+    colorMap->data()->clear();
+    colorMap->data()->setSize(xBin, yBin);
+    colorMap->data()->setRange(QCPRange(xMin, xMax), QCPRange(yMin, yMax));
+
+    for( int i = 0; i < 3; i ++){
+      for( int j = 0; j < 3; j ++){
+        entry[i][j] = 0;
+        if( txt[i][j] ) txt[i][j]->setText("0");
+      }
+    }
+
+  }
+
   void UpdatePlot(){
     colorMap->rescaleDataRange();
-    rescaleAxes();
+    //rescaleAxes();
     replot();
   }
 
   void Clear(){
-    colorMap->data()->clear();
+    
     for( int i = 0; i < 3; i ++){
       for( int j = 0; j < 3; j ++){
         entry[i][j] = 0;
@@ -334,6 +361,7 @@ public:
   }
 
   void Fill(double x, double y){
+    if( isBusy ) return;
     int xIndex, yIndex;
     colorMap->data()->coordToCell(x, y, &xIndex, &yIndex);
     //printf("%f,  %d  %d| %f, %d %d\n", x, xIndex, xBin, y, yIndex, yBin);
@@ -350,6 +378,11 @@ public:
     if( xk == 1 && yk == 1 ) {
       double value = colorMap->data()->cell(xIndex, yIndex);
       colorMap->data()->setCell(xIndex, yIndex, value + 1);
+
+      for( int i = 0; i < cutList.count(); i++){
+        if( cutList[i].isEmpty() ) continue;
+        if( cutList[i].containsPoint(QPointF(x,y), Qt::OddEvenFill) ) cutEntryList[i] ++;
+      }
     }
   }
 
@@ -378,10 +411,19 @@ public:
     }
     replot();
 
-    qDebug() << "Plottable count : " <<  plottableCount() << ", cutList.count :" << cutList.count() << ", cutID :" << lastPlottableID;
+    //qDebug() << "Plottable count : " <<  plottableCount() << ", cutList.count :" << cutList.count() << ", cutID :" << lastPlottableID;
   }
 
   QList<QPolygonF> GetCutList() const{return cutList;} // this list may contain empty element
+  QList<int> GetCutEntryList() const{ return cutEntryList;}
+  void PrintCutEntry() const{
+    if( numCut == 0 ) return;
+    printf("=============== There are %d cuts.\n", numCut);
+    for( int i = 0; i < cutList.count(); i++){
+      if( cutList[i].isEmpty() ) continue;
+      printf("%10s | %d \n", cutNameList[i].toStdString().c_str(), cutEntryList[i]);  
+    }
+  }
 
 private:
   double xMin, xMax, yMin, yMax;
@@ -407,9 +449,110 @@ private:
   QList<int> cutTextIDList;
   QList<int> plottableIDList;
   QList<QString> cutNameList;
+  QList<int> cutEntryList;
 
   QCPItemLine * line;
   double oldMouseX = 0.0, oldMouseY = 0.0;
+
+  bool isBusy;
+
+  //^======================== Right Mouse click action
+  void rightMouseClickRebin(){
+    QDialog dialog(this);
+    dialog.setWindowTitle("Rebin histogram");
+
+    QFormLayout layout(&dialog);
+
+    QLabel * info = new QLabel(&dialog);
+    info->setStyleSheet("color:red;");
+    info->setText("This will also clear histogram!!");
+    layout.addRow(info);
+
+    QStringList nameListX = {"Num. x-Bin", "x-Min", "x-Max"};
+    QLineEdit* lineEditX[3];
+    for (int i = 0; i < 3; ++i) {
+        lineEditX[i] = new QLineEdit(&dialog);
+        layout.addRow(nameListX[i] + " : ", lineEditX[i]);
+    }
+    lineEditX[0]->setText(QString::number(xBin));
+    lineEditX[1]->setText(QString::number(xMin));
+    lineEditX[2]->setText(QString::number(xMax));
+
+    QStringList nameListY = {"Num. y-Bin", "y-Min", "y-Max"};
+    QLineEdit* lineEditY[3];
+    for (int i = 0; i < 3; ++i) {
+        lineEditY[i] = new QLineEdit(&dialog);
+        layout.addRow(nameListY[i] + " : ", lineEditY[i]);
+    }
+    lineEditY[0]->setText(QString::number(yBin));
+    lineEditY[1]->setText(QString::number(yMin));
+    lineEditY[2]->setText(QString::number(yMax));
+
+    QLabel * msg = new QLabel(&dialog);
+    msg->setStyleSheet("color:red;");
+    layout.addRow(msg);
+
+    QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dialog);
+    layout.addRow(&buttonBox);
+
+    double number[3][2];
+
+    QObject::connect(&buttonBox, &QDialogButtonBox::accepted, [&]() {
+        int OKcount = 0;
+        bool conversionOk = true;
+        for( int i = 0; i < 3; i++ ){
+          number[i][0] = lineEditX[i]->text().toDouble(&conversionOk);
+          if( conversionOk ){
+            OKcount++;
+          }else{
+            msg->setText(nameListX[i] + " is invalid.");
+            return;
+          }
+        }
+        for( int i = 0; i < 3; i++ ){
+          number[i][1] = lineEditY[i]->text().toDouble(&conversionOk);
+          if( conversionOk ){
+            OKcount++;
+          }else{
+            msg->setText(nameListY[i] + " is invalid.");
+            return;
+          }
+        }
+
+        if( OKcount == 6 ) {
+          if( number[0][0] <= 0 ) {
+            msg->setText( nameListX[0] + " is zero or negative" );
+            return;
+          }
+          if( number[0][0] <= 0 ) {
+            msg->setText( nameListX[0] + " is zero or negative" );
+            return;
+          }
+
+          if( number[2][0] > number[1][0] && number[2][1] > number[1][1]  ) {
+            dialog.accept();
+          }else{
+            if( number[2][0] > number[1][0] ){
+              msg->setText(nameListX[2] + " is smaller than " + nameListX[1]);
+            }
+            if( number[2][1] > number[1][1] ){
+              msg->setText(nameListY[2] + " is smaller than " + nameListY[1]);
+            }
+          }
+        }
+    });
+
+    QObject::connect(&buttonBox, &QDialogButtonBox::rejected, [&]() { dialog.reject();});
+
+    if( dialog.exec() == QDialog::Accepted ){
+      isBusy = true;
+      Rebin((int)number[0][0], number[1][0], number[2][0], (int)number[0][1], number[1][1], number[2][1]);
+      rescaleAxes();
+      UpdatePlot();
+      isBusy = false;
+    }
+
+  }
 
 };
 
