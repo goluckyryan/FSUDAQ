@@ -37,7 +37,8 @@ HEADERS += ClassData.h \
            SingleSpectra.h \
            OnlineEventBuilder.h \
            Analyser.h \
-           qcustomplot.h
+           qcustomplot.h \
+           SplitPoleAnalyzer.h
 SOURCES += ClassDigitizer.cpp \
            DigiSettingsPanel.cpp \
            FSUDAQ.cpp \
@@ -47,4 +48,5 @@ SOURCES += ClassDigitizer.cpp \
            SingleSpectra.cpp \
            OnlineEventBuilder.cpp \
            Analyser.cpp \
-           qcustomplot.cpp
+           qcustomplot.cpp \
+           SplitPoleAnalyzer.cpp 

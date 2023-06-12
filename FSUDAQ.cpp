@@ -14,6 +14,8 @@
 #include <QProcess>
 #include <QMessageBox>
 
+#include "SplitPoleAnalyzer.h"
+
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
 
   setWindowTitle("FSU DAQ");
@@ -1127,7 +1129,8 @@ void MainWindow::OpenCanvas(){
 void MainWindow::OpenAnalyzer(){
 
   if( onlineAnalyzer == nullptr ) {
-    onlineAnalyzer = new Analyzer(digi, nDigi);
+    //onlineAnalyzer = new Analyzer(digi, nDigi);
+    onlineAnalyzer = new SplitPole(digi, nDigi);
     onlineAnalyzer->show();
   }else{
     onlineAnalyzer->show();

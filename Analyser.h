@@ -42,27 +42,31 @@ public:
 
   virtual void SetUpCanvas();
 
+  OnlineEventBuilder * GetEventBuilder() {return oeb[digiID];} 
+
 public slots:
   void StartThread();
   void StopThread();
+  virtual void UpdateHistograms(); // where event-building, analysis, and ploting
 
 private slots:
 
-  virtual void UpdateHistograms(); // where event-building, analysis, and ploting
+
+protected:
+  QGridLayout * layout;
+  void BuildEvents();
+  void SetDigiID(int ID) { digiID = ID;}
+  void SetUpdateTimeInSec(double sec = 1.0) {waitTimeinSec = sec; buildTimerThread->SetWaitTimeinSec(waitTimeinSec);}
 
 private:
-
   Digitizer ** digi;
   unsigned short nDigi;
 
+  int digiID; // the digi that will event
+  double waitTimeinSec; 
+
   OnlineEventBuilder ** oeb;
   TimingThread * buildTimerThread;
-
-  QGridLayout * layout;
-
-  //======================== custom histograms
-  Histogram2D * h2;
-  Histogram1D * h1;
 
 };
 #endif
