@@ -8,15 +8,15 @@ Analyzer::Analyzer(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent )
   this->digi = digi;
   this->nDigi = nDigi;
 
+  setWindowTitle("Online Analyzer");
+  setGeometry(0, 0, 1000, 800);  
+
   oeb = new OnlineEventBuilder * [nDigi];
   for( unsigned int i = 0; i < nDigi; i++ ) oeb[i] = new OnlineEventBuilder(digi[i]);
 
   buildTimerThread = new TimingThread(this);
   buildTimerThread->SetWaitTimeinSec(1.0); //^Set event build interval
   connect( buildTimerThread, &TimingThread::timeUp, this, &Analyzer::UpdateHistograms);
-
-  setWindowTitle("Online Analyzer");
-  setGeometry(0, 0, 1000, 800);  
 
   QWidget * layoutWidget = new QWidget(this);
   setCentralWidget(layoutWidget);
@@ -35,17 +35,19 @@ Analyzer::~Analyzer(){
 }
 
 void Analyzer::StartThread(){
+  // printf("%s\n", __func__);
   for( unsigned int i = 0; i < nDigi; i++) oeb[i]->ClearEvents();
   buildTimerThread->start();
 }
 
 void Analyzer::StopThread(){
-
+  // printf("%s\n", __func__);
   buildTimerThread->Stop();
   buildTimerThread->quit();
   buildTimerThread->wait();
-
 }
+
+//^####################################### below are open to customization
 
 void Analyzer::SetUpCanvas(){
 
@@ -57,17 +59,6 @@ void Analyzer::SetUpCanvas(){
   h1 = new Histogram1D("testing", "x", 400, 0, 10000, this);
   layout->addWidget(h1, 0, 1);
 
-  // std::random_device rd;
-  // std::mt19937 gen(rd());
-  // std::normal_distribution<double> distribution(2000.0, 1000);
-  // for( int i = 0; i < 1000 ; i++ ){
-  //   double x = distribution(gen);
-  //   double y = distribution(gen);
-  //   h2->Fill(x, y);
-  //   h1->Fill(x);
-  // }
-  // h1->UpdatePlot();
-
 }
 
 void Analyzer::UpdateHistograms(){
@@ -77,7 +68,7 @@ void Analyzer::UpdateHistograms(){
   oeb[0]->BuildEvents(100, false);
   digiMTX[0].unlock();
 
-  oeb[0]->PrintStat();
+  //oeb[0]->PrintStat();
 
   //============ Get events, and do analysis
   long eventBuilt = oeb[0]->eventBuilt;

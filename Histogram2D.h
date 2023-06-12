@@ -47,9 +47,12 @@ public:
     QCPColorGradient color;
     color.clearColorStops();
     color.setColorStopAt( 0.0, QColor("white" ));
-    color.setColorStopAt( 0.3, QColor("blue"));
-    color.setColorStopAt( 0.4, QColor("green"));
-    color.setColorStopAt( 1.0, QColor("yellow"));
+    color.setColorStopAt( 0.0001, QColor("purple" ));
+    color.setColorStopAt( 0.2, QColor("blue"));
+    color.setColorStopAt( 0.4, QColor("cyan"));
+    color.setColorStopAt( 0.6, QColor("green"));
+    color.setColorStopAt( 0.8, QColor("yellow"));
+    color.setColorStopAt( 1.0, QColor("red"));
     colorMap->setGradient(color);
 
     double xPosStart = 0.02;
@@ -165,11 +168,13 @@ public:
           yAxis->setRangeUpper(yMax);
           replot();
           usingMenu = false;
+          return;
         }
 
         if( selectedAction == a2 ) {
           Clear();
           usingMenu = false;
+          return;
         }
 
         if( selectedAction == a3 ){
@@ -181,11 +186,13 @@ public:
           }
           replot();
           usingMenu = false;
+          return;
         }
 
         if( selectedAction == a4){
           rightMouseClickRebin();
           usingMenu = false;
+          return;
         }
 
         if( selectedAction == a5 ){
@@ -194,6 +201,7 @@ public:
           isDrawCut= true;
           usingMenu = false;
           numCut ++;
+          return;
         }
 
         if( selectedAction && numCut > 0 && selectedAction->text().contains("Delete ") ){
@@ -230,27 +238,12 @@ public:
             cutNameList.clear();
             cutEntryList.clear();
           }
-
+          return;
         }
 
         if( selectedAction && numCut > 0 && selectedAction->text().contains("Clear all Cuts") ){
-          numCut = 0;
-          tempCutID = -1;
-          lastPlottableID = -1;
-          cutList.clear();
-          cutIDList.clear();
-          for( int i = cutTextIDList.count() - 1; i >= 0 ; i--){
-            if( cutTextIDList[i] < 0 ) continue;
-            removeItem(cutTextIDList[i]);
-            removePlottable(plottableIDList[i]);
-          }
-          replot();
-
-          cutTextIDList.clear();
-          plottableIDList.clear();
-          cutNameList.clear();
-          cutEntryList.clear();
-
+          ClearAllCuts();
+          return;
         }
 
         if( selectedAction && numCut > 0 && selectedAction->text().contains("Add/Edit names to Cuts") ){
@@ -276,6 +269,7 @@ public:
             });
           }
           dialog.exec();
+          return;
         }
 
       }///================= end of right click
@@ -357,6 +351,7 @@ public:
         txt[i][j]->setText("0");
       }
     }
+    colorMap->data()->clear();
     UpdatePlot();
   }
 
@@ -412,6 +407,25 @@ public:
     replot();
 
     //qDebug() << "Plottable count : " <<  plottableCount() << ", cutList.count :" << cutList.count() << ", cutID :" << lastPlottableID;
+  }
+
+  void ClearAllCuts(){
+    numCut = 0;
+    tempCutID = -1;
+    lastPlottableID = -1;
+    cutList.clear();
+    cutIDList.clear();
+    for( int i = cutTextIDList.count() - 1; i >= 0 ; i--){
+      if( cutTextIDList[i] < 0 ) continue;
+      removeItem(cutTextIDList[i]);
+      removePlottable(plottableIDList[i]);
+    }
+    replot();
+
+    cutTextIDList.clear();
+    plottableIDList.clear();
+    cutNameList.clear();
+    cutEntryList.clear();
   }
 
   QList<QPolygonF> GetCutList() const{return cutList;} // this list may contain empty element

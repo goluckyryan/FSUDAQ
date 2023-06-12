@@ -14,7 +14,7 @@
 #include "CAENDigitizerType.h"
 #include "macro.h"
 
-#define MaxNData 50 /// store 10k events per channels
+#define MaxNData 10000 /// store 10k events per channels
 
 class Data{
 

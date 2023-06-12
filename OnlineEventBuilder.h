@@ -14,7 +14,7 @@ Use another class to hold the event data and methods.
 #include "macro.h"
 #include "ClassDigitizer.h"
 
-#define MaxNEvent 30
+#define MaxNEvent 5000
 
 struct dataPoint{
   unsigned short ch;
