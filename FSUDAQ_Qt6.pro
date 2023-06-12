@@ -48,5 +48,4 @@ SOURCES += ClassDigitizer.cpp \
            SingleSpectra.cpp \
            OnlineEventBuilder.cpp \
            Analyser.cpp \
-           qcustomplot.cpp \
-           SplitPoleAnalyzer.cpp 
+           qcustomplot.cpp
