@@ -35,7 +35,6 @@ HEADERS += ClassData.h \
            influxdb.h\
            Scope.h \
            SingleSpectra.h \
-           OnlineEventBuilder.h \
            MultiBuilder.h \
            Analyser.h \
            qcustomplot.h \
@@ -47,7 +46,6 @@ SOURCES += ClassDigitizer.cpp \
            influxdb.cpp\
            Scope.cpp \
            SingleSpectra.cpp \
-           OnlineEventBuilder.cpp \
            MultiBuilder.cpp \
            Analyser.cpp \
            qcustomplot.cpp

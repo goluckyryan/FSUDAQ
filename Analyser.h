@@ -43,8 +43,6 @@ public:
 
   virtual void SetUpCanvas();
 
-  //OnlineEventBuilder * GetEventBuilder() {return oeb[digiID];} 
-
   MultiBuilder * GetEventBuilder() { return mb;}
 
 
@@ -68,8 +66,6 @@ private:
 
   int digiID; // the digi that will event
   double waitTimeinSec; 
-
-  //OnlineEventBuilder ** oeb;
 
   MultiBuilder * mb;
 

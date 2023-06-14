@@ -14,7 +14,7 @@ ROOTLIBS = `root-config --cflags --glibs`
 
 OBJS = ClassDigitizer.o OnlineEventBuilder.o MultiBuilder.o
 
-ALL = test test_indep EventBuilder DataGenerator EventKenshikushi
+ALL = test test_indep DataGenerator EventKenshikushi
 
 #########################################################################
 
@@ -39,10 +39,6 @@ test	:	test.cpp ClassDigitizer.o OnlineEventBuilder.o
 test_indep : test_indep.cpp RegisterAddress.h macro.h
 		@echo "--------- making test_indep"
 		$(CC) $(COPTS) -o test_indep test_indep.cpp $(CAENLIBS) 
-
-EventBuilder : EventBuilder.cpp ClassData.h
-		@echo "--------- making EventBuilder"
-		$(CC) $(COPTS) -o EventBuilder EventBuilder.cpp $(CAENLIBS) $(ROOTLIBS) 
 
 DataGenerator : DataGenerator.cpp ClassDigitizer.o  OnlineEventBuilder.o
 		@echo "--------- making DataGenerator"

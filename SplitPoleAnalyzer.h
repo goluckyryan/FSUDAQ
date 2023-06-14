@@ -27,7 +27,6 @@ public:
     SetDigiID(0); // define which digitizer to build event
     SetUpdateTimeInSec(1.0);
 
-    //evtbder = GetEventBuilder(); // get the event builder pointer from mother class;
     evtbder = GetEventBuilder();
 
     SetUpCanvas();
@@ -42,7 +41,6 @@ public slots:
 
 private:
 
-  //OnlineEventBuilder * evtbder;
   MultiBuilder *evtbder;
 
   // declaie histograms
@@ -70,8 +68,6 @@ inline void SplitPole::UpdateHistograms(){
 
   BuildEvents(); // call the event builder to build events
 
-  //oeb->PrintStat();
-
   //============ Get events, and do analysis
   long eventBuilt = evtbder->eventBuilt;
   if( eventBuilt == 0 ) return;
@@ -84,7 +80,6 @@ inline void SplitPole::UpdateHistograms(){
   unsigned short e1 = 0, e2 = 0;
 
   for( long i = eventStart ; i <= eventIndex; i ++ ){
-    //std::vector<dataPoint> event = evtbder->events[i];
     std::vector<EventMember> event = evtbder->events[i];
 
     for( int k = 0; k < (int) event.size(); k++ ){
