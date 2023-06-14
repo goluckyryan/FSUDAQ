@@ -198,7 +198,6 @@ int main(int argc, char* argv[]){
   
   delete dig;
   
-  /**
   {///============ Checking the buffer size calculation
     unsigned short B = 10; /// BLT
     unsigned short Eg = 511; /// Event / dual channel
@@ -246,7 +245,8 @@ int main(int argc, char* argv[]){
     printf("                       diff : %8u byte \n", size > 2*bSize ? size - 2*bSize : 2*bSize - size);
       
     delete buffer;
-  }/**/
+  }
+  */
   
   //dig->GetData()->SetSaveWaveToMemory(true);
   

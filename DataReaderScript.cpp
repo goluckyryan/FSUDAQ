@@ -5,7 +5,7 @@ void DataReaderScript(){
   Data * data = new Data();  
   data->DPPType = V1730_DPP_PSD_CODE;
 
-  std::string fileName = "data/temp_006_089_PSD_000.fsu";
+  std::string fileName = "temp_036_089_PSD_000.fsu";
 
   FILE * haha = fopen(fileName.c_str(), "r");
   fseek(haha, 0L, SEEK_END);
@@ -33,23 +33,23 @@ void DataReaderScript(){
     dump = fread(buffer, aggSize, 1, haha);
     long fPos2 = ftell(haha);
 
-    printf("Board Agg. has %d word  = %d bytes | %ld - %ld\n", aggSize/4, aggSize, fPos1, fPos2);    
-
     countBdAgg ++;
-    printf("==================== %d Agg\n", countBdAgg);    
+    //printf("Board Agg. has %d word  = %d bytes | %ld - %ld\n", aggSize/4, aggSize, fPos1, fPos2);    
+    //printf("==================== %d Agg\n", countBdAgg);    
+
     data->DecodeBuffer(buffer, aggSize, false, 0); // data own the buffer
     data->ClearBuffer(); // this will clear the buffer.
 
     if( !data->IsNotRollOverFakeAgg ) continue;
 
-    //if( countBdAgg % 100 == 0) 
-    data->PrintStat();
+    //if( countBdAgg % 100 == 0) data->PrintStat();
     //data->ClearData();
 
-    if( countBdAgg > 1 ) break;
+    // if( countBdAgg > 10 ) break;
     
   }while(!feof(haha) && ftell(haha) < inFileSize);
 
+  data->PrintStat();
   data->PrintAllData();
 
   fclose(haha);

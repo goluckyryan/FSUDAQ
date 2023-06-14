@@ -153,6 +153,7 @@
     "qmainwindow": "cpp",
     "qchartview": "cpp",
     "qthread": "cpp",
-    "qrandomgenerator": "cpp"
+    "qrandomgenerator": "cpp",
+    "source_location": "cpp"
   }
 }
