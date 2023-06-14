@@ -2,8 +2,6 @@
 #include "ClassData.h"
 #include "ClassDigitizer.h"
 
-#include "OnlineEventBuilder.h"
-
 #include <TROOT.h>
 #include <TSystem.h>
 #include <TApplication.h>
@@ -45,8 +43,6 @@ int main(int argc, char* argv[]){
 
   // const float ch2ns = dig[0]->GetCh2ns();
 
-  OnlineEventBuilder * eb = new OnlineEventBuilder( dig[0] );
-
   Data * data =  dig[0]->GetData();
   data->ClearData();
 
@@ -68,7 +64,6 @@ int main(int argc, char* argv[]){
     // printf("-------------- %ld \n", data->Waveform1[0][index].size());
 
     //data->PrintAllData();
-    eb->BuildEvents(100, false);
 
   }
 

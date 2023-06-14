@@ -3,7 +3,6 @@
 
 #include "macro.h"
 #include "ClassDigitizer.h"
-#include "OnlineEventBuilder.h"
 
 int main(){
 
@@ -19,7 +18,6 @@ int main(){
   std::uniform_int_distribution<unsigned short> RanEnergy(1, 1000);
   std::uniform_int_distribution<unsigned long long> RanTime(1, 50);
 
-  OnlineEventBuilder * eb = new OnlineEventBuilder(digi);
   unsigned long long time = 0;
 
   for( int q = 0; q < 3; q ++ ){
@@ -56,11 +54,8 @@ int main(){
 
     printf("===================================\n");
 
-    eb->BuildEvents(100, true);
-
   }
 
-  delete eb;
   delete digi;
 
 }

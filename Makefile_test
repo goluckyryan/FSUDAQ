@@ -12,7 +12,7 @@ CAENLIBS	=	-lCAENDigitizer
 
 ROOTLIBS = `root-config --cflags --glibs`
 
-OBJS = ClassDigitizer.o OnlineEventBuilder.o MultiBuilder.o
+OBJS = ClassDigitizer.o MultiBuilder.o
 
 ALL = test test_indep DataGenerator EventKenshikushi
 
@@ -23,26 +23,23 @@ all	:	$(ALL)
 clean	:
 		/bin/rm -f $(OBJS) $(ALL)
 
-OnlineEventBuilder.o : OnlineEventBuilder.cpp OnlineEventBuilder.h
-		$(CC) $(COPTS) -c OnlineEventBuilder.cpp
-
 MultiBuilder.o : MultiBuilder.cpp MultiBuilder.h
 		$(CC) $(COPTS) -c MultiBuilder.cpp
 
 ClassDigitizer.o : ClassDigitizer.cpp ClassDigitizer.h RegisterAddress.h macro.h ClassData.h
 		$(CC) $(COPTS) -c ClassDigitizer.cpp
 
-test	:	test.cpp ClassDigitizer.o OnlineEventBuilder.o
+test	:	test.cpp ClassDigitizer.o
 		@echo "--------- making test"
-		$(CC) $(COPTS) -o test test.cpp ClassDigitizer.o  OnlineEventBuilder.o $(CAENLIBS)  $(ROOTLIBS)
+		$(CC) $(COPTS) -o test test.cpp ClassDigitizer.o  $(CAENLIBS)  $(ROOTLIBS)
 
 test_indep : test_indep.cpp RegisterAddress.h macro.h
 		@echo "--------- making test_indep"
 		$(CC) $(COPTS) -o test_indep test_indep.cpp $(CAENLIBS) 
 
-DataGenerator : DataGenerator.cpp ClassDigitizer.o  OnlineEventBuilder.o
+DataGenerator : DataGenerator.cpp ClassDigitizer.o 
 		@echo "--------- making DataGenerator"
-		$(CC) $(COPTS) -o DataGenerator DataGenerator.cpp ClassDigitizer.o  OnlineEventBuilder.o $(CAENLIBS)
+		$(CC) $(COPTS) -o DataGenerator DataGenerator.cpp ClassDigitizer.o $(CAENLIBS)
 
 EventKenshikushi : EventKenshikushi.cpp ClassData.h MultiBuilder.o
 		@echo "--------- making EventKenshikushi"

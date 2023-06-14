@@ -154,6 +154,7 @@
     "qchartview": "cpp",
     "qthread": "cpp",
     "qrandomgenerator": "cpp",
-    "source_location": "cpp"
+    "source_location": "cpp",
+    "splitpole.C": "cpp"
   }
 }
