@@ -2,6 +2,7 @@
 #define MuLTI_BUILDER_H
 
 #include "ClassData.h"
+#include "ClassDigitizer.h"
 
 #define MaxNEvent 5000 // circular 
 
@@ -20,16 +21,16 @@ public:
     Clear();
   }
 
-  EventMember operator = (EventMember e){
-    bd = e.bd;
-    ch = e.ch;
-    energy = e.energy;
-    energy2 = e.energy2;
-    timestamp = e.timestamp;
-    fineTime = e.fineTime;
-    trace = e.trace;
-    return *this;
-  }
+  // EventMember operator = (EventMember e){
+  //   bd = e.bd;
+  //   ch = e.ch;
+  //   energy = e.energy;
+  //   energy2 = e.energy2;
+  //   timestamp = e.timestamp;
+  //   fineTime = e.fineTime;
+  //   trace = e.trace;
+  //   return *this;
+  // }
 
   void Clear(){
     bd = 0;
@@ -47,6 +48,7 @@ public:
 class MultiBuilder {
 
 public:
+  MultiBuilder(Digitizer ** digi, unsigned int nDigi);
   MultiBuilder(Data ** inData, std::vector<int> type);
   ~MultiBuilder();
 

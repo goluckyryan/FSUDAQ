@@ -15,7 +15,8 @@
 #include "ClassDigitizer.h"
 #include "CustomThreads.h"
 #include "CustomWidgets.h"
-#include "OnlineEventBuilder.h"
+//#include "OnlineEventBuilder.h"
+#include "MultiBuilder.h"
 
 /**************************************
 
@@ -42,7 +43,10 @@ public:
 
   virtual void SetUpCanvas();
 
-  OnlineEventBuilder * GetEventBuilder() {return oeb[digiID];} 
+  //OnlineEventBuilder * GetEventBuilder() {return oeb[digiID];} 
+
+  MultiBuilder * GetEventBuilder() { return mb;}
+
 
 public slots:
   void StartThread();
@@ -65,7 +69,10 @@ private:
   int digiID; // the digi that will event
   double waitTimeinSec; 
 
-  OnlineEventBuilder ** oeb;
+  //OnlineEventBuilder ** oeb;
+
+  MultiBuilder * mb;
+
   TimingThread * buildTimerThread;
 
 };

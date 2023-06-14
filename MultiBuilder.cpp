@@ -2,6 +2,18 @@
 
 #include <algorithm>
 
+MultiBuilder::MultiBuilder(Digitizer ** digi, unsigned int nDigi) : nData(nDigi){
+
+  data = new Data *[nData];
+  for( unsigned int i = 0; i < nData; i++){
+    data[i] = digi[i]->GetData();
+    typeList.push_back(digi[i]->GetDPPType());
+    timeWindow = 100;
+    ClearEvents();
+  } 
+
+}
+
 MultiBuilder::MultiBuilder(Data ** inData, std::vector<int> type) : nData(type.size()){
   data = inData;
   typeList = type;
