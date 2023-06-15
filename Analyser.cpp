@@ -32,6 +32,11 @@ Analyzer::~Analyzer(){
   delete mb;
 }
 
+void Analyzer::RedefineEventBuilder(std::vector<int> idList){
+  delete mb;
+  mb = new MultiBuilder(digi, idList);
+}
+
 void Analyzer::StartThread(){
   mb->ClearEvents();
   buildTimerThread->start();
@@ -44,11 +49,19 @@ void Analyzer::StopThread(){
   buildTimerThread->wait();
 }
 
+
+
 void Analyzer::BuildEvents(){
 
-  for( unsigned int i = 0; i < nDigi; i++ ) digiMTX[digiID].lock();
-  mb->BuildEvents(0, 0, 0);
-  for( unsigned int i = 0; i < nDigi; i++ ) digiMTX[digiID].unlock();
+  unsigned int nData = mb->GetNumOfDigitizer();
+  std::vector<int> idList = mb->GetDigiIDList();
+  for( unsigned int i = 0; i < nData; i++ ) digiMTX[idList[i]].lock();
+  if( isBuildBackward ){
+    mb->BuildEventsBackWard(0);
+  }else{
+    mb->BuildEvents(0, 0, 0);
+  }
+  for( unsigned int i = 0; i < nData; i++ ) digiMTX[idList[i]].unlock();
 
 }
 

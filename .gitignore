@@ -10,6 +10,9 @@ DataGenerator
 
 data
 
+*.d
+*.pcm
+
 *.txt
 
 *~

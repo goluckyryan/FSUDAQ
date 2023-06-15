@@ -45,6 +45,8 @@ public:
 
   MultiBuilder * GetEventBuilder() { return mb;}
 
+  void RedefineEventBuilder(std::vector<int> idList);
+  void SetBackwardBuild(bool TF) { isBuildBackward = TF;}
 
 public slots:
   void StartThread();
@@ -57,18 +59,16 @@ private slots:
 protected:
   QGridLayout * layout;
   void BuildEvents();
-  void SetDigiID(int ID) { digiID = ID;}
   void SetUpdateTimeInSec(double sec = 1.0) {waitTimeinSec = sec; buildTimerThread->SetWaitTimeinSec(waitTimeinSec);}
 
 private:
   Digitizer ** digi;
   unsigned short nDigi;
 
-  int digiID; // the digi that will event
   double waitTimeinSec; 
 
   MultiBuilder * mb;
-
+  bool isBuildBackward;
   TimingThread * buildTimerThread;
 
 };

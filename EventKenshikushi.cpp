@@ -139,7 +139,7 @@ int main(int argc, char **argv) {
   TFile * outRootFile = new TFile(outFileName, "recreate");
   TTree * tree = new TTree("tree", outFileName);
 
-  unsigned long long                evID = 0;
+  unsigned long long                evID = -1;
   unsigned short                   multi = 0;
   unsigned short           bd[MAX_MULTI] = {0}; /// boardID
   unsigned short           ch[MAX_MULTI] = {0}; /// chID
@@ -222,7 +222,7 @@ int main(int argc, char **argv) {
     if( startIndex < 0 ) startIndex += MaxNEvent;
     //printf("startIndex : %ld, %ld\n", startIndex, mb->eventIndex);
     for( long i = startIndex; i <= mb->eventIndex; i++){
-      evID = i;
+      evID ++;
       multi = mb->events[i].size();
       for( int j = 0; j < multi; j ++){
         bd[j] = mb->events[i][j].bd;
@@ -260,7 +260,7 @@ int main(int argc, char **argv) {
   if( startIndex < 0 ) startIndex += MaxNEvent;
   //printf("startIndex : %ld, %ld\n", startIndex, mb->eventIndex);
   for( long i = startIndex; i <= mb->eventIndex; i++){
-    evID = i;
+    evID ++;
     multi = mb->events[i].size();
     for( int j = 0; j < multi; j ++){
       bd[j] = mb->events[i][j].bd;

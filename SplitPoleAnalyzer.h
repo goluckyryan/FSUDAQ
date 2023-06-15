@@ -24,9 +24,9 @@ class SplitPole : public Analyzer{
 public:
   SplitPole(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent = nullptr): Analyzer(digi, nDigi, parent){
 
-    SetDigiID(0); // define which digitizer to build event
     SetUpdateTimeInSec(1.0);
 
+    RedefineEventBuilder({0}); // only build for the 0-th digitizer;
     evtbder = GetEventBuilder();
 
     SetUpCanvas();

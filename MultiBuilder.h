@@ -8,6 +8,7 @@
 
 class EventMember{
 public:
+  int sn;
   unsigned short bd;
   unsigned short ch;
   unsigned short energy;
@@ -21,18 +22,8 @@ public:
     Clear();
   }
 
-  // EventMember operator = (EventMember e){
-  //   bd = e.bd;
-  //   ch = e.ch;
-  //   energy = e.energy;
-  //   energy2 = e.energy2;
-  //   timestamp = e.timestamp;
-  //   fineTime = e.fineTime;
-  //   trace = e.trace;
-  //   return *this;
-  // }
-
   void Clear(){
+    sn = 0;
     bd = 0;
     ch = 0;
     energy = 0;
@@ -49,13 +40,22 @@ class MultiBuilder {
 
 public:
   MultiBuilder(Digitizer ** digi, unsigned int nDigi);
-  MultiBuilder(Data ** inData, std::vector<int> type);
+  MultiBuilder(Digitizer ** digi, std::vector<int> id);
+  MultiBuilder(Data ** inData, std::vector<int> type, std::vector<int> sn);
+
+  //for signal digitizer
+  MultiBuilder(Digitizer ** digi, int digiID);
+  MultiBuilder(Digitizer * digi);
   ~MultiBuilder();
 
   void SetTimeWindow(int ticks) {timeWindow = ticks;}
   int GetTimeWindow() const{return timeWindow;}
 
+  unsigned int GetNumOfDigitizer() const {return nData;}
+  std::vector<int> GetDigiIDList() const {return idList;}
+
   void BuildEvents(bool isFinal = false, bool skipTrace = false, bool verbose = false);
+  void BuildEventsBackWard(bool verbose = false); // always skip trace, for faster online building 
 
   void ClearEvents();
   // void PrintStat();
@@ -67,6 +67,8 @@ public:
 
 private:
   std::vector<int> typeList;
+  std::vector<int> snList;
+  std::vector<int> idList;
   const unsigned short nData;
   Data ** data; // assume all data has MaxNChannel (16) 
 
@@ -76,12 +78,19 @@ private:
 
   int nExhaushedCh;
   bool chExhaused[MaxNDigitizer][MaxNChannels];
+
+  void FindEarlistTimeAndCh(bool verbose = false); // search thtough the nextIndex
   unsigned long long earlistTime;
-  unsigned long long latestTime;
   int earlistDigi;
   int earlistCh;
-  void FindEarlistTimeAndCh(bool verbose = false);
-  void FindLatestTime(bool verbose = false);
+  void FindLatestTimeAndCh(bool verbose = false); // search thtough the nextIndex
+  unsigned long long latestTime;
+  int latestDigi;
+  int latestCh;
+
+  void FindLatestTimeOfData(bool verbose = false);
+
+  int lastBackWardIndex[MaxNDigitizer][MaxNChannels];
 
 };
 
