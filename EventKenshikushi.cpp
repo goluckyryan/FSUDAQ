@@ -170,7 +170,7 @@ int main(int argc, char **argv) {
 
 
   //*====================================== build events
-  MultiBuilder * mb = new MultiBuilder(data, typeList);
+  MultiBuilder * mb = new MultiBuilder(data, typeList, snList);
   mb->SetTimeWindow(timeWindow);
 
   ///------------------ re data

@@ -21,6 +21,7 @@ MultiBuilder::MultiBuilder(Digitizer ** digi, std::vector<int> id) : nData(id.si
   for( unsigned int i = 0; i < nData; i++){
     int k = idList[i];
     data[i] = digi[k]->GetData();
+    //TODO type and sn should be inside data[i]
     typeList.push_back(digi[k]->GetDPPType());
     snList.push_back(digi[k]->GetSerialNumber());
     timeWindow = 100;
@@ -28,8 +29,8 @@ MultiBuilder::MultiBuilder(Digitizer ** digi, std::vector<int> id) : nData(id.si
   } 
 }
 
-MultiBuilder::MultiBuilder(Data ** inData, std::vector<int> type, std::vector<int> sn) : nData(type.size()){
-  data = inData;
+MultiBuilder::MultiBuilder(Data ** multiData, std::vector<int> type, std::vector<int> sn) : nData(type.size()){
+  data = multiData;
   typeList = type;
   snList = sn;
   for( int i = 0; i < (int) type.size(); i++) idList.push_back(i);
@@ -52,6 +53,16 @@ MultiBuilder::MultiBuilder(Digitizer * digi) : nData(1){
   data[0] = digi->GetData();
   typeList.push_back(digi->GetDPPType());
   snList.push_back(digi->GetSerialNumber());
+  idList.push_back(0);  
+  timeWindow = 100;
+  ClearEvents();
+}
+
+MultiBuilder::MultiBuilder(Data * singleData, int type): nData(1){
+  data = new Data *[1];
+  data[0] = singleData;
+  typeList.push_back(type);
+  snList.push_back(0);
   idList.push_back(0);  
   timeWindow = 100;
   ClearEvents();
@@ -81,6 +92,17 @@ void MultiBuilder::ClearEvents(){
 
     nExhaushedCh = 0;
   }
+}
+
+void MultiBuilder::PrintStat(){
+
+  printf("Total number of evet built : %ld\n", totalEventBuilt);
+  for( int i = 0; i < nData ; i++){
+    for( int ch = 0; ch < MaxNChannels ; ch++){
+      printf("%d %d | %d \n", i, ch, nextIndex[i][ch]);
+    }
+  }
+
 }
 
 void MultiBuilder::FindEarlistTimeAndCh(bool verbose){
@@ -134,15 +156,17 @@ void MultiBuilder::FindLatestTimeAndCh(bool verbose){
     }
 
     for(unsigned int ch = 0; ch < MaxNChannels; ch ++){
-      if( data[i]->Timestamp[ch][data[i]->DataIndex[ch]] == 0 || data[i]->DataIndex[ch] == -1 ) {
+      // printf(" %d, %d | %d", i, ch, nextIndex[i][ch]);
+      if( nextIndex[i][ch] < 0 ) {
         nExhaushedCh ++;
         chExhaused[i][ch] = true;
+
+        // printf(", exhanshed. %d \n", nExhaushedCh);
         continue;
-      }else{
-        nextIndex[i][ch] = data[i]->DataIndex[ch];
       }
 
       unsigned long long time = data[i]->Timestamp[ch][nextIndex[i][ch]];
+      // printf(", time : %llu\n", time );
       if( time > latestTime ) {
         latestTime = time;
         latestDigi = i;
@@ -271,7 +295,14 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
 void MultiBuilder::BuildEventsBackWard(bool verbose){
 
   //skip trace, and only build for 100 events max
-  
+
+  // remember the end of DataIndex, prevent over build
+  for( int k = 0; k < nData; k++){
+    for( int i = 0; i < MaxNChannels; i++){
+      nextIndex[k][i] = data[k]->DataIndex[i];
+    }
+  }
+
   FindLatestTimeAndCh(verbose);
 
   //========== build event
@@ -290,7 +321,8 @@ void MultiBuilder::BuildEventsBackWard(bool verbose){
       for( unsigned int i = 0; i < MaxNChannels; i++){
         int ch = (i + latestCh) % MaxNChannels;
         if( chExhaused[k][ch] ) continue;
-        if( nextIndex[k][ch] <= lastBackWardIndex[k][ch] ){
+        //if( nextIndex[k][ch] <= lastBackWardIndex[k][ch] || nextIndex[k][ch] < 0){
+        if( nextIndex[k][ch] < 0){
           chExhaused[k][ch] = true;
           nExhaushedCh ++;
           continue;
@@ -309,7 +341,7 @@ void MultiBuilder::BuildEventsBackWard(bool verbose){
 
             events[eventIndex].push_back(em);
             nextIndex[k][ch]--;
-            if( nextIndex[k][ch] < 0) nextIndex[k][ch] = MaxNData - 1;
+            if( nextIndex[k][ch] < 0 && data[k]->LoopIndex[ch] > 0 ) nextIndex[k][ch] = MaxNData - 1;
             
           }else{
             break;
@@ -321,7 +353,9 @@ void MultiBuilder::BuildEventsBackWard(bool verbose){
       if( timeWindow == 0 ) break;
     }
 
-    //skip sorting by timestamp
+    std::sort(events[eventIndex].begin(), events[eventIndex].end(), [](const EventMember& a, const EventMember& b) {
+      return a.timestamp < b.timestamp;
+    });
 
     FindLatestTimeAndCh(verbose);
 
@@ -337,17 +371,17 @@ void MultiBuilder::BuildEventsBackWard(bool verbose){
         printf("######################### no more event to be built\n"); 
         break;
       } 
-      printf("----- next ch : %d, next earlist Time : %llu.\n", earlistCh, earlistTime);
+      printf("----- next ch : %d, next latest Time : %llu.\n", latestCh, latestTime);
 
     }
 
-  }while(nExhaushedCh < nData * MaxNChannels || eventBuilt > 100);
+  }while(nExhaushedCh < nData * MaxNChannels && eventBuilt < 100);
 
-  // remember the end of DataIndex, prevent over build
-  for( int k = 0; k < nData; k++){
-    for( int i = 0; i < MaxNChannels; i++){
-      lastBackWardIndex[k][i] = data[k]->DataIndex[i];
-    }
-  }
+  // // remember the end of DataIndex, prevent over build
+  // for( int k = 0; k < nData; k++){
+  //   for( int i = 0; i < MaxNChannels; i++){
+  //     lastBackWardIndex[k][i] = data[k]->DataIndex[i];
+  //   }
+  // }
 
 }

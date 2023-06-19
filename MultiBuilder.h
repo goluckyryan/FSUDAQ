@@ -41,11 +41,12 @@ class MultiBuilder {
 public:
   MultiBuilder(Digitizer ** digi, unsigned int nDigi);
   MultiBuilder(Digitizer ** digi, std::vector<int> id);
-  MultiBuilder(Data ** inData, std::vector<int> type, std::vector<int> sn);
+  MultiBuilder(Data ** multiData, std::vector<int> type, std::vector<int> sn);
 
   //for signal digitizer
   MultiBuilder(Digitizer ** digi, int digiID);
   MultiBuilder(Digitizer * digi);
+  MultiBuilder(Data * singleData, int type);
   ~MultiBuilder();
 
   void SetTimeWindow(int ticks) {timeWindow = ticks;}
@@ -58,7 +59,7 @@ public:
   void BuildEventsBackWard(bool verbose = false); // always skip trace, for faster online building 
 
   void ClearEvents();
-  // void PrintStat();
+  void PrintStat();
 
   long eventIndex;
   long eventBuilt; // reset once call BuildEvents()
