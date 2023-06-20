@@ -15,8 +15,8 @@
 #include "ClassDigitizer.h"
 #include "CustomThreads.h"
 #include "CustomWidgets.h"
-//#include "OnlineEventBuilder.h"
 #include "MultiBuilder.h"
+#include "influxdb.h"
 
 /**************************************
 
@@ -46,7 +46,7 @@ public:
   MultiBuilder * GetEventBuilder() { return mb;}
 
   void RedefineEventBuilder(std::vector<int> idList);
-  void SetBackwardBuild(bool TF) { isBuildBackward = TF;}
+  void SetBackwardBuild(bool TF, int maxNumEvent = 100) { isBuildBackward = TF; maxNumEventBuilt = maxNumEvent;}
 
 public slots:
   void StartThread();
@@ -58,8 +58,11 @@ private slots:
 
 protected:
   QGridLayout * layout;
-  void BuildEvents();
+  void BuildEvents(bool verbose = false);
   void SetUpdateTimeInSec(double sec = 1.0) {waitTimeinSec = sec; buildTimerThread->SetWaitTimeinSec(waitTimeinSec);}
+
+  InfluxDB * influx;
+  std::string dataBaseName;
 
 private:
   Digitizer ** digi;
@@ -69,7 +72,9 @@ private:
 
   MultiBuilder * mb;
   bool isBuildBackward;
+  int maxNumEventBuilt;
   TimingThread * buildTimerThread;
+
 
 };
 #endif

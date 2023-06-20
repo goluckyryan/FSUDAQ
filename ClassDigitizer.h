@@ -31,7 +31,7 @@ class Digitizer{
     int                   ADCbits;       /// ADC bit
     int                   DPPType;       /// DPP verion
     unsigned int          ADCFullSize;   /// pow(2, ADCbits) - 1
-    float                 ch2ns;         /// channel to ns
+    float                 tick2ns;         /// channel to ns
     CAEN_DGTZ_BoardInfo_t BoardInfo;
     
     //^----- adjustable parameters
@@ -105,7 +105,7 @@ class Digitizer{
     int         GetSerialNumber()            const {return BoardInfo.SerialNumber;}
     int         GetChannelMask()             { channelMask = GetSettingFromMemory(DPP::ChannelEnableMask); return channelMask;}
     bool        GetChannelOnOff(unsigned ch) { channelMask = GetSettingFromMemory(DPP::ChannelEnableMask); return (channelMask & ( 1 << ch) );} 
-    float       GetCh2ns()                   const {return ch2ns;}
+    float       GetTick2ns()                   const {return tick2ns;}
     int         GetNChannels()               const {return NChannel;}
     int         GetHandle()                  const {return handle;}
     int         GetDPPType()                 const {return DPPType;}

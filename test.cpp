@@ -41,7 +41,7 @@ int main(int argc, char* argv[]){
   // dig[0]->ProgramBoard();
   // dig[0]->ProgramPSDBoard();
 
-  // const float ch2ns = dig[0]->GetCh2ns();
+  // const float tick2ns = dig[0]->GetTick2ns();
 
   Data * data =  dig[0]->GetData();
   data->ClearData();
@@ -117,7 +117,7 @@ int main(int argc, char* argv[]){
       
       unsigned short nData = data->DataIndex[0]; //channel-0
       haha = data->Waveform1[0][nData-1];
-      for( int i = 0; i < waveFormLength; i++) g1->SetPoint(i, i*ch2ns, haha[i]);
+      for( int i = 0; i < waveFormLength; i++) g1->SetPoint(i, i*tick2ns, haha[i]);
 
       canvas->cd(3); g1->Draw("AP");
       

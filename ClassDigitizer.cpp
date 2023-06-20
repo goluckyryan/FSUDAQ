@@ -25,7 +25,7 @@ void Digitizer::Initalization(){
   ADCbits  = 1;
   DPPType = 0;
   ADCFullSize = 0;
-  ch2ns = 0; 
+  tick2ns = 0; 
   BoardInfo = {};
 
   channelMask = 0xFFFF;
@@ -59,7 +59,7 @@ void Digitizer::Reset(){
 
 void Digitizer::PrintBoard (){
   printf("Connected to Model %s with handle %d using %s\n", BoardInfo.ModelName, handle, LinkType == CAEN_DGTZ_USB ? "USB" : "Optical Link");
-  printf("Sampling rate : %.0f MHz = %.1f ns \n", 1000/ch2ns, ch2ns);
+  printf("Sampling rate : %.0f MHz = %.1f ns \n", 1000/tick2ns, tick2ns);
   printf("Number of Channels : %d = 0x%X\n", NChannel, channelMask);
   printf("SerialNumber :\e[1m\e[33m %d\e[0m\n", BoardInfo.SerialNumber);
   printf("DPPType : %d (%s)\n", DPPType, GetDPPString().c_str());
@@ -103,11 +103,11 @@ int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose
       NChannel = BoardInfo.Channels;
       channelMask = pow(2, NChannel)-1;
       switch(BoardInfo.Model){
-            case CAEN_DGTZ_V1730: ch2ns = 2.0; break; ///ns -> 500 MSamples/s
-            case CAEN_DGTZ_V1725: ch2ns = 4.0; break; ///ns -> 250 MSamples/s
-            default : ch2ns = 4.0; break;
+            case CAEN_DGTZ_V1730: tick2ns = 2.0; break; ///ns -> 500 MSamples/s
+            case CAEN_DGTZ_V1725: tick2ns = 4.0; break; ///ns -> 250 MSamples/s
+            default : tick2ns = 4.0; break;
       }
-      data->ch2ns = ch2ns;
+      data->tick2ns = tick2ns;
       data->boardSN = BoardInfo.SerialNumber;
       ADCbits = BoardInfo.ADC_NBits;
       ADCFullSize = (unsigned int)( pow(2, ADCbits) -1 );
@@ -739,8 +739,8 @@ int Digitizer::LoadSettingBinaryToMemory(std::string fileName){
       if( dummy != 0 ) printf("reach the end of file (read %ld).\n", dummy);
       
       uint32_t boardInfo = GetSettingFromMemory(DPP::BoardInfo_R);
-      if( (boardInfo & 0xFF) == 0x0E ) ch2ns = 4.0;
-      if( (boardInfo & 0xFF) == 0x0B ) ch2ns = 2.0;
+      if( (boardInfo & 0xFF) == 0x0E ) tick2ns = 4.0;
+      if( (boardInfo & 0xFF) == 0x0B ) tick2ns = 2.0;
 
       ///Should seperate file<->memory, memory<->board
       ///ProgramSettingsToBoard(); /// do nothing if not connected.

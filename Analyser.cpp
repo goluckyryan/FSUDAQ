@@ -11,6 +11,9 @@ Analyzer::Analyzer(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent )
   setWindowTitle("Online Analyzer");
   setGeometry(0, 0, 1000, 800);  
 
+  influx = nullptr;
+  dataBaseName = "";
+
   mb = new MultiBuilder(digi, nDigi);
 
   buildTimerThread = new TimingThread(this);
@@ -28,7 +31,7 @@ Analyzer::Analyzer(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent )
 }
 
 Analyzer::~Analyzer(){
-
+  delete influx;
   delete mb;
 }
 
@@ -51,15 +54,15 @@ void Analyzer::StopThread(){
 
 
 
-void Analyzer::BuildEvents(){
+void Analyzer::BuildEvents(bool verbose){
 
   unsigned int nData = mb->GetNumOfDigitizer();
   std::vector<int> idList = mb->GetDigiIDList();
   for( unsigned int i = 0; i < nData; i++ ) digiMTX[idList[i]].lock();
   if( isBuildBackward ){
-    mb->BuildEventsBackWard(0);
+    mb->BuildEventsBackWard(maxNumEventBuilt, verbose);
   }else{
-    mb->BuildEvents(0, 0, 0);
+    mb->BuildEvents(0, 0, verbose);
   }
   for( unsigned int i = 0; i < nData; i++ ) digiMTX[idList[i]].unlock();
 

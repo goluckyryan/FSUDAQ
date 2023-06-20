@@ -63,7 +63,7 @@ class Reg{
     RW           GetType()         const {return type;}
     bool         IsCoupled()       const {return group;}
     unsigned int GetMaxBit()       const {return maxBit;} 
-    int          GetPartialStep()  const {return partialStep;} /// step = partialStep * ch2ns, -1 : step = 1
+    int          GetPartialStep()  const {return partialStep;} /// step = partialStep * tick2ns, -1 : step = 1
     void         Print()           const ;
 
     std::vector<std::pair<std::string, unsigned int>> GetComboList() const {return comboList;}

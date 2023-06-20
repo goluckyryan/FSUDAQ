@@ -32,9 +32,12 @@ public:
     fineTime = 0;
     trace.clear();
   }
+
+  void Print(){
+    printf("(%2d, %2d)[%3d] %6d %10llu, %5ld\n", bd, ch, sn, energy, timestamp, trace.size());
+  }
+
 };
-
-
 
 class MultiBuilder {
 
@@ -56,7 +59,7 @@ public:
   std::vector<int> GetDigiIDList() const {return idList;}
 
   void BuildEvents(bool isFinal = false, bool skipTrace = false, bool verbose = false);
-  void BuildEventsBackWard(bool verbose = false); // always skip trace, for faster online building 
+  void BuildEventsBackWard(int maxNumEvent = 100, bool verbose = false); // always skip trace, for faster online building 
 
   void ClearEvents();
   void PrintStat();

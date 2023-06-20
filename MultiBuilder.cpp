@@ -92,6 +92,7 @@ void MultiBuilder::ClearEvents(){
 
     nExhaushedCh = 0;
   }
+
 }
 
 void MultiBuilder::PrintStat(){
@@ -292,7 +293,7 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
 
 }
 
-void MultiBuilder::BuildEventsBackWard(bool verbose){
+void MultiBuilder::BuildEventsBackWard(int maxNumEvent, bool verbose){
 
   //skip trace, and only build for 100 events max
 
@@ -375,7 +376,7 @@ void MultiBuilder::BuildEventsBackWard(bool verbose){
 
     }
 
-  }while(nExhaushedCh < nData * MaxNChannels && eventBuilt < 100);
+  }while(nExhaushedCh < nData * MaxNChannels && eventBuilt <= maxNumEvent);
 
   // // remember the end of DataIndex, prevent over build
   // for( int k = 0; k < nData; k++){

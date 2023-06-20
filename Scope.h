@@ -71,7 +71,7 @@ private:
   Digitizer ** digi;
   unsigned short nDigi;
   unsigned short ID; // the id of digi, index of cbScopeDigi
-  int ch2ns;
+  int tick2ns;
   bool traceOn[MaxNDigitizer];
 
   ReadDataThread ** readDataThread;   

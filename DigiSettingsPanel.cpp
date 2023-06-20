@@ -74,7 +74,7 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
 
       SetUpInfo(  "S/N No. ", std::to_string(digi[ID]->GetSerialNumber()), infoLayout[ID], 1, 0);
       SetUpInfo(  "No. Ch. ", std::to_string(digi[ID]->GetNChannels()), infoLayout[ID], 1, 2);
-      SetUpInfo("Sampling Rate ", std::to_string((int) digi[ID]->GetCh2ns()) + " ns = " + std::to_string( (int) (1000/digi[ID]->GetCh2ns())) + " MHz" , infoLayout[ID], 1, 4);
+      SetUpInfo("Sampling Rate ", std::to_string((int) digi[ID]->GetTick2ns()) + " ns = " + std::to_string( (int) (1000/digi[ID]->GetTick2ns())) + " MHz" , infoLayout[ID], 1, 4);
 
       SetUpInfo("ADC bit ", std::to_string(digi[ID]->GetADCBits()), infoLayout[ID], 2, 0);
       SetUpInfo("ROC version ", digi[ID]->GetROCVersion(), infoLayout[ID], 2, 2);
@@ -733,8 +733,8 @@ void DigiSettingsPanel::SetUpSpinBox(RSpinBox * &sb, QString label, QGridLayout 
     sb->setSingleStep(1);
     sb->setMaximum(para.GetMaxBit());
   }else{
-    sb->setMaximum(para.GetMaxBit() * para.GetPartialStep() * digi[ID]->GetCh2ns());
-    sb->setSingleStep(para.GetPartialStep() * digi[ID]->GetCh2ns());
+    sb->setMaximum(para.GetMaxBit() * para.GetPartialStep() * digi[ID]->GetTick2ns());
+    sb->setSingleStep(para.GetPartialStep() * digi[ID]->GetTick2ns());
   }
 
   if( para == DPP::DPPAlgorithmControl ) {
@@ -770,7 +770,7 @@ void DigiSettingsPanel::SetUpSpinBox(RSpinBox * &sb, QString label, QGridLayout 
     }
 
     if( para == DPP::PSD::CFDSetting ){
-      digi[ID]->SetBits(para, DPP::PSD::Bit_CFDSetting::CFDDealy, sb->value()/digi[ID]->GetCh2ns(), chID);
+      digi[ID]->SetBits(para, DPP::PSD::Bit_CFDSetting::CFDDealy, sb->value()/digi[ID]->GetTick2ns(), chID);
       UpdatePanelFromMemory();
       emit UpdateOtherPanels();
       return;
@@ -783,7 +783,7 @@ void DigiSettingsPanel::SetUpSpinBox(RSpinBox * &sb, QString label, QGridLayout 
       return;
     }
 
-    uint32_t bit = para.GetPartialStep() == -1 ? sb->value() : sb->value() / para.GetPartialStep() / digi[ID]->GetCh2ns();
+    uint32_t bit = para.GetPartialStep() == -1 ? sb->value() : sb->value() / para.GetPartialStep() / digi[ID]->GetTick2ns();
 
     digi[ID]->WriteRegister(para, bit, chID);
     if( para.IsCoupled() == true  && chID >= 0 ) digi[ID]->WriteRegister(para, bit, chID%2 == 0 ? chID + 1 : chID - 1);
@@ -964,8 +964,8 @@ void DigiSettingsPanel::SetUpGlobalTriggerMaskAndFrontPanelMask(QGridLayout * & 
 
   sbGlbMajCoinWin[ID] = new RSpinBox(this);
   sbGlbMajCoinWin[ID]->setMinimum(0);
-  sbGlbMajCoinWin[ID]->setMaximum(0xF * 4 * digi[ID]->GetCh2ns() );
-  sbGlbMajCoinWin[ID]->setSingleStep(4 * digi[ID]->GetCh2ns());
+  sbGlbMajCoinWin[ID]->setMaximum(0xF * 4 * digi[ID]->GetTick2ns() );
+  sbGlbMajCoinWin[ID]->setSingleStep(4 * digi[ID]->GetTick2ns());
   maskLayout->addWidget(sbGlbMajCoinWin[ID], 1, 10);
   connect(sbGlbMajCoinWin[ID], &RSpinBox::valueChanged, this, [=](){
     if( !enableSignalSlot ) return;
@@ -982,7 +982,7 @@ void DigiSettingsPanel::SetUpGlobalTriggerMaskAndFrontPanelMask(QGridLayout * & 
     }
 
     sbGlbMajCoinWin[ID]->setStyleSheet("");
-    digi[ID]->SetBits(DPP::GlobalTriggerMask, DPP::Bit_GlobalTriggerMask::MajorCoinWin, sbGlbMajCoinWin[ID]->value() / 4 / digi[ID]->GetCh2ns(), -1);
+    digi[ID]->SetBits(DPP::GlobalTriggerMask, DPP::Bit_GlobalTriggerMask::MajorCoinWin, sbGlbMajCoinWin[ID]->value() / 4 / digi[ID]->GetTick2ns(), -1);
   });
 
   //*============================================
@@ -2581,7 +2581,7 @@ void DigiSettingsPanel::UpdatePanelFromMemory(){
 //&###########################################################
 void DigiSettingsPanel::UpdateSpinBox(RSpinBox * &sb, Reg para, int ch){
 
-  int ch2ns = digi[ID]->GetCh2ns();
+  int tick2ns = digi[ID]->GetTick2ns();
   int pStep = para.GetPartialStep();
 
   uint32_t value = digi[ID]->GetSettingFromMemory(para, ch);
@@ -2593,7 +2593,7 @@ void DigiSettingsPanel::UpdateSpinBox(RSpinBox * &sb, Reg para, int ch){
   }
 
   if( para == DPP::PSD::CFDSetting ){
-    sb->setValue( ( value & DPP::PSD::CFDSetting.GetMaxBit() ) * ch2ns );
+    sb->setValue( ( value & DPP::PSD::CFDSetting.GetMaxBit() ) * tick2ns );
     return;
   }
 
@@ -2602,9 +2602,9 @@ void DigiSettingsPanel::UpdateSpinBox(RSpinBox * &sb, Reg para, int ch){
     return;
   }
 
-  sb->setValue( pStep > 0 ? value * pStep * ch2ns : value);
+  sb->setValue( pStep > 0 ? value * pStep * tick2ns : value);
 
-  //printf("%d, %s | %d %d %u, %f\n", para.GetNameChar(), ch, ch2ns, pStep, value, sb->value());
+  //printf("%d, %s | %d %d %u, %f\n", para.GetNameChar(), ch, tick2ns, pStep, value, sb->value());
 
 }
 

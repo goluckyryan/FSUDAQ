@@ -13,7 +13,7 @@
 
 using namespace std;
 
-void PrintChannelSettingFromDigitizer(int handle, int ch, float ch2ns){
+void PrintChannelSettingFromDigitizer(int handle, int ch, float tick2ns){
   
   printf("\e[33m================================================\n");
   printf("================ Setting for channel %d \n", ch);
@@ -48,11 +48,11 @@ void PrintChannelSettingFromDigitizer(int handle, int ch, float ch2ns){
     default: extra2WordOptStr = "Reserved"; break;
   }
 
-  printf(" ch2ns : %.0f ns\n", ch2ns);
+  printf(" tick2ns : %.0f ns\n", tick2ns);
   
   printf("==========----- input \n");
-  CAEN_DGTZ_ReadRegister(handle, DPP::RecordLength_G + (ch << 8), value);    printf("%24s  %5d samples = %5.0f ns \n",   "Record Length",  ((value[0] * 8) & MaxRecordLength), ((value[0] * 8) & MaxRecordLength) * ch2ns); ///Record length
-  CAEN_DGTZ_ReadRegister(handle, DPP::PreTrigger + (ch << 8), value);        printf("%24s  %5d samples = %5.0f ns \n",   "Pre-tigger",  value[0] * 4, value[0] * 4 * ch2ns);    ///Pre-trigger
+  CAEN_DGTZ_ReadRegister(handle, DPP::RecordLength_G + (ch << 8), value);    printf("%24s  %5d samples = %5.0f ns \n",   "Record Length",  ((value[0] * 8) & MaxRecordLength), ((value[0] * 8) & MaxRecordLength) * tick2ns); ///Record length
+  CAEN_DGTZ_ReadRegister(handle, DPP::PreTrigger + (ch << 8), value);        printf("%24s  %5d samples = %5.0f ns \n",   "Pre-tigger",  value[0] * 4, value[0] * 4 * tick2ns);    ///Pre-trigger
                                                                                        printf("%24s  %5.0f samples, DPP-[20:22]\n", "baseline mean",  pow(4, 1 + baseline)); ///Ns baseline
   CAEN_DGTZ_ReadRegister(handle, DPP::ChannelDCOffset + (ch << 8), value);   printf("%24s  %.2f %% \n", "DC offset",  100.0 - value[0] * 100./ 0xFFFF); ///DC offset
   CAEN_DGTZ_ReadRegister(handle, DPP::InputDynamicRange + (ch << 8), value); printf("%24s  %.1f Vpp \n",     "input Dynamic",  value[0] == 0 ? 2 : 0.5); ///InputDynamic
@@ -60,27 +60,27 @@ void PrintChannelSettingFromDigitizer(int handle, int ch, float ch2ns){
 
   printf("==========----- discriminator \n");
   CAEN_DGTZ_ReadRegister(handle, DPP::PHA::TriggerThreshold + (ch << 8), value);     printf("%24s  %4d LSB\n",     "Threshold",  value[0]); ///Threshold
-  CAEN_DGTZ_ReadRegister(handle, DPP::PHA::TriggerHoldOffWidth + (ch << 8), value);  printf("%24s  %4d samples, %5.0f ns \n",   "trigger hold off", value[0],  value[0] * 4 * ch2ns); ///Trigger Hold off
-  CAEN_DGTZ_ReadRegister(handle, DPP::PHA::RCCR2SmoothingFactor + (ch << 8), value); printf("%24s  %4d samples, %5.0f ns \n", "Fast Dis. smoothing",  (value[0] & 0x1f) * 2, (value[0] & 0x1f) * 2 * ch2ns ); ///Fast Discriminator smoothing
-  CAEN_DGTZ_ReadRegister(handle, DPP::PHA::ShapedTriggerWidth + (ch << 8), value);   printf("%24s  %4d samples, %5.0f ns \n",   "Fast Dis. output width", value[0], value[0] * 4 * ch2ns); ///Fast Dis. output width
-  CAEN_DGTZ_ReadRegister(handle, DPP::PHA::InputRiseTime + (ch << 8), value);        printf("%24s  %4d samples, %5.0f ns \n",   "Input rise time ", value[0],  value[0] * 4 * ch2ns); ///Input rise time
+  CAEN_DGTZ_ReadRegister(handle, DPP::PHA::TriggerHoldOffWidth + (ch << 8), value);  printf("%24s  %4d samples, %5.0f ns \n",   "trigger hold off", value[0],  value[0] * 4 * tick2ns); ///Trigger Hold off
+  CAEN_DGTZ_ReadRegister(handle, DPP::PHA::RCCR2SmoothingFactor + (ch << 8), value); printf("%24s  %4d samples, %5.0f ns \n", "Fast Dis. smoothing",  (value[0] & 0x1f) * 2, (value[0] & 0x1f) * 2 * tick2ns ); ///Fast Discriminator smoothing
+  CAEN_DGTZ_ReadRegister(handle, DPP::PHA::ShapedTriggerWidth + (ch << 8), value);   printf("%24s  %4d samples, %5.0f ns \n",   "Fast Dis. output width", value[0], value[0] * 4 * tick2ns); ///Fast Dis. output width
+  CAEN_DGTZ_ReadRegister(handle, DPP::PHA::InputRiseTime + (ch << 8), value);        printf("%24s  %4d samples, %5.0f ns \n",   "Input rise time ", value[0],  value[0] * 4 * tick2ns); ///Input rise time
 
   printf("==========----- Trapezoid \n");
-  CAEN_DGTZ_ReadRegister(handle, DPP::PHA::TrapezoidRiseTime + (ch << 8), value); printf("%24s  %4d samples, %5.0f ns \n", "Trap. rise time", value[0], value[0] * 4 * ch2ns); ///Trap. rise time, 2 for 1 ch to 2ns
-  int riseTime = value[0] * 4 * ch2ns;
-  CAEN_DGTZ_ReadRegister(handle, DPP::PHA::TrapezoidFlatTop + (ch << 8), value);  printf("%24s  %4d samples, %5.0f ns \n", "Trap. flat time", value[0], value[0] * 4 * ch2ns); ///Trap. flat time
-  int flatTopTime = value[0] * 4 * ch2ns;
+  CAEN_DGTZ_ReadRegister(handle, DPP::PHA::TrapezoidRiseTime + (ch << 8), value); printf("%24s  %4d samples, %5.0f ns \n", "Trap. rise time", value[0], value[0] * 4 * tick2ns); ///Trap. rise time, 2 for 1 ch to 2ns
+  int riseTime = value[0] * 4 * tick2ns;
+  CAEN_DGTZ_ReadRegister(handle, DPP::PHA::TrapezoidFlatTop + (ch << 8), value);  printf("%24s  %4d samples, %5.0f ns \n", "Trap. flat time", value[0], value[0] * 4 * tick2ns); ///Trap. flat time
+  int flatTopTime = value[0] * 4 * tick2ns;
   double shift = log(riseTime * flatTopTime ) / log(2) - 2;
                                                                                             printf("%24s  %4d bit =? %.1f = Ceil( Log(rise [ns] x decay [ns])/Log(2) ), DPP-[0:5]\n", "Trap. Rescaling",  trapRescaling, shift ); ///Trap. Rescaling Factor
-  CAEN_DGTZ_ReadRegister(handle, DPP::PHA::DecayTime + (ch << 8), value);         printf("%24s  %4d samples, %5.0f ns \n",    "Decay time", value[0], value[0] * 4 * ch2ns); ///Trap. pole zero
-  CAEN_DGTZ_ReadRegister(handle, DPP::PHA::PeakingTime + (ch << 8), value);       printf("%24s  %4d samples, %5.0f ns = %.2f %% of FlatTop\n", "Peaking time",  value[0], value[0] * 4 * ch2ns, value[0] * 400. * ch2ns / flatTopTime ); ///Peaking time
-  CAEN_DGTZ_ReadRegister(handle, DPP::PHA::PeakHoldOff + (ch << 8), value);       printf("%24s  %4d samples, %5.0f ns \n",    "Peak hole off", value[0], value[0] * 4 *ch2ns ); ///Peak hold off
+  CAEN_DGTZ_ReadRegister(handle, DPP::PHA::DecayTime + (ch << 8), value);         printf("%24s  %4d samples, %5.0f ns \n",    "Decay time", value[0], value[0] * 4 * tick2ns); ///Trap. pole zero
+  CAEN_DGTZ_ReadRegister(handle, DPP::PHA::PeakingTime + (ch << 8), value);       printf("%24s  %4d samples, %5.0f ns = %.2f %% of FlatTop\n", "Peaking time",  value[0], value[0] * 4 * tick2ns, value[0] * 400. * tick2ns / flatTopTime ); ///Peaking time
+  CAEN_DGTZ_ReadRegister(handle, DPP::PHA::PeakHoldOff + (ch << 8), value);       printf("%24s  %4d samples, %5.0f ns \n",    "Peak hole off", value[0], value[0] * 4 *tick2ns ); ///Peak hold off
                                                                                             printf("%24s  %4.0f samples, DPP-[12:13]\n", "Peak mean",  pow(4, NsPeak)); ///Ns peak
 
   printf("==========----- Other \n");
   CAEN_DGTZ_ReadRegister(handle, DPP::PHA::FineGain + (ch << 8), value);                 printf("%24s  %d = 0x%x\n",  "Energy fine gain",  value[0], value[0]); ///Energy fine gain
   CAEN_DGTZ_ReadRegister(handle, DPP::ChannelADCTemperature_R + (ch << 8), value);         printf("%24s  %d C\n",     "Temperature",  value[0]); ///Temperature
-  CAEN_DGTZ_ReadRegister(handle, DPP::PHA::RiseTimeValidationWindow + (ch << 8), value); printf("%24s  %.0f ns \n", "RiseTime Vaild Win.",  value[0] * ch2ns); 
+  CAEN_DGTZ_ReadRegister(handle, DPP::PHA::RiseTimeValidationWindow + (ch << 8), value); printf("%24s  %.0f ns \n", "RiseTime Vaild Win.",  value[0] * tick2ns); 
   CAEN_DGTZ_ReadRegister(handle, DPP::PHA::ChannelStopAcquisition + (ch << 8), value);   printf("%24s  %d = %s \n", "Stop Acq bit", value[0] & 1 , (value[0] & 1 ) == 0 ? "Run" : "Stop"); 
   CAEN_DGTZ_ReadRegister(handle, DPP::ChannelStatus_R + (ch << 8), value);                 printf("%24s  0x%x \n",    "Status bit",  (value[0] & 0xff) ); 
   CAEN_DGTZ_ReadRegister(handle, DPP::AMCFirmwareRevision_R + (ch << 8), value);           printf("%24s  0x%x \n",    "AMC firmware rev.",  value[0] ); 
@@ -181,10 +181,10 @@ int main(int argc, char* argv[]){
   ret = (int) CAEN_DGTZ_GetInfo(handle, &BoardInfo);
   int NChannel = BoardInfo.Channels;
   uint32_t channelMask = 0xFFFF;
-  float ch2ns = 4.0;
+  float tick2ns = 4.0;
   switch(BoardInfo.Model){
-        case CAEN_DGTZ_V1730: ch2ns = 2.0; break; ///ns -> 500 MSamples/s
-        case CAEN_DGTZ_V1725: ch2ns = 4.0; break; ///ns -> 250 MSamples/s
+        case CAEN_DGTZ_V1730: tick2ns = 2.0; break; ///ns -> 500 MSamples/s
+        case CAEN_DGTZ_V1725: tick2ns = 4.0; break; ///ns -> 250 MSamples/s
   }
   unsigned int ADCbits = BoardInfo.ADC_NBits;
   
@@ -309,7 +309,7 @@ int main(int argc, char* argv[]){
   if( ret != 0 ) { printf("==== memory allocation error.\n"); return 0;}
   
   PrintBoardConfiguration(handle);
-  PrintChannelSettingFromDigitizer(handle, 4, ch2ns);
+  PrintChannelSettingFromDigitizer(handle, 4, tick2ns);
   
   printf("============ Start ACQ \n");
   CAEN_DGTZ_SWStartAcquisition(handle);

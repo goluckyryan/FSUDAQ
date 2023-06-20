@@ -101,12 +101,12 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   ID = 0;
   cbScopeDigi->setCurrentIndex(0);
   for( int i = 0; i < digi[0]->GetNChannels(); i++) cbScopeCh->addItem("Ch-" + QString::number(i));
-  ch2ns = digi[ID]->GetCh2ns();
+  tick2ns = digi[ID]->GetTick2ns();
 
   connect(cbScopeDigi, &RComboBox::currentIndexChanged, this, [=](int index){
     if( !enableSignalSlot ) return;
     ID = index;
-    ch2ns = digi[ID]->GetCh2ns();
+    tick2ns = digi[ID]->GetTick2ns();
     //---setup cbScopeCh
     cbScopeCh->clear();
     for( int i = 0; i < digi[ID]->GetNChannels(); i++) cbScopeCh->addItem("Ch-" + QString::number(i));
@@ -310,7 +310,7 @@ void Scope::UpdateScope(){
 
   if( digi[ID]->GetChannelOnOff(ch) == false) return;
 
-  int ch2ns = digi[ID]->GetCh2ns();
+  int tick2ns = digi[ID]->GetTick2ns();
   int factor = digi[ID]->IsDualTrace_PHA() ? 2 : 1;
 
   digiMTX[ID].lock();
@@ -329,19 +329,19 @@ void Scope::UpdateScope(){
     QVector<QPointF> points[4];
     if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) {
       for( int i = 0; i < (int) (data->Waveform1[ch][index]).size() ; i++ ) {
-        points[0].append(QPointF(ch2ns * i * factor, (data->Waveform1[ch][index])[i])); 
-        if( i < (int) data->Waveform2[ch][index].size() )  points[1].append(QPointF(ch2ns * i * factor, (data->Waveform2[ch][index])[i]));
-        if( i < (int) data->DigiWaveform1[ch][index].size() )  points[2].append(QPointF(ch2ns * i * factor, (data->DigiWaveform1[ch][index])[i] * 1000));
-        if( i < (int) data->DigiWaveform2[ch][index].size() )  points[3].append(QPointF(ch2ns * i * factor, (data->DigiWaveform2[ch][index])[i] * 1000 + 500));
+        points[0].append(QPointF(tick2ns * i * factor, (data->Waveform1[ch][index])[i])); 
+        if( i < (int) data->Waveform2[ch][index].size() )  points[1].append(QPointF(tick2ns * i * factor, (data->Waveform2[ch][index])[i]));
+        if( i < (int) data->DigiWaveform1[ch][index].size() )  points[2].append(QPointF(tick2ns * i * factor, (data->DigiWaveform1[ch][index])[i] * 1000));
+        if( i < (int) data->DigiWaveform2[ch][index].size() )  points[3].append(QPointF(tick2ns * i * factor, (data->DigiWaveform2[ch][index])[i] * 1000 + 500));
       }
     }
 
     if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) {
       for( int i = 0; i < (int) (data->DigiWaveform1[ch][index]).size() ; i++ ) {
-        points[0].append(QPointF(ch2ns * i * factor, (data->Waveform1[ch][index])[i])); 
-        if( i < (int) data->Waveform2[ch][index].size() )  points[1].append(QPointF(ch2ns * i * factor, (data->Waveform2[ch][index])[i]));
-        if( i < (int) data->DigiWaveform1[ch][index].size() )  points[2].append(QPointF(ch2ns * i, (data->DigiWaveform1[ch][index])[i] * 1000));
-        if( i < (int) data->DigiWaveform2[ch][index].size() )  points[3].append(QPointF(ch2ns * i, (data->DigiWaveform2[ch][index])[i] * 1000 + 500));
+        points[0].append(QPointF(tick2ns * i * factor, (data->Waveform1[ch][index])[i])); 
+        if( i < (int) data->Waveform2[ch][index].size() )  points[1].append(QPointF(tick2ns * i * factor, (data->Waveform2[ch][index])[i]));
+        if( i < (int) data->DigiWaveform1[ch][index].size() )  points[2].append(QPointF(tick2ns * i, (data->DigiWaveform1[ch][index])[i] * 1000));
+        if( i < (int) data->DigiWaveform2[ch][index].size() )  points[3].append(QPointF(tick2ns * i, (data->DigiWaveform2[ch][index])[i] * 1000 + 500));
       }
     }
     dataTrace[0]->replace(points[0]);
@@ -351,7 +351,7 @@ void Scope::UpdateScope(){
   }
   digiMTX[ID].unlock();
 
-  plot->axes(Qt::Horizontal).first()->setRange(0, ch2ns * traceLength * factor);
+  plot->axes(Qt::Horizontal).first()->setRange(0, tick2ns * traceLength * factor);
 
   emit UpdateScaler();
 
@@ -412,8 +412,8 @@ void Scope::SetUpSpinBox(RSpinBox * &sb, QString str, int row, int col, const Re
   sb = new RSpinBox(settingGroup);
   if( para.GetPartialStep() != 0 ){
     sb->setMinimum(0);
-    sb->setMaximum(para.GetMaxBit() * para.GetPartialStep() * ch2ns);
-    if( para.GetPartialStep() > 0 ) sb->setSingleStep(para.GetPartialStep() * ch2ns);
+    sb->setMaximum(para.GetMaxBit() * para.GetPartialStep() * tick2ns);
+    if( para.GetPartialStep() > 0 ) sb->setSingleStep(para.GetPartialStep() * tick2ns);
     if( para.GetPartialStep() == -1 ) sb->setSingleStep(1);
   }
   settingLayout->addWidget(sb, row, col + 1);
@@ -438,7 +438,7 @@ void Scope::SetUpSpinBox(RSpinBox * &sb, QString str, int row, int col, const Re
     msg = QString::fromStdString(para.GetName()) + "|DIG:"+ QString::number(digi[ID]->GetSerialNumber()) + ",CH:" + (ch == -1 ? "All" : QString::number(ch));
     msg += " = " + QString::number(sb->value());
 
-    uint32_t value = sb->value() / ch2ns / abs(para.GetPartialStep());
+    uint32_t value = sb->value() / tick2ns / abs(para.GetPartialStep());
 
     if( para == DPP::RecordLength_G){
       int factor = digi[ID]->IsDualTrace_PHA() ? 2 : 1;
@@ -694,7 +694,7 @@ void Scope::UpdateSpinBox(RSpinBox * &sb, const Reg para){
   enableSignalSlot = false;
   unsigned int haha = digi[ID]->GetSettingFromMemory(para, ch);
 
-  if( para.GetPartialStep() >   0 ) sb->setValue(haha * para.GetPartialStep() * ch2ns);
+  if( para.GetPartialStep() >   0 ) sb->setValue(haha * para.GetPartialStep() * tick2ns);
   if( para.GetPartialStep() == -1 ) sb->setValue(haha);
   //enableSignalSlot = true;
 }
@@ -708,11 +708,11 @@ void Scope::UpdatePanelFromMomeory(){
   int ch = cbScopeCh->currentIndex();
 
   unsigned int haha = digi[ID]->GetSettingFromMemory(DPP::RecordLength_G, ch);
-  sbReordLength->setValue(haha * DPP::RecordLength_G.GetPartialStep() * ch2ns);
+  sbReordLength->setValue(haha * DPP::RecordLength_G.GetPartialStep() * tick2ns);
 
   // if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ){
   //   int factor = digi[ID]->IsDualTrace() ? 2 : 1; // if dual trace, 
-  //   sbReordLength->setValue(haha * DPP::RecordLength_G.GetPartialStep() * ch2ns / factor);
+  //   sbReordLength->setValue(haha * DPP::RecordLength_G.GetPartialStep() * tick2ns / factor);
   // }else{
   // }
 

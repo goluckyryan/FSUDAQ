@@ -23,7 +23,7 @@ class Data{
     int DPPType;
     std::string DPPTypeStr;
     unsigned short boardSN;
-    float ch2ns;  /// only use in TriggerRate calculation
+    float tick2ns;  /// only use in TriggerRate calculation
     
     unsigned int nByte;               /// number of byte from read buffer
     uint32_t AllocatedSize;      
@@ -42,7 +42,7 @@ class Data{
     int                DataIndex[MaxNChannels];
 
     unsigned long long Timestamp[MaxNChannels][MaxNData]; /// 47 bit
-    unsigned short     fineTime[MaxNChannels][MaxNData];  /// 10 bits, in unit of ch2ns / 1000 = ps
+    unsigned short     fineTime[MaxNChannels][MaxNData];  /// 10 bits, in unit of tick2ns / 1000 = ps
     unsigned short     Energy[MaxNChannels][MaxNData];   /// 15 bit
     unsigned short     Energy2[MaxNChannels][MaxNData];  /// 15 bit, in PSD, Energy = Qshort, Energy2 = Qlong
     bool               PileUp[MaxNChannels][MaxNData];   /// pile up flag
@@ -113,7 +113,7 @@ class Data{
 //==========================================
 
 inline Data::Data(){
-  ch2ns = 2.0;
+  tick2ns = 2.0;
   boardSN = 0;
   DPPType = V1730_DPP_PHA_CODE;
   DPPTypeStr = "";
@@ -414,7 +414,7 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
       //printf("%d %d| %d %d \n", DataIndex[ch], NumEventsDecoded[ch], indexStart, DataIndex[ch] );
 
       unsigned long long dTime = Timestamp[ch][DataIndex[ch]] - Timestamp[ch][indexStart]; 
-      double sec =  dTime * ch2ns / 1e9;
+      double sec =  dTime * tick2ns / 1e9;
 
       TriggerRate[ch] = NumEventsDecoded[ch]/sec;
       NonPileUpRate[ch] = NumNonPileUpDecoded[ch]/sec;
@@ -430,9 +430,9 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
       
       if( calIndexes[ch][0] > -1 && calIndexes[ch][1] > -1 && nEvent > 10 ){
           unsigned long long dTime = Timestamp[ch][calIndexes[ch][1]] - Timestamp[ch][calIndexes[ch][0]];
-          double sec = dTime * ch2ns / 1e9;
+          double sec = dTime * tick2ns / 1e9;
         
-          //printf(" %10llu  %10llu, %f = %f sec, rate = %f \n", Timestamp[ch][calIndexes[ch][0]], Timestamp[ch][calIndexes[ch][1]], ch2ns, sec, nEvent / sec);
+          //printf(" %10llu  %10llu, %f = %f sec, rate = %f \n", Timestamp[ch][calIndexes[ch][0]], Timestamp[ch][calIndexes[ch][1]], tick2ns, sec, nEvent / sec);
 
           TriggerRate[ch] = nEvent / sec;
 
