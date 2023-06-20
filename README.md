@@ -8,6 +8,12 @@ It can be connected to InfluxDB v1.8 and Elog.
 
 Each channel has it own 1D histogram. It will not be filled by default, but can enable it in the "Online 1D histgram" panel. The binning of each histogram will be saved under the raw data path as singleSpectaSetting.txt
 
+A Multi-builder (event builder that can build event across multiple digitizer) is made. It has normal event building code and also a backward event building code that build events from the latest data up to certain amont of event.
+
+A 1-D and 2-D histogram is avalible. In the 2-D histogram, graphical cuts can be created and rename.
+
+An online analyzer class is created as a template for online analysis. An example is the SplitPoleAnalyzer.h. It demo a 2-D histogram and a 1-D histogram, and the way to output the rates of cuts to influxDB.
+
 # Operation
 
 When programSettings.txt is presented in the same folder as the FSUDAQ_Qt, the program will load it can config the following 
@@ -27,8 +33,6 @@ Missing the raw data path will disable save data run, but still can start the AC
 
 the following additional functions are planned and I am working on them
 
-- 1-D and 2-D histogram
-- Online Analyzer
 - support V1740 DPP-QDC
 - synchronization helper
 
