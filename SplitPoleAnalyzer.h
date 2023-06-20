@@ -28,9 +28,10 @@ public:
 
     RedefineEventBuilder({0}); // only build for the 0-th digitizer, otherwise, it will build event accross all digitizers
     tick2ns = digi[0]->GetTick2ns();
-    SetBackwardBuild(false, 500); // using normal building (acceding in time) or backward building, int the case of backward building, default events to be build is 100. 
+    SetBackwardBuild(false, 100); // using normal building (acceding in time) or backward building, int the case of backward building, default events to be build is 100. 
     evtbder = GetEventBuilder();
-
+    evtbder->SetTimeWindow(500);
+    
     //========== use the influx from the Analyzer
     influx = new InfluxDB("https://fsunuc.physics.fsu.edu/influx/");
     dataBaseName = "testing"; 

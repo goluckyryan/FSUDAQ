@@ -155,6 +155,7 @@
     "qthread": "cpp",
     "qrandomgenerator": "cpp",
     "source_location": "cpp",
-    "splitpole.C": "cpp"
+    "splitpole.C": "cpp",
+    "forward_list": "cpp"
   }
 }

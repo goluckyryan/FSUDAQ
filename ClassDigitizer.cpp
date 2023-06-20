@@ -105,6 +105,7 @@ int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose
       switch(BoardInfo.Model){
             case CAEN_DGTZ_V1730: tick2ns = 2.0; break; ///ns -> 500 MSamples/s
             case CAEN_DGTZ_V1725: tick2ns = 4.0; break; ///ns -> 250 MSamples/s
+            case CAEN_DGTZ_V1740: tick2ns = 16.0; break; ///ns -> 62.5 MSamples/s
             default : tick2ns = 4.0; break;
       }
       data->tick2ns = tick2ns;
@@ -353,7 +354,7 @@ int Digitizer::ProgramPSDBoard(){
   ret |= CAEN_DGTZ_SetIOLevel(handle, CAEN_DGTZ_IOLevel_NIM);
   ret |= CAEN_DGTZ_SetExtTriggerInputMode(handle, CAEN_DGTZ_TRGMODE_ACQ_ONLY);
 
-  ret = CAEN_DGTZ_SetChannelEnableMask(handle, 0xFFFF);
+  ret |= CAEN_DGTZ_SetChannelEnableMask(handle, 0xFFFF);
 
   ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::ChannelDCOffset) + 0x7000 , 0xEEEE );
 
@@ -369,6 +370,19 @@ int Digitizer::ProgramPSDBoard(){
   isSettingFilledinMemeory = false; /// unlock the ReadAllSettingsFromBoard();
   ReadAllSettingsFromBoard();
   return ret;
+}
+
+int Digitizer::ProgramQDCBoard(){
+
+  printf("===== Digitizer::%s\n", __func__);
+  Reset();
+
+  ret = CAEN_DGTZ_SetChannelEnableMask(handle, 0xFFFF);
+
+  isSettingFilledinMemeory = false; /// unlock the ReadAllSettingsFromBoard();
+  ReadAllSettingsFromBoard();
+  return ret;
+
 }
 
 //========================================================= ACQ control

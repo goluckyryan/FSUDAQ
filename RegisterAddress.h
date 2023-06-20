@@ -371,6 +371,9 @@ namespace DPP {
                                                                                {"64 samples", 2},
                                                                                {"256 samples", 3},
                                                                                {"1024 samples", 4}};
+  }
+
+  namespace Bit_DPPAlgorithmControl_QDC {
 
   }
 
@@ -730,11 +733,22 @@ namespace DPP {
   }
 
   namespace QDC {
-    const Reg GateWidth                     ("GateWidth"                     , 0x1030, RW::ReadWrite, false, 0xFFF, 4); /// R/W
-    const Reg GateOffset                    ("GateOfset"                     , 0x1034, RW::ReadWrite, false,  0xFF, 4); /// R/W
-    const Reg FixedBaseline                 ("FixedBaseline"                 , 0x1038, RW::ReadWrite, false, 0xFFF, 4); /// R/W
-    const Reg Pretrigger                    ("PreTrigger"                    , 0x103C, RW::ReadWrite, false,  0xFF, 4); /// R/W
-    const Reg DPPAlgorithmControl           ("DPPAlgorithmControl"           , 0x1040, RW::ReadWrite, false, {}); /// R/W
+    const Reg GateWidth_G                   ("GateWidth"                     , 0x1030, RW::ReadWrite, true, 0xFFF, 1); /// R/W
+    const Reg GateOffset_G                  ("GateOfset"                     , 0x1034, RW::ReadWrite, true,  0xFF, 1); /// R/W
+    const Reg FixedBaseline_G               ("FixedBaseline"                 , 0x1038, RW::ReadWrite, true, 0xFFF, 1); /// R/W
+    const Reg Pretrigger_G                  ("PreTrigger"                    , 0x103C, RW::ReadWrite, true,  0xFF, 1); /// R/W
+    const Reg DPPAlgorithmControl_G         ("DPPAlgorithmControl"           , 0x1040, RW::ReadWrite, true, {}); /// R/W
+    const Reg TriggerHoldOffWidth_G         ("Trigger Hold-off width"        , 0x1074, RW::ReadWrite, true, 0xFFFF, 1); /// R/W
+    const Reg GroupStatus_RG                ("Group Status"                  , 0x1088, RW::ReadONLY, true, {});  /// R/
+    const Reg AMCFirmwareRevision_RG        ("AMC firmware version"          , 0x108C, RW::ReadONLY, true, {});  /// R/
+    const Reg DCOffset_G                    ("DC offset"                     , 0x1098, RW::ReadWrite, true, 0xFFFF, 1); /// R/W
+    const Reg ChannelMask_G                 ("Channel Group Mask"            , 0x10A8, RW::ReadWrite, true,   0xFF, 1); /// R/W
+    const Reg DCOffset_LowCh_G              ("DC offset for low ch."         , 0x10C0, RW::ReadWrite, true, {}); /// R/W
+    const Reg DCOffset_HighCh_G             ("DC offset for high ch."        , 0x10C4, RW::ReadWrite, true, {}); /// R/W
+    const Reg TriggerThreshold_G            ("Trigger Threshold"             , 0x10D0, RW::ReadWrite, true, {}); /// R/W
+
+    const Reg NumberEventsPerAggregate      ("Number of Events per Aggregate", 0x8020, RW::ReadWrite, false, 0x3FF, 1); /// R/W
+    const Reg RecordLength                  ("Record Length"                 , 0x8024, RW::ReadWrite, false, 0xFFF, 1); /// R/W
   }
 
 } // end of DPP namepace Register
@@ -800,7 +814,22 @@ const std::vector<Reg> RegisterPSDList = {
 };
 
 const std::vector<Reg> RegisterQDCList = { //TODO
+  DPP::QDC::GateWidth_G,
+  DPP::QDC::GateOffset_G,
+  DPP::QDC::FixedBaseline_G,
+  DPP::QDC::Pretrigger_G,
+  DPP::QDC::DPPAlgorithmControl_G,
+  DPP::QDC::TriggerHoldOffWidth_G,
+  DPP::QDC::GroupStatus_RG,
+  DPP::QDC::AMCFirmwareRevision_RG,
+  DPP::QDC::DCOffset_G,
+  DPP::QDC::ChannelMask_G,
+  DPP::QDC::DCOffset_LowCh_G,
+  DPP::QDC::DCOffset_HighCh_G,
+  DPP::QDC::TriggerThreshold_G,
 
+  DPP::QDC::NumberEventsPerAggregate,
+  DPP::QDC::RecordLength
 
 };
 
