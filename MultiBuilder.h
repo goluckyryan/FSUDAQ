@@ -6,7 +6,7 @@
 
 #define MaxNEvent 5000 // circular 
 
-class EventMember{
+class Hit{
 public:
   int sn;
   unsigned short bd;
@@ -18,7 +18,7 @@ public:
 
   std::vector<short> trace;
 
-  EventMember(){
+  Hit(){
     Clear();
   }
 
@@ -34,7 +34,7 @@ public:
   }
 
   void Print(){
-    printf("(%2d, %2d)[%3d] %6d %10llu, %5ld\n", bd, ch, sn, energy, timestamp, trace.size());
+    printf("(%2d, %2d)[%3d] %6d %10llu, %6d, %5ld\n", bd, ch, sn, energy, timestamp, fineTime, trace.size());
   }
 
 };
@@ -67,7 +67,7 @@ public:
   long eventIndex;
   long eventBuilt; // reset once call BuildEvents()
   long totalEventBuilt;
-  std::vector<EventMember> events[MaxNEvent];
+  std::vector<Hit> events[MaxNEvent];
 
 private:
   std::vector<int> typeList;

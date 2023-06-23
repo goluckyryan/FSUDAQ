@@ -11,6 +11,9 @@ DataReaderScript
 
 data
 
+splitpole.C
+splitpole.h
+
 *.d
 *.pcm
 

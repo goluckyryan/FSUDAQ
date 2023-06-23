@@ -316,10 +316,12 @@ void MainWindow::OpenDataPath(){
     leDataPath->setText(fileDialog.selectedFiles().at(0));
     rawDataPath = leDataPath->text();
     bnStartACQ->setEnabled(true);
+    bnStartACQ->setStyleSheet("background-color: green;");
   }else{
     leDataPath->clear();
     rawDataPath = "";
     bnStartACQ->setEnabled(false);
+    bnStartACQ->setStyleSheet("");
   }
 
   SaveProgramSettings();
@@ -551,7 +553,9 @@ void MainWindow::OpenDigitizers(){
   LogMsg(QString("Done. Opened %1 digitizer(s).").arg(nDigi));
 
   WaitForDigitizersOpen(false);
+  bnStartACQ->setStyleSheet("background-color: green;");
   bnStopACQ->setEnabled(false);
+  bnStopACQ->setStyleSheet("");
 
   if( rawDataPath == "" ) {
     chkSaveData->setChecked(false);
@@ -622,6 +626,7 @@ void MainWindow::WaitForDigitizersOpen(bool onOff){
   bnOpenScaler->setEnabled(!onOff);
   bnStartACQ->setEnabled(!onOff);
   bnStopACQ->setEnabled(!onOff);
+  bnStopACQ->setStyleSheet("");
   chkSaveData->setEnabled(!onOff);
   bnCanvas->setEnabled(!onOff);
   bnAnalyzer->setEnabled(!onOff);
@@ -849,7 +854,9 @@ void MainWindow::StartACQ(){
   if( canvas != nullptr ) histThread->start();
 
   bnStartACQ->setEnabled(false);
+  bnStartACQ->setStyleSheet("");
   bnStopACQ->setEnabled(true);
+  bnStopACQ->setStyleSheet("background-color: red;");
   bnOpenScope->setEnabled(false);
 
   if( onlineAnalyzer ) onlineAnalyzer->StartThread();
@@ -918,7 +925,9 @@ void MainWindow::StopACQ(){
   lbScalarACQStatus->setText("<font style=\"color: red;\"><b>ACQ Off</b></font>");
 
   bnStartACQ->setEnabled(true);
+  bnStartACQ->setStyleSheet("background-color: green;");
   bnStopACQ->setEnabled(false);
+  bnStopACQ->setStyleSheet("");
   bnOpenScope->setEnabled(true);
 
   {//^=== elog and database
@@ -1054,7 +1063,9 @@ void MainWindow::OpenScope(){
     connect(scope, &Scope::SendLogMsg, this, &MainWindow::LogMsg);
     connect(scope, &Scope::CloseWindow, this, [=](){
       bnStartACQ->setEnabled(true);
+      bnStartACQ->setStyleSheet("background-color: green;");
       bnStopACQ->setEnabled(false);  
+      bnStopACQ->setStyleSheet("");
     });
     connect(scope, &Scope::TellACQOnOff, this, [=](bool onOff){
       if( scope  ) {
@@ -1089,7 +1100,9 @@ void MainWindow::OpenScope(){
   }
 
   bnStartACQ->setEnabled(false);
+  bnStartACQ->setStyleSheet("");
   bnStopACQ->setEnabled(false);  
+  bnStopACQ->setStyleSheet("");
   chkSaveData->setChecked(false);
 
 }

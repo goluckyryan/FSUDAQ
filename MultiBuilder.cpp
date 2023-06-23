@@ -207,7 +207,7 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
 
   eventBuilt = 0;
   //======= Start building event
-  EventMember em;
+  Hit em;
   do{
 
     eventIndex ++;
@@ -239,6 +239,8 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
             em.ch = ch;
             em.energy = data[k]->Energy[ch][nextIndex[k][ch]];
             em.timestamp = time;
+            em.fineTime = data[k]->fineTime[ch][nextIndex[k][ch]];
+
             if( !skipTrace ) em.trace = data[k]->Waveform1[ch][nextIndex[k][ch]];
             if( typeList[k] == V1730_DPP_PSD_CODE ) em.energy2 = data[k]->Energy2[ch][nextIndex[k][ch]];
 
@@ -259,7 +261,7 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
 
     }
 
-    std::sort(events[eventIndex].begin(), events[eventIndex].end(), [](const EventMember& a, const EventMember& b) {
+    std::sort(events[eventIndex].begin(), events[eventIndex].end(), [](const Hit& a, const Hit& b) {
       return a.timestamp < b.timestamp;
     });
     
@@ -308,7 +310,7 @@ void MultiBuilder::BuildEventsBackWard(int maxNumEvent, bool verbose){
 
   //========== build event
   eventBuilt = 0;
-  EventMember em;
+  Hit em;
   do{
     eventIndex ++;
     if( eventIndex >= MaxNEvent ) eventIndex = 0;
@@ -354,7 +356,7 @@ void MultiBuilder::BuildEventsBackWard(int maxNumEvent, bool verbose){
       if( timeWindow == 0 ) break;
     }
 
-    std::sort(events[eventIndex].begin(), events[eventIndex].end(), [](const EventMember& a, const EventMember& b) {
+    std::sort(events[eventIndex].begin(), events[eventIndex].end(), [](const Hit& a, const Hit& b) {
       return a.timestamp < b.timestamp;
     });
 

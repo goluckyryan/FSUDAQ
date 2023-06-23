@@ -658,7 +658,7 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
 
       Energy[channel][DataIndex[channel]] = energy;
       Timestamp[channel][DataIndex[channel]] = timeStamp;
-      if(extra2Option == 0 || extra2Option == 2 ) fineTime[channel][DataIndex[channel]] = (extra2 & 0x07FF );
+      if(extra2Option == 2 ) fineTime[channel][DataIndex[channel]] = (extra2 & 0x03FF );
       PileUp[channel][DataIndex[channel]] = pileUp;
       NumEventsDecoded[channel] ++; 
       TotNumEvents[channel] ++;
@@ -850,6 +850,7 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
       Energy[channel][DataIndex[channel]] = Qshort;
       Energy2[channel][DataIndex[channel]] = Qlong;
       Timestamp[channel][DataIndex[channel]] = timeStamp;
+      if( extraOption == 2 ) fineTime[channel][DataIndex[channel]] = extra & 0x3FF;
 
       if( !fastDecode ) {
         if( hasDualTrace ){

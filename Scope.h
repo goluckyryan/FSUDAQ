@@ -71,6 +71,7 @@ private:
   Digitizer ** digi;
   unsigned short nDigi;
   unsigned short ID; // the id of digi, index of cbScopeDigi
+  bool isACQStarted;
   int tick2ns;
   bool traceOn[MaxNDigitizer];
 

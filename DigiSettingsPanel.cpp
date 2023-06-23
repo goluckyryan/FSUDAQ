@@ -2066,7 +2066,9 @@ void DigiSettingsPanel::SetUpPSDChannel(){
           SetUpSpinBox(sbFixedBaseline[ID][ch],                    "", tabLayout, ch + 1, 7, DPP::PSD::FixedBaseline, ch);
 
           connect(cbBaseLineAvg[ID][ch], &RComboBox::currentIndexChanged, this, [=](){
-            sbFixedBaseline[ID][ch]->setEnabled(  cbBaseLineAvg[ID][ch]->currentData().toInt() == 0);
+            for( int jj = 0; jj < 16 ; jj++ ){
+              sbFixedBaseline[ID][jj]->setEnabled(  cbBaseLineAvg[ID][jj]->currentData().toInt() == 0);
+            }
           });
 
         }
@@ -2891,12 +2893,16 @@ void DigiSettingsPanel::SyncAllChannelsTab_PSD(){
     SyncComboBox(cbVetoMode);
     SyncComboBox(cbVetoStep);
 
+    for( int jj = 0; jj < 16 ; jj++ ){
+      sbFixedBaseline[ID][jj]->setEnabled(  cbBaseLineAvg[ID][jj]->currentData().toInt() == 0);
+    }
+
 }
 void DigiSettingsPanel::UpdatePSDSetting(){
 
   enableSignalSlot = false;
 
-  //printf("------ %s \n", __func__);
+  // printf("------ %s \n", __func__);
 
   for(int ch = 0; ch < digi[ID]->GetNChannels(); ch ++){
 
@@ -2916,7 +2922,6 @@ void DigiSettingsPanel::UpdatePSDSetting(){
     UpdateSpinBox(sbPURGAPThreshold[ID][ch],   DPP::PSD::PurGapThreshold, ch);
     UpdateSpinBox(sbNumEventAgg[ID][ch],       DPP::NumberEventsPerAggregate_G, ch);
     UpdateComboBox(cbDynamicRange[ID][ch],     DPP::InputDynamicRange, ch);
-
 
     uint32_t dpp = digi[ID]->GetSettingFromMemory(DPP::DPPAlgorithmControl, ch);
 
@@ -2966,6 +2971,7 @@ void DigiSettingsPanel::UpdatePSDSetting(){
 
     UpdateSpinBox(sbVetoWidth[ID][ch],         DPP::VetoWidth, ch);
     UpdateComboBoxBit(cbVetoStep[ID][ch], vetoBit, DPP::Bit_VetoWidth::VetoStep);
+
   }
   enableSignalSlot = true;
 

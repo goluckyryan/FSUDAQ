@@ -19,6 +19,8 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
 
   enableSignalSlot = false;
 
+  isACQStarted = false;
+
   plot = new RChart();
   for( int i = 0; i < MaxNumberOfTrace; i++) {
     dataTrace[i] = new QLineSeries();
@@ -105,6 +107,10 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
 
   connect(cbScopeDigi, &RComboBox::currentIndexChanged, this, [=](int index){
     if( !enableSignalSlot ) return;
+
+    bool saveACQStartStatus = isACQStarted;
+    if( isACQStarted) StopScope();
+
     ID = index;
     tick2ns = digi[ID]->GetTick2ns();
     //---setup cbScopeCh
@@ -118,11 +124,20 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
 
     ReadSettingsFromBoard();
 
+    if( saveACQStartStatus )StartScope();
+
   });
 
   connect(cbScopeCh, &RComboBox::currentIndexChanged, this, [=](){
     if( !enableSignalSlot ) return;
+
+    bool saveACQStartStatus = isACQStarted;
+    if( isACQStarted) StopScope();
+
     ReadSettingsFromBoard();
+
+    if( saveACQStartStatus )StartScope();
+
   });
 
 
@@ -202,7 +217,9 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   layout->setColumnStretch(5, 1);
 
   bnScopeStart->setEnabled(true);
+  bnScopeStart->setStyleSheet("background-color: green;");
   bnScopeStop->setEnabled(false);
+  bnScopeStop->setStyleSheet("");
 
   UpdatePanelFromMomeory();
 
@@ -259,11 +276,15 @@ void Scope::StartScope(){
   updateTraceThread->start();
 
   bnScopeStart->setEnabled(false);
+  bnScopeStart->setStyleSheet("");
   bnScopeStop->setEnabled(true);
+  bnScopeStop->setStyleSheet("background-color: red;");
 
   EnableControl(false);
 
   TellACQOnOff(true);
+
+  isACQStarted = true;
 
 }
 
@@ -292,11 +313,15 @@ void Scope::StopScope(){
   emit UpdateOtherPanels();
 
   bnScopeStart->setEnabled(true);
+  bnScopeStart->setStyleSheet("background-color: green;");
   bnScopeStop->setEnabled(false);
+  bnScopeStop->setStyleSheet("");
 
   EnableControl(true);
 
   TellACQOnOff(false);
+
+  isACQStarted = false;
 
   // printf("----- end of %s\n", __func__);
 
@@ -350,6 +375,13 @@ void Scope::UpdateScope(){
     dataTrace[3]->replace(points[3]);
   }
   digiMTX[ID].unlock();
+
+  if( data->TriggerRate[ch] == 0 ){
+      dataTrace[0]->clear();
+      dataTrace[1]->clear();
+      dataTrace[2]->clear();
+      dataTrace[3]->clear();
+  }
 
   plot->axes(Qt::Horizontal).first()->setRange(0, tick2ns * traceLength * factor);
 
@@ -457,6 +489,7 @@ void Scope::SetUpSpinBox(RSpinBox * &sb, QString str, int row, int col, const Re
 
     digiMTX[ID].lock();
     digi[ID]->WriteRegister(para, value, ch);
+
     digiMTX[ID].unlock();
     if( digi[ID]->GetErrorCode() == CAEN_DGTZ_Success ){
       SendLogMsg(msg + " | OK.");
@@ -610,7 +643,8 @@ void Scope::SetUpPSDPanel(){
   SetUpSpinBox(sbGateOffset, "Gate Offset [ns] ", rowID, 6, DPP::PSD::GateOffset);
 
   rowID ++; //=============================================================
-  SetUpComboBoxSimple(cbAnaProbe1, "Ana. Probe ", rowID, 0);
+  SetUpSpinBox(sbThreshold, "Threshold [LSB] ", rowID, 0, DPP::PSD::TriggerThreshold);
+  SetUpComboBoxSimple(cbAnaProbe1, "Ana. Probe ", rowID, 2);
   for( int i = 0; i < (int) DPP::Bit_BoardConfig::ListAnaProbe_PSD.size(); i++){
     cbAnaProbe1->addItem(QString::fromStdString(DPP::Bit_BoardConfig::ListAnaProbe_PSD[i].first), DPP::Bit_BoardConfig::ListAnaProbe_PSD[i].second);
   }

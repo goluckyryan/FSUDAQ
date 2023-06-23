@@ -70,7 +70,13 @@ class Reg{
 
     uint32_t  ActualAddress(int ch = -1){
       if( address == 0x8180 ) return  (ch < 0 ? address : (address + 4*(ch/2)));
-      if( address <  0x8000 ) return  (ch < 0 ? (address + 0x7000) : (address + (ch << 8)) );
+      if( address <  0x8000 ){
+        if( group ) {
+          if( ch < 0 ) return address + 0x7000;
+          return address + ((ch % 2 == 0 ? ch : ch - 1) << 8) ;
+        }
+        return  (ch < 0 ? (address + 0x7000) : (address + (ch << 8)) );
+      }
       if( address >= 0x8000 ) return  address;
       return 0;
     }

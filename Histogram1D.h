@@ -3,6 +3,8 @@
 
 #include "qcustomplot.h"
 
+#define MaxNHist 10
+
 //^==============================================
 //^==============================================
 class Histogram1D : public QCustomPlot{
@@ -11,6 +13,7 @@ public:
   Histogram1D(QString title, QString xLabel, int xbin, double xmin, double xmax, QWidget * parent = nullptr) : QCustomPlot(parent){
 
     for( int i = 0; i < 3; i ++) txt[i] = nullptr;
+    nData = 1;
     Rebin(xbin, xmin, xmax);
 
     xAxis->setLabel(xLabel);
@@ -35,7 +38,7 @@ public:
     connect(xAxis, SIGNAL(rangeChanged(QCPRange)), xAxis2, SLOT(setRange(QCPRange)));
     connect(yAxis, SIGNAL(rangeChanged(QCPRange)), yAxis2, SLOT(setRange(QCPRange)));
 
-    graph(0)->setData(xList, yList);
+    graph(0)->setData(xList, yList[0]);
 
     //setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
     //setInteractions( QCP::iRangeDrag | QCP::iRangeZoom );
@@ -62,7 +65,7 @@ public:
     connect(this, &QCustomPlot::mouseMove, this, [=](QMouseEvent *event){
       double x = this->xAxis->pixelToCoord(event->pos().x());
       double bin = (x - xMin)/dX;
-      double z = yList[2*qFloor(bin) + 1];
+      double z = yList[0][2*qFloor(bin) + 1];
 
       QString coordinates = QString("Bin: %1, Value: %2").arg(qFloor(bin)).arg(z);
       QToolTip::showText(event->globalPosition().toPoint(), coordinates, this);
@@ -176,8 +179,22 @@ public:
   double GetXMin() const {return xMin;}
   double GetXMax() const {return xMax;}
 
+  void SetColor(QColor color, unsigned short ID = 0) {
+    graph(ID)->setPen(QPen(color));
+    QColor haha = color;
+    haha.setAlpha(20);
+    graph(ID)->setBrush(QBrush(haha));
+  }
+  void AddDataList(QString title, QColor color){
+    nData ++;
+    addGraph();
+    graph(nData - 1)->setName(title);
+    SetColor(color, nData-1);
+    yList[nData-1] = yList[0];
+  }
+
   void UpdatePlot(){
-    graph(0)->setData(xList, yList);
+    for( int ID = 0 ; ID < nData; ID ++) graph(ID)->setData(xList, yList[ID]);
     xAxis->setRangeLower(xMin);
     xAxis->setRangeUpper(xMax);
     yAxis->setRangeLower(0);
@@ -186,7 +203,9 @@ public:
   }
 
   void Clear(){
-    for( int i = 0; i <= yList.count(); i++) yList[i] = 0;
+    for( int ID = 0 ; ID < nData; ID ++) {
+      for( int i = 0; i <= yList[ID].count(); i++) yList[ID][i] = 0;
+    }
     yMax = 0;
     txt[0]->setText("Under Flow : 0");
     txt[1]->setText("Total Entry : 0");
@@ -202,13 +221,15 @@ public:
     dX = (xMax - xMin)/(xBin);
 
     xList.clear();
-    yList.clear();
+    for( int i = 0 ; i < nData ; i ++) yList[i].clear();
 
     for( int i = 0; i <= xBin; i ++ ){
       xList.append(xMin + i*dX-(dX)*0.000001); 
       xList.append(xMin + i*dX); 
-      yList.append(0); 
-      yList.append(0); 
+      for( int ID = 0 ; ID < nData; ID ++ ){
+        yList[ID].append(0); 
+        yList[ID].append(0); 
+      }
     }
 
     yMax = 0;
@@ -222,34 +243,36 @@ public:
     if( txt[2] ) txt[2]->setText("Over Flow : 0");
   }
 
-  void Fill(double value){
-    totalEntry ++;
-    txt[1]->setText("Total Entry : "+ QString::number(totalEntry));
+  void Fill(double value, unsigned int ID = 0){
+    if( ID == 0 ){
+      totalEntry ++;
+      txt[1]->setText("Total Entry : "+ QString::number(totalEntry));
 
-    if( value < xMin ) {
-      underFlow ++;
-      txt[0]->setText("Under Flow : "+ QString::number(underFlow));
-      return;
-    }
-    if( value > xMax ) {
-      overFlow ++;
-      txt[2]->setText("Over Flow : "+ QString::number(overFlow));
-      return;
+      if( value < xMin ) {
+        underFlow ++;
+        txt[0]->setText("Under Flow : "+ QString::number(underFlow));
+        return;
+      }
+      if( value > xMax ) {
+        overFlow ++;
+        txt[2]->setText("Over Flow : "+ QString::number(overFlow));
+        return;
+      }
     }
 
     double bin = (value - xMin)/dX;
     int index1 = 2*qFloor(bin) + 1;
     int index2 = index1 + 1;
 
-    if( 0 <= index1 && index1 <= 2*xBin) yList[index1] += 1;
-    if( 0 <= index1 && index2 <= 2*xBin) yList[index2] += 1;
+    if( 0 <= index1 && index1 <= 2*xBin) yList[ID][index1] += 1;
+    if( 0 <= index1 && index2 <= 2*xBin) yList[ID][index2] += 1;
 
-    if( yList[index1] > yMax ) yMax = yList[index1];
+    if( yList[ID][index1] > yMax ) yMax = yList[ID][index1];
   }
 
-  void Print(){
+  void Print(unsigned int ID = 0){
     for( int i = 0; i < xList.count(); i++){
-      printf("%f  %f\n", xList[i], yList[i]);
+      printf("%f  %f\n", xList[i], yList[ID][i]);
     }
   }
 
@@ -266,11 +289,14 @@ private:
   int underFlow;
   int overFlow;
 
-  QVector<double> xList, yList;
+  unsigned short nData;
+  QVector<double> xList;
+  QVector<double> yList[MaxNHist];
 
   QCPItemText * txt[3];
 
   bool usingMenu;
+
 
 };
 

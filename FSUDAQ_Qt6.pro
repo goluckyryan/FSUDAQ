@@ -38,6 +38,7 @@ HEADERS += ClassData.h \
            MultiBuilder.h \
            Analyser.h \
            qcustomplot.h \
+           Isotope.h \
            SplitPoleAnalyzer.h
 SOURCES += ClassDigitizer.cpp \
            DigiSettingsPanel.cpp \
