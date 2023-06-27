@@ -40,14 +40,35 @@ class SplitPoleHit{
 
 public:
   SplitPoleHit(){
+    Clear();
+  }
 
-    target.SetIso(12, 6);
-    beam.SetIso(2,1);
-    recoil.SetIso(1,1);
+  unsigned int eSR; unsigned long long tSR;
+  unsigned int eSL; unsigned long long tSL;
+  unsigned int eFR; unsigned long long tFR;
+  unsigned int eFL; unsigned long long tFL;
+  unsigned int eBR; unsigned long long tBR;
+  unsigned int eBL; unsigned long long tBL;
+  unsigned int eCath; unsigned long long tCath;
+  unsigned int eAF; unsigned long long tAF;
+  unsigned int eAB; unsigned long long tAB;
 
-    Bfield = 0.76; // Tesla
-    angleDegree = 20; // degree
-    beamKE = 16; // MeV
+  float eSAvg;
+  float x1, x2, theta;
+  float xAvg;
+
+  void CalZoffset(QString targetStr, QString beamStr, QString recoilStr, double bfieldT, double angleDeg, double energyMeV){
+
+    target.SetIsoByName(targetStr.toStdString());
+    beam.SetIsoByName(beamStr.toStdString());
+    recoil.SetIsoByName(recoilStr.toStdString());
+    // target.SetIso(12, 6);
+    // beam.SetIso(2,1);
+    // recoil.SetIso(1,1);
+
+    Bfield = bfieldT; // Tesla
+    angleDegree = angleDeg; // degree
+    beamKE = energyMeV; // MeV
 
     heavyRecoil.SetIso(target.A + beam.A - recoil.A, target.Z + beam.Z - recoil.Z);
 
@@ -71,24 +92,9 @@ public:
 
     zOffset = -1000.0 * rho * k * SPS_DISPERSION * SPS_MAGNIFICATION;
 
-    printf("rho: %f m; z-offset: %f mm\n", rho, zOffset);
+    printf("rho: %f m; z-offset: %f cm\n", rho, zOffset);
 
-    Clear();
   }
-
-  unsigned int eSR; unsigned long long tSR;
-  unsigned int eSL; unsigned long long tSL;
-  unsigned int eFR; unsigned long long tFR;
-  unsigned int eFL; unsigned long long tFL;
-  unsigned int eBR; unsigned long long tBR;
-  unsigned int eBL; unsigned long long tBL;
-  unsigned int eCath; unsigned long long tCath;
-  unsigned int eAF; unsigned long long tAF;
-  unsigned int eAB; unsigned long long tAB;
-
-  float eSAvg;
-  float x1, x2, theta;
-  float xAvg;
 
   void Clear(){
     eSR = 0;  tSR = 0;
@@ -169,6 +175,15 @@ public:
     dataBaseName = "testing"; 
 
     SetUpCanvas();
+    leTarget->setText("12C");
+    leBeam->setText("d");
+    leRecoil->setText("p");
+    sbBfield->setValue(0.76);
+    sbAngle->setValue(20);
+    sbEnergy->setValue(16);
+
+    hit.CalZoffset(leTarget->text(), leBeam->text(), leRecoil->text(), sbBfield->value(), sbAngle->value(), sbEnergy->value()); 
+
 
     hit.Clear();
 
@@ -196,6 +211,13 @@ private:
 
   SplitPoleHit hit;
 
+  RSpinBox * sbBfield;
+  QLineEdit * leTarget;
+  QLineEdit * leBeam;
+  QLineEdit * leRecoil;
+  RSpinBox * sbEnergy;
+  RSpinBox * sbAngle;
+
 };
 
 
@@ -203,22 +225,105 @@ inline void SplitPole::SetUpCanvas(){
 
   setGeometry(0, 0, 1600, 1000);  
 
+  {//^====== magnet and reaction setting
+    QGroupBox * box = new QGroupBox("Configuration", this);
+    layout->addWidget(box, 0, 0);
+    QGridLayout * boxLayout = new QGridLayout(box);
+    boxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    box->setLayout(boxLayout);
+    
+    QLabel * lbBfield = new QLabel("B-field [T] ", box);
+    lbBfield->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+    boxLayout->addWidget(lbBfield, 0, 2);
+    sbBfield = new RSpinBox(box);
+    sbBfield->setDecimals(3);
+    sbBfield->setSingleStep(0.05);
+    boxLayout->addWidget(sbBfield, 0, 3);
+
+    QLabel * lbTarget = new QLabel("Target ", box);
+    lbTarget->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+    boxLayout->addWidget(lbTarget, 0, 0);
+    leTarget = new QLineEdit(box);
+    boxLayout->addWidget(leTarget, 0, 1);
+
+    QLabel * lbBeam = new QLabel("Beam ", box);
+    lbBeam->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+    boxLayout->addWidget(lbBeam, 1, 0);
+    leBeam = new QLineEdit(box);
+    boxLayout->addWidget(leBeam, 1, 1);
+
+    QLabel * lbRecoil = new QLabel("Recoil ", box);
+    lbRecoil->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+    boxLayout->addWidget(lbRecoil, 2, 0);
+    leRecoil = new QLineEdit(box);
+    boxLayout->addWidget(leRecoil, 2, 1);
+
+    QLabel * lbEnergy = new QLabel("Beam Energy [MeV] ", box);
+    lbEnergy->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+    boxLayout->addWidget(lbEnergy, 1, 2);
+    sbEnergy = new RSpinBox(box);
+    sbEnergy->setDecimals(3);
+    sbEnergy->setSingleStep(1.0);
+    boxLayout->addWidget(sbEnergy, 1, 3);
+
+    QLabel * lbAngle = new QLabel("SPS Angle [Deg] ", box);
+    lbAngle->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+    boxLayout->addWidget(lbAngle, 2, 2);
+    sbAngle = new RSpinBox(box);
+    sbAngle->setDecimals(3);
+    sbAngle->setSingleStep(1.0);
+    boxLayout->addWidget(sbAngle, 2, 3);
+
+    boxLayout->setColumnStretch(0, 1);
+    boxLayout->setColumnStretch(1, 2);
+    boxLayout->setColumnStretch(2, 1);
+    boxLayout->setColumnStretch(3, 2);
+
+    connect(leTarget, &QLineEdit::returnPressed, this, [=](){
+      hit.CalZoffset(leTarget->text(), leBeam->text(), leRecoil->text(), sbBfield->value(), sbAngle->value(), sbEnergy->value());  
+    });
+    
+    connect(leBeam, &QLineEdit::returnPressed, this, [=](){
+      hit.CalZoffset(leTarget->text(), leBeam->text(), leRecoil->text(), sbBfield->value(), sbAngle->value(), sbEnergy->value());  
+    });
+
+    connect(leRecoil, &QLineEdit::returnPressed, this, [=](){
+      hit.CalZoffset(leTarget->text(), leBeam->text(), leRecoil->text(), sbBfield->value(), sbAngle->value(), sbEnergy->value());  
+    });
+
+    connect(sbBfield, &RSpinBox::returnPressed, this, [=](){
+      hit.CalZoffset(leTarget->text(), leBeam->text(), leRecoil->text(), sbBfield->value(), sbAngle->value(), sbEnergy->value());  
+    });
+
+    connect(sbAngle, &RSpinBox::returnPressed, this, [=](){
+      hit.CalZoffset(leTarget->text(), leBeam->text(), leRecoil->text(), sbBfield->value(), sbAngle->value(), sbEnergy->value());  
+    });
+
+    connect(sbEnergy, &RSpinBox::returnPressed, this, [=](){
+      hit.CalZoffset(leTarget->text(), leBeam->text(), leRecoil->text(), sbBfield->value(), sbAngle->value(), sbEnergy->value());  
+    });
+
+  }
+
+  //============ histograms
+  hMulti = new Histogram1D("Multiplicity", "", 10, 0, 10, this);
+  layout->addWidget(hMulti, 0, 1);  
+
   // the "this" make the histogram a child of the SplitPole class. When SplitPole destory, all childs destory as well.
   hPID = new Histogram2D("Split Pole PID", "Scin-L", "Anode-Font", 100, 0, 2000, 100, 0, 2000, this);
   //layout is inheriatge from Analyzer
-  layout->addWidget(hPID, 0, 0, 2, 1);
+  layout->addWidget(hPID, 1, 0, 2, 1);
 
   h1 = new Histogram1D("Spectrum", "x", 100, 0, 2000, this);
   h1->SetColor(Qt::darkGreen);
   h1->AddDataList("Test", Qt::red); // add another histogram in h1, Max Data List is 10
-  layout->addWidget(h1, 0, 1);
+  layout->addWidget(h1, 1, 1);
   
-  hMulti = new Histogram1D("Multiplicity", "", 10, 0, 10, this);
-  layout->addWidget(hMulti, 1, 1);
-
   h1g = new Histogram1D("Spectrum (gated)", "x", 100, 0, 2000, this);
-  layout->addWidget(h1g, 2, 0, 1, 2);
-  
+  layout->addWidget(h1g, 2, 1);
+
+  layout->setColumnStretch(0, 1);
+  layout->setColumnStretch(1, 1);
 
 }
 

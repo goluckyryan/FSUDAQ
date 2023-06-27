@@ -847,8 +847,8 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
       NumNonPileUpDecoded[channel] ++; 
       TotNumEvents[channel] ++;
 
-      Energy[channel][DataIndex[channel]] = Qshort;
-      Energy2[channel][DataIndex[channel]] = Qlong;
+      Energy2[channel][DataIndex[channel]] = Qshort;
+      Energy[channel][DataIndex[channel]] = Qlong;
       Timestamp[channel][DataIndex[channel]] = timeStamp;
       if( extraOption == 2 ) fineTime[channel][DataIndex[channel]] = extra & 0x3FF;
 

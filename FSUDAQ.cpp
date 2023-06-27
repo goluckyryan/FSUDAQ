@@ -64,6 +64,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     layout->addWidget(bnCanvas, 1, 2);
     connect(bnCanvas, &QPushButton::clicked, this, &MainWindow::OpenCanvas);
 
+    QPushButton * bnSync = new QPushButton("Sync Boards", this);
+    layout->addWidget(bnSync);
+    bnSync->setEnabled(false);
+
   }
 
   {//^====================== influx and Elog

@@ -1,4 +1,5 @@
 #include "Analyser.h"
+#include "CustomWidgets.h"
 
 #include <QRandomGenerator>
 #include <random>

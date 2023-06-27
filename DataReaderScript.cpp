@@ -7,7 +7,7 @@ void DataReaderScript(){
   Data * data = new Data();  
   data->DPPType = V1730_DPP_PSD_CODE;
 
-  std::string fileName = "data/temp_030_089_PSD_000.fsu";
+  std::string fileName = "data/temp_043_089_PSD_000.fsu";
 
   FILE * haha = fopen(fileName.c_str(), "r");
   fseek(haha, 0L, SEEK_END);
@@ -49,7 +49,7 @@ void DataReaderScript(){
     //if( countBdAgg % 100 == 0) data->PrintStat();
     //data->ClearData();
 
-    if( countBdAgg > 10 ){
+    if( countBdAgg > 500 ){
       data->PrintAllData();
       mb->BuildEventsBackWard(false);
       break;
