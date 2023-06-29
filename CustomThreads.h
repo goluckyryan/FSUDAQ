@@ -3,6 +3,7 @@
 
 #include <QThread>
 #include <QMutex>
+#include <QWaitCondition>
 
 #include "macro.h"
 #include "ClassDigitizer.h"
@@ -24,11 +25,30 @@ public:
   void Stop() { this->stop = true;}
   void SetSaveData(bool onOff)  {this->isSaveData = onOff;}
   void SetScopeMode(bool onOff) {this->isScope = onOff;}
+
+  void go(){
+    mutex.lock();
+    condition.wakeAll();
+    mutex.unlock();
+  }
+
   void run(){
+
+    stop = false;
+
+    mutex.lock();
+    condition.wait(&mutex);
+    mutex.unlock();
+
     clock_gettime(CLOCK_REALTIME, &t0);
+    printf("--- %d, %ld nsec \n", ID, t0.tv_nsec);
     ta = t0;
     // clock_gettime(CLOCK_REALTIME, &t1);
-    stop = false;
+
+    digi->StartACQ();
+
+    usleep(1000); // wait for some data;
+
     do{
       
       if( stop) break;
@@ -84,7 +104,10 @@ private:
   timespec ta, tb, t1, t2, t0;
   bool isSaveData;
   bool isScope;
-  unsigned long readCount;
+  unsigned long readCount; 
+
+  QMutex mutex;
+  QWaitCondition condition;
 };
 
 //^#======================================================= Timing Thread

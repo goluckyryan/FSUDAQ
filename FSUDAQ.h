@@ -74,6 +74,8 @@ private slots:
   void WriteElog(QString htmlText, QString subject, QString category, int runNumber);
   void AppendElog(QString appendHtmlText);
 
+  void SetSyncMode();
+
 
 private:
 
@@ -95,6 +97,7 @@ private:
   QPushButton * bnOpenScaler;
   QPushButton * bnStartACQ;
   QPushButton * bnStopACQ;
+  QPushButton * bnSync;
 
   QPushButton * bnCanvas;
 

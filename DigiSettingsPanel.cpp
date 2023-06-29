@@ -2476,7 +2476,7 @@ void DigiSettingsPanel::UpdatePanelFromMemory(){
 
   chkEnableExternalTrigger[ID]->setChecked( ! ( digi[ID]->GetSettingFromMemory(DPP::DisableExternalTrigger) & 0x1) );
 
-  sbRunDelay[ID]->setValue(digi[ID]->GetSettingFromMemory(DPP::RunStartStopDelay));
+  sbRunDelay[ID]->setValue(digi[ID]->GetSettingFromMemory(DPP::RunStartStopDelay) * DPP::RunStartStopDelay.GetPartialStep() * digi[ID]->GetTick2ns());
 
   //*========================================
   uint32_t anaMonitor = digi[ID]->GetSettingFromMemory(DPP::AnalogMonitorMode);
@@ -2496,6 +2496,13 @@ void DigiSettingsPanel::UpdatePanelFromMemory(){
   sbBufferGain[ID]->setValue(digi[ID]->GetSettingFromMemory(DPP::BufferOccupancyGain));
   sbVoltageLevel[ID]->setValue(digi[ID]->GetSettingFromMemory(DPP::VoltageLevelModeConfig));
 
+  //*======================================== 
+  uint32_t acqCtrl = digi[ID]->GetSettingFromMemory(DPP::AcquisitionControl);
+
+  cbStartStopMode[ID]->setCurrentIndex( Digitizer::ExtractBits(acqCtrl, DPP::Bit_AcquistionControl::StartStopMode) );
+  cbAcqStartArm[ID]->setCurrentIndex( Digitizer::ExtractBits(acqCtrl, DPP::Bit_AcquistionControl::ACQStartArm) );
+  cbPLLRefClock[ID]->setCurrentIndex( Digitizer::ExtractBits(acqCtrl, DPP::Bit_AcquistionControl::PLLRef) );
+
   //*========================================
   uint32_t frontPanel = digi[ID]->GetSettingFromMemory(DPP::FrontPanelIOControl);
   cbLEMOMode[ID]->setCurrentIndex( ( frontPanel & 0x1 ));
@@ -2503,8 +2510,7 @@ void DigiSettingsPanel::UpdatePanelFromMemory(){
   if( (frontPanel >> 1 ) & 0x1 ) { // bit-1, TRIG-OUT high impedance, i.e. disable
     cbTRGOUTMode[ID]->setCurrentIndex(0);
   }else{
-    unsigned short trgOutBit = ((frontPanel >> 14 ) & 0x3F ) << 14 ;
-
+    unsigned int trgOutBit = ((frontPanel >> 14 ) & 0x3F ) << 14 ;
     for( int i = 0; i < cbTRGOUTMode[ID]->count() ; i++ ){
       if( cbTRGOUTMode[ID]->itemData(i).toUInt() == trgOutBit ){
         cbTRGOUTMode[ID]->setCurrentIndex(i);
@@ -3075,6 +3081,8 @@ void DigiSettingsPanel::LoadSetting(){
     leSaveFilePath[ID]->setText(fileName + " | dynamic update");
     digi[ID]->ProgramSettingsToBoard();
     UpdatePanelFromMemory();
+
+    UpdateOtherPanels();
 
   }else{
     SendLogMsg("Fail to Loaded settings file " + fileName + " for Digi-" + QString::number(digi[ID]->GetSerialNumber()));

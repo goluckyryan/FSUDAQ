@@ -70,7 +70,7 @@ class Data{
   
     void PrintStat() const;
 
-    void PrintAllData(bool tableMode = true) const;
+    void PrintAllData(bool tableMode = true, unsigned int maxRowDisplay = 0) const;
 
     //^================= Saving data
     bool OpenSaveFile(std::string fileNamePrefix); // return false when fail
@@ -268,7 +268,7 @@ inline void Data::PrintStat() const{
   printf("---+--------+-----------+-----------+----------\n");
 }
 
-inline void Data::PrintAllData(bool tableMode) const{
+inline void Data::PrintAllData(bool tableMode, unsigned int maxRowDisplay) const{
   printf("============================= Print Data\n");
 
   if( tableMode ){
@@ -296,6 +296,8 @@ inline void Data::PrintAllData(bool tableMode) const{
       }
       printf("\n");
       entry ++;
+
+      if( maxRowDisplay > 0 && (unsigned int) entry >= maxRowDisplay ) break;
     }while(entry <= MaxEntry);
 
   }else{
@@ -305,6 +307,7 @@ inline void Data::PrintAllData(bool tableMode) const{
       for( int ev = 0; ev <= (LoopIndex[ch] > 0 ? MaxNData : DataIndex[ch]) ; ev++){
         if( DPPType == V1730_DPP_PHA_CODE ) printf("%4d, %5u, %15llu, %5u \n", ev, Energy[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
         if( DPPType == V1730_DPP_PSD_CODE ) printf("%4d, %5u, %5u, %15llu, %5u \n", ev, Energy[ch][ev], Energy2[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
+        if( maxRowDisplay > 0 && (unsigned int) ev > maxRowDisplay ) break;
       }
     }
   }

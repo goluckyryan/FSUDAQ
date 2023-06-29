@@ -64,9 +64,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     layout->addWidget(bnCanvas, 1, 2);
     connect(bnCanvas, &QPushButton::clicked, this, &MainWindow::OpenCanvas);
 
-    QPushButton * bnSync = new QPushButton("Sync Boards", this);
+    bnSync = new QPushButton("Sync Boards", this);
     layout->addWidget(bnSync);
-    bnSync->setEnabled(false);
+    connect(bnSync, &QPushButton::clicked, this, &MainWindow::SetSyncMode);
 
   }
 
@@ -561,6 +561,8 @@ void MainWindow::OpenDigitizers(){
   bnStopACQ->setEnabled(false);
   bnStopACQ->setStyleSheet("");
 
+  bnSync->setEnabled( nDigi >= 1  );
+
   if( rawDataPath == "" ) {
     chkSaveData->setChecked(false);
     chkSaveData->setEnabled(false);
@@ -634,6 +636,8 @@ void MainWindow::WaitForDigitizersOpen(bool onOff){
   chkSaveData->setEnabled(!onOff);
   bnCanvas->setEnabled(!onOff);
   bnAnalyzer->setEnabled(!onOff);
+
+  bnSync->setEnabled(false);
 
 }
 
@@ -786,6 +790,8 @@ void MainWindow::UpdateScalar(){
   for( unsigned int iDigi = 0; iDigi < nDigi; iDigi++){
     digiMTX[iDigi].lock();
 
+    printf("### %d ", iDigi);
+    digi[iDigi]->GetData()->PrintAllData(true, 10);
     if( chkSaveData->isChecked() ) totalFileSize += digi[iDigi]->GetData()->GetTotalFileSize();
     for( int i = 0; i < digi[iDigi]->GetNChannels(); i++){
       if( digi[iDigi]->GetChannelOnOff(i) == true ) {
@@ -828,7 +834,6 @@ void MainWindow::StartACQ(){
     LogMsg("<font style=\"color: orange;\">===================== <b>Start a non-save Run</b></font>");
   }
 
-
   for( unsigned int i = 0; i < nDigi ; i++){
     if( chkSaveData->isChecked() ) {
       if( digi[i]->GetData()->OpenSaveFile((rawDataPath + "/" + prefix + "_" + QString::number(runID).rightJustified(3, '0')).toStdString()) == false ) {
@@ -841,11 +846,15 @@ void MainWindow::StartACQ(){
     digi[i]->WriteRegister(DPP::SoftwareClear_W, 1);
     digi[i]->GetData()->ClearData();
 
-    digi[i]->StartACQ();
     readDataThread[i]->start();
   }
   if( chkSaveData->isChecked() ) SaveLastRunFile();
-  
+
+  printf("------------ wait for 2 sec \n");
+  usleep(2000*1000);
+  printf("------------ Go! \n");
+  for( unsigned int i = 0; i < nDigi; i++) readDataThread[i]->go();
+
   scalarThread->start();
 
   if( !scalar->isVisible() ) {
@@ -959,6 +968,19 @@ void MainWindow::StopACQ(){
 }
 
 void MainWindow::AutoRun(){ //TODO
+
+}
+
+void MainWindow::SetSyncMode(){
+
+  // No sync
+
+  // using external start ( TRG-OUT (S-IN) --> S-IN )
+
+  // using SW ( TRG-OUT(RUN) --> S-IN)
+
+  // using external Clock ( TRG-OUT(RUN) --> S-IN )
+
 
 }
 

@@ -408,6 +408,24 @@ void Digitizer::StartACQ(){
   printf("\e[1m\e[33m======= Acquisition Started for %d | Board %d, Port %d\e[0m\n", BoardInfo.SerialNumber, boardID, portID);
   AcqRun = true;
   data->ClearTriggerRate();
+
+  unsigned int acqID = ExtractBits(GetSettingFromMemory(DPP::AcquisitionControl), DPP::Bit_AcquistionControl::StartStopMode);
+  unsigned int trgOutID = ExtractBits(GetSettingFromMemory(DPP::FrontPanelIOControl), DPP::Bit_FrontPanelIOControl::TRGOUTConfig);
+
+  std::string acqStr = "";
+  for( int i = 0; i < (int) DPP::Bit_AcquistionControl::ListStartStopMode.size(); i++){
+    if( DPP::Bit_AcquistionControl::ListStartStopMode[i].second == acqID  ){
+      acqStr = DPP::Bit_AcquistionControl::ListStartStopMode[i].first;
+    }
+  }
+  std::string trgOutStr = "";
+  for( int i = 0; i < (int) DPP::Bit_FrontPanelIOControl::ListTRGOUTConfig.size(); i++){
+    if( DPP::Bit_FrontPanelIOControl::ListTRGOUTConfig[i].second == (trgOutID << 14)  ){
+      trgOutStr = DPP::Bit_FrontPanelIOControl::ListTRGOUTConfig[i].first;
+    }
+  }
+
+  printf("    ACQ mode : %s (%d), TRG-OUT mode : %s (%d) \n", acqStr.c_str(), acqID, trgOutStr.c_str(), trgOutID);
 }
 
 void Digitizer::StopACQ(){
