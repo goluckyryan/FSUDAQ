@@ -220,35 +220,40 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
     em.Clear();
     
     for( int k = 0; k < nData; k++){
+      int bd = (k + earlistDigi) % nData;
+
+      // printf("##### %d/%d | ", k, nData);
+      // data[k]->PrintAllData(true, 10);
+
       for( unsigned int i = 0; i < MaxNChannels; i++){
         int ch = (i + earlistCh ) % MaxNChannels;
-        if( chExhaused[k][ch] ) continue;
-        if( loopIndex[k][ch] * MaxNData + nextIndex[k][ch] > data[k]->LoopIndex[ch] * MaxNData +  data[k]->DataIndex[ch]) {
+        if( chExhaused[bd][ch] ) continue;
+        if( loopIndex[bd][ch] * MaxNData + nextIndex[bd][ch] > data[bd]->LoopIndex[ch] * MaxNData +  data[bd]->DataIndex[ch]) {
           nExhaushedCh ++;
-          chExhaused[k][ch] = true;
+          chExhaused[bd][ch] = true;
           continue;
         }
 
         do {
 
-          unsigned long long time = data[k]->Timestamp[ch][nextIndex[k][ch]];
+          unsigned long long time = data[bd]->Timestamp[ch][nextIndex[bd][ch]];
 
           if( time >= earlistTime && (time - earlistTime <=  timeWindow) ){
-            em.sn = snList[k];
-            em.bd = k;
+            em.sn = snList[bd];
+            em.bd = bd;
             em.ch = ch;
-            em.energy = data[k]->Energy[ch][nextIndex[k][ch]];
+            em.energy = data[bd]->Energy[ch][nextIndex[bd][ch]];
             em.timestamp = time;
-            em.fineTime = data[k]->fineTime[ch][nextIndex[k][ch]];
+            em.fineTime = data[bd]->fineTime[ch][nextIndex[bd][ch]];
 
-            if( !skipTrace ) em.trace = data[k]->Waveform1[ch][nextIndex[k][ch]];
-            if( typeList[k] == V1730_DPP_PSD_CODE ) em.energy2 = data[k]->Energy2[ch][nextIndex[k][ch]];
+            if( !skipTrace ) em.trace = data[bd]->Waveform1[ch][nextIndex[bd][ch]];
+            if( typeList[bd] == V1730_DPP_PSD_CODE ) em.energy2 = data[bd]->Energy2[ch][nextIndex[bd][ch]];
 
             events[eventIndex].push_back(em);
-            nextIndex[k][ch]++;
-            if( nextIndex[k][ch] >= MaxNData) {
-              loopIndex[k][ch] ++;
-              nextIndex[k][ch] = 0;
+            nextIndex[bd][ch]++;
+            if( nextIndex[bd][ch] >= MaxNData) {
+              loopIndex[bd][ch] ++;
+              nextIndex[bd][ch] = 0;
             }
           }else{
             break;
@@ -258,12 +263,13 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
         if( timeWindow == 0 ) break;
       }
       if( timeWindow == 0 ) break;
-
     }
 
-    std::sort(events[eventIndex].begin(), events[eventIndex].end(), [](const Hit& a, const Hit& b) {
-      return a.timestamp < b.timestamp;
-    });
+    if( timeWindow > 0 ) {
+      std::sort(events[eventIndex].begin(), events[eventIndex].end(), [](const Hit& a, const Hit& b) {
+        return a.timestamp < b.timestamp;
+      });
+    }
     
     ///Find the next earlist 
     FindEarlistTimeAndCh(verbose);
@@ -280,7 +286,7 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
         printf("######################### no more event to be built\n"); 
         break;
       } 
-      printf("----- next ch : %d, next earlist Time : %llu.\n", earlistCh, earlistTime);
+      printf("----- next bd : %d, ch : %d, next earlist Time : %llu.\n", earlistDigi, earlistCh, earlistTime);
 
     }
 
@@ -321,30 +327,32 @@ void MultiBuilder::BuildEventsBackWard(int maxNumEvent, bool verbose){
     em.Clear();
 
     for( int k = 0; k < nData; k++){
+      int bd = (k + latestDigi) % nData;
+
       for( unsigned int i = 0; i < MaxNChannels; i++){
         int ch = (i + latestCh) % MaxNChannels;
-        if( chExhaused[k][ch] ) continue;
-        //if( nextIndex[k][ch] <= lastBackWardIndex[k][ch] || nextIndex[k][ch] < 0){
-        if( nextIndex[k][ch] < 0){
-          chExhaused[k][ch] = true;
+        if( chExhaused[bd][ch] ) continue;
+        //if( nextIndex[bd][ch] <= lastBackWardIndex[bd][ch] || nextIndex[bd][ch] < 0){
+        if( nextIndex[bd][ch] < 0){
+          chExhaused[bd][ch] = true;
           nExhaushedCh ++;
           continue;
         }
 
         do{
 
-          unsigned long long time = data[k]->Timestamp[ch][nextIndex[k][ch]];
+          unsigned long long time = data[bd]->Timestamp[ch][nextIndex[bd][ch]];
           if( time <= latestTime && (latestTime - time <= timeWindow)){
-            em.sn = snList[k];
-            em.bd = k;
+            em.sn = snList[bd];
+            em.bd = bd;
             em.ch = ch;
-            em.energy = data[k]->Energy[ch][nextIndex[k][ch]];
+            em.energy = data[bd]->Energy[ch][nextIndex[bd][ch]];
             em.timestamp = time;
-            if( typeList[k] == V1730_DPP_PSD_CODE ) em.energy2 = data[k]->Energy2[ch][nextIndex[k][ch]];
+            if( typeList[bd] == V1730_DPP_PSD_CODE ) em.energy2 = data[bd]->Energy2[ch][nextIndex[bd][ch]];
 
             events[eventIndex].push_back(em);
-            nextIndex[k][ch]--;
-            if( nextIndex[k][ch] < 0 && data[k]->LoopIndex[ch] > 0 ) nextIndex[k][ch] = MaxNData - 1;
+            nextIndex[bd][ch]--;
+            if( nextIndex[bd][ch] < 0 && data[bd]->LoopIndex[ch] > 0 ) nextIndex[bd][ch] = MaxNData - 1;
             
           }else{
             break;
@@ -374,7 +382,7 @@ void MultiBuilder::BuildEventsBackWard(int maxNumEvent, bool verbose){
         printf("######################### no more event to be built\n"); 
         break;
       } 
-      printf("----- next ch : %d, next latest Time : %llu.\n", latestCh, latestTime);
+      printf("----- next bd: %d, ch : %d, next latest Time : %llu.\n", latestDigi, latestCh, latestTime);
 
     }
 

@@ -199,6 +199,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     cbAutoRun->addItem("Single 30 mins", 30);
     cbAutoRun->addItem("Single 60 mins", 60);
     cbAutoRun->addItem("Repeat 60 mins", -60);
+    cbAutoRun->addItem("Repeat 120 mins", -120);
     cbAutoRun->setEnabled(false);
 
     bnStartACQ = new QPushButton("Start ACQ", this);
@@ -790,8 +791,8 @@ void MainWindow::UpdateScalar(){
   for( unsigned int iDigi = 0; iDigi < nDigi; iDigi++){
     digiMTX[iDigi].lock();
 
-    printf("### %d ", iDigi);
-    digi[iDigi]->GetData()->PrintAllData(true, 10);
+    // printf("### %d ", iDigi);
+    // digi[iDigi]->GetData()->PrintAllData(true, 10);
     if( chkSaveData->isChecked() ) totalFileSize += digi[iDigi]->GetData()->GetTotalFileSize();
     for( int i = 0; i < digi[iDigi]->GetNChannels(); i++){
       if( digi[iDigi]->GetChannelOnOff(i) == true ) {
@@ -972,6 +973,13 @@ void MainWindow::StopACQ(){
 
 void MainWindow::AutoRun(){ //TODO
 
+  if( chkSaveData->isChecked() == false){
+    StartACQ();
+    return;
+  }
+
+  
+
 }
 
 void MainWindow::SetSyncMode(){
@@ -981,12 +989,12 @@ void MainWindow::SetSyncMode(){
 
   QVBoxLayout * layout = new QVBoxLayout(&dialog);
 
-  QLabel * lbInfo1 = new QLabel("This will reset 0x8100 and 0x811C \nMaster must be the 1st board.", &dialog);
+  QLabel * lbInfo1 = new QLabel("This will reset 0x8100 and 0x811C \nMaster must be the 1st board.\n (could be 100 ticks offset)", &dialog);
   lbInfo1->setStyleSheet("color : red;");
 
   QPushButton * bnNoSync = new QPushButton("No Sync");
-  QPushButton * bnMethod1 = new QPushButton("Software TRG-OUT --> TRG-IN (within 100 ticks)");
-  QPushButton * bnMethod2 = new QPushButton("Software TRG-OUT --> S-IN (within 20 ticks)");
+  QPushButton * bnMethod1 = new QPushButton("Software TRG-OUT --> TRG-IN ");
+  QPushButton * bnMethod2 = new QPushButton("Software TRG-OUT --> S-IN ");
   QPushButton * bnMethod3 = new QPushButton("External TRG-OUT --> S-IN ");
 
   layout->addWidget(lbInfo1, 0);
