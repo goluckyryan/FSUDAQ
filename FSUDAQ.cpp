@@ -834,7 +834,8 @@ void MainWindow::StartACQ(){
     LogMsg("<font style=\"color: orange;\">===================== <b>Start a non-save Run</b></font>");
   }
 
-  for( unsigned int i = 0; i < nDigi ; i++){
+  //assume master board is the 0-th board
+  for( int i = (int) nDigi-1; i >= 0 ; i--){
     if( chkSaveData->isChecked() ) {
       if( digi[i]->GetData()->OpenSaveFile((rawDataPath + "/" + prefix + "_" + QString::number(runID).rightJustified(3, '0')).toStdString()) == false ) {
         LogMsg("Cannot open save file : " + QString::fromStdString(digi[i]->GetData()->GetOutFileName() ) + ". Probably read-only?");
@@ -846,14 +847,16 @@ void MainWindow::StartACQ(){
     digi[i]->WriteRegister(DPP::SoftwareClear_W, 1);
     digi[i]->GetData()->ClearData();
 
+    digi[i]->StartACQ();
+
     readDataThread[i]->start();
   }
   if( chkSaveData->isChecked() ) SaveLastRunFile();
 
-  printf("------------ wait for 2 sec \n");
-  usleep(2000*1000);
-  printf("------------ Go! \n");
-  for( unsigned int i = 0; i < nDigi; i++) readDataThread[i]->go();
+  // printf("------------ wait for 2 sec \n");
+  // usleep(1000*1000);
+  // printf("------------ Go! \n");
+  // for( unsigned int i = 0; i < nDigi; i++) readDataThread[i]->go();
 
   scalarThread->start();
 
@@ -973,14 +976,67 @@ void MainWindow::AutoRun(){ //TODO
 
 void MainWindow::SetSyncMode(){
 
-  // No sync
+  QDialog dialog;
+  dialog.setWindowTitle("Board Synchronization");
 
-  // using external start ( TRG-OUT (S-IN) --> S-IN )
+  QVBoxLayout * layout = new QVBoxLayout(&dialog);
 
-  // using SW ( TRG-OUT(RUN) --> S-IN)
+  QLabel * lbInfo1 = new QLabel("This will reset 0x8100 and 0x811C \nMaster must be the 1st board.", &dialog);
+  lbInfo1->setStyleSheet("color : red;");
 
-  // using external Clock ( TRG-OUT(RUN) --> S-IN )
+  QPushButton * bnNoSync = new QPushButton("No Sync");
+  QPushButton * bnMethod1 = new QPushButton("Software TRG-OUT --> TRG-IN (within 100 ticks)");
+  QPushButton * bnMethod2 = new QPushButton("Software TRG-OUT --> S-IN (within 20 ticks)");
+  QPushButton * bnMethod3 = new QPushButton("External TRG-OUT --> S-IN ");
 
+  layout->addWidget(lbInfo1, 0);
+  layout->addWidget( bnNoSync, 2);
+  layout->addWidget(bnMethod1, 3);
+  layout->addWidget(bnMethod2, 4);
+  layout->addWidget(bnMethod3, 5);
+
+  bnNoSync->setFixedHeight(40);
+  bnMethod1->setFixedHeight(40);
+  bnMethod2->setFixedHeight(40);
+  bnMethod3->setFixedHeight(40);
+
+  connect(bnNoSync, &QPushButton::clicked, [&](){
+    for(unsigned int i = 0; i < nDigi; i++){
+      digi[i]->WriteRegister(DPP::AcquisitionControl, 0);
+      digi[i]->WriteRegister(DPP::FrontPanelIOControl, 0);
+    }
+    dialog.accept();
+  });
+  
+  connect(bnMethod1, &QPushButton::clicked, [&](){
+    digi[0]->WriteRegister(DPP::AcquisitionControl, 0);
+    digi[0]->WriteRegister(DPP::FrontPanelIOControl, 0x10000); //RUN
+    for(unsigned int i = 1; i < nDigi; i++){
+      digi[i]->WriteRegister(DPP::AcquisitionControl, 2);
+      digi[i]->WriteRegister(DPP::FrontPanelIOControl, 0x10000); // S-IN
+    }
+    dialog.accept();
+  });
+  
+  connect(bnMethod2, &QPushButton::clicked, [&](){
+    digi[0]->WriteRegister(DPP::AcquisitionControl, 0);
+    digi[0]->WriteRegister(DPP::FrontPanelIOControl, 0x10000); //RUN
+    for(unsigned int i = 1; i < nDigi; i++){
+      digi[i]->WriteRegister(DPP::AcquisitionControl, 1);
+      digi[i]->WriteRegister(DPP::FrontPanelIOControl, 0x30000); // S-IN
+    }
+    dialog.accept();
+  });  
+
+  connect(bnMethod3, &QPushButton::clicked, [&](){
+    for(unsigned int i = 0; i < nDigi; i++){
+      digi[i]->WriteRegister(DPP::AcquisitionControl, 1);
+      digi[i]->WriteRegister(DPP::FrontPanelIOControl, 0x30000); // S-IN
+    }
+    dialog.accept();
+  });
+
+  dialog.exec();
 
 }
 

@@ -393,7 +393,7 @@ namespace DPP {
 
     const std::vector<std::pair<std::string, unsigned int>> ListStartStopMode = {{"SW controlled", 0},
                                                                                  {"S-IN/GPI controlled", 1},
-                                                                                 {"1st Trigger", 2},
+                                                                                 {"1st TRG-IN", 2},
                                                                                  {"LVDS controlled", 3}};
 
     const std::vector<std::pair<std::string, unsigned int>> ListACQStartArm = {{"ACQ STOP", 0},

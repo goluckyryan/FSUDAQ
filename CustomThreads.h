@@ -26,28 +26,27 @@ public:
   void SetSaveData(bool onOff)  {this->isSaveData = onOff;}
   void SetScopeMode(bool onOff) {this->isScope = onOff;}
 
-  void go(){
-    mutex.lock();
-    condition.wakeAll();
-    mutex.unlock();
-  }
+  // void go(){
+  //   mutex.lock();
+  //   condition.wakeAll();
+  //   mutex.unlock();
+  // }
 
   void run(){
 
     stop = false;
 
-    mutex.lock();
-    condition.wait(&mutex);
-    mutex.unlock();
+    // mutex.lock();
+    // condition.wait(&mutex);
+    // mutex.unlock();
 
     clock_gettime(CLOCK_REALTIME, &t0);
     printf("--- %d, %ld nsec \n", ID, t0.tv_nsec);
     ta = t0;
     // clock_gettime(CLOCK_REALTIME, &t1);
 
-    digi->StartACQ();
-
-    usleep(1000); // wait for some data;
+    // digi->StartACQ();
+    // usleep(1000); // wait for some data;
 
     do{
       
@@ -106,8 +105,8 @@ private:
   bool isScope;
   unsigned long readCount; 
 
-  QMutex mutex;
-  QWaitCondition condition;
+  // QMutex mutex;
+  // QWaitCondition condition;
 };
 
 //^#======================================================= Timing Thread
