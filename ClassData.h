@@ -269,7 +269,7 @@ inline void Data::PrintStat() const{
 }
 
 inline void Data::PrintAllData(bool tableMode, unsigned int maxRowDisplay) const{
-  printf("============================= Print Data\n");
+  printf("============================= Print Data Digi-%d\n", boardSN);
 
   if( tableMode ){
     int entry = 0;

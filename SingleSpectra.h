@@ -36,7 +36,6 @@ public:
 public slots:
   void FillHistograms();
   void ChangeHistView();
-  void RebinHistogram();
 
 private:
 
@@ -49,13 +48,6 @@ private:
 
   RComboBox * cbDigi;
   RComboBox * cbCh;
-  
-  bool enableSignalSlot;
-
-  RSpinBox * sbNBin;
-  RSpinBox * sbXMin;
-  RSpinBox * sbXMax;
-  QPushButton * bnReBin;
 
   QGroupBox * histBox;
   QGridLayout * histLayout;

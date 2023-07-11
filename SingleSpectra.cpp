@@ -13,8 +13,6 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
   this->nDigi = nDigi;
   this->rawDataPath = rawDataPath;
 
-  enableSignalSlot = false;
-
   setWindowTitle("1-D Histograms");
   setGeometry(0, 0, 1000, 800);  
   //setWindowFlags( this->windowFlags() & ~Qt::WindowCloseButtonHint );
@@ -40,7 +38,7 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
     ctrlLayout->addWidget(cbCh, 0, 2, 1, 2);
     connect( cbCh, &RComboBox::currentIndexChanged, this, &SingleSpectra::ChangeHistView);
 
-    QPushButton * bnClearHist = new QPushButton("Clear Hist.", this);
+    QPushButton * bnClearHist = new QPushButton("Clear All Hist.", this);
     ctrlLayout->addWidget(bnClearHist, 0, 4, 1, 2);
     connect(bnClearHist, &QPushButton::clicked, this, [=](){
       for( unsigned int i = 0; i < nDigi; i++){
@@ -55,54 +53,6 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
     connect(chkIsFillHistogram, &QCheckBox::stateChanged, this, [=](int state){ fillHistograms = state;});
     chkIsFillHistogram->setChecked(false);
     fillHistograms = false;
-
-    QLabel * lbNBin = new QLabel("#Bin:", this);
-    lbNBin->setAlignment(Qt::AlignRight | Qt::AlignCenter );
-    ctrlLayout->addWidget(lbNBin, 1, 0);
-    sbNBin = new RSpinBox(this);
-    sbNBin->setMinimum(0);
-    sbNBin->setMaximum(500);
-    ctrlLayout->addWidget(sbNBin, 1, 1);
-    connect(sbNBin, &RSpinBox::valueChanged, this, [=](){
-      if( !enableSignalSlot ) return;
-      sbNBin->setStyleSheet("color : blue;");
-      bnReBin->setEnabled(true);
-    });
-
-    QLabel * lbXMin = new QLabel("X-Min:", this);
-    lbXMin->setAlignment(Qt::AlignRight | Qt::AlignCenter );
-    ctrlLayout->addWidget(lbXMin, 1, 2);
-    sbXMin = new RSpinBox(this);
-    sbXMin->setMinimum(-0x3FFF);
-    sbXMin->setMaximum(0x3FFF);
-    ctrlLayout->addWidget(sbXMin, 1, 3);
-    connect(sbXMin, &RSpinBox::valueChanged, this, [=](){
-      if( !enableSignalSlot ) return;
-      sbXMin->setStyleSheet("color : blue;");
-      bnReBin->setEnabled(true);
-    });
-
-    QLabel * lbXMax = new QLabel("X-Max:", this);
-    lbXMax->setAlignment(Qt::AlignRight | Qt::AlignCenter );
-    ctrlLayout->addWidget(lbXMax, 1, 4);
-    sbXMax = new RSpinBox(this);
-    sbXMax->setMinimum(-0x3FFF);
-    sbXMax->setMaximum(0x3FFF);
-    ctrlLayout->addWidget(sbXMax, 1, 5);
-    connect(sbXMax, &RSpinBox::valueChanged, this, [=](){
-      if( !enableSignalSlot ) return;
-      sbXMax->setStyleSheet("color : blue;");
-      bnReBin->setEnabled(true);
-    });
-
-    connect(sbNBin, &RSpinBox::returnPressed, this, &SingleSpectra::RebinHistogram);
-    connect(sbXMin, &RSpinBox::returnPressed, this, &SingleSpectra::RebinHistogram);
-    connect(sbXMax, &RSpinBox::returnPressed, this, &SingleSpectra::RebinHistogram);
-
-    bnReBin = new QPushButton("Rebin and Clear Histogram", this);
-    ctrlLayout->addWidget(bnReBin, 1, 6);
-    bnReBin->setEnabled(false);
-    connect(bnReBin, &QPushButton::clicked, this, &SingleSpectra::RebinHistogram);
 
   }
 
@@ -121,13 +71,6 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
       for( int j = 0; j < digi[i]->GetNChannels(); j++){
         if( i < nDigi ) {
           hist[i][j] = new Histogram1D("Digi-" + QString::number(digi[i]->GetSerialNumber()) +", Ch-" +  QString::number(j), "Raw Energy [ch]", nBin, xMin, xMax);
-          connect(hist[i][j], &Histogram1D::ReBinned , this, [=](){
-            enableSignalSlot = false;
-            sbNBin->setValue(hist[i][j]->GetNBin());
-            sbXMin->setValue(hist[i][j]->GetXMin());
-            sbXMax->setValue(hist[i][j]->GetXMax());
-            enableSignalSlot = true;
-          });
         }else{
           hist[i][j] = nullptr;
         }
@@ -137,10 +80,6 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
     LoadSetting();
 
     histLayout->addWidget(hist[0][0], 0, 0);
-
-    sbNBin->setValue(nBin);
-    sbXMin->setValue(xMin);
-    sbXMax->setValue(xMax);
   }
 
   layout->setStretch(0, 1);
@@ -155,8 +94,6 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
   }
   oldBd = -1;
   oldCh = -1;
-
-  enableSignalSlot = true;
 
 }
 
@@ -181,18 +118,6 @@ void SingleSpectra::ChangeHistView(){
   int ch = cbCh->currentIndex();
 
   histLayout->addWidget(hist[bd][ch], 0, 0);
-
-  if( enableSignalSlot ){
-    sbNBin->setValue(hist[bd][ch]->GetNBin());
-    sbXMin->setValue(hist[bd][ch]->GetXMin());
-    sbXMax->setValue(hist[bd][ch]->GetXMax());
-
-    sbNBin->setStyleSheet("");
-    sbXMin->setStyleSheet("");
-    sbXMax->setStyleSheet("");
-  }
-
-  bnReBin->setEnabled(false);
 
   oldBd = bd;
   oldCh = ch;
@@ -229,22 +154,6 @@ void SingleSpectra::FillHistograms(){
     digiMTX[i].unlock();
 
   }
-}
-
-void SingleSpectra::RebinHistogram(){
-
-  if( !enableSignalSlot ) return;
-  int bd = cbDigi->currentIndex();
-  int ch = cbCh->currentIndex();
-  hist[bd][ch]->Rebin( sbNBin->value(), sbXMin->value(), sbXMax->value());
-
-  sbNBin->setStyleSheet("");
-  sbXMin->setStyleSheet("");
-  sbXMax->setStyleSheet("");
-  bnReBin->setEnabled(false);
-
-  hist[bd][ch]->UpdatePlot();
-
 }
 
 void SingleSpectra::SaveSetting(){

@@ -222,15 +222,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     connect( bnStartACQ, &QPushButton::clicked, this, &MainWindow::AutoRun);
     bnStopACQ = new QPushButton("Stop ACQ", this);
     connect( bnStopACQ, &QPushButton::clicked, this, [=](){
-      if( runTimer->isActive() ){
-        runTimer->stop();
-        runTimer->disconnect(runTimerConnection);
-        StopACQ();
+      if( chkSaveData->isChecked() ){
+        if( runTimer->isActive() ){
+          runTimer->stop();
+          runTimer->disconnect(runTimerConnection);
+          StopACQ();
+        }else{
+          breakAutoRepeat = true;
+          runTimer->disconnect(runTimerConnection);
+        }
+        needManualComment = true;
       }else{
-        breakAutoRepeat = true;
-        runTimer->disconnect(runTimerConnection);
+        StopACQ();
       }
-      needManualComment = true;
     });
 
     layout->addWidget(lbPrefix, rowID, 0);
