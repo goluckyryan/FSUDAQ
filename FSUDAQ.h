@@ -38,6 +38,8 @@ public:
 private slots:
 
   void OpenDataPath();
+  void OpenRecord();
+  void UpdateRecord();
   void LoadProgramSettings();
   void SaveProgramSettings();
   void LoadLastRunFile();
@@ -101,6 +103,11 @@ private:
 
   QPushButton * bnCanvas;
 
+  QTimer * runTimer;
+  bool breakAutoRepeat;
+  bool needManualComment;
+  QMetaObject::Connection runTimerConnection;
+
   //@----- influx
   InfluxDB * influx;
 
@@ -143,6 +150,11 @@ private:
   QLineEdit  *** leAccept; // need to delete manually
   QLabel * lbLastUpdateTime;
   QLabel * lbScalarACQStatus;
+
+  //@----- Run Record
+  QMainWindow * runRecord;
+  QStandardItemModel *model;
+  QTableView * tableView;
 
   //@----- ACQ
   ReadDataThread ** readDataThread;

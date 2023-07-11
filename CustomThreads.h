@@ -41,7 +41,7 @@ public:
     // mutex.unlock();
 
     clock_gettime(CLOCK_REALTIME, &t0);
-    printf("--- %d, %ld nsec \n", ID, t0.tv_nsec);
+    //printf("--- %d, %ld nsec \n", ID, t0.tv_nsec);
     ta = t0;
     // clock_gettime(CLOCK_REALTIME, &t1);
 

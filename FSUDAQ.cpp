@@ -19,7 +19,7 @@
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
 
   setWindowTitle("FSU DAQ");
-  setGeometry(500, 100, 1100, 500);
+  setGeometry(500, 100, 1100, 600);
 
   digi = nullptr;
   nDigi = 0;
@@ -29,6 +29,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
   digiSettings = nullptr;
   canvas = nullptr;
   onlineAnalyzer = nullptr;
+  runTimer = new QTimer();
+  breakAutoRepeat = true;
+  needManualComment = true;
+  runRecord = nullptr;
+  model = nullptr;
 
   QWidget * mainLayoutWidget = new QWidget(this);
   setCentralWidget(mainLayoutWidget);
@@ -176,9 +181,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     QPushButton * bnSetDataPath = new QPushButton("Set Path", this);
     connect(bnSetDataPath, &QPushButton::clicked, this, &MainWindow::OpenDataPath);
 
+    QPushButton * bnOpenRecord = new QPushButton("Open Record", this);
+    connect(bnOpenRecord, &QPushButton::clicked, this, &MainWindow::OpenRecord);
+
     layout->addWidget(lbDataPath, rowID, 0);
-    layout->addWidget(leDataPath, rowID, 1, 1, 6);
-    layout->addWidget(bnSetDataPath, rowID, 7);
+    layout->addWidget(leDataPath, rowID, 1, 1, 5);
+    layout->addWidget(bnSetDataPath, rowID, 6);
+    layout->addWidget(bnOpenRecord, rowID, 7);
 
     //------------------------------------------
     rowID ++;
@@ -194,18 +203,35 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     leRunID->setAlignment(Qt::AlignHCenter);
 
     chkSaveData = new QCheckBox("Save Data", this);
+    connect( chkSaveData, &QCheckBox::stateChanged, this, [=](int state){
+      cbAutoRun->setEnabled(state);
+      if( state == 0 ) cbAutoRun->setCurrentIndex(0);
+    });
+
     cbAutoRun = new RComboBox(this);
     cbAutoRun->addItem("Single Infinite", 0);
+    cbAutoRun->addItem("Single 1 min", 1);
     cbAutoRun->addItem("Single 30 mins", 30);
     cbAutoRun->addItem("Single 60 mins", 60);
+    cbAutoRun->addItem("Repeat 1 mins", -1);
     cbAutoRun->addItem("Repeat 60 mins", -60);
     cbAutoRun->addItem("Repeat 120 mins", -120);
     cbAutoRun->setEnabled(false);
 
     bnStartACQ = new QPushButton("Start ACQ", this);
-    connect( bnStartACQ, &QPushButton::clicked, this, &MainWindow::StartACQ);
+    connect( bnStartACQ, &QPushButton::clicked, this, &MainWindow::AutoRun);
     bnStopACQ = new QPushButton("Stop ACQ", this);
-    connect( bnStopACQ, &QPushButton::clicked, this, &MainWindow::StopACQ);
+    connect( bnStopACQ, &QPushButton::clicked, this, [=](){
+      if( runTimer->isActive() ){
+        runTimer->stop();
+        runTimer->disconnect(runTimerConnection);
+        StopACQ();
+      }else{
+        breakAutoRepeat = true;
+        runTimer->disconnect(runTimerConnection);
+      }
+      needManualComment = true;
+    });
 
     layout->addWidget(lbPrefix, rowID, 0);
     layout->addWidget(lePrefix, rowID, 1);
@@ -331,6 +357,69 @@ void MainWindow::OpenDataPath(){
 
   SaveProgramSettings();
 
+}
+
+void MainWindow::OpenRecord(){
+
+  QString filePath = leDataPath->text() + "/RunTimeStamp.dat";
+
+  if( runRecord == nullptr ){
+    runRecord = new QMainWindow(this);
+    runRecord->setGeometry(0,0, 500, 500);
+    runRecord->setWindowTitle("Run Record");
+
+    QWidget * widget = new QWidget(runRecord);
+    runRecord->setCentralWidget(widget);
+
+    QVBoxLayout * layout = new QVBoxLayout(widget);
+    widget->setLayout(layout);
+    
+    QLabel * lbFilePath = new QLabel(widget);
+    lbFilePath->setText(filePath);
+    layout->addWidget(lbFilePath);
+
+    tableView = new QTableView(widget);
+    layout->addWidget(tableView);
+
+    model = new QStandardItemModel(runRecord);
+    tableView->setModel(model);
+
+  }
+
+  UpdateRecord();
+  runRecord->show();
+
+}
+
+void MainWindow::UpdateRecord(){
+
+  if( !runRecord ) return;
+
+  QString filePath = leDataPath->text() + "/RunTimeStamp.dat";
+  model->clear();
+  
+  if (!filePath.isEmpty()) {
+    QFile file(filePath);
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+
+      QTextStream stream(&file);
+      while (!stream.atEnd()) {
+        QString line = stream.readLine();
+        QStringList fields = line.split('|');
+
+        QList<QStandardItem*> items;
+        for (const QString& field : fields) {
+          items.append(new QStandardItem(field));
+        }
+        model->appendRow(items);
+      }
+
+      file.close();
+      tableView->resizeColumnsToContents();
+    }
+  }
+
+  tableView->scrollToBottom();
 }
 
 void MainWindow::LoadProgramSettings(){
@@ -621,6 +710,8 @@ void MainWindow::CloseDigitizers(){
   nDigi = 0;
 
   WaitForDigitizersOpen(true);
+  bnStartACQ->setStyleSheet("");
+  bnStopACQ->setStyleSheet("");
 
 }
 
@@ -638,6 +729,7 @@ void MainWindow::WaitForDigitizersOpen(bool onOff){
   bnCanvas->setEnabled(!onOff);
   bnAnalyzer->setEnabled(!onOff);
 
+  cbAutoRun->setEnabled(chkSaveData->isChecked());
   bnSync->setEnabled(false);
 
 }
@@ -825,7 +917,7 @@ void MainWindow::StartACQ(){
   if( digi == nullptr ) return;
 
   bool commentResult = true;
-  if( chkSaveData->isChecked() ) commentResult = CommentDialog(true);
+  if( chkSaveData->isChecked()) commentResult = CommentDialog(true);
   if( commentResult == false) return;
 
   if( chkSaveData->isChecked() ) {
@@ -875,6 +967,7 @@ void MainWindow::StartACQ(){
   bnStopACQ->setEnabled(true);
   bnStopACQ->setStyleSheet("background-color: red;");
   bnOpenScope->setEnabled(false);
+  cbAutoRun->setEnabled(false);
 
   if( onlineAnalyzer ) onlineAnalyzer->StartThread();
 
@@ -946,6 +1039,7 @@ void MainWindow::StopACQ(){
   bnStopACQ->setEnabled(false);
   bnStopACQ->setStyleSheet("");
   bnOpenScope->setEnabled(true);
+  cbAutoRun->setEnabled(true);
 
   {//^=== elog and database
     if( influx ){
@@ -978,7 +1072,67 @@ void MainWindow::AutoRun(){ //TODO
     return;
   }
 
-  
+  if( cbAutoRun->currentData().toInt() == 0 ){
+    StartACQ();
+    //disconnect(runTimer, runTimerConnection);
+    //runTimer->disconnect(runTimerConnection);
+    return;
+  }else{ // auto run
+    needManualComment = true;
+    StartACQ();    
+
+    runTimerConnection =  connect( runTimer, &QTimer::timeout, this, [=](){
+      needManualComment = false;
+      StopACQ();
+      if( cbAutoRun->currentData().toInt() < 0 ){
+
+        bnStartACQ->setEnabled(false);
+        bnStartACQ->setStyleSheet("");
+        bnStopACQ->setEnabled(true);
+        bnStopACQ->setStyleSheet("background-color : red;");
+
+        LogMsg("Wait for 10 sec for next Run ...." );
+        QElapsedTimer elapsedTimer;
+        elapsedTimer.invalidate();
+        elapsedTimer.start();
+        while( elapsedTimer.elapsed() < 10000) {
+          
+          if( breakAutoRepeat ) {
+            LogMsg("Break Auto repeat.");
+            bnStartACQ->setEnabled(true);
+            bnStartACQ->setStyleSheet("background-color : green");
+            bnStopACQ->setEnabled(false);
+            bnStopACQ->setStyleSheet("");
+            return;
+          }
+          QCoreApplication::processEvents();
+        }
+        
+        needManualComment = false;
+        StartACQ();
+        runTimer->setSingleShot(true);
+        runTimer->start(qAbs( cbAutoRun->currentData().toInt() * 60 * 1000));
+      }
+    });
+  }
+
+  int timeMiliSec = cbAutoRun->currentData().toInt() * 60 * 1000;
+  runTimer->setSingleShot(true);
+  runTimer->start(qAbs(timeMiliSec));
+
+  if( timeMiliSec ) breakAutoRepeat = false;
+
+  // ///=========== single run
+  // if ( timeMiliSec > 0 ){
+  //   runTimer->setSingleShot(true);
+  //   runTimer->start(timeMiliSec);
+  // }
+
+  // ///=========== infinite repeat run
+  // if ( timeMiliSec < 0 ){
+  //   runTimer->setSingleShot(false);
+  //   runTimer->start(qAbs(timeMiliSec));
+  // }
 
 }
 
@@ -1053,36 +1207,55 @@ bool MainWindow::CommentDialog(bool isStartRun){
   if( isStartRun ) runID ++;
   QString runIDStr = QString::number(runID).rightJustified(3, '0');
 
-  QDialog * dOpen = new QDialog(this);
-  if( isStartRun ) {
-    dOpen->setWindowTitle("Start Run Comment");
+  int result = QDialog::Rejected ;
+  QLineEdit *lineEdit = new QLineEdit(this);
+
+  if( needManualComment ) {
+    QDialog * dOpen = new QDialog(this);
+    if( isStartRun ) {
+      dOpen->setWindowTitle("Start Run Comment");
+    }else{
+      dOpen->setWindowTitle("Stop Run Comment");
+    }
+    dOpen->setWindowFlags(Qt::Dialog | Qt::WindowTitleHint | Qt::CustomizeWindowHint);
+    dOpen->setMinimumWidth(600);
+    connect(dOpen, &QDialog::finished, dOpen, &QDialog::deleteLater);
+
+    QGridLayout * vlayout = new QGridLayout(dOpen);
+    QLabel *label = new QLabel("Enter Run comment for <font style=\"color : red;\">Run-" +  runIDStr + "</font> : ", dOpen);    
+    QPushButton *button1 = new QPushButton("OK", dOpen);
+    QPushButton *button2 = new QPushButton("Cancel", dOpen);
+
+    vlayout->addWidget(label, 0, 0, 1, 2);
+    vlayout->addWidget(lineEdit, 1, 0, 1, 2);
+    vlayout->addWidget(button1, 2, 0);
+    vlayout->addWidget(button2, 2, 1);
+
+    connect(button1, &QPushButton::clicked, dOpen, &QDialog::accept);
+    connect(button2, &QPushButton::clicked, dOpen, &QDialog::reject);
+    result = dOpen->exec();
   }else{
-    dOpen->setWindowTitle("Stop Run Comment");
+    if( isStartRun ){
+      lineEdit->setText("Auto Start, repeat every " + QString::number(qAbs(cbAutoRun->currentData().toInt())) + " mins.");
+    }else{
+      lineEdit->setText("Auto Stop, after " + QString::number(qAbs(cbAutoRun->currentData().toInt())) + " mins.");
+    }
+    result = QDialog::Accepted;
   }
-  dOpen->setWindowFlags(Qt::Dialog | Qt::WindowTitleHint | Qt::CustomizeWindowHint);
-  dOpen->setMinimumWidth(600);
-  connect(dOpen, &QDialog::finished, dOpen, &QDialog::deleteLater);
-
-  QGridLayout * vlayout = new QGridLayout(dOpen);
-  QLabel *label = new QLabel("Enter Run comment for <font style=\"color : red;\">Run-" +  runIDStr + "</font> : ", dOpen);
-  QLineEdit *lineEdit = new QLineEdit(dOpen);
-  QPushButton *button1 = new QPushButton("OK", dOpen);
-  QPushButton *button2 = new QPushButton("Cancel", dOpen);
-
-  vlayout->addWidget(label, 0, 0, 1, 2);
-  vlayout->addWidget(lineEdit, 1, 0, 1, 2);
-  vlayout->addWidget(button1, 2, 0);
-  vlayout->addWidget(button2, 2, 1);
-
-  connect(button1, &QPushButton::clicked, dOpen, &QDialog::accept);
-  connect(button2, &QPushButton::clicked, dOpen, &QDialog::reject);
-  int result = dOpen->exec();
 
   if(result == QDialog::Accepted ){
-
     if( isStartRun ){
       startComment = lineEdit->text();
       if( startComment == "") startComment = "No commet was typed.";
+      
+      if( needManualComment ){
+        int minute = cbAutoRun->currentData().toInt();
+        if(  minute > 0 ) {
+          startComment += ", single run of " + QString::number(minute) + " mins.";
+        }else{
+          startComment += ", repeat run of " + QString::number(qAbs(minute)) + " mins.";
+        }
+      }
       startComment = "Start Comment: " + startComment;
       leComment->setText(startComment);
       leRunID->setText(QString::number(runID));
@@ -1141,6 +1314,8 @@ void MainWindow::WriteRunTimestamp(bool isStartRun){
 
     fileCSV.close();
   }
+
+  UpdateRecord();
 
 }
 
