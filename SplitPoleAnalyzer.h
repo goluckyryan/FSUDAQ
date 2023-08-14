@@ -18,6 +18,37 @@
 #include "Analyser.h"
 #include "Isotope.h"
 
+#include <QRandomGenerator>
+
+#include <cmath>
+#include <random>
+
+// static double randZeroToOne() {
+//     return static_cast<double>(rand()) / RAND_MAX;
+// }
+
+// // Box-Muller transform to generate random Gaussian numbers
+// static double generateGaussian(double mean, double stddev) {
+//     static bool hasSpare = false;
+//     static double spare;
+//     if (hasSpare) {
+//         hasSpare = false;
+//         return mean + stddev * spare;
+//     } else {
+//         double u, v, s;
+//         do {
+//             u = 2.0 * randZeroToOne() - 1.0;
+//             v = 2.0 * randZeroToOne() - 1.0;
+//             s = u * u + v * v;
+//         } while (s >= 1.0 || s == 0.0);
+
+//         s = std::sqrt(-2.0 * std::log(s) / s);
+//         spare = v * s;
+//         hasSpare = true;
+//         return mean + stddev * u * s;
+//     }
+// }
+
 namespace ChMap{
 
   const short ScinR = 0;
@@ -310,20 +341,63 @@ inline void SplitPole::SetUpCanvas(){
   layout->addWidget(hMulti, 0, 1);  
 
   // the "this" make the histogram a child of the SplitPole class. When SplitPole destory, all childs destory as well.
-  hPID = new Histogram2D("Split Pole PID", "Scin-L", "Anode-Font", 100, 0, 2000, 100, 0, 2000, this);
+  hPID = new Histogram2D("Split Pole PID", "Scin-L", "Anode-Font", 100, 0, 5000, 100, 0, 5000, this);
   //layout is inheriatge from Analyzer
   layout->addWidget(hPID, 1, 0, 2, 1);
 
-  h1 = new Histogram1D("Spectrum", "x", 100, 0, 2000, this);
+  h1 = new Histogram1D("Spectrum", "x", 300, 30, 70, this);
   h1->SetColor(Qt::darkGreen);
   h1->AddDataList("Test", Qt::red); // add another histogram in h1, Max Data List is 10
   layout->addWidget(h1, 1, 1);
   
-  h1g = new Histogram1D("Spectrum (gated)", "x", 100, 0, 2000, this);
+  h1g = new Histogram1D("Spectrum (gated)", "x", 300, 30, 70, this);
   layout->addWidget(h1g, 2, 1);
 
   layout->setColumnStretch(0, 1);
   layout->setColumnStretch(1, 1);
+
+  //===========fill fake data
+  // int min = 0;
+  // int max = 8;
+
+  // double meanX[9] = { 500,  500, 1000, 1000, 1000, 1500, 3000, 3000, 3000};
+  // double stdX[9] =  { 100,  100,  300,  300,  300,  100,  500,  500,  500};
+  // double meanY[9] = {1000, 1000, 3000, 3000, 1500, 2000,  500,  500,  500};
+  // double stdY[9] =  { 100,  100,  500,  500,  500,  200,  100,  100,  100};
+
+  // int mu[9] = {1, 2, 3, 4, 5, 6, 6, 5, 6};
+
+  // double ex[9] = {60, 60, 50, 45, 45, 45, 45, 42, 42};
+
+  // for( int i = 0; i < 2456; i++){
+  //   int index = QRandomGenerator::global()->bounded(min, max + 1);
+
+  //   double radX = generateGaussian(meanX[index], stdX[index]);
+  //   double radY = generateGaussian(meanY[index], stdY[index]);
+
+  //   double radEx = generateGaussian(ex[index], 0.1);
+
+  //   double rad = generateGaussian(55, 20);
+
+  //   printf("%5d | %2d %6f %6f %6f %6f\n", i, index, radX, radY, radEx, rad);
+
+  //   hPID->Fill(radX, radY);
+
+  //   if( i % 3 != 0 ){
+  //     h1-> Fill(radEx);
+  //   }else{
+  //     h1->Fill(rad);
+  //   }
+
+  //   hMulti->Fill(mu[index]);
+
+  //   if ( i% 3 != 0) h1g->Fill(radEx);
+  // }
+
+  // hPID->UpdatePlot();
+  // h1->UpdatePlot();
+  // hMulti->UpdatePlot();
+  // h1g->UpdatePlot();
 
 }
 

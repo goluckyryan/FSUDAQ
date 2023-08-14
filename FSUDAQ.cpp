@@ -34,6 +34,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
   needManualComment = true;
   runRecord = nullptr;
   model = nullptr;
+  influx = nullptr;
 
   QWidget * mainLayoutWidget = new QWidget(this);
   setCentralWidget(mainLayoutWidget);
@@ -360,6 +361,8 @@ void MainWindow::OpenDataPath(){
   }
 
   SaveProgramSettings();
+
+  //TODO Check us the dataPath empty, check is the lastRun.sh exist and load the last run.
 
 }
 
