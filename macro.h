@@ -1,8 +1,8 @@
 #ifndef MACRO_H
 #define MACRO_H
 
-#define MaxNPorts 4
-#define MaxNBoards 4
+#define MaxNPorts 4   //for optical link
+#define MaxNBoards 4  //for both optical link and usb
 
 #define MaxNDigitizer MaxNPorts * MaxNBoards
 

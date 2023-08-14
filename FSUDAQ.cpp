@@ -573,7 +573,7 @@ void MainWindow::SaveLastRunFile(){
 void MainWindow::OpenDigitizers(){
 
   //sereach for digitizers
-  LogMsg("Searching digitizers via optical link.....Please wait");
+  LogMsg("Searching digitizers via optical link or USB .....Please wait");
   logMsgHTMLMode = false;
   nDigi = 0;
   std::vector<std::pair<int, int>> portList; //boardID, portID
