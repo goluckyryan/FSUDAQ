@@ -625,15 +625,15 @@ void MainWindow::OpenDigitizers(){
       }
 
     }else{
-      // LogMsg("Found <b>" + fileName + "</b> for digitizer settings.");
+      LogMsg("Found <b>" + fileName + "</b> for digitizer settings.");
       
-      // if( digi[i]->LoadSettingBinaryToMemory(fileName.toStdString().c_str()) == 0 ){
-      //   LogMsg("Loaded settings file <b>" + fileName + "</b> for Digi-" + QString::number(digi[i]->GetSerialNumber()));
-      //   digi[i]->ProgramSettingsToBoard();
+      if( digi[i]->LoadSettingBinaryToMemory(fileName.toStdString().c_str()) == 0 ){
+        LogMsg("Loaded settings file <b>" + fileName + "</b> for Digi-" + QString::number(digi[i]->GetSerialNumber()));
+        digi[i]->ProgramSettingsToBoard();
         
-      // }else{
-      //   LogMsg("Fail to Loaded settings file " + fileName + " for Digi-" + QString::number(digi[i]->GetSerialNumber()));
-      // }
+      }else{
+        LogMsg("Fail to Loaded settings file " + fileName + " for Digi-" + QString::number(digi[i]->GetSerialNumber()));
+      }
     }    
     digi[i]->ReadAllSettingsFromBoard(true);
 
