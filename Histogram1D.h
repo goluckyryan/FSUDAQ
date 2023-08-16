@@ -210,6 +210,9 @@ public:
     txt[0]->setText("Under Flow : 0");
     txt[1]->setText("Total Entry : 0");
     txt[2]->setText("Over Flow : 0");
+    totalEntry = 0;
+    underFlow = 0;
+    overFlow = 0;
     UpdatePlot();
   }
 

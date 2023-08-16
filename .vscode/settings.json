@@ -156,6 +156,7 @@
     "qrandomgenerator": "cpp",
     "source_location": "cpp",
     "splitpole.C": "cpp",
-    "forward_list": "cpp"
+    "forward_list": "cpp",
+    "fstream": "cpp"
   }
 }

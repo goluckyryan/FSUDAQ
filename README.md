@@ -97,3 +97,7 @@ The following files must be excluded from the *.pro, as they are not related to 
 Those file can be compiled using 
 
 `make -f Makefile_test`
+
+# Known Bugs
+
+* for PHA firmware, when the peak average changed, trace disapear and causing program lag.

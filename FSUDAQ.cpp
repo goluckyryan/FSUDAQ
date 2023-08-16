@@ -894,13 +894,18 @@ void MainWindow::UpdateScalar(){
     // digi[iDigi]->GetData()->PrintAllData(true, 10);
     if( chkSaveData->isChecked() ) totalFileSize += digi[iDigi]->GetData()->GetTotalFileSize();
     for( int i = 0; i < digi[iDigi]->GetNChannels(); i++){
+      QString a = "";
+      QString b = "";
+      
       if( digi[iDigi]->GetChannelOnOff(i) == true ) {
         //printf(" %3d %2d | %7.2f %7.2f \n", digi[iDigi]->GetSerialNumber(), i, digi[iDigi]->GetData()->TriggerRate[i], digi[iDigi]->GetData()->NonPileUpRate[i]);
-        leTrigger[iDigi][i]->setText(QString::number(digi[iDigi]->GetData()->TriggerRate[i], 'f', 2));
-        leAccept[iDigi][i]->setText(QString::number(digi[iDigi]->GetData()->NonPileUpRate[i], 'f', 2));
+        QString a = QString::number(digi[iDigi]->GetData()->TriggerRate[i], 'f', 2);
+        QString b = QString::number(digi[iDigi]->GetData()->NonPileUpRate[i], 'f', 2);
+        leTrigger[iDigi][i]->setText(a);
+        leAccept[iDigi][i]->setText(b);
 
-        if( influx ){
-          influx->AddDataPoint("Rate,Bd="+std::to_string(digi[iDigi]->GetSerialNumber()) + ",Ch=" + QString::number(i).rightJustified(2, '0').toStdString() + " value=" +  QString::number(digi[iDigi]->GetData()->TriggerRate[i], 'f', 2).toStdString());
+        if( influx && a != "inf" ){
+          influx->AddDataPoint("Rate,Bd="+std::to_string(digi[iDigi]->GetSerialNumber()) + ",Ch=" + QString::number(i).rightJustified(2, '0').toStdString() + " value=" +  a.toStdString());
         }
       }
     }
@@ -979,7 +984,7 @@ void MainWindow::StartACQ(){
   if( onlineAnalyzer ) onlineAnalyzer->StartThread();
 
   {//^=== elog and database
-    if( influx ){
+    if( influx && chkSaveData->isChecked() ){
       influx->AddDataPoint("RunID value=" + std::to_string(runID));
       influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=1");
       influx->WriteData(dataBaseName.toStdString());
@@ -1033,10 +1038,11 @@ void MainWindow::StopACQ(){
 
   if( onlineAnalyzer ) onlineAnalyzer->StopThread();
 
-  if( histThread->isRunning()){
+  if( canvas && histThread->isRunning()){
     histThread->Stop();
     histThread->quit();
     histThread->wait();
+    canvas->ClearInternalDataCount();
   }
   
   lbScalarACQStatus->setText("<font style=\"color: red;\"><b>ACQ Off</b></font>");
@@ -1049,7 +1055,7 @@ void MainWindow::StopACQ(){
   cbAutoRun->setEnabled(true);
 
   {//^=== elog and database
-    if( influx ){
+    if( influx && chkSaveData->isChecked() ){
       influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=0");
       influx->WriteData(dataBaseName.toStdString());
       influx->ClearDataPointsBuffer();
@@ -1356,6 +1362,7 @@ void MainWindow::OpenScope(){
             histThread->Stop();
             histThread->quit();
             histThread->wait();
+            canvas->ClearInternalDataCount();
           }
         }
       }

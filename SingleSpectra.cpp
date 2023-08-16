@@ -44,6 +44,8 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
       for( unsigned int i = 0; i < nDigi; i++){
         for( int j = 0; j < MaxNChannels; j++){
           if( hist[i][j] ) hist[i][j]->Clear();
+          lastFilledIndex[i][j] = -1;
+          loopFilledIndex[i][j] = 0;
         }
       }
     });
@@ -85,13 +87,8 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
   layout->setStretch(0, 1);
   layout->setStretch(1, 6);
 
+  ClearInternalDataCount();
 
-  for( unsigned int i = 0; i < nDigi; i++){
-    for( int ch = 0; ch < MaxNChannels ; ch++) {
-      lastFilledIndex[i][ch] = -1;
-      loopFilledIndex[i][ch] = 0;
-    }
-  }
   oldBd = -1;
   oldCh = -1;
 
@@ -104,6 +101,15 @@ SingleSpectra::~SingleSpectra(){
   for( unsigned int i = 0; i < nDigi; i++ ){
     for( int ch = 0; ch < digi[i]->GetNChannels(); ch++){
       delete hist[i][ch];
+    }
+  }
+}
+
+void SingleSpectra::ClearInternalDataCount(){
+  for( unsigned int i = 0; i < nDigi; i++){
+    for( int ch = 0; ch < MaxNChannels ; ch++) {
+      lastFilledIndex[i][ch] = -1;
+      loopFilledIndex[i][ch] = 0;
     }
   }
 }
@@ -136,7 +142,7 @@ void SingleSpectra::FillHistograms(){
       int temp1 = lastIndex + loopIndex*MaxNData;
       int temp2 = lastFilledIndex[i][ch] + loopFilledIndex[i][ch]*MaxNData;
 
-      //printf("%d |%d   %d \n", ch, temp2, temp1);
+      // printf("%d |%d   %d \n", ch, temp2, temp1);
       if( lastIndex < 0 ) continue;
 
       if( temp1 <= temp2 ) continue;

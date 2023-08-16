@@ -27,6 +27,7 @@ public:
   SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawDataPath, QMainWindow * parent = nullptr);
   ~SingleSpectra();
 
+  void ClearInternalDataCount();
   void SetFillHistograms(bool onOff) { fillHistograms = onOff;}
   bool IsFillHistograms() const {return fillHistograms;}
 
