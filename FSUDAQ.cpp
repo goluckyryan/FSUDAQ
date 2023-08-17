@@ -337,6 +337,9 @@ MainWindow::~MainWindow(){
 
   delete influx;
 
+  printf("-------- remove %s\n", DAQLockFile);
+  remove(DAQLockFile);
+
 }
 
 //***************************************************************
@@ -984,7 +987,7 @@ void MainWindow::StartACQ(){
   if( onlineAnalyzer ) onlineAnalyzer->StartThread();
 
   {//^=== elog and database
-    if( influx && chkSaveData->isChecked() ){
+    if( influx ){
       influx->AddDataPoint("RunID value=" + std::to_string(runID));
       influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=1");
       influx->WriteData(dataBaseName.toStdString());
@@ -1055,7 +1058,7 @@ void MainWindow::StopACQ(){
   cbAutoRun->setEnabled(true);
 
   {//^=== elog and database
-    if( influx && chkSaveData->isChecked() ){
+    if( influx ){
       influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=0");
       influx->WriteData(dataBaseName.toStdString());
       influx->ClearDataPointsBuffer();
@@ -1349,9 +1352,13 @@ void MainWindow::OpenScope(){
       if( scope  ) {
         if( onOff ) {
           lbScalarACQStatus->setText("<font style=\"color: green;\"><b>ACQ On</b></font>");
+          influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=1");
         }else{
           lbScalarACQStatus->setText("<font style=\"color: red;\"><b>ACQ Off</b></font>");
+          influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=0");
         }
+        influx->WriteData(dataBaseName.toStdString());
+        influx->ClearDataPointsBuffer();
       }
 
       if( canvas ){

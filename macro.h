@@ -15,6 +15,9 @@
 
 #define SETTINGSIZE 2048
 
+#define DAQLockFile "DAQLock.dat"
+#define PIDFile  "pid.dat"
+
 #include <sys/time.h> /** struct timeval, select() */
 
 inline unsigned int get_time(){
