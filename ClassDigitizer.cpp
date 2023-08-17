@@ -501,7 +501,7 @@ int Digitizer::ReadData(){
   
   ret = CAEN_DGTZ_ReadData(handle, CAEN_DGTZ_SLAVE_TERMINATED_READOUT_MBLT, data->buffer, &(data->nByte));
   //uint32_t EventSize = ReadRegister(DPP::EventSize); // Is it as same as data->nByte?
-  //printf("Read Buffer size %d byte, Event Size : %d byte \n", data->nByte, EventSize);
+  // if( data->nByte > 0 ) printf("Read Buffer size %d byte \n", data->nByte);
   
   if (ret || data->nByte == 0) {
     ErrorMsg(__func__);

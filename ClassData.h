@@ -398,6 +398,7 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
   ///Calculate trigger rate and first and last Timestamp
   for(int ch = 0; ch < MaxNChannels; ch++){
     if( NumEventsDecoded[ch] > 0 ) {
+      // printf("%s | ch %d | %d %d \n", __func__, ch, LoopIndex[ch], DataIndex[ch]);
       IsNotRollOverFakeAgg = true;
     }else{
       continue;

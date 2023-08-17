@@ -98,6 +98,9 @@ Those file can be compiled using
 
 `make -f Makefile_test`
 
+# Known Issues
+
+* for PHA firmware, when the peak average changed, the Events per Agg need to be changed.
+
 # Known Bugs
 
-* for PHA firmware, when the peak average changed, trace disapear and causing program lag.

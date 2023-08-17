@@ -73,6 +73,7 @@ private:
   unsigned short ID; // the id of digi, index of cbScopeDigi
   bool isACQStarted;
   int tick2ns;
+  int factor; // whether dual trace or not
   bool traceOn[MaxNDigitizer];
 
   ReadDataThread ** readDataThread;   

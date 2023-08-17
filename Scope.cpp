@@ -104,6 +104,7 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   cbScopeDigi->setCurrentIndex(0);
   for( int i = 0; i < digi[0]->GetNChannels(); i++) cbScopeCh->addItem("Ch-" + QString::number(i));
   tick2ns = digi[ID]->GetTick2ns();
+  factor = digi[ID]->IsDualTrace_PHA() ? 2 : 1;
 
   connect(cbScopeDigi, &RComboBox::currentIndexChanged, this, [=](int index){
     if( !enableSignalSlot ) return;
@@ -113,6 +114,8 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
 
     ID = index;
     tick2ns = digi[ID]->GetTick2ns();
+    factor = digi[ID]->IsDualTrace_PHA() ? 2 : 1;
+
     //---setup cbScopeCh
     cbScopeCh->clear();
     for( int i = 0; i < digi[ID]->GetNChannels(); i++) cbScopeCh->addItem("Ch-" + QString::number(i));
@@ -253,6 +256,7 @@ void Scope::StartScope(){
   if( !digi ) return;
 
   //TODO set other channel to be no trace;
+  emit UpdateOtherPanels();
 
   for( unsigned int iDigi = 0; iDigi < nDigi; iDigi ++){
 
@@ -269,9 +273,8 @@ void Scope::StartScope(){
     readDataThread[iDigi]->SetScopeMode(true);
     readDataThread[iDigi]->SetSaveData(false);
     readDataThread[iDigi]->start();
+    printf("----- readDataThread running ? %d.\n", readDataThread[iDigi]->isRunning());
   }
-
-  emit UpdateOtherPanels();
 
   updateTraceThread->start();
 
@@ -335,8 +338,7 @@ void Scope::UpdateScope(){
 
   if( digi[ID]->GetChannelOnOff(ch) == false) return;
 
-  int tick2ns = digi[ID]->GetTick2ns();
-  int factor = digi[ID]->IsDualTrace_PHA() ? 2 : 1;
+  // printf("### %d %d \n", ch, digi[ID]->GetData()->DataIndex[ch]);
 
   digiMTX[ID].lock();
   Data * data = digi[ID]->GetData();
@@ -344,18 +346,17 @@ void Scope::UpdateScope(){
   //leTriggerRate->setText(QString::number(data->TriggerRate[ch]) + " [" + QString::number(data->NumEventsDecoded[ch]) + "]");
   leTriggerRate->setText(QString::number(data->TriggerRate[ch]));
 
-  unsigned short index = data->DataIndex[ch];
-  unsigned short traceLength = data->Waveform1[ch][index].size();
+  int index = data->DataIndex[ch];
+  int traceLength = data->Waveform1[ch][index].size();
 
+  // printf("--- %s| %d, %d, %d | %d | %d, %d\n", __func__, ch, data->LoopIndex[ch], index, traceLength, factor, tick2ns );
   if( data->TriggerRate[ch] > 0 ){
-
-    //printf("--- %d | %d \n", index, traceLength );
 
     QVector<QPointF> points[4];
     if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) {
-      for( int i = 0; i < (int) (data->Waveform1[ch][index]).size() ; i++ ) {
+      for( int i = 0; i < traceLength ; i++ ) {
         points[0].append(QPointF(tick2ns * i * factor, (data->Waveform1[ch][index])[i])); 
-        if( i < (int) data->Waveform2[ch][index].size() )  points[1].append(QPointF(tick2ns * i * factor, (data->Waveform2[ch][index])[i]));
+        if( i < (int) data->Waveform2[ch][index].size() )      points[1].append(QPointF(tick2ns * i * factor, (data->Waveform2[ch][index])[i]));
         if( i < (int) data->DigiWaveform1[ch][index].size() )  points[2].append(QPointF(tick2ns * i * factor, (data->DigiWaveform1[ch][index])[i] * 1000));
         if( i < (int) data->DigiWaveform2[ch][index].size() )  points[3].append(QPointF(tick2ns * i * factor, (data->DigiWaveform2[ch][index])[i] * 1000 + 500));
       }
@@ -364,9 +365,9 @@ void Scope::UpdateScope(){
     if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) {
       for( int i = 0; i < (int) (data->DigiWaveform1[ch][index]).size() ; i++ ) {
         points[0].append(QPointF(tick2ns * i * factor, (data->Waveform1[ch][index])[i])); 
-        if( i < (int) data->Waveform2[ch][index].size() )  points[1].append(QPointF(tick2ns * i * factor, (data->Waveform2[ch][index])[i]));
-        if( i < (int) data->DigiWaveform1[ch][index].size() )  points[2].append(QPointF(tick2ns * i, (data->DigiWaveform1[ch][index])[i] * 1000));
-        if( i < (int) data->DigiWaveform2[ch][index].size() )  points[3].append(QPointF(tick2ns * i, (data->DigiWaveform2[ch][index])[i] * 1000 + 500));
+        if( i < (int) data->Waveform2[ch][index].size() )      points[1].append(QPointF(tick2ns * i * factor, (data->Waveform2[ch][index])[i]));
+        if( i < (int) data->DigiWaveform1[ch][index].size() )  points[2].append(QPointF(tick2ns * i,          (data->DigiWaveform1[ch][index])[i] * 1000));
+        if( i < (int) data->DigiWaveform2[ch][index].size() )  points[3].append(QPointF(tick2ns * i,          (data->DigiWaveform2[ch][index])[i] * 1000 + 500));
       }
     }
     dataTrace[0]->replace(points[0]);
