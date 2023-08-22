@@ -190,6 +190,8 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
         usleep(1000*500); // wait for 0.2 sec
 
         ReadSettingsFromBoard();
+        emit UpdateOtherPanels();
+
       }); 
 
       bnClearBuffer = new QPushButton("Clear Buffer/FIFO", this);

@@ -391,8 +391,8 @@ void Digitizer::StartACQ(){
   
   unsigned int bufferSize = CalByteForBuffer();
   if( bufferSize  > 160 * 1024 * 1024 ){
-    printf("============= buffer size bigger than 160 MB");
-    return;
+    printf("============= buffer size bigger than 160 MB (%u)\n", bufferSize );
+    //return;
   }
 
   if( DPPType == V1730_DPP_PSD_CODE) bufferSize = 80 * 1024 * 1024; //TODO allocate 80 MB for PSD
@@ -435,6 +435,7 @@ void Digitizer::StopACQ(){
   if( ret != 0 ) ErrorMsg("something wrong when try to stop ACQ and clear buffer");
   printf("\n\e[1m\e[33m====== Acquisition STOPPED for %d | Board %d, Port %d\e[0m\n", BoardInfo.SerialNumber, boardID, portID);
   AcqRun = false;
+  data->PrintStat();
   data->ClearTriggerRate();
   data->ClearBuffer();
   data->ZeroTotalFileSize();

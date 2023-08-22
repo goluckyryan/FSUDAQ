@@ -223,19 +223,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     connect( bnStartACQ, &QPushButton::clicked, this, &MainWindow::AutoRun);
     bnStopACQ = new QPushButton("Stop ACQ", this);
     connect( bnStopACQ, &QPushButton::clicked, this, [=](){
-      if( chkSaveData->isChecked() ){
-        if( runTimer->isActive() ){
-          runTimer->stop();
-          runTimer->disconnect(runTimerConnection);
-          StopACQ();
-        }else{
-          breakAutoRepeat = true;
-          runTimer->disconnect(runTimerConnection);
-        }
-        needManualComment = true;
+      if( runTimer->isActive() ){
+        runTimer->stop();
+        runTimer->disconnect(runTimerConnection);
       }else{
-        StopACQ();
+        breakAutoRepeat = true;
+        runTimer->disconnect(runTimerConnection);
       }
+      needManualComment = true;
+      StopACQ();
     });
 
     layout->addWidget(lbPrefix, rowID, 0);
@@ -630,13 +626,13 @@ void MainWindow::OpenDigitizers(){
     }else{
       LogMsg("Found <b>" + fileName + "</b> for digitizer settings.");
       
-      if( digi[i]->LoadSettingBinaryToMemory(fileName.toStdString().c_str()) == 0 ){
-        LogMsg("Loaded settings file <b>" + fileName + "</b> for Digi-" + QString::number(digi[i]->GetSerialNumber()));
-        digi[i]->ProgramSettingsToBoard();
-        
-      }else{
-        LogMsg("Fail to Loaded settings file " + fileName + " for Digi-" + QString::number(digi[i]->GetSerialNumber()));
-      }
+      // if( digi[i]->LoadSettingBinaryToMemory(fileName.toStdString().c_str()) == 0 ){
+        // LogMsg("Loaded settings file <b>" + fileName + "</b> for Digi-" + QString::number(digi[i]->GetSerialNumber()));
+        // digi[i]->ProgramSettingsToBoard();
+        // 
+      // }else{
+        // LogMsg("Fail to Loaded settings file " + fileName + " for Digi-" + QString::number(digi[i]->GetSerialNumber()));
+      // }
     }    
     digi[i]->ReadAllSettingsFromBoard(true);
 
@@ -1352,13 +1348,15 @@ void MainWindow::OpenScope(){
       if( scope  ) {
         if( onOff ) {
           lbScalarACQStatus->setText("<font style=\"color: green;\"><b>ACQ On</b></font>");
-          influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=1");
+          if( influx ) influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=1");
         }else{
           lbScalarACQStatus->setText("<font style=\"color: red;\"><b>ACQ Off</b></font>");
-          influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=0");
+          if( influx ) influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=0");
         }
-        influx->WriteData(dataBaseName.toStdString());
-        influx->ClearDataPointsBuffer();
+        if( influx ){
+          influx->WriteData(dataBaseName.toStdString());
+          influx->ClearDataPointsBuffer();
+        }
       }
 
       if( canvas ){

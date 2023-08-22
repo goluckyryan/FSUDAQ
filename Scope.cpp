@@ -116,6 +116,7 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
     tick2ns = digi[ID]->GetTick2ns();
     factor = digi[ID]->IsDualTrace_PHA() ? 2 : 1;
 
+    enableSignalSlot = false;
     //---setup cbScopeCh
     cbScopeCh->clear();
     for( int i = 0; i < digi[ID]->GetNChannels(); i++) cbScopeCh->addItem("Ch-" + QString::number(i));
@@ -155,6 +156,11 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
     digi[ID]->GetData()->ClearData();
     digiMTX[ID].unlock();
   });
+
+  QPushButton * bnClearBuffer = new QPushButton("Clear Buffer/FIFO", this);
+  layout->addWidget(bnClearBuffer, rowID, 4);
+  connect(bnClearBuffer, &QPushButton::clicked, this, [=](){ digi[ID]->WriteRegister(DPP::SoftwareClear_W, 1);});
+
 
   //================ Trace settings
   rowID ++;
@@ -308,6 +314,7 @@ void Scope::StopScope(){
     }
     digiMTX[iDigi].lock();
     digi[iDigi]->StopACQ();
+    //digi[iDigi]->GetData()->PrintAllData();
     digiMTX[iDigi].unlock();
 
     digi[iDigi]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, traceOn[iDigi], -1);
@@ -691,13 +698,25 @@ void Scope::EnableControl(bool enable){
 
   if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ){
 
+    sbReordLength->setEnabled(enable);
     sbPreTrigger->setEnabled(enable);
+    sbDCOffset->setEnabled(enable);
+    cbDynamicRange->setEnabled(enable);
+
+    sbInputRiseTime->setEnabled(enable);
+    //sbThreshold->setEnabled(enable);
+    sbTriggerHoldOff->setEnabled(enable);
+    cbSmoothingFactor->setEnabled(enable);
+
     sbTrapRiseTime->setEnabled(enable);
     sbTrapFlatTop->setEnabled(enable);
     sbDecayTime->setEnabled(enable);
+    sbPeakingTime->setEnabled(enable);
 
-    sbInputRiseTime->setEnabled(enable);
-    cbSmoothingFactor->setEnabled(enable);
+    cbPolarity->setEnabled(enable);
+    cbBaselineAvg->setEnabled(enable);
+    cbPeakAvg->setEnabled(enable);
+    sbPeakHoldOff->setEnabled(enable);
 
   }
 

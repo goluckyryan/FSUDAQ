@@ -19,7 +19,7 @@ void quickSort(int arr[], int kaka[], TString file[], int start, int end);
 int main(int argc, char **argv) {
   
   printf("=========================================\n");
-  printf("===    *.fsu Events Kenshikushi       ===\n");
+  printf("===      *.fsu Events Builder         ===\n");
   printf("=========================================\n");  
   if (argc <= 3)    {
     printf("Incorrect number of arguments:\n");

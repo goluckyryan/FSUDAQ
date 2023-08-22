@@ -6,6 +6,7 @@ test
 test_indep
 programSettings.txt
 EventKenshikushi
+EventBuilder
 DataGenerator
 DataReaderScript
 pid.dat

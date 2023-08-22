@@ -256,14 +256,15 @@ inline void Data::CloseSaveFile(){
 //^####################################################### Print
 inline void Data::PrintStat() const{
 
+  printf("============================= Print Stat. Digi-%d\n", boardSN);
   if( !IsNotRollOverFakeAgg ) {
     printf(" this is roll-over fake event or no events.\n");
     return;
   }
-  printf("%2s | %6s | %9s | %9s | %6s\n", "ch", "# Evt.", "Rate [Hz]", "N-PileUp", "Tot. Evt.");
+  printf("%2s | %6s | %9s | %9s | %6s | %6s(%4s)\n", "ch", "# Evt.", "Rate [Hz]", "N-PileUp", "Tot. Evt.", "index", "loop");
   printf("---+--------+-----------+-----------+----------\n");
   for(int ch = 0; ch < MaxNChannels; ch++){
-    printf("%2d | %6d | %9.2f | %9.2f | %6lu\n", ch, NumEventsDecoded[ch], TriggerRate[ch], NonPileUpRate[ch], TotNumEvents[ch]);
+    printf("%2d | %6d | %9.2f | %9.2f | %6lu | %6d(%2d)\n", ch, NumEventsDecoded[ch], TriggerRate[ch], NonPileUpRate[ch], TotNumEvents[ch], DataIndex[ch], LoopIndex[ch]);
   }
   printf("---+--------+-----------+-----------+----------\n");
 }
@@ -415,13 +416,12 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
       int indexStart = DataIndex[ch] - NumEventsDecoded[ch] + 1;
       if( indexStart < 0  ) indexStart += MaxNData;
 
-      //printf("%d %d| %d %d \n", DataIndex[ch], NumEventsDecoded[ch], indexStart, DataIndex[ch] );
-
       unsigned long long dTime = Timestamp[ch][DataIndex[ch]] - Timestamp[ch][indexStart]; 
       double sec =  dTime * tick2ns / 1e9;
 
-      TriggerRate[ch] = NumEventsDecoded[ch]/sec;
-      NonPileUpRate[ch] = NumNonPileUpDecoded[ch]/sec;
+      TriggerRate[ch] = (NumEventsDecoded[ch]-1)/sec;
+      //printf("%d %d| %d | %llu, %.3e | %.2f\n", indexStart, DataIndex[ch], NumEventsDecoded[ch], dTime, sec , TriggerRate[ch]);
+      NonPileUpRate[ch] = (NumNonPileUpDecoded[ch]-1)/sec;
 
     }else{ // look in to the data in the memory, not just this agg.
 
