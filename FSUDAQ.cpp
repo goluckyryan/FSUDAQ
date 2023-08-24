@@ -214,6 +214,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     cbAutoRun->addItem("Single 1 min", 1);
     cbAutoRun->addItem("Single 30 mins", 30);
     cbAutoRun->addItem("Single 60 mins", 60);
+    cbAutoRun->addItem("Single 120 mins", 120);
     cbAutoRun->addItem("Repeat 1 mins", -1);
     cbAutoRun->addItem("Repeat 60 mins", -60);
     cbAutoRun->addItem("Repeat 120 mins", -120);
@@ -1079,11 +1080,11 @@ void MainWindow::StopACQ(){
 
 void MainWindow::AutoRun(){ //TODO
 
+  runTimer->disconnect(runTimerConnection);
   if( chkSaveData->isChecked() == false){
     StartACQ();
     return;
   }
-
   if( cbAutoRun->currentData().toInt() == 0 ){
     StartACQ();
     //disconnect(runTimer, runTimerConnection);
@@ -1095,6 +1096,7 @@ void MainWindow::AutoRun(){ //TODO
 
     runTimerConnection =  connect( runTimer, &QTimer::timeout, this, [=](){
       needManualComment = false;
+      LogMsg("Time Up, Stopping ACQ...");
       StopACQ();
       if( cbAutoRun->currentData().toInt() < 0 ){
 

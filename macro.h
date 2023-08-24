@@ -10,7 +10,8 @@
 #define MaxRecordLength 0x3fff * 8 
 #define MaxSaveFileSize  1024 * 1024 * 1024 * 2
 
-#define MaxDisplayTraceDataLength 2000 //data point, 
+#define MaxDisplayTraceDataLength 1250 //data point, 
+#define ScopeUpdateMiliSec  200 // msec
 #define MaxNumberOfTrace  4   // in an event
 
 #define SETTINGSIZE 2048

@@ -51,7 +51,7 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   xaxis->setTitleText("Time [ns]");
 
   updateTraceThread = new TimingThread();
-  updateTraceThread->SetWaitTimeinSec(0.5);
+  updateTraceThread->SetWaitTimeinSec(ScopeUpdateMiliSec / 1000.);
   connect(updateTraceThread, &TimingThread::timeUp, this, &Scope::UpdateScope);
 
 
@@ -355,6 +355,9 @@ void Scope::UpdateScope(){
 
   int index = data->DataIndex[ch];
   int traceLength = data->Waveform1[ch][index].size();
+  if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) traceLength =  data->DigiWaveform1[ch][index].size();
+
+  if( traceLength > MaxDisplayTraceDataLength) traceLength = MaxDisplayTraceDataLength;
 
   // printf("--- %s| %d, %d, %d | %d | %d, %d\n", __func__, ch, data->LoopIndex[ch], index, traceLength, factor, tick2ns );
   if( data->TriggerRate[ch] > 0 ){
@@ -370,7 +373,7 @@ void Scope::UpdateScope(){
     }
 
     if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) {
-      for( int i = 0; i < (int) (data->DigiWaveform1[ch][index]).size() ; i++ ) {
+      for( int i = 0; i < traceLength ; i++ ) {
         points[0].append(QPointF(tick2ns * i * factor, (data->Waveform1[ch][index])[i])); 
         if( i < (int) data->Waveform2[ch][index].size() )      points[1].append(QPointF(tick2ns * i * factor, (data->Waveform2[ch][index])[i]));
         if( i < (int) data->DigiWaveform1[ch][index].size() )  points[2].append(QPointF(tick2ns * i,          (data->DigiWaveform1[ch][index])[i] * 1000));

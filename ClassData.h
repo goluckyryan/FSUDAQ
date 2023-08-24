@@ -245,8 +245,9 @@ inline void Data::SaveData(){
 
 }
 inline void Data::CloseSaveFile(){
-  if( outFile != NULL ){
+  if( outFile != nullptr ){
     fclose(outFile);
+    outFile = nullptr;
     int result = chmod(outFileName.c_str(), S_IRUSR | S_IRGRP | S_IROTH);
     if( result != 0 ) printf("somewrong when set file (%s) to read only.", outFileName.c_str());
   }

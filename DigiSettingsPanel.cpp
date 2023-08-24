@@ -194,9 +194,13 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
 
       }); 
 
-      bnClearBuffer = new QPushButton("Clear Buffer/FIFO", this);
+      bnClearBuffer = new QPushButton("Clear Buffer/FIFO/Data", this);
       buttonLayout->addWidget(bnClearBuffer, rowID, 2);
-      connect(bnClearBuffer, &QPushButton::clicked, this, [=](){ digi[ID]->WriteRegister(DPP::SoftwareClear_W, 1); UpdateBoardAndChannelsStatus();});
+      connect(bnClearBuffer, &QPushButton::clicked, this, [=](){ 
+        digi[ID]->WriteRegister(DPP::SoftwareClear_W, 1); 
+        digi[ID]->GetData()->ClearData();
+        UpdateBoardAndChannelsStatus();
+      });
 
       bnLoadSettings = new QPushButton("Load Settings", this);
       buttonLayout->addWidget(bnLoadSettings, rowID, 3);
