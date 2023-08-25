@@ -36,10 +36,11 @@ HEADERS += ClassData.h \
            Scope.h \
            SingleSpectra.h \
            MultiBuilder.h \
-           Analyser.h \
            qcustomplot.h \
-           Isotope.h \
-           SplitPoleAnalyzer.h
+           analyzers/Isotope.h \
+           analyzers/Analyser.h \
+           analyzers/SplitPoleAnalyzer.h \
+           analyzers/EncoreAnalyzer.h
 SOURCES += ClassDigitizer.cpp \
            DigiSettingsPanel.cpp \
            FSUDAQ.cpp \
@@ -48,5 +49,5 @@ SOURCES += ClassDigitizer.cpp \
            Scope.cpp \
            SingleSpectra.cpp \
            MultiBuilder.cpp \
-           Analyser.cpp \
-           qcustomplot.cpp
+           qcustomplot.cpp \
+           analyzers/Analyser.cpp 

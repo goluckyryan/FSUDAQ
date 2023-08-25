@@ -18,7 +18,7 @@
 #include "DigiSettingsPanel.h"
 #include "SingleSpectra.h"
 #include "influxdb.h"
-#include "Analyser.h"
+#include "analyzers/Analyser.h"
 
 //^#===================================================== MainWindow
 class MainWindow : public QMainWindow{

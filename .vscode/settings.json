@@ -159,6 +159,7 @@
     "forward_list": "cpp",
     "fstream": "cpp",
     "Analyzer.C": "cpp",
-    "process_Run.C": "cpp"
+    "process_Run.C": "cpp",
+    "EncoreAnalyzer.C": "cpp"
   }
 }

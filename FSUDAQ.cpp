@@ -14,7 +14,8 @@
 #include <QProcess>
 #include <QMessageBox>
 
-#include "SplitPoleAnalyzer.h"
+#include "analyzers/SplitPoleAnalyzer.h"
+#include "analyzers/EncoreAnalyzer.h"
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
 
@@ -1429,7 +1430,8 @@ void MainWindow::OpenAnalyzer(){
 
   if( onlineAnalyzer == nullptr ) {
     //onlineAnalyzer = new Analyzer(digi, nDigi);
-    onlineAnalyzer = new SplitPole(digi, nDigi);
+    //onlineAnalyzer = new SplitPole(digi, nDigi);
+    onlineAnalyzer = new Encore(digi, nDigi);
     onlineAnalyzer->show();
   }else{
     onlineAnalyzer->show();
