@@ -624,8 +624,8 @@ namespace DPP {
                                                                                         {"OR", 7}};
 
       const std::vector<std::pair<std::string, unsigned int>> ListLocalTrigValidMode = {{"Disabled", 0},
-                                                                                        {"Crossed", 4},
-                                                                                        {"Equal", 5},
+                                                                                        {"Crossed Trigger", 4},
+                                                                                        {"Both from Mother board", 5},
                                                                                         {"AND", 6},
                                                                                         {"OR", 7}};
 
@@ -699,8 +699,8 @@ namespace DPP {
                                                                                         {"OR", 7}};
 
       const std::vector<std::pair<std::string, unsigned int>> ListLocalTrigValidMode = {{"Disabled", 0},
-                                                                                        {"Crossed", 4},
-                                                                                        {"Equal", 5},
+                                                                                        {"Crossed Trigger", 4},
+                                                                                        {"Both from Mother board", 5},
                                                                                         {"AND", 6},
                                                                                         {"OR", 7}};
 

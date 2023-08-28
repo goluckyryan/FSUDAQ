@@ -17,7 +17,6 @@ An online analyzer class is created as a template for online analysis. An exampl
 
 <span style="color:red;">Notice that, when the FSUDAQ is started, the online analyzer is a null pointer, no event will be built. Once the online anlyzer is created and opened, event will be built, event the window is closed. </span>
 
-
 # Operation
 
 When programSettings.txt is presented in the same folder as the FSUDAQ_Qt, the program will load it can config the following 
@@ -38,6 +37,12 @@ Missing the raw data path will disable save data run, but still can start the AC
 the following additional functions are planned and I am working on them
 
 - support V1740 DPP-QDC
+
+# ToDo
+
+- Gaussians fitting for 1D Histogram
+- log scale for 1D and 2D Histogram
+- Improve the color scheme for 2D histogram
 
 # Required / Development enviroment
 
@@ -100,6 +105,7 @@ Those file can be compiled using
 
 # Known Issues
 
+* DC offset issue. When porgram default settings, the DC offset is not the same for all channels.
 * for PHA firmware, when the peak average changed, the Events per Agg need to be changed.
 
 # Known Bugs

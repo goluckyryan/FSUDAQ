@@ -177,6 +177,8 @@ inline void Data::ClearData(){
     NumEventsDecoded[ch] = 0;
     NumNonPileUpDecoded[ch] = 0;
 
+    TotNumEvents[ch] = 0 ;
+
     calIndexes[ch][0] = -1;
     calIndexes[ch][1] = -1;
   }
@@ -262,7 +264,7 @@ inline void Data::PrintStat() const{
     printf(" this is roll-over fake event or no events.\n");
     return;
   }
-  printf("%2s | %6s | %9s | %9s | %6s | %6s(%4s)\n", "ch", "# Evt.", "Rate [Hz]", "N-PileUp", "Tot. Evt.", "index", "loop");
+  printf("%2s | %6s | %9s | %9s | %6s | %6s(%4s)\n", "ch", "# Evt.", "Rate [Hz]", "Accept", "Tot. Evt.", "index", "loop");
   printf("---+--------+-----------+-----------+----------\n");
   for(int ch = 0; ch < MaxNChannels; ch++){
     printf("%2d | %6d | %9.2f | %9.2f | %6lu | %6d(%2d)\n", ch, NumEventsDecoded[ch], TriggerRate[ch], NonPileUpRate[ch], TotNumEvents[ch], DataIndex[ch], LoopIndex[ch]);
@@ -422,7 +424,7 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
 
       TriggerRate[ch] = (NumEventsDecoded[ch]-1)/sec;
       //printf("%d %d| %d | %llu, %.3e | %.2f\n", indexStart, DataIndex[ch], NumEventsDecoded[ch], dTime, sec , TriggerRate[ch]);
-      NonPileUpRate[ch] = (NumNonPileUpDecoded[ch]-1)/sec;
+      NonPileUpRate[ch] = (NumNonPileUpDecoded[ch])/sec;
 
     }else{ // look in to the data in the memory, not just this agg.
 
@@ -437,7 +439,6 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
           unsigned long long dTime = Timestamp[ch][calIndexes[ch][1]] - Timestamp[ch][calIndexes[ch][0]];
           double sec = dTime * tick2ns / 1e9;
         
-          //printf(" %10llu  %10llu, %f = %f sec, rate = %f \n", Timestamp[ch][calIndexes[ch][0]], Timestamp[ch][calIndexes[ch][1]], tick2ns, sec, nEvent / sec);
 
           TriggerRate[ch] = nEvent / sec;
 
@@ -445,6 +446,7 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
           for( int i = calIndexes[ch][0] ; i <= calIndexes[ch][0] + nEvent; i++ ) {
             if( PileUp[ch][i % MaxNData]  ) pileUpCount ++;
           }
+          //printf("%2d | %10llu  %10llu, %.0f = %f sec, rate = %f, nEvent %d pileUp %d \n", ch, Timestamp[ch][calIndexes[ch][0]], Timestamp[ch][calIndexes[ch][1]], tick2ns, sec, nEvent / sec, nEvent, pileUpCount);
 
           NonPileUpRate[ch] = (nEvent - pileUpCount)/sec;
 

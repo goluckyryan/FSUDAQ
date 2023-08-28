@@ -25,7 +25,7 @@ const double mp = 938.2720813; // MeV/c^2
 const double mn = 939.56542052; // MeV/c^2
 const double amu = 931.0;
 
-const string massData="mass20.txt";
+const string massData="analyzers/mass20.txt";
 
 // about the mass**.txt
 // Mass Excess = (ATOMIC MASS - A)*amu | e.g. n : (1.088664.91585E-6-1)*amu

@@ -63,9 +63,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     layout->addWidget(bnOpenScope, 1, 1);
     connect(bnOpenScope, &QPushButton::clicked, this, &MainWindow::OpenScope);
 
-    bnAnalyzer = new QPushButton("Online Analyzer", this);
-    layout->addWidget(bnAnalyzer, 0, 2);
-    connect(bnAnalyzer, &QPushButton::clicked, this, &MainWindow::OpenAnalyzer);
+    cbAnalyzer = new RComboBox(this);
+    layout->addWidget(cbAnalyzer, 0, 2);
+    cbAnalyzer->addItem("Choose Online Analyzer", -1);
+    cbAnalyzer->addItem("Split-Pole", 0);
+    cbAnalyzer->addItem("Encore", 1);
+    connect(cbAnalyzer, &RComboBox::currentIndexChanged, this, &MainWindow::OpenAnalyzer);
 
     bnCanvas = new QPushButton("Online 1D Histograms", this);
     layout->addWidget(bnCanvas, 1, 2);
@@ -735,7 +738,7 @@ void MainWindow::WaitForDigitizersOpen(bool onOff){
   bnStopACQ->setStyleSheet("");
   chkSaveData->setEnabled(!onOff);
   bnCanvas->setEnabled(!onOff);
-  bnAnalyzer->setEnabled(!onOff);
+  cbAnalyzer->setEnabled(!onOff);
 
   cbAutoRun->setEnabled(chkSaveData->isChecked());
   bnSync->setEnabled(false);
@@ -1427,16 +1430,29 @@ void MainWindow::OpenCanvas(){
 //***************************************************************
 //***************************************************************
 void MainWindow::OpenAnalyzer(){
+  int id = cbAnalyzer->currentData().toInt();
+
+  if( id < 0 ) return;
 
   if( onlineAnalyzer == nullptr ) {
     //onlineAnalyzer = new Analyzer(digi, nDigi);
-    //onlineAnalyzer = new SplitPole(digi, nDigi);
-    onlineAnalyzer = new Encore(digi, nDigi);
-    onlineAnalyzer->show();
+    if( id == 0 ) onlineAnalyzer = new SplitPole(digi, nDigi);
+    if( id == 1 ) onlineAnalyzer = new Encore(digi, nDigi);
+    if( id >=  0 ) onlineAnalyzer->show();
   }else{
-    onlineAnalyzer->show();
-    onlineAnalyzer->activateWindow();
+
+    delete onlineAnalyzer;
+  
+    if( id == 0 ) onlineAnalyzer = new SplitPole(digi, nDigi);
+    if( id == 1 ) onlineAnalyzer = new Encore(digi, nDigi);
+
+    if( id >= 0 ){
+      onlineAnalyzer->show();
+      onlineAnalyzer->activateWindow();
+    }
   }
+
+  cbAnalyzer->setCurrentIndex(0);
 
 }
 

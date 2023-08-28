@@ -92,6 +92,7 @@ inline void Encore::SetUpCanvas(){
 
 inline void Encore::UpdateHistograms(){
 
+  if( this->isVisible() == false ) return;
   if( runAnalyzer->isChecked() == false ) return;
 
   BuildEvents(); // call the event builder to build events

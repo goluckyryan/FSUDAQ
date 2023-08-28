@@ -249,6 +249,8 @@ private:
   RSpinBox * sbEnergy;
   RSpinBox * sbAngle;
 
+  QCheckBox * runAnalyzer;
+
 };
 
 
@@ -334,6 +336,9 @@ inline void SplitPole::SetUpCanvas(){
       hit.CalZoffset(leTarget->text(), leBeam->text(), leRecoil->text(), sbBfield->value(), sbAngle->value(), sbEnergy->value());  
     });
 
+    runAnalyzer = new QCheckBox("Run Analyzer", this);
+    boxLayout->addWidget(runAnalyzer, 4, 1);
+
   }
 
   //============ histograms
@@ -402,6 +407,9 @@ inline void SplitPole::SetUpCanvas(){
 }
 
 inline void SplitPole::UpdateHistograms(){
+
+  if( this->isVisible() == false ) return;
+  if( runAnalyzer->isChecked() == false ) return;
 
   BuildEvents(); // call the event builder to build events
 
