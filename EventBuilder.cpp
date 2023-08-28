@@ -238,7 +238,7 @@ int main(int argc, char **argv) {
       }
       aggCount++;
 
-    }while(aggCount < 10); // get 10 agg
+    }while(aggCount < 10); // get 10 agg should be enough for events building
 
     mb->BuildEvents(0, 0, debug);
 

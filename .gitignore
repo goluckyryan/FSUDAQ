@@ -9,6 +9,7 @@ EventKenshikushi
 EventBuilder
 DataGenerator
 DataReaderScript
+DataReader
 pid.dat
 DAQLock.dat
 
