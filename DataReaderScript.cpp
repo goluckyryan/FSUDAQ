@@ -21,6 +21,7 @@ void DataReader(std::string fileName, int DPPType){
   fseek(haha, 0, SEEK_SET);
 
   MultiBuilder * mb = new MultiBuilder(data, DPPType);
+  mb->SetTimeWindow(0);
 
   char * buffer = nullptr;
   int countBdAgg = 0;
@@ -60,11 +61,12 @@ void DataReader(std::string fileName, int DPPType){
     //if( countBdAgg % 100 == 0) data->PrintStat();
     //data->ClearData();
 
-    //if( countBdAgg > 500 ){
-    //  data->PrintAllData();
-    //  mb->BuildEventsBackWard(false);
-    //  break;
-    //}
+    if( countBdAgg > 10 ){
+      //data->PrintAllData();
+      
+      mb->BuildEvents(false, true, false);
+      //mb->BuildEventsBackWard(false);
+    }
 
     
   }while(!feof(haha) && ftell(haha) < inFileSize);
@@ -74,8 +76,9 @@ void DataReader(std::string fileName, int DPPType){
   data->PrintStat();
   //data->PrintAllData();
 
+  mb->BuildEvents(true, true, false);
 
-  //mb->PrintStat();
+  mb->PrintStat();
 
   delete mb;
   delete data;
