@@ -200,6 +200,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     lbPrefix->setAlignment(Qt::AlignRight | Qt::AlignCenter);
     lePrefix = new QLineEdit(this);
     lePrefix->setAlignment(Qt::AlignHCenter);
+    connect(lePrefix, &QLineEdit::textChanged, this, [=](){
+      lePrefix->setStyleSheet("color:blue;");
+    });
+    connect(lePrefix, &QLineEdit::returnPressed, this, &MainWindow::SaveLastRunFile);
 
     QLabel * lbRunID = new QLabel("Run No. :", this);
     lbRunID->setAlignment(Qt::AlignRight | Qt::AlignCenter);
@@ -550,6 +554,7 @@ void MainWindow::LoadLastRunFile(){
     }
 
     lePrefix->setText(prefix);
+    lePrefix->setStyleSheet("");
     leRunID->setText(QString::number(runID));
 
   }
@@ -560,8 +565,10 @@ void MainWindow::SaveLastRunFile(){
 
   QFile file(rawDataPath + "/lastRun.sh");
 
-  file.open(QIODevice::Text | QIODevice::WriteOnly);
+  prefix = lePrefix->text();
+  lePrefix->setStyleSheet("");
 
+  file.open(QIODevice::Text | QIODevice::WriteOnly);
   file.write(("prefix=" + prefix + "\n").toStdString().c_str());
   file.write(("runID=" + QString::number(runID) + "\n").toStdString().c_str());
   file.write(("elogID=" + QString::number(elogID) + "\n").toStdString().c_str());
@@ -985,6 +992,8 @@ void MainWindow::StartACQ(){
   bnOpenScope->setEnabled(false);
   cbAutoRun->setEnabled(false);
 
+  if( digiSettings ) digiSettings->setEnabled(false);
+
   if( onlineAnalyzer ) onlineAnalyzer->StartThread();
 
   {//^=== elog and database
@@ -1057,6 +1066,8 @@ void MainWindow::StopACQ(){
   bnStopACQ->setStyleSheet("");
   bnOpenScope->setEnabled(true);
   cbAutoRun->setEnabled(true);
+
+  if( digiSettings ) digiSettings->setEnabled(true);
 
   {//^=== elog and database
     if( influx ){
@@ -1364,6 +1375,8 @@ void MainWindow::OpenScope(){
           influx->ClearDataPointsBuffer();
         }
       }
+
+      if( digiSettings ) digiSettings->setEnabled(!onOff);
 
       if( canvas ){
         if( onOff) {
