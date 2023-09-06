@@ -186,73 +186,84 @@ int main(int argc, char **argv) {
   MultiBuilder * mb = new MultiBuilder(data, typeList, snList);
   mb->SetTimeWindow(timeWindow);
 
-  ///------------------ re data
+  ///------------------ read data
   char * buffer = nullptr;
   unsigned int word[1]; // 4 byte = 32 bit
 
+  int lastDataIndex[nGroup][MaxNChannels]={0}; // keep track of the DataIndex
+  int lastLoopIndex[nGroup][MaxNChannels]={0}; // keep track of the DataIndex
 
   do{
 
     /// fill the data class with some agg;
-    bool earlyTermination = false;
-    int aggCount = 0;
+    bool breakFlag = false;
     do{
 
+      // Get 1 agg. from each file.
       for ( int i = 0; i < nGroup; i++){
         if( inFile[i] == nullptr ) continue;
         size_t dummy = fread(word, 4, 1, inFile[i]);
         if( dummy != 1) {
           printf("fread error, should read 4 bytes, but read %ld x 4 byte, file pos: %ld byte (%s)\n", dummy, ftell(inFile[i]), fileList[i][inFileIndex[i]].Data());
-          earlyTermination = true;
+        }
+    
+        fseek(inFile[i], -4, SEEK_CUR); // rool back
+
+        short header = ((word[0] >> 28 ) & 0xF);
+        if( header != 0xA ) break;
+        unsigned int aggSize = (word[0] & 0x0FFFFFFF) * 4; ///byte
+
+        buffer = new char[aggSize];
+        size_t dummy2 = fread(buffer, aggSize, 1, inFile[i]);
+        if( dummy2 != 1) {
+          printf("fread error, should read %d bytes, but read %ld x %d byte, file pos: %ld byte (%s)\n", aggSize, dummy, aggSize, ftell(inFile[i]), fileList[i][inFileIndex[i]].Data());
         }
 
-        if( earlyTermination == false){  
-          fseek(inFile[i], -4, SEEK_CUR); // rool back
+        data[i]->DecodeBuffer(buffer, aggSize, false, 0);
+        data[i]->ClearBuffer();
 
-          short header = ((word[0] >> 28 ) & 0xF);
-          if( header != 0xA ) break;
-          unsigned int aggSize = (word[0] & 0x0FFFFFFF) * 4; ///byte
-
-          buffer = new char[aggSize];
-          dummy = fread(buffer, aggSize, 1, inFile[i]);
-          if( dummy != 1) {
-            printf("fread error, should read %d bytes, but read %ld x %d byte, file pos: %ld byte (%s)\n", aggSize, dummy, aggSize, ftell(inFile[i]), fileList[i][inFileIndex[i]].Data());
-            earlyTermination = true;
+        //check if Data Index near MaxNData. if near by 50%, break
+        for( int ch = 0; ch < MaxNChannels; ch ++){
+          if( data[i]->LoopIndex[ch]*MaxNData + data[i]->DataIndex[ch] - lastLoopIndex[i][ch]*MaxNData - lastDataIndex[i][ch] > MaxNData * 0.5 ) {
+            breakFlag = true;
+            printf("digi:%d | ch: %d DataIndex: %d (%d) \n", data[i]->boardSN, ch, data[i]->DataIndex[ch], lastDataIndex[i][ch]);
           }
-
-          if( earlyTermination == false){
-            data[i]->DecodeBuffer(buffer, aggSize, false, 0);
-            data[i]->ClearBuffer();
-          }
+          lastDataIndex[i][ch] = data[i]->DataIndex[ch];
+          lastLoopIndex[i][ch] = data[i]->LoopIndex[ch];
         }
+        if( breakFlag ) break;
 
-        if( feof(inFile[i]) || earlyTermination ){
+        if( feof(inFile[i]) || dummy != 1 ){
           fclose(inFile[i]);
           inFile[i] = fopen(fileList[i][inFileIndex[i]+1], "r");
           if( inFile[i] ){
             inFileIndex[i]++;
+            printf("---- go to next file\n");
           }else{
             inFileIndex[i] = -1;
+            printf("---- no more file for this digitizer.\n");
+            continue;
           }
         }
+
       }
-      aggCount++;
 
-    }while(aggCount < 10); // get 10 agg should be enough for events building
+    }while(breakFlag);
 
+    //data[0]->PrintStat();
     mb->BuildEvents(0, 0, debug);
 
     ///----------- save to tree;
     long startIndex = mb->eventIndex - mb->eventBuilt + 1;
-    while( startIndex < 0 ) startIndex += MaxNEvent;
-    //printf("startIndex : %ld, %ld\n", startIndex, mb->eventIndex);
-    for( long i = startIndex; i <= mb->eventIndex; i++){
+    //printf("startIndex : %ld -> %ld, %ld, %ld\n", startIndex, startIndex < 0 ? startIndex + MaxNEvent : startIndex, mb->eventIndex, mb->eventBuilt);
+    if (startIndex < 0 ) startIndex += MaxNEvent;
 
+    for( long i = startIndex; i <= mb->eventIndex; i++){
       multi = mb->events[i].size();
       if( multi > MAX_MULTI) break;
       evID ++;
       for( int j = 0; j < multi; j ++){
-        bd[j] = mb->events[i][j].bd;
+        bd[j] = mb->events[i][j].sn;
         ch[j] = mb->events[i][j].ch;
         e[j] = mb->events[i][j].energy;
         e2[j] = mb->events[i][j].energy2;
@@ -275,15 +286,17 @@ int main(int argc, char **argv) {
     for( int i = 0; i < nGroup; i++){
       if( inFileIndex[i] != -1 ) okFileNum ++;
     }
-
     if( okFileNum == 0 ) break;
 
   }while(true);
+
+  printf("------------------- build the last data\n");
 
   mb->BuildEvents(1, 0, debug);
 
   ///----------- save to tree;
   long startIndex = mb->eventIndex - mb->eventBuilt + 1;
+  printf("startIndex : %ld -> %ld, %ld, %ld\n", startIndex, startIndex < 0 ? startIndex + MaxNEvent : startIndex, mb->eventIndex, mb->eventBuilt);
   if( startIndex < 0 ) startIndex += MaxNEvent;
   //printf("startIndex : %ld, %ld\n", startIndex, mb->eventIndex);
   for( long i = startIndex; i <= mb->eventIndex; i++){
@@ -291,7 +304,7 @@ int main(int argc, char **argv) {
     multi = mb->events[i].size();
     if( multi > MAX_MULTI) break;
     for( int j = 0; j < multi; j ++){
-      bd[j] = mb->events[i][j].bd;
+      bd[j] = mb->events[i][j].sn;
       ch[j] = mb->events[i][j].ch;
       e[j] = mb->events[i][j].energy;
       e2[j] = mb->events[i][j].energy2;
@@ -318,10 +331,7 @@ int main(int argc, char **argv) {
   printf("=======> saved to %s \n", outFileName.Data());
 
   delete mb;
-
-  for( int i = 0 ; i < nGroup; i++){
-    delete data[i];
-  }
+  for( int i = 0 ; i < nGroup; i++) delete data[i];
   delete [] data;
 
 }

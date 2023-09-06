@@ -61,12 +61,12 @@ void DataReader(std::string fileName, int DPPType){
     //if( countBdAgg % 100 == 0) data->PrintStat();
     //data->ClearData();
 
-    if( countBdAgg > 10 ){
+    //if( countBdAgg > 10 ){
       //data->PrintAllData();
       
-      mb->BuildEvents(false, true, false);
+      //mb->BuildEvents(false, true, false);
       //mb->BuildEventsBackWard(false);
-    }
+    //}
 
     
   }while(!feof(haha) && ftell(haha) < inFileSize);

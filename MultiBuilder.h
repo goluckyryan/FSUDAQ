@@ -4,7 +4,7 @@
 #include "ClassData.h"
 #include "ClassDigitizer.h"
 
-#define MaxNEvent 5000 // circular 
+#define MaxNEvent 100000 // circular, this number should be at least nDigi * MaxNChannel * MaxNData
 
 class Hit{
 public:

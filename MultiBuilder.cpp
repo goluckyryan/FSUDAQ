@@ -258,11 +258,11 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
           }else{
             break;
           }
-          if( timeWindow == 0 ) break;
+          if( timeWindow <= 0 ) break;
         }while( true );
-        if( timeWindow == 0 ) break;
+        if( timeWindow <= 0 ) break;
       }
-      if( timeWindow == 0 ) break;
+      if( timeWindow <= 0 ) break;
     }
 
     if( timeWindow > 0 ) {
