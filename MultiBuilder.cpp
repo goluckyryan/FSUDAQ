@@ -100,7 +100,7 @@ void MultiBuilder::PrintStat(){
   printf("Total number of evet built : %ld\n", totalEventBuilt);
   for( int i = 0; i < nData ; i++){
     for( int ch = 0; ch < MaxNChannels ; ch++){
-      printf("%d %d | %d \n", i, ch, nextIndex[i][ch]);
+      printf("%d %3d %2d | %7d (%d)\n", i, snList[i], ch, nextIndex[i][ch], loopIndex[i][ch]);
     }
   }
 

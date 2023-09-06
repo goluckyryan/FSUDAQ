@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
   }
   quickSort(&(ID[0]), &(type[0]), &(inFileName[0]), 0, nFile-1);
   for( int i = 0 ; i < nFile; i++){
-    printf("%d | %6d | %3d | %s | %u\n", i, ID[i], type[i], inFileName[i].Data(), fileSize[i]);
+    printf("%d | %6d | %3d | %s | %u Bytes = %.2f MB\n", i, ID[i], type[i], inFileName[i].Data(), fileSize[i], fileSize[i]/1024./1024.);
   }
   
   //*======================================= Sort files in to group 
@@ -121,7 +121,7 @@ int main(int argc, char **argv) {
   int nGroup = snList.size();
   printf("===================================== number of file Group by digitizer %d.\n", nGroup);  
   for( int i = 0; i < nGroup; i++){
-    printf("............ %d \n", snList[i]);
+    printf("............ Digi-%d \n", snList[i]);
     for( int j = 0; j< (int) fileList[i].size(); j++){
       printf("%s | %d\n", fileList[i][j].Data(), typeList[i]);
     }
@@ -153,6 +153,7 @@ int main(int argc, char **argv) {
 
   unsigned long long                evID = -1;
   unsigned short                   multi = 0;
+  unsigned short           sn[MAX_MULTI] = {0}; /// board SN
   unsigned short           bd[MAX_MULTI] = {0}; /// boardID
   unsigned short           ch[MAX_MULTI] = {0}; /// chID
   unsigned short            e[MAX_MULTI] = {0}; /// 15 bit
@@ -162,6 +163,7 @@ int main(int argc, char **argv) {
 
   tree->Branch("evID",           &evID, "event_ID/l"); 
   tree->Branch("multi",         &multi, "multi/s"); 
+  tree->Branch("sn",                sn, "sn[multi]/s");
   tree->Branch("bd",                bd, "bd[multi]/s");
   tree->Branch("ch",                ch, "ch[multi]/s");
   tree->Branch("e",                  e, "e[multi]/s");
@@ -193,6 +195,7 @@ int main(int argc, char **argv) {
   int lastDataIndex[nGroup][MaxNChannels]={0}; // keep track of the DataIndex
   int lastLoopIndex[nGroup][MaxNChannels]={0}; // keep track of the DataIndex
 
+  int aggCount[nGroup] = {0};
   do{
 
     /// fill the data class with some agg;
@@ -204,77 +207,93 @@ int main(int argc, char **argv) {
         if( inFile[i] == nullptr ) continue;
         size_t dummy = fread(word, 4, 1, inFile[i]);
         if( dummy != 1) {
-          printf("fread error, should read 4 bytes, but read %ld x 4 byte, file pos: %ld byte (%s)\n", dummy, ftell(inFile[i]), fileList[i][inFileIndex[i]].Data());
-        }
-    
-        fseek(inFile[i], -4, SEEK_CUR); // rool back
-
-        short header = ((word[0] >> 28 ) & 0xF);
-        if( header != 0xA ) break;
-        unsigned int aggSize = (word[0] & 0x0FFFFFFF) * 4; ///byte
-
-        buffer = new char[aggSize];
-        size_t dummy2 = fread(buffer, aggSize, 1, inFile[i]);
-        if( dummy2 != 1) {
-          printf("fread error, should read %d bytes, but read %ld x %d byte, file pos: %ld byte (%s)\n", aggSize, dummy, aggSize, ftell(inFile[i]), fileList[i][inFileIndex[i]].Data());
-        }
-
-        data[i]->DecodeBuffer(buffer, aggSize, false, 0);
-        data[i]->ClearBuffer();
-
-        //check if Data Index near MaxNData. if near by 50%, break
-        for( int ch = 0; ch < MaxNChannels; ch ++){
-          if( data[i]->LoopIndex[ch]*MaxNData + data[i]->DataIndex[ch] - lastLoopIndex[i][ch]*MaxNData - lastDataIndex[i][ch] > MaxNData * 0.5 ) {
-            breakFlag = true;
-            printf("digi:%d | ch: %d DataIndex: %d (%d) \n", data[i]->boardSN, ch, data[i]->DataIndex[ch], lastDataIndex[i][ch]);
+          //printf("fread error, should read 4 bytes, but read %ld x 4 byte, file pos: %ld byte (%s)\n", dummy, ftell(inFile[i]), fileList[i][inFileIndex[i]].Data());
+          // go to next file in same digitizer
+          if( feof(inFile[i])){
+            fclose(inFile[i]);
+            inFile[i] = fopen(fileList[i][inFileIndex[i]+1], "r");
+            if( inFile[i] ){
+              inFileIndex[i]++;
+              printf("---- go to next file for digi-%d\n", snList[i]);
+            }else{
+              inFileIndex[i] = -1;
+              printf("---- no more file for digi-%d.\n", snList[i]);
+              continue;
+            }
           }
-          lastDataIndex[i][ch] = data[i]->DataIndex[ch];
-          lastLoopIndex[i][ch] = data[i]->LoopIndex[ch];
-        }
-        if( breakFlag ) break;
 
-        if( feof(inFile[i]) || dummy != 1 ){
-          fclose(inFile[i]);
-          inFile[i] = fopen(fileList[i][inFileIndex[i]+1], "r");
-          if( inFile[i] ){
-            inFileIndex[i]++;
-            printf("---- go to next file\n");
+        }else{
+          fseek(inFile[i], -4, SEEK_CUR); // rool back
+
+          short header = ((word[0] >> 28 ) & 0xF);
+          if( header != 0xA ) break;
+          unsigned int aggSize = (word[0] & 0x0FFFFFFF) * 4; ///byte
+
+          buffer = new char[aggSize];
+          size_t dummy2 = fread(buffer, aggSize, 1, inFile[i]);
+          if( dummy2 != 1) {
+            printf("fread error, should read %d bytes, but read %ld x %d byte, file pos: %ld byte (%s)\n", aggSize, dummy, aggSize, ftell(inFile[i]), fileList[i][inFileIndex[i]].Data());
           }else{
-            inFileIndex[i] = -1;
-            printf("---- no more file for this digitizer.\n");
-            continue;
+            data[i]->DecodeBuffer(buffer, aggSize, false, 0);
+            data[i]->ClearBuffer();
+
+            aggCount[i] ++;
           }
         }
 
       }
 
+      //if all file exhausted, break
+      int okFileNum = 0;
+      for( int i = 0; i < nGroup; i++){
+        if( inFileIndex[i] != -1 ) okFileNum ++;
+      }
+      if( okFileNum == 0 ) break;
+
+      //check if Data Index near MaxNData. if near by 50%, break
+      //printf("-----------------------------------\n");
+      for( int i = 0; i < nGroup; i++){
+        for( int ch = 0; ch < MaxNChannels; ch ++){
+          if( data[i]->LoopIndex[ch]*MaxNData + data[i]->DataIndex[ch] - lastLoopIndex[i][ch]*MaxNData - lastDataIndex[i][ch] > MaxNData * 0.5 ) {
+            breakFlag = true;
+            //printf("digi:%d | ch: %d DataIndex: %d (%d) \n", data[i]->boardSN, ch, data[i]->DataIndex[ch], lastDataIndex[i][ch]);
+          }
+          lastDataIndex[i][ch] = data[i]->DataIndex[ch];
+          lastLoopIndex[i][ch] = data[i]->LoopIndex[ch];
+        }
+        //printf("%3d | agg : %d | %s\n", snList[i], aggCount[i], breakFlag ? "Break" : "cont." );
+      }
+
     }while(breakFlag);
 
-    //data[0]->PrintStat();
     mb->BuildEvents(0, 0, debug);
 
     ///----------- save to tree;
     long startIndex = mb->eventIndex - mb->eventBuilt + 1;
-    //printf("startIndex : %ld -> %ld, %ld, %ld\n", startIndex, startIndex < 0 ? startIndex + MaxNEvent : startIndex, mb->eventIndex, mb->eventBuilt);
+    //printf("startIndex : %6ld -> %6ld, %6ld, %6ld, %ld | %llu\n", startIndex, startIndex < 0 ? startIndex + MaxNEvent : startIndex, mb->eventIndex, mb->eventBuilt, mb->totalEventBuilt, tree->GetEntries());
     if (startIndex < 0 ) startIndex += MaxNEvent;
-
-    for( long i = startIndex; i <= mb->eventIndex; i++){
-      multi = mb->events[i].size();
-      if( multi > MAX_MULTI) break;
+    for( long p = startIndex; p < startIndex + mb->eventBuilt; p++){
+      int k =  p % MaxNEvent;
+      multi = mb->events[k].size();
+      if( multi > MAX_MULTI) {
+        printf("!!!!! MAX_MULTI %d reached.\n", MAX_MULTI);
+        break;
+      }
       evID ++;
       for( int j = 0; j < multi; j ++){
-        bd[j] = mb->events[i][j].sn;
-        ch[j] = mb->events[i][j].ch;
-        e[j] = mb->events[i][j].energy;
-        e2[j] = mb->events[i][j].energy2;
-        e_t[j] = mb->events[i][j].timestamp;
-        e_f[j] = mb->events[i][j].fineTime;
+        bd[j]  = mb->events[k][j].bd;
+        sn[j]  = mb->events[k][j].sn;
+        ch[j]  = mb->events[k][j].ch;
+        e[j]   = mb->events[k][j].energy;
+        e2[j]  = mb->events[k][j].energy2;
+        e_t[j] = mb->events[k][j].timestamp;
+        e_f[j] = mb->events[k][j].fineTime;
         if( traceOn ){
-          traceLength[j] = mb->events[i][j].trace.size();
+          traceLength[j] = mb->events[k][j].trace.size();
           trace = (TGraph *) arrayTrace->ConstructedAt(j, "C");
           trace->Clear();
           for( int hh = 0; hh < traceLength[j]; hh++){
-            trace->SetPoint(hh, hh, mb->events[i][j].trace[hh]);
+            trace->SetPoint(hh, hh, mb->events[k][j].trace[hh]);
           }
         }
       }
@@ -290,45 +309,52 @@ int main(int argc, char **argv) {
 
   }while(true);
 
-  printf("------------------- build the last data\n");
+  if( timeWindow > 0 ){
+    printf("------------------- build the last data\n");
 
-  mb->BuildEvents(1, 0, debug);
+    mb->BuildEvents(1, 0, debug);
 
-  ///----------- save to tree;
-  long startIndex = mb->eventIndex - mb->eventBuilt + 1;
-  printf("startIndex : %ld -> %ld, %ld, %ld\n", startIndex, startIndex < 0 ? startIndex + MaxNEvent : startIndex, mb->eventIndex, mb->eventBuilt);
-  if( startIndex < 0 ) startIndex += MaxNEvent;
-  //printf("startIndex : %ld, %ld\n", startIndex, mb->eventIndex);
-  for( long i = startIndex; i <= mb->eventIndex; i++){
-    evID ++;
-    multi = mb->events[i].size();
-    if( multi > MAX_MULTI) break;
-    for( int j = 0; j < multi; j ++){
-      bd[j] = mb->events[i][j].sn;
-      ch[j] = mb->events[i][j].ch;
-      e[j] = mb->events[i][j].energy;
-      e2[j] = mb->events[i][j].energy2;
-      e_t[j] = mb->events[i][j].timestamp;
-      e_f[j] = mb->events[i][j].fineTime;
-      if( traceOn ){
-        traceLength[j] = mb->events[i][j].trace.size();
-        trace = (TGraph *) arrayTrace->ConstructedAt(j, "C");
-        trace->Clear();
-        for( int hh = 0; hh < traceLength[j]; hh++){
-          trace->SetPoint(hh, hh, mb->events[i][j].trace[hh]);
+    ///----------- save to tree;
+    long startIndex = mb->eventIndex - mb->eventBuilt + 1;
+    //printf("startIndex : %ld -> %ld, %ld, %ld, %ld\n", startIndex, startIndex < 0 ? startIndex + MaxNEvent : startIndex, mb->eventIndex, mb->eventBuilt, mb->totalEventBuilt);
+    if( startIndex < 0 ) startIndex += MaxNEvent;
+    for( long p = startIndex; p <= startIndex + mb->eventBuilt; p++){
+      int k =  p % MaxNEvent;
+      multi = mb->events[k].size();
+      if( multi > MAX_MULTI) {
+        printf("!!!!! MAX_MULTI %d reached.\n", MAX_MULTI);
+        break;
+      }
+      evID ++;
+      for( int j = 0; j < multi; j ++){
+        bd[j]  = mb->events[k][j].bd;
+        sn[j]  = mb->events[k][j].sn;
+        ch[j]  = mb->events[k][j].ch;
+        e[j]   = mb->events[k][j].energy;
+        e2[j]  = mb->events[k][j].energy2;
+        e_t[j] = mb->events[k][j].timestamp;
+        e_f[j] = mb->events[k][j].fineTime;
+        if( traceOn ){
+          traceLength[j] = mb->events[k][j].trace.size();
+          trace = (TGraph *) arrayTrace->ConstructedAt(j, "C");
+          trace->Clear();
+          for( int hh = 0; hh < traceLength[j]; hh++){
+            trace->SetPoint(hh, hh, mb->events[k][j].trace[hh]);
+          }
         }
       }
+      outRootFile->cd();
+      tree->Fill();
     } 
-    outRootFile->cd();
-    tree->Fill();
   }
     
   tree->Write();
-  outRootFile->Close();
 
   printf("========================= finsihed.\n");
-  printf("total events built = %llu \n", evID + 1);
+  printf("total events built = %llu(%llu)\n", evID + 1, tree->GetEntriesFast());
   printf("=======> saved to %s \n", outFileName.Data());
+
+  outRootFile->Close();
 
   delete mb;
   for( int i = 0 ; i < nGroup; i++) delete data[i];
