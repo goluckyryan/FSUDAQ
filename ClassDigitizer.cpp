@@ -542,11 +542,11 @@ void Digitizer::WriteRegister (Reg registerAddress, uint32_t value, int ch, bool
     return;
   }
   
-  if( registerAddress.GetType() == RW::ReadONLY ) return;
+  if( registerAddress.GetRWType() == RW::ReadONLY ) return;
   
   ret = CAEN_DGTZ_WriteRegister(handle, registerAddress.ActualAddress(ch), value);
 
-  if( ret == 0 && isSave2MemAndFile && registerAddress.GetType() == RW::ReadWrite) {
+  if( ret == 0 && isSave2MemAndFile && registerAddress.GetRWType() == RW::ReadWrite) {
     if( ch < 0 ) {
       for(int i = 0; i < NChannel; i++){
         SetSettingToMemory(registerAddress, value, i);
@@ -567,7 +567,7 @@ void Digitizer::WriteRegister (Reg registerAddress, uint32_t value, int ch, bool
 
 uint32_t Digitizer::ReadRegister(Reg registerAddress, unsigned short ch, bool isSave2MemAndFile, std::string str ){
   if( !isConnected )  return 0;
-  if( registerAddress.GetType() == RW::WriteONLY ) return 0;
+  if( registerAddress.GetRWType() == RW::WriteONLY ) return 0;
 
   ret = CAEN_DGTZ_ReadRegister(handle, registerAddress.ActualAddress(ch), &returnData);
   
@@ -640,7 +640,7 @@ void Digitizer::ReadAllSettingsFromBoard(bool force){
 
   /// board setting
   for( int p = 0; p < (int) RegisterDPPList.size(); p++){
-    if( RegisterDPPList[p].GetType() == RW::WriteONLY) continue;
+    if( RegisterDPPList[p].GetRWType() == RW::WriteONLY) continue;
     ReadRegister(RegisterDPPList[p]); 
   }
   
@@ -650,13 +650,13 @@ void Digitizer::ReadAllSettingsFromBoard(bool force){
   for( int ch = 0; ch < NChannel; ch ++){
     if( DPPType == V1730_DPP_PHA_CODE ){
       for( int p = 0; p < (int) RegisterPHAList.size(); p++){
-        if( RegisterPHAList[p].GetType() == RW::WriteONLY) continue;
+        if( RegisterPHAList[p].GetRWType() == RW::WriteONLY) continue;
         ReadRegister(RegisterPHAList[p], ch); 
       }
     }
     if( DPPType == V1730_DPP_PSD_CODE ){
       for( int p = 0; p < (int) RegisterPSDList.size(); p++){
-        if( RegisterPSDList[p].GetType() == RW::WriteONLY) continue;
+        if( RegisterPSDList[p].GetRWType() == RW::WriteONLY) continue;
         ReadRegister(RegisterPSDList[p], ch); 
       }
     }
@@ -674,7 +674,7 @@ void Digitizer::ProgramSettingsToBoard(){
   
   /// board setting
   for( int p = 0; p < (int) RegisterDPPList.size(); p++){
-    if( RegisterDPPList[p].GetType() == RW::ReadWrite) {
+    if( RegisterDPPList[p].GetRWType() == RW::ReadWrite) {
       haha = RegisterDPPList[p];
       WriteRegister(haha, GetSettingFromMemory(haha), -1, false); 
       usleep(1 * 1000);
@@ -684,7 +684,7 @@ void Digitizer::ProgramSettingsToBoard(){
   for( int ch = 0; ch < NChannel; ch ++){
     if( DPPType == V1730_DPP_PHA_CODE ){
       for( int p = 0; p < (int) RegisterPHAList.size(); p++){
-        if( RegisterPHAList[p].GetType() == RW::ReadWrite ){
+        if( RegisterPHAList[p].GetRWType() == RW::ReadWrite ){
           haha = RegisterPHAList[p];
           WriteRegister(haha, GetSettingFromMemory(haha, ch), ch, false); 
           usleep(1 * 1000);
@@ -693,7 +693,7 @@ void Digitizer::ProgramSettingsToBoard(){
     }
     if( DPPType == V1730_DPP_PSD_CODE ){
       for( int p = 0; p < (int) RegisterPSDList.size(); p++){
-        if( RegisterPSDList[p].GetType() == RW::ReadWrite){
+        if( RegisterPSDList[p].GetRWType() == RW::ReadWrite){
           haha = RegisterPSDList[p];
           WriteRegister(haha, GetSettingFromMemory(haha, ch), ch, false); 
           usleep(1 * 1000);
@@ -865,9 +865,9 @@ void Digitizer::SaveAllSettingsAsText(std::string fileName){
     }
     if( haha.GetName() != "" )  {
       std::string typeStr ;
-      if( haha.GetType() == RW::ReadWrite ) typeStr = "R/W";
-      if( haha.GetType() == RW::ReadONLY  ) typeStr = "R  ";
-      if( haha.GetType() == RW::WriteONLY ) typeStr = "  W";
+      if( haha.GetRWType() == RW::ReadWrite ) typeStr = "R/W";
+      if( haha.GetRWType() == RW::ReadONLY  ) typeStr = "R  ";
+      if( haha.GetRWType() == RW::WriteONLY ) typeStr = "  W";
       fprintf( txtFile, "0x%04X %30s   0x%08X  %s  %u\n", actualAddress, 
                                                           haha.GetNameChar(), 
                                                           setting[i], 

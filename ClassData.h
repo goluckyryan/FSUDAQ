@@ -11,10 +11,15 @@
 #include <vector>
 #include <sys/stat.h>
 
-#include "CAENDigitizerType.h"
+//#include "CAENDigitizerType.h"
 #include "macro.h"
 
 #define MaxNData 10000 /// store 10k events per channels
+
+enum DPPType{ 
+  DPP_PHA_CODE = 0x8B,
+  DPP_PSD_CODE = 0x88
+};
 
 class Data{
 
@@ -115,7 +120,7 @@ class Data{
 inline Data::Data(){
   tick2ns = 2.0;
   boardSN = 0;
-  DPPType = V1730_DPP_PHA_CODE;
+  DPPType = DPPType::DPP_PHA_CODE;
   DPPTypeStr = "";
   IsNotRollOverFakeAgg = false;
   buffer = NULL;
@@ -309,8 +314,8 @@ inline void Data::PrintAllData(bool tableMode, unsigned int maxRowDisplay) const
       if( DataIndex[ch] < 0  ) continue;
       printf("------------ ch : %d, DataIndex : %d, loop : %d\n", ch, DataIndex[ch], LoopIndex[ch]);
       for( int ev = 0; ev <= (LoopIndex[ch] > 0 ? MaxNData : DataIndex[ch]) ; ev++){
-        if( DPPType == V1730_DPP_PHA_CODE ) printf("%4d, %5u, %15llu, %5u \n", ev, Energy[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
-        if( DPPType == V1730_DPP_PSD_CODE ) printf("%4d, %5u, %5u, %15llu, %5u \n", ev, Energy[ch][ev], Energy2[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
+        if( DPPType == DPPType::DPP_PHA_CODE ) printf("%4d, %5u, %15llu, %5u \n", ev, Energy[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
+        if( DPPType == DPPType::DPP_PSD_CODE ) printf("%4d, %5u, %5u, %15llu, %5u \n", ev, Energy[ch][ev], Energy2[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
         if( maxRowDisplay > 0 && (unsigned int) ev > maxRowDisplay ) break;
       }
     }
@@ -362,8 +367,8 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
       
       if( BoardID > 0 ) {
         switch(BoardID){
-          case 0x8 : DPPType = V1730_DPP_PSD_CODE; break;
-          case 0xB : DPPType = V1730_DPP_PHA_CODE; break;
+          case 0x8 : DPPType = DPPType::DPP_PSD_CODE; break;
+          case 0xB : DPPType = DPPType::DPP_PHA_CODE; break;
         }
       }
       
@@ -384,10 +389,10 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
         if( ((ChannelMask >> chMask) & 0x1 ) == 0 ) continue;
         if( verbose >= 2 ) printf("==================== Dual Channel Block, ch Mask : %d, nw : %d\n", chMask *2, nw);
 
-        if( DPPType == V1730_DPP_PHA_CODE ) {
+        if( DPPType == DPPType::DPP_PHA_CODE ) {
           if ( DecodePHADualChannelBlock(chMask, fastDecode, verbose) < 0 ) break;
         }
-        if( DPPType == V1730_DPP_PSD_CODE ) {
+        if( DPPType == DPPType::DPP_PSD_CODE ) {
           if ( DecodePSDDualChannelBlock(chMask, fastDecode, verbose) < 0 ) break;
         }
       }

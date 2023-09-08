@@ -379,7 +379,7 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
       connect(cbBdReg, &RComboBox::currentIndexChanged, this, [=](int index){
         if( !enableSignalSlot ) return;
 
-        if( RegisterDPPList[index].GetType() == RW::WriteONLY ) {
+        if( RegisterDPPList[index].GetRWType() == RW::WriteONLY ) {
           leBdRegRW->setText("Write ONLY" );
           leBdRegValue->setText("");
           leBdRegSet->setEnabled(true);
@@ -389,13 +389,13 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
         uint32_t value = digi[ cbDigi->currentIndex() ] ->ReadRegister(RegisterDPPList[index]);
         leBdRegValue->setText( "0x" + QString::number(value, 16).toUpper());
 
-        if( RegisterDPPList[index].GetType() == RW::ReadONLY ) {
+        if( RegisterDPPList[index].GetRWType() == RW::ReadONLY ) {
           leBdRegRW->setText("Read ONLY" );
           leBdRegSet->setEnabled(false);
           return;
         }
 
-        if( RegisterDPPList[index].GetType() == RW::ReadWrite ) {
+        if( RegisterDPPList[index].GetRWType() == RW::ReadWrite ) {
           leBdRegRW->setText("Read/Write" );
           leBdRegSet->setEnabled(true);
         }
@@ -414,7 +414,7 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
       connect(cbChReg, &RComboBox::currentIndexChanged, this, [=](int index){
         if( !enableSignalSlot ) return;
 
-        if( chRegList[index].GetType() == RW::WriteONLY ) {
+        if( chRegList[index].GetRWType() == RW::WriteONLY ) {
           leChRegRW->setText("Write ONLY" );
           leChRegValue->setText("");
           leChRegSet->setEnabled(true);
@@ -424,13 +424,13 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
         uint32_t value = digi[ cbDigi->currentIndex() ] ->ReadRegister(chRegList[index], cbCh->currentIndex());
         leChRegValue->setText( "0x" + QString::number(value, 16).toUpper());
 
-        if( chRegList[index].GetType() == RW::ReadONLY ) {
+        if( chRegList[index].GetRWType() == RW::ReadONLY ) {
           leChRegRW->setText("Read ONLY" );
           leChRegSet->setEnabled(false);
           return;
         }
 
-        if( chRegList[index].GetType() == RW::ReadWrite ) {
+        if( chRegList[index].GetRWType() == RW::ReadWrite ) {
           leChRegRW->setText("Read/Write" );
           leChRegSet->setEnabled(true);
         }
@@ -554,6 +554,7 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
         
         //Copy Board Setting
         for( int i = 0; i < (int) RegisterDPPList.size(); i++){
+          if( RegisterDPPList[i].GetRWType() != RW::WriteONLY ) continue;
           uint32_t value = digi[fromIndex]->GetSettingFromMemory(RegisterDPPList[i]);
           digi[toIndex]->WriteRegister(RegisterDPPList[i], value);
         }
@@ -565,7 +566,7 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
         for( int i = 0; i < MaxNChannels; i++){
           //Copy setting
           for( int k = 0; k < (int) regList.size(); k ++){
-            if( regList[k].GetType() != RW::ReadWrite ) continue;
+            if( regList[k].GetRWType() != RW::ReadWrite ) continue;
 
             uint32_t value = digi[fromIndex]->GetSettingFromMemory(regList[k], i);
             digi[toIndex]->WriteRegister(regList[k], value, i);
@@ -600,7 +601,7 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
           if( ! chkCh[i]->isChecked() ) return;
           //Copy setting
           for( int k = 0; k < (int) regList.size(); k ++){
-            if( regList[k].GetType() != RW::ReadWrite ) continue;
+            if( regList[k].GetRWType() != RW::ReadWrite ) continue;
 
             uint32_t value = digi[fromIndex]->GetSettingFromMemory(regList[k], fromCh);
             digi[toIndex]->WriteRegister(regList[k], value, i);

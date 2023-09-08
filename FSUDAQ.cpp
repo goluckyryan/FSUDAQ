@@ -1030,8 +1030,6 @@ void MainWindow::StopACQ(){
   }
 
   for( unsigned int i = 0; i < nDigi; i++){
-    LogMsg("Digi-" + QString::number(digi[i]->GetSerialNumber()) + " is stoping ACQ." );
-
     if( readDataThread[i]->isRunning() ) {
       readDataThread[i]->Stop();
       readDataThread[i]->quit();
@@ -1041,6 +1039,7 @@ void MainWindow::StopACQ(){
     digi[i]->StopACQ();
     digiMTX[i].unlock();
     if( chkSaveData->isChecked() ) digi[i]->GetData()->CloseSaveFile();
+    LogMsg("Digi-" + QString::number(digi[i]->GetSerialNumber()) + " ACQ is stopped." );
   }
 
   if( scalarThread->isRunning()){

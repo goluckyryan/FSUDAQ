@@ -27,7 +27,7 @@ class Reg{
     Reg(){
       name = "";
       address = 0;
-      type = RW::ReadWrite;
+      rwType = RW::ReadWrite;
       group = 0;
       maxBit = 0;
       partialStep = 0;
@@ -36,7 +36,7 @@ class Reg{
     Reg(std::string name, uint32_t address, RW type = RW::ReadWrite, bool group = false, unsigned int max = 0, int pStep = 0){
       this->name = name;
       this->address = address;
-      this->type = type;
+      this->rwType = type;
       this->group = group;
       this->maxBit = max;
       this->partialStep = pStep;
@@ -46,7 +46,7 @@ class Reg{
     Reg(std::string name, uint32_t address, RW type = RW::ReadWrite,  bool group = false, std::vector<std::pair<std::string, unsigned int>> list = {}){
       this->name = name;
       this->address = address;
-      this->type = type;
+      this->rwType = type;
       this->group = group;
       this->maxBit = 0;
       this->partialStep = 0;
@@ -60,7 +60,7 @@ class Reg{
     std::string  GetName()         const {return name;}
     const char * GetNameChar()     const {return name.c_str();}
     uint32_t     GetAddress()      const {return address; }
-    RW           GetType()         const {return type;}
+    RW           GetRWType()       const {return rwType;}
     bool         IsCoupled()       const {return group;}
     unsigned int GetMaxBit()       const {return maxBit;} 
     int          GetPartialStep()  const {return partialStep;} /// step = partialStep * tick2ns, -1 : step = 1
@@ -90,7 +90,7 @@ class Reg{
 
     std::string name;
     uint32_t address; /// This is the table of register, the actual address should call ActualAddress();
-    RW type; /// read/write = 0; read = 1; write = 2
+    RW rwType; /// read/write = 0; read = 1; write = 2
     bool group;
     unsigned int maxBit ;
     int partialStep;
@@ -100,7 +100,7 @@ class Reg{
 inline void Reg::Print() const{
   printf("       Name: %s\n", name.c_str());
   printf(" Re.Address: 0x%04X\n", address);
-  printf("       Type: %s\n", type == RW::ReadWrite ? "Read/Write" : (type == RW::ReadONLY ? "Read-Only" : "Write-Only") );
+  printf("       Type: %s\n", rwType == RW::ReadWrite ? "Read/Write" : (rwType == RW::ReadONLY ? "Read-Only" : "Write-Only") );
   printf("      Group: %s\n", group ? "True" : "False");
   printf(" Max Value : 0x%X = %d \n", maxBit, maxBit);
 }

@@ -48,6 +48,7 @@ public:
     // digi->StartACQ();
     // usleep(1000); // wait for some data;
 
+    printf("ReadDataThread for digi-%d running.\n", digi->GetSerialNumber());
     do{
       
       if( stop) break;
@@ -84,6 +85,7 @@ public:
         clock_gettime(CLOCK_REALTIME, &tb);
         if( tb.tv_sec - ta.tv_sec > 2 ) {
           digiMTX[ID].lock();
+          
           emit sendMsg("FileSize ("+ QString::number(digi->GetSerialNumber()) +"): " +  QString::number(digi->GetData()->GetTotalFileSize()/1024./1024., 'f', 4) + " MB [" + QString::number(tb.tv_sec-t0.tv_sec) + " sec]");
           //digi->GetData()->PrintStat();
           digiMTX[ID].unlock();
@@ -92,7 +94,7 @@ public:
       }
     
     }while(!stop);
-    printf("ReadDataThread stopped.\n");
+    printf("ReadDataThread for digi-%d stopped.\n", digi->GetSerialNumber());
   }
 signals:
   void sendMsg(const QString &msg);
