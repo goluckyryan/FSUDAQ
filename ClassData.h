@@ -18,7 +18,8 @@
 
 enum DPPType{ 
   DPP_PHA_CODE = 0x8B,
-  DPP_PSD_CODE = 0x88
+  DPP_PSD_CODE = 0x88,
+  DPP_QDC_CODE = 0x87
 };
 
 class Data{

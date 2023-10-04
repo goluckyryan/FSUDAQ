@@ -780,7 +780,12 @@ void MainWindow::SetupScalar(){
   scalarThread = new TimingThread();
   connect(scalarThread, &TimingThread::timeUp, this, &MainWindow::UpdateScalar);
 
-  scalar->setGeometry(0, 0, 10 + nDigi * 200, 110 + MaxNChannels * 20);
+  unsigned short maxNChannel = 0;
+  for( unsigned int k = 0; k < nDigi; k ++ ){
+    if( digi[k]->GetNChannels() > maxNChannel ) maxNChannel = digi[k]->GetNChannels();
+  }
+
+  scalar->setGeometry(0, 0, 10 + nDigi * 200, 110 + maxNChannel * 20);
 
   if( lbLastUpdateTime == nullptr ){
     lbLastUpdateTime = new QLabel("Last update : NA", scalar);
@@ -797,7 +802,8 @@ void MainWindow::SetupScalar(){
 
   int rowID = 3;
   ///==== create the header row
-  for( int ch = 0; ch < MaxNChannels; ch++){
+
+  for( int ch = 0; ch < maxNChannel; ch++){
 
     if( ch == 0 ){
       QLabel * lbCH_H = new QLabel("Ch", scalar); 
@@ -818,7 +824,7 @@ void MainWindow::SetupScalar(){
     leTrigger[iDigi] = new QLineEdit *[digi[iDigi]->GetNChannels()];
     leAccept[iDigi] = new QLineEdit *[digi[iDigi]->GetNChannels()];
     uint32_t chMask =  digi[iDigi]->GetChannelMask();
-    for( int ch = 0; ch < MaxNChannels; ch++){
+    for( int ch = 0; ch < maxNChannel; ch++){
 
       if( ch == 0 ){
           QLabel * lbDigi = new QLabel("Digi-" + QString::number(digi[iDigi]->GetSerialNumber()), scalar); 

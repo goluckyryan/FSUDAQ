@@ -773,6 +773,8 @@ namespace DPP {
     const Reg Pretrigger_G                  ("PreTrigger"                    , 0x103C, RW::ReadWrite, true,  0xFF, 1); /// R/W
     const Reg DPPAlgorithmControl_G         ("DPPAlgorithmControl"           , 0x1040, RW::ReadWrite, true, {}); /// R/W
     const Reg TriggerHoldOffWidth_G         ("Trigger Hold-off width"        , 0x1074, RW::ReadWrite, true, 0xFFFF, 1); /// R/W
+    const Reg TRGOUTWidth_G                 ("Trigger out width"             , 0x1078, RW::ReadWrite, true, 0xFFFF, 1); /// R/W
+    const Reg OverThresholdWidth_G          ("Over Threshold width"          , 0x107C, RW::ReadWrite, true, 0xFFFF, 1); /// R/W
     const Reg GroupStatus_RG                ("Group Status"                  , 0x1088, RW::ReadONLY, true, {});  /// R/
     const Reg AMCFirmwareRevision_RG        ("AMC firmware version"          , 0x108C, RW::ReadONLY, true, {});  /// R/
     const Reg DCOffset_G                    ("DC offset"                     , 0x1098, RW::ReadWrite, true, 0xFFFF, 1); /// R/W
@@ -780,6 +782,12 @@ namespace DPP {
     const Reg DCOffset_LowCh_G              ("DC offset for low ch."         , 0x10C0, RW::ReadWrite, true, {}); /// R/W
     const Reg DCOffset_HighCh_G             ("DC offset for high ch."        , 0x10C4, RW::ReadWrite, true, {}); /// R/W
     const Reg TriggerThreshold_G            ("Trigger Threshold"             , 0x10D0, RW::ReadWrite, true, {}); /// R/W
+
+
+
+
+
+
 
     const Reg NumberEventsPerAggregate      ("Number of Events per Aggregate", 0x8020, RW::ReadWrite, false, 0x3FF, 1); /// R/W
     const Reg RecordLength                  ("Record Length"                 , 0x8024, RW::ReadWrite, false, 0xFFF, 1); /// R/W
