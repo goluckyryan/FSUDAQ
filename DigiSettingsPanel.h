@@ -201,6 +201,8 @@ private:
   QCheckBox * chkDisableSelfTrigger[MaxNDigitizer][MaxNChannels + 1];
   RComboBox * cbTrigCount[MaxNDigitizer][MaxNChannels + 1];
 
+  RComboBox * cbTRGOUTChannelProbe[MaxNDigitizer][MaxNChannels + 1];
+
   //---------- PHA
   RComboBox * cbRCCR2Smoothing[MaxNDigitizer][MaxNChannels + 1];
   RSpinBox * sbInputRiseTime[MaxNDigitizer][MaxNChannels + 1];

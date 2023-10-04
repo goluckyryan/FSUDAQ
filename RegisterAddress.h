@@ -615,6 +615,7 @@ namespace DPP {
       const std::pair<unsigned short, unsigned short> TriggerCounterFlag = {2, 16} ;
       const std::pair<unsigned short, unsigned short> ActivebaselineCalulation = {1, 18} ;
       const std::pair<unsigned short, unsigned short> TagCorrelatedEvents = {1, 19} ;
+      const std::pair<unsigned short, unsigned short> ChannelProbe = {4, 20} ; 
       const std::pair<unsigned short, unsigned short> EnableActiveBaselineRestoration = {1, 29} ;
 
       const std::vector<std::pair<std::string, unsigned int>> ListLocalShapeTrigMode = {{"Disabled", 0},
@@ -642,6 +643,19 @@ namespace DPP {
       const std::vector<std::pair<std::string, unsigned int>> ListTrigCounter = {{"1024", 0},
                                                                                 {"128", 1},
                                                                                 {"8192", 2}};
+
+      const std::vector<std::pair<std::string, unsigned int>> ListChannelProbe = {{"Acq Armed", 1},
+                                                                                  {"Self-Trig", 2},
+                                                                                  {"Pile-Up", 3},
+                                                                                  {"Pile-Up / Self-Trig", 4},
+                                                                                  {"Veto", 5},
+                                                                                  {"Coincident", 6},
+                                                                                  {"Trig Valid.", 7},
+                                                                                  {"Trig Valid. Acq Windown", 8},
+                                                                                  {"Anti-coin. Event", 9},
+                                                                                  {"Discard no coin. Event", 10},
+                                                                                  {"Valid Event", 11},
+                                                                                  {"Not Valid Event", 12}};
 
     }
 
@@ -687,6 +701,7 @@ namespace DPP {
       const std::pair<unsigned short, unsigned short> SmoothedChargeIntegration = {5, 11} ;
       const std::pair<unsigned short, unsigned short> TriggerCounterFlag = {2, 16} ;
       const std::pair<unsigned short, unsigned short> VetoSource = {2, 18} ;
+      const std::pair<unsigned short, unsigned short> ChannelProbe = {4, 20} ;
       const std::pair<unsigned short, unsigned short> MarkSaturation = {1, 24} ;
       const std::pair<unsigned short, unsigned short> AdditionLocalTrigValid = {2, 25} ;
       const std::pair<unsigned short, unsigned short> VetoMode = {1, 27} ;
@@ -721,6 +736,19 @@ namespace DPP {
                                                                                 {"Common (Global Trig. Mask)", 1},
                                                                                 {"Difference (Trig. Mask)", 2},
                                                                                 {"Negative Saturation", 3}};
+
+      const std::vector<std::pair<std::string, unsigned int>> ListChannelProbe = {{"OverThreshold", 1},
+                                                                                  {"Self-Trig", 2},
+                                                                                  {"Pile-Up", 3},
+                                                                                  {"Pile-Up / Self-Trig", 4},
+                                                                                  {"Veto", 5},
+                                                                                  {"Coincident", 6},
+                                                                                  {"Trig Valid.", 7},
+                                                                                  {"Trig Valid. Acq Windown", 8},
+                                                                                  {"Neutron Pulse", 9},
+                                                                                  {"Gamma Pulse", 10},
+                                                                                  {"Neutron Pulse (gate end)", 11},
+                                                                                  {"Gamma Pulse (gate end)", 12}};
                                                                                 
       const std::vector<std::pair<std::string, unsigned int>> ListTrigCounter = {{"1024", 0},
                                                                                 {"128", 1},

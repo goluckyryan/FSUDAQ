@@ -35,7 +35,7 @@ class Data{
     
     double TriggerRate[MaxNChannels]; /// Hz
     double NonPileUpRate[MaxNChannels]; /// Hz
-    unsigned long TotNumEvents[MaxNChannels];
+    unsigned long TotNumNonPileUpEvents[MaxNChannels];
     unsigned short NumEventsDecoded[MaxNChannels];  /// reset at every decode
     unsigned short NumNonPileUpDecoded[MaxNChannels]; /// reset at every decode
 
@@ -124,7 +124,7 @@ inline Data::Data(){
   DPPTypeStr = "";
   IsNotRollOverFakeAgg = false;
   buffer = NULL;
-  for ( int i = 0; i < MaxNChannels; i++) TotNumEvents[i] = 0;
+  for ( int i = 0; i < MaxNChannels; i++) TotNumNonPileUpEvents[i] = 0;
   ClearData();
   ClearTriggerRate();
   nw = 0;
@@ -182,7 +182,7 @@ inline void Data::ClearData(){
     NumEventsDecoded[ch] = 0;
     NumNonPileUpDecoded[ch] = 0;
 
-    TotNumEvents[ch] = 0 ;
+    TotNumNonPileUpEvents[ch] = 0 ;
 
     calIndexes[ch][0] = -1;
     calIndexes[ch][1] = -1;
@@ -272,7 +272,7 @@ inline void Data::PrintStat() const{
   printf("%2s | %6s | %9s | %9s | %6s | %6s(%4s)\n", "ch", "# Evt.", "Rate [Hz]", "Accept", "Tot. Evt.", "index", "loop");
   printf("---+--------+-----------+-----------+----------\n");
   for(int ch = 0; ch < MaxNChannels; ch++){
-    printf("%2d | %6d | %9.2f | %9.2f | %6lu | %6d(%2d)\n", ch, NumEventsDecoded[ch], TriggerRate[ch], NonPileUpRate[ch], TotNumEvents[ch], DataIndex[ch], LoopIndex[ch]);
+    printf("%2d | %6d | %9.2f | %9.2f | %6lu | %6d(%2d)\n", ch, NumEventsDecoded[ch], TriggerRate[ch], NonPileUpRate[ch], TotNumNonPileUpEvents[ch], DataIndex[ch], LoopIndex[ch]);
   }
   printf("---+--------+-----------+-----------+----------\n");
 }
@@ -673,10 +673,10 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
       if(extra2Option == 2 ) fineTime[channel][DataIndex[channel]] = (extra2 & 0x03FF );
       PileUp[channel][DataIndex[channel]] = pileUp;
       NumEventsDecoded[channel] ++; 
-      TotNumEvents[channel] ++;
 
       if( !pileUp ) {
         NumNonPileUpDecoded[channel] ++;
+        TotNumNonPileUpEvents[channel] ++;
       }
 
       if( !fastDecode ) {
@@ -845,6 +845,7 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
     
     nw = nw +1 ; word = ReadBuffer(nw, verbose);
     unsigned int Qlong  = (( word >> 16) & 0xFFFF);
+    bool pileup = ((word >> 15) & 0x1);
     unsigned int Qshort = (word & 0x7FFF);
     bool isEnergyCorrect = ((word >> 15) & 0x1); // the PUR, either pileup or saturated
     
@@ -856,8 +857,10 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
       }
 
       NumEventsDecoded[channel] ++; 
-      NumNonPileUpDecoded[channel] ++; 
-      TotNumEvents[channel] ++;
+      if( !pileup){
+        NumNonPileUpDecoded[channel] ++; 
+        TotNumNonPileUpEvents[channel] ++;
+      }
 
       Energy2[channel][DataIndex[channel]] = Qshort;
       Energy[channel][DataIndex[channel]] = Qlong;
