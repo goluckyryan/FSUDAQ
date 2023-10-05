@@ -14,7 +14,7 @@ ROOTLIBS = `root-config --cflags --glibs`
 
 OBJS = ClassDigitizer.o MultiBuilder.o
 
-ALL = test test_indep DataGenerator EventBuilder DataReader FSU2ROOT
+ALL = test test_indep DataGenerator EventBuilder DataReader DumpFSU2ROOT
 
 #########################################################################
 
@@ -43,12 +43,12 @@ DataGenerator : DataGenerator.cpp ClassDigitizer.o
 
 DataReader : DataReaderScript.cpp ClassData.h MultiBuilder.o
 		@echo "--------- making DataReader"
-		$(CC) $(COPTS) -o DataReader DataReaderScript.cpp ClassData.h MultiBuilder.o $(CAENLIBS)
+		$(CC) $(COPTS) -o DataReader DataReaderScript.cpp ClassData.h MultiBuilder.o
 
 EventBuilder : EventBuilder.cpp ClassData.h MultiBuilder.o
 		@echo "--------- making EventBuilder"
-		$(CC) $(COPTS) -o EventBuilder EventBuilder.cpp MultiBuilder.o $(CAENLIBS) $(ROOTLIBS) 
+		$(CC) $(COPTS) -o EventBuilder EventBuilder.cpp MultiBuilder.o $(ROOTLIBS) 
 
-FSU2ROOT : FSU2ROOT.cpp ClassData.h MultiBuilder.o
-		@echo "--------- making FSU2ROOT"
-		$(CC) $(COPTS) -o FSU2ROOT FSU2ROOT.cpp ClassData.h MultiBuilder.o $(CAENLIBS) $(ROOTLIBS)
+DumpFSU2ROOT : DumpFSU2ROOT.cpp ClassData.h MultiBuilder.o
+		@echo "--------- making DumpFSU2ROOT"
+		$(CC) $(COPTS) -o DumpFSU2ROOT DumpFSU2ROOT.cpp ClassData.h MultiBuilder.o $(ROOTLIBS)

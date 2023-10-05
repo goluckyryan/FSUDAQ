@@ -47,20 +47,22 @@ int main(int argc, char **argv){
   ///============= sorting file by the serial number & order
   int ID[nFile]; /// serial+ order*1000;
   int type[nFile];
+  int sn[nFile];
   unsigned int fileSize[nFile];
   for( int i = 0; i < nFile; i++){
     int pos = inFileName[i].Last('/');
     int snPos = inFileName[i].Index("_", pos); // first "_"
     //snPos = inFileName[i].Index("_", snPos + 1);
-    int sn = atoi(&inFileName[i][snPos+5]);
+    sn[i] = atoi(&inFileName[i][snPos+5]);
     TString typeStr = &inFileName[i][snPos+9];
     typeStr.Resize(3);
 
-    if( typeStr == "PHA" ) type[i] = V1730_DPP_PHA_CODE;
-    if( typeStr == "PSD" ) type[i] = V1730_DPP_PSD_CODE;
+    if( typeStr == "PHA" ) type[i] = DPPType::DPP_PHA_CODE;
+    if( typeStr == "PSD" ) type[i] = DPPType::DPP_PSD_CODE;
+    if( typeStr == "QDC" ) type[i] = DPPType::DPP_QDC_CODE;
 
     int order = atoi(&inFileName[i][snPos+13]);
-    ID[i] = sn + order * 1000;
+    ID[i] = sn[i] + order * 1000;
 
     FILE * temp = fopen(inFileName[i].Data(), "rb");
     if( temp == NULL ) {
@@ -114,7 +116,7 @@ int main(int argc, char **argv){
   for( int i = 0; i < nFile; i++){
     if( inFile[i] == nullptr ) continue;
 
-    MultiBuilder * mb = new MultiBuilder(data[i], type[i]);
+    MultiBuilder * mb = new MultiBuilder(data[i], type[i], sn[i]);
     mb->SetTimeWindow(0);
     int countBdAgg = 0;
 

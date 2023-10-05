@@ -2,33 +2,6 @@
 
 #include <algorithm>
 
-
-MultiBuilder::MultiBuilder(Digitizer ** digi, unsigned int nDigi) : nData(nDigi){
-  data = new Data *[nData];
-  for( unsigned int i = 0; i < nData; i++){
-    data[i] = digi[i]->GetData();
-    typeList.push_back(digi[i]->GetDPPType());
-    snList.push_back(digi[i]->GetSerialNumber());
-    idList.push_back(i);
-    timeWindow = 100;
-    ClearEvents();
-  } 
-}
-
-MultiBuilder::MultiBuilder(Digitizer ** digi, std::vector<int> id) : nData(id.size()){
-  data = new Data *[nData];
-  idList = id;
-  for( unsigned int i = 0; i < nData; i++){
-    int k = idList[i];
-    data[i] = digi[k]->GetData();
-    //TODO type and sn should be inside data[i]
-    typeList.push_back(digi[k]->GetDPPType());
-    snList.push_back(digi[k]->GetSerialNumber());
-    timeWindow = 100;
-    ClearEvents();
-  } 
-}
-
 MultiBuilder::MultiBuilder(Data ** multiData, std::vector<int> type, std::vector<int> sn) : nData(type.size()){
   data = multiData;
   typeList = type;
@@ -38,38 +11,17 @@ MultiBuilder::MultiBuilder(Data ** multiData, std::vector<int> type, std::vector
   ClearEvents();
 }
 
-MultiBuilder::MultiBuilder(Digitizer ** digi, int digiID) : nData(1){
-  data = new Data *[nData];
-  data[0] = digi[digiID]->GetData();
-  typeList.push_back(digi[digiID]->GetDPPType());
-  snList.push_back(digi[digiID]->GetSerialNumber());
-  idList.push_back(digiID);
-  timeWindow = 100;
-  ClearEvents();
-}
-
-MultiBuilder::MultiBuilder(Digitizer * digi) : nData(1){
-  data = new Data *[1];
-  data[0] = digi->GetData();
-  typeList.push_back(digi->GetDPPType());
-  snList.push_back(digi->GetSerialNumber());
-  idList.push_back(0);  
-  timeWindow = 100;
-  ClearEvents();
-}
-
-MultiBuilder::MultiBuilder(Data * singleData, int type): nData(1){
+MultiBuilder::MultiBuilder(Data * singleData, int type, int sn): nData(1){
   data = new Data *[1];
   data[0] = singleData;
   typeList.push_back(type);
-  snList.push_back(0);
+  snList.push_back(sn);
   idList.push_back(0);  
   timeWindow = 100;
   ClearEvents();
 }
 
 MultiBuilder::~MultiBuilder(){
-
 }
 
 void MultiBuilder::ClearEvents(){

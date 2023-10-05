@@ -135,6 +135,10 @@ inline void Encore::UpdateHistograms(){
          hRight->Fill(ID-100, eC );
          sum[ID-100] += eC ;
       }
+      if( 200 <= ID && ID < 300 ) {
+         hRight->Fill(ID-200, eC );
+         sum[ID-200] += eC ;
+      }
     }
 
     for( int ch = 0; ch < 17; ch++){

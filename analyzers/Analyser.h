@@ -68,6 +68,10 @@ private:
   Digitizer ** digi;
   unsigned short nDigi;
 
+  Data ** dataList;
+  std::vector<int> typeList;
+  std::vector<int> snList;
+
   double waitTimeinSec; 
 
   MultiBuilder * mb;

@@ -20,7 +20,7 @@ void DataReader(std::string fileName, int DPPType){
 
   fseek(haha, 0, SEEK_SET);
 
-  MultiBuilder * mb = new MultiBuilder(data, DPPType);
+  MultiBuilder * mb = new MultiBuilder(data, DPPType, 0);
   mb->SetTimeWindow(0);
 
   char * buffer = nullptr;

@@ -42,14 +42,8 @@ public:
 class MultiBuilder {
 
 public:
-  MultiBuilder(Digitizer ** digi, unsigned int nDigi);
-  MultiBuilder(Digitizer ** digi, std::vector<int> id);
   MultiBuilder(Data ** multiData, std::vector<int> type, std::vector<int> sn);
-
-  //for signal digitizer
-  MultiBuilder(Digitizer ** digi, int digiID);
-  MultiBuilder(Digitizer * digi);
-  MultiBuilder(Data * singleData, int type);
+  MultiBuilder(Data * singleData, int type, int sn);
   ~MultiBuilder();
 
   void SetTimeWindow(int ticks) {timeWindow = ticks;}

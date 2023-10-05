@@ -4,7 +4,7 @@
 #include <QRandomGenerator>
 #include <random>
 
-Analyzer::Analyzer(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent ): QMainWindow(parent){
+Analyzer::Analyzer(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent ): QMainWindow(parent), dataList(NULL){
 
   this->digi = digi;
   this->nDigi = nDigi;
@@ -15,7 +15,17 @@ Analyzer::Analyzer(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent )
   influx = nullptr;
   dataBaseName = "";
 
-  mb = new MultiBuilder(digi, nDigi);
+  dataList = new Data*[nDigi];
+  typeList.clear();
+  snList.clear();
+
+  for( unsigned int k = 0; k < nDigi; k ++) {
+    dataList[k] = digi[k]->GetData();
+    typeList.push_back(digi[k]->GetDPPType());
+    snList.push_back(digi[k]->GetSerialNumber());
+  }
+
+  mb = new MultiBuilder(dataList, typeList, snList);
 
   buildTimerThread = new TimingThread(this);
   buildTimerThread->SetWaitTimeinSec(1.0); //^Set event build interval
@@ -34,11 +44,23 @@ Analyzer::Analyzer(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent )
 Analyzer::~Analyzer(){
   delete influx;
   delete mb;
+  delete [] dataList;
 }
 
 void Analyzer::RedefineEventBuilder(std::vector<int> idList){
   delete mb;
-  mb = new MultiBuilder(digi, idList);
+  delete [] dataList;
+  typeList.clear();
+  snList.clear();
+  dataList = new Data*[idList.size()];
+
+  for( size_t k = 0; k <  idList.size(); k ++) {
+    dataList[k] = digi[idList[k]]->GetData();
+    typeList.push_back(digi[idList[k]]->GetDPPType());
+    snList.push_back(digi[idList[k]]->GetSerialNumber());
+  }
+
+  mb = new MultiBuilder(dataList, typeList, snList);
 }
 
 void Analyzer::StartThread(){
