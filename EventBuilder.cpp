@@ -192,10 +192,18 @@ int main(int argc, char **argv) {
   char * buffer = nullptr;
   unsigned int word[1]; // 4 byte = 32 bit
 
-  int lastDataIndex[nGroup][MaxNChannels]={0}; // keep track of the DataIndex
-  int lastLoopIndex[nGroup][MaxNChannels]={0}; // keep track of the DataIndex
+  int lastDataIndex[nGroup][MAX_MULTI]; // keep track of the DataIndex
+  int lastLoopIndex[nGroup][MAX_MULTI]; // keep track of the DataIndex
+  int aggCount[nGroup];
 
-  int aggCount[nGroup] = {0};
+  for( int i = 0; i < nGroup; i++){
+    aggCount[i] = 0;
+    for( int j = 0; j < MAX_MULTI; j++){
+      lastDataIndex[i][j] = 0;
+      lastLoopIndex[i][j] = 0;
+    }
+  }
+
   do{
 
     /// fill the data class with some agg;

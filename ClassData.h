@@ -7,6 +7,8 @@
 #include <cmath>
 #include <cstring>  ///memset
 #include <iostream> ///cout
+#include <sstream>
+#include <iomanip> // for setw
 #include <bitset>
 #include <vector>
 #include <sys/stat.h>
@@ -212,11 +214,19 @@ inline void Data::CopyBuffer(const char * buffer, const unsigned int size){
 inline bool Data::OpenSaveFile(std::string fileNamePrefix){
 
   outFilePrefix = fileNamePrefix;
-  char saveFileName[100];
-  sprintf(saveFileName, "%s_%03d_%3s_%03u.fsu", outFilePrefix.c_str() , boardSN, DPPTypeStr.c_str(), outFileIndex);
+
+  std::ostringstream oss;
+  oss << outFilePrefix << "_"
+      << std::setfill('0') << std::setw(3) << boardSN << "_"
+      << DPPTypeStr << "_"
+      << std::setfill('0') << std::setw(3) << outFileIndex << ".fsu";
+  std::string saveFileName = oss.str();
+
+  //char saveFileName[100];
+  //sprintf(saveFileName, "%s_%03d_%3s_%03u.fsu", outFilePrefix.c_str() , boardSN, DPPTypeStr.c_str(), outFileIndex);
 
   outFileName = saveFileName;
-  outFile = fopen(saveFileName, "wb"); // overwrite binary
+  outFile = fopen(saveFileName.c_str(), "wb"); // overwrite binary
   
   if (outFile == NULL) {
     printf("Failed to open the file. Probably Read-ONLY.\n");
@@ -242,8 +252,17 @@ inline void Data::SaveData(){
     FinishedOutFilesSize += ftell(outFile);
     CloseSaveFile();
     outFileIndex ++;
-    char saveFileName[100];
-    sprintf(saveFileName, "%s_%03d_%3s_%03u.fsu", outFilePrefix.c_str() , boardSN, DPPTypeStr.c_str(), outFileIndex);
+
+    // char saveFileName[100];
+    // sprintf(saveFileName, "%s_%03d_%3s_%03u.fsu", outFilePrefix.c_str() , boardSN, DPPTypeStr.c_str(), outFileIndex);
+
+    std::ostringstream oss;
+    oss << outFilePrefix << "_"
+        << std::setfill('0') << std::setw(3) << boardSN << "_"
+        << DPPTypeStr << "_"
+        << std::setfill('0') << std::setw(3) << outFileIndex << ".fsu";
+    std::string saveFileName = oss.str();
+
     outFileName = saveFileName;
     outFile = fopen(outFileName.c_str(), "wb"); //overwrite binary
   }
