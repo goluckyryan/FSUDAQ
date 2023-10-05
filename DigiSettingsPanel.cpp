@@ -262,7 +262,7 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
       QLabel * lbLVDSInfo = new QLabel(" LDVS settings will be implement later. ", bdLVDS);
       bdLVDSLayout[iDigi]->addWidget(lbLVDSInfo);
 
-      SetUpChannelMask();
+      SetUpChannelMask(iDigi);
 
       if( digi[iDigi]->GetDPPType() == V1730_DPP_PHA_CODE ) SetUpPHABoard();
       if( digi[iDigi]->GetDPPType() == V1730_DPP_PSD_CODE ) SetUpPSDBoard();
@@ -288,340 +288,7 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
 
   }
 
-  //TODO ----- Copy settings tab
-  {//*##################################### Inquiry / Copy Tab
-    QWidget * inquiryTab = new QWidget(this);
-    tabWidget->addTab(inquiryTab, "Inquiry / Copy");
-
-    QGridLayout * layout = new QGridLayout(inquiryTab);
-    layout->setAlignment(Qt::AlignTop);
-
-    {//^================ Inquiry
-      QGroupBox * inquiryBox = new QGroupBox("Register Settings", inquiryTab);
-      layout->addWidget(inquiryBox);
-
-      QGridLayout * regLayout = new QGridLayout(inquiryBox);
-      regLayout->setAlignment(Qt::AlignLeft);
-
-      QLabel * lb1 = new QLabel("Register", inquiryBox);      lb1->setAlignment(Qt::AlignCenter); regLayout->addWidget(lb1, 0, 1);
-      QLabel * lb2 = new QLabel("R/W", inquiryBox);           lb2->setAlignment(Qt::AlignCenter); regLayout->addWidget(lb2, 0, 2);
-      QLabel * lb3 = new QLabel("Present Value", inquiryBox); lb3->setAlignment(Qt::AlignCenter); regLayout->addWidget(lb3, 0, 3);
-      QLabel * lb4 = new QLabel("Set Value", inquiryBox);     lb4->setAlignment(Qt::AlignCenter); regLayout->addWidget(lb4, 0, 4);
-
-      ///--------------- board
-      RComboBox * cbDigi = new RComboBox(inquiryBox);
-      cbDigi->setFixedWidth(120);
-      for( int i = 0; i < (int) nDigi; i++) cbDigi->addItem("Digi-" + QString::number(digi[i]->GetSerialNumber()), i);
-      regLayout->addWidget(cbDigi, 1, 0);
-
-      RComboBox * cbBdReg = new RComboBox(inquiryBox);
-      cbBdReg->setFixedWidth(300);
-      for( int i = 0; i < (int) RegisterDPPList.size() ; i++ ){
-        cbBdReg->addItem( QString::fromStdString(RegisterDPPList[i].GetName()) + " [0x" + QString::number(RegisterDPPList[i].GetAddress(), 16).toUpper() + "]", RegisterDPPList[i].GetAddress());
-      }
-      regLayout->addWidget(cbBdReg, 1, 1);
-
-      QLineEdit * leBdRegRW = new QLineEdit(inquiryBox);
-      leBdRegRW->setReadOnly(true);
-      leBdRegRW->setFixedWidth(120);
-      regLayout->addWidget(leBdRegRW, 1, 2);
-
-      QLineEdit * leBdRegValue = new QLineEdit(inquiryBox);
-      leBdRegValue->setReadOnly(true);
-      leBdRegValue->setFixedWidth(120);
-      regLayout->addWidget(leBdRegValue, 1, 3);
-
-      QLineEdit * leBdRegSet = new QLineEdit(inquiryBox);
-      leBdRegSet->setFixedWidth(120);
-      regLayout->addWidget(leBdRegSet, 1, 4);
-
-      ///--------------- channel
-      RComboBox * cbCh = new RComboBox(inquiryBox);
-      cbCh->setFixedWidth(120);
-      regLayout->addWidget(cbCh, 2, 0);
-
-      RComboBox * cbChReg = new RComboBox(inquiryBox);
-      cbChReg->setFixedWidth(300);
-      regLayout->addWidget(cbChReg, 2, 1);
-
-      QLineEdit * leChRegRW = new QLineEdit(inquiryBox);
-      leChRegRW->setFixedWidth(120);
-      leChRegRW->setReadOnly(true);
-      regLayout->addWidget(leChRegRW, 2, 2);
-
-      QLineEdit * leChRegValue = new QLineEdit(inquiryBox);
-      leChRegValue->setReadOnly(true);
-      leChRegValue->setFixedWidth(120);
-      regLayout->addWidget(leChRegValue, 2, 3);
-
-      QLineEdit * leChRegSet = new QLineEdit(inquiryBox);
-      leChRegSet->setFixedWidth(120);
-      regLayout->addWidget(leChRegSet, 2, 4);
-
-      connect(cbDigi, &RComboBox::currentIndexChanged, this, [=](int index){
-        enableSignalSlot = false;
-
-        cbCh->clear();
-        for( int i = 0; i < digi[index]->GetNChannels(); i ++ ) cbCh->addItem("Ch-" + QString::number(i), i);
-
-        if( digi[index]->GetDPPType() == V1730_DPP_PHA_CODE ) chRegList = RegisterPHAList;
-        if( digi[index]->GetDPPType() == V1730_DPP_PSD_CODE ) chRegList = RegisterPSDList;
-
-        cbChReg->clear();
-        for( int i = 0; i < (int) chRegList.size(); i++ ){
-          cbChReg->addItem(QString::fromStdString(chRegList[i].GetName()) + " [0x" + QString::number(chRegList[i].GetAddress(), 16).toUpper() + "]", chRegList[i].GetAddress());
-        }
-        enableSignalSlot = true;
-      });
-
-      cbDigi->currentIndexChanged(0);
-
-      connect(cbBdReg, &RComboBox::currentIndexChanged, this, [=](int index){
-        if( !enableSignalSlot ) return;
-
-        if( RegisterDPPList[index].GetRWType() == RW::WriteONLY ) {
-          leBdRegRW->setText("Write ONLY" );
-          leBdRegValue->setText("");
-          leBdRegSet->setEnabled(true);
-          return;
-        }
-
-        uint32_t value = digi[ cbDigi->currentIndex() ] ->ReadRegister(RegisterDPPList[index]);
-        leBdRegValue->setText( "0x" + QString::number(value, 16).toUpper());
-
-        if( RegisterDPPList[index].GetRWType() == RW::ReadONLY ) {
-          leBdRegRW->setText("Read ONLY" );
-          leBdRegSet->setEnabled(false);
-          return;
-        }
-
-        if( RegisterDPPList[index].GetRWType() == RW::ReadWrite ) {
-          leBdRegRW->setText("Read/Write" );
-          leBdRegSet->setEnabled(true);
-        }
-      });
-
-      cbBdReg->currentIndexChanged(0);
-
-      connect(cbCh, &RComboBox::currentIndexChanged, this, [=](int index){
-        if( !enableSignalSlot ) return;
-        int regIndex = cbChReg->currentIndex();
-
-        uint32_t value = digi[ cbDigi->currentIndex() ] ->ReadRegister(chRegList[regIndex], cbCh->currentIndex(), index);
-        leChRegValue->setText( "0x" + QString::number(value, 16).toUpper());
-      });
-    
-      connect(cbChReg, &RComboBox::currentIndexChanged, this, [=](int index){
-        if( !enableSignalSlot ) return;
-
-        if( chRegList[index].GetRWType() == RW::WriteONLY ) {
-          leChRegRW->setText("Write ONLY" );
-          leChRegValue->setText("");
-          leChRegSet->setEnabled(true);
-          return;
-        }
-
-        uint32_t value = digi[ cbDigi->currentIndex() ] ->ReadRegister(chRegList[index], cbCh->currentIndex());
-        leChRegValue->setText( "0x" + QString::number(value, 16).toUpper());
-
-        if( chRegList[index].GetRWType() == RW::ReadONLY ) {
-          leChRegRW->setText("Read ONLY" );
-          leChRegSet->setEnabled(false);
-          return;
-        }
-
-        if( chRegList[index].GetRWType() == RW::ReadWrite ) {
-          leChRegRW->setText("Read/Write" );
-          leChRegSet->setEnabled(true);
-        }
-      });
-      cbChReg->currentIndexChanged(0);
-
-      connect( leBdRegSet, &QLineEdit::textChanged, this, [=](){
-        if( !enableSignalSlot ) return;
-        leBdRegSet->setStyleSheet("color : blue;");
-      });
-      connect( leBdRegSet, &QLineEdit::returnPressed, this, [=](){
-        if( !enableSignalSlot ) return;
-        QString text = leBdRegSet->text();
-
-        if( text.contains("0x") ){
-          uint32_t value = std::stoul(text.toStdString(), nullptr, 16);
-          int index = cbDigi->currentIndex();
-          int regID = cbBdReg->currentIndex();
-          digi[index]->WriteRegister(RegisterDPPList[regID], value);
-          leBdRegSet->setStyleSheet("");
-
-          cbBdReg->currentIndexChanged(regID);
-
-        }else{
-          leBdRegSet->setText("use Hex 0xAB123");
-          leBdRegSet->setStyleSheet("color : red;");
-        }
-      });
-
-      connect( leChRegSet, &QLineEdit::textChanged, this, [=](){
-        if( !enableSignalSlot ) return;
-        leChRegSet->setStyleSheet("color : blue;");
-      });
-      connect( leChRegSet, &QLineEdit::returnPressed, this, [=](){
-        if( !enableSignalSlot ) return;
-        QString text = leChRegSet->text();
-
-        if( text.contains("0x") ){
-          uint32_t value = std::stoul(text.toStdString(), nullptr, 16);
-          int index = cbDigi->currentIndex();
-          int regID = cbChReg->currentIndex();
-          int ch = cbCh->currentIndex();
-          digi[index]->WriteRegister(chRegList[regID], value, ch);
-          leChRegSet->setStyleSheet("");
-
-          cbChReg->currentIndexChanged(regID);
-        }else{
-          leChRegSet->setText("use Hex 0xAB123");
-          leChRegSet->setStyleSheet("color : red;");
-        }
-      });
-
-    }
-
-    {//^================ Copy
-      QGroupBox * copyBox = new QGroupBox("Copy Settings", inquiryTab);
-      layout->addWidget(copyBox);
-
-      QGridLayout * copyLayout = new QGridLayout(copyBox);
-      copyLayout->setAlignment(Qt::AlignLeft);
-
-      //---------- copy from
-      QGroupBox * copyFromBox = new QGroupBox("Copy From", copyBox);
-      copyFromBox->setFixedWidth(400);
-      copyLayout->addWidget(copyFromBox, 0, 0, 8 + 1, 2);
-
-      QGridLayout * copyFromLayout = new QGridLayout(copyFromBox);
-      
-      cbFromBoard = new RComboBox(copyFromBox);
-      for( unsigned int i = 0; i < nDigi; i++) cbFromBoard->addItem("Digi-" + QString::number(digi[i]->GetSerialNumber()), i);
-      copyFromLayout->addWidget(cbFromBoard, 0, 0, 1, 16);
-      connect(cbFromBoard, &RComboBox::currentIndexChanged, this, &DigiSettingsPanel::CheckRadioAndCheckedButtons);
-
-      for( int i = 0 ; i < MaxNChannels; i++ ){
-        QLabel * leCh = new QLabel(QString::number(i), copyFromBox);
-        leCh->setAlignment(Qt::AlignRight);
-        copyFromLayout->addWidget(leCh, i%8 + 1, 2*(i/8));
-        rbCh[i] = new QRadioButton(copyFromBox);
-        copyFromLayout->addWidget(rbCh[i], i%8 + 1, 2*(i/8) + 1);
-        connect(rbCh[i], &QRadioButton::clicked, this, &DigiSettingsPanel::CheckRadioAndCheckedButtons);
-
-        int id1 = cbFromBoard->currentIndex();
-        if( i >= digi[id1]->GetNChannels() ) rbCh[i]->setEnabled(false);
-      }
-
-      //---------- Acton buttons
-      bnCopyBoard = new QPushButton("Copy Board",copyBox);
-      bnCopyBoard->setFixedSize(120, 50);
-      copyLayout->addWidget(bnCopyBoard, 2, 2);
-
-      bnCopyChannel = new QPushButton("Copy Channel(s)", copyBox);
-      bnCopyChannel->setFixedSize(120, 50);
-      copyLayout->addWidget(bnCopyChannel, 3, 2);
-
-      //---------- copy to
-      QGroupBox * copyToBox = new QGroupBox("Copy To", copyBox);
-      copyToBox->setFixedWidth(400);
-      copyLayout->addWidget(copyToBox, 0, 3, 8 + 1, 2);
-
-      QGridLayout * copyToLayout = new QGridLayout(copyToBox);
-
-      cbToBoard = new RComboBox(copyToBox);
-      for( unsigned int i = 0; i < nDigi; i++) cbToBoard->addItem("Digi-" + QString::number(digi[i]->GetSerialNumber()), i);
-      copyToLayout->addWidget(cbToBoard, 0, 0, 1, 16);
-      connect(cbToBoard, &RComboBox::currentIndexChanged, this, &DigiSettingsPanel::CheckRadioAndCheckedButtons);
-
-      for( int i = 0 ; i < MaxNChannels; i++ ){
-        QLabel * leCh = new QLabel(QString::number(i), copyToBox);
-        leCh->setAlignment(Qt::AlignRight);
-        copyToLayout->addWidget(leCh, i%8 + 1, 2*(i/8));
-        chkCh[i] = new QCheckBox(copyToBox);
-        copyToLayout->addWidget(chkCh[i], i%8 + 1, 2*(i/8) + 1);
-        connect(chkCh[i], &QCheckBox::clicked, this, &DigiSettingsPanel::CheckRadioAndCheckedButtons);
-
-        int id1 = cbToBoard->currentIndex();
-        if( i >= digi[id1]->GetNChannels() ) chkCh[i]->setEnabled(false);
-      }
-
-      bnCopyBoard->setEnabled(false);
-      bnCopyChannel->setEnabled(false);
-
-      connect(bnCopyBoard, &QPushButton::clicked, this, [=](){
-        int fromIndex = cbFromBoard->currentIndex();
-        int toIndex = cbToBoard->currentIndex();
-
-        SendLogMsg("Copy Settings from DIG:" +  QString::number(digi[fromIndex]->GetSerialNumber()) + " to DIG:" +  QString::number(digi[toIndex]->GetSerialNumber()));
-        
-        //Copy Board Setting
-        for( int i = 0; i < (int) RegisterDPPList.size(); i++){
-          if( RegisterDPPList[i].GetRWType() != RW::WriteONLY ) continue;
-          uint32_t value = digi[fromIndex]->GetSettingFromMemory(RegisterDPPList[i]);
-          digi[toIndex]->WriteRegister(RegisterDPPList[i], value);
-        }
-
-        std::vector<Reg> regList;
-        if( digi[fromIndex]->GetDPPType() == V1730_DPP_PHA_CODE ) regList = RegisterPHAList;
-        if( digi[fromIndex]->GetDPPType() == V1730_DPP_PSD_CODE ) regList = RegisterPSDList;
-
-        for( int i = 0; i < digi[toIndex]->GetNChannels() ; i++){
-          //Copy setting
-          for( int k = 0; k < (int) regList.size(); k ++){
-            if( regList[k].GetRWType() != RW::ReadWrite ) continue;
-
-            uint32_t value = digi[fromIndex]->GetSettingFromMemory(regList[k], i);
-            digi[toIndex]->WriteRegister(regList[k], value, i);
-
-            usleep(10000); // wait for 10 milisec
-          }
-        }
-        
-        SendLogMsg("------ done");
-        return true;
-
-      });
-
-      connect(bnCopyChannel, &QPushButton::clicked, this, [=](){
-        int fromIndex = cbFromBoard->currentIndex();
-        int toIndex = cbToBoard->currentIndex();
-
-        std::vector<Reg> regList;
-        if( digi[fromIndex]->GetDPPType() == V1730_DPP_PHA_CODE ) regList = RegisterPHAList;
-        if( digi[fromIndex]->GetDPPType() == V1730_DPP_PSD_CODE ) regList = RegisterPSDList;
-
-        int fromCh = -1;
-        for( int i = 0; i < MaxNChannels; i++) {
-          if( rbCh[i]->isChecked() ) {
-            fromCh = i;
-            break;
-          }
-        }
-
-        if( fromCh == -1 ) return;
-
-        for( int i = 0; i < MaxNChannels; i++){
-          if( ! chkCh[i]->isChecked() ) return;
-          //Copy setting
-          for( int k = 0; k < (int) regList.size(); k ++){
-            if( regList[k].GetRWType() != RW::ReadWrite ) continue;
-
-            uint32_t value = digi[fromIndex]->GetSettingFromMemory(regList[k], fromCh);
-            digi[toIndex]->WriteRegister(regList[k], value, i);
-
-          }
-        }
-
-      });
-
-
-    }
-  }
-
+  SetUpInquiryCopyTab();
 
   connect(tabWidget, &QTabWidget::currentChanged, this, [=](int index){ 
     if( index < (int) nDigi) {
@@ -630,7 +297,6 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
       UpdatePanelFromMemory(); 
     }
   });
-
 
   ID = 0;
   UpdatePanelFromMemory();
@@ -901,7 +567,7 @@ void DigiSettingsPanel::SetUpGlobalTriggerMaskAndFrontPanelMask(QGridLayout * & 
     cbTRINMezzanines[ID]->setEnabled(state);
   });
 
-SetUpComboBox(cbAnalogMonitorMode[ID], "Analog Monitor Mode ", gLayout, 4, 0, DPP::AnalogMonitorMode, 0);
+  SetUpComboBox(cbAnalogMonitorMode[ID], "Analog Monitor Mode ", gLayout, 4, 0, DPP::AnalogMonitorMode, 0);
 
   connect(cbAnalogMonitorMode[ID], &RComboBox::currentIndexChanged, this, [=](int index){
     if( index < 2) {
@@ -1198,43 +864,394 @@ SetUpComboBox(cbAnalogMonitorMode[ID], "Analog Monitor Mode ", gLayout, 4, 0, DP
 
 }
 
-//&###########################################################
-void DigiSettingsPanel::SetUpChannelMask(){
+void DigiSettingsPanel::SetUpInquiryCopyTab(){
 
-  QLabel * chMaskLabel = new QLabel("Channel Mask : ", this);
+  //*##################################### Inquiry / Copy Tab
+  QWidget * inquiryTab = new QWidget(this);
+  tabWidget->addTab(inquiryTab, "Inquiry / Copy");
+
+  QGridLayout * layout = new QGridLayout(inquiryTab);
+  layout->setAlignment(Qt::AlignTop);
+
+  {//^================ Inquiry
+      QGroupBox * inquiryBox = new QGroupBox("Register Settings", inquiryTab);
+      layout->addWidget(inquiryBox);
+
+      QGridLayout * regLayout = new QGridLayout(inquiryBox);
+      regLayout->setAlignment(Qt::AlignLeft);
+
+      QLabel * lb1 = new QLabel("Register", inquiryBox);      lb1->setAlignment(Qt::AlignCenter); regLayout->addWidget(lb1, 0, 1);
+      QLabel * lb2 = new QLabel("R/W", inquiryBox);           lb2->setAlignment(Qt::AlignCenter); regLayout->addWidget(lb2, 0, 2);
+      QLabel * lb3 = new QLabel("Present Value", inquiryBox); lb3->setAlignment(Qt::AlignCenter); regLayout->addWidget(lb3, 0, 3);
+      QLabel * lb4 = new QLabel("Set Value", inquiryBox);     lb4->setAlignment(Qt::AlignCenter); regLayout->addWidget(lb4, 0, 4);
+
+      ///--------------- board
+      RComboBox * cbDigi = new RComboBox(inquiryBox);
+      cbDigi->setFixedWidth(120);
+      for( int i = 0; i < (int) nDigi; i++) cbDigi->addItem("Digi-" + QString::number(digi[i]->GetSerialNumber()), i);
+      regLayout->addWidget(cbDigi, 1, 0);
+
+      RComboBox * cbBdReg = new RComboBox(inquiryBox);
+      cbBdReg->setFixedWidth(300);
+      for( int i = 0; i < (int) RegisterPHAPSDBoardList.size() ; i++ ){
+        cbBdReg->addItem( QString::fromStdString(RegisterPHAPSDBoardList[i].GetName()) + " [0x" + QString::number(RegisterPHAPSDBoardList[i].GetAddress(), 16).toUpper() + "]", RegisterPHAPSDBoardList[i].GetAddress());
+      }
+      regLayout->addWidget(cbBdReg, 1, 1);
+
+      QLineEdit * leBdRegRW = new QLineEdit(inquiryBox);
+      leBdRegRW->setReadOnly(true);
+      leBdRegRW->setFixedWidth(120);
+      regLayout->addWidget(leBdRegRW, 1, 2);
+
+      QLineEdit * leBdRegValue = new QLineEdit(inquiryBox);
+      leBdRegValue->setReadOnly(true);
+      leBdRegValue->setFixedWidth(120);
+      regLayout->addWidget(leBdRegValue, 1, 3);
+
+      QLineEdit * leBdRegSet = new QLineEdit(inquiryBox);
+      leBdRegSet->setFixedWidth(120);
+      regLayout->addWidget(leBdRegSet, 1, 4);
+
+      ///--------------- channel
+      RComboBox * cbCh = new RComboBox(inquiryBox);
+      cbCh->setFixedWidth(120);
+      regLayout->addWidget(cbCh, 2, 0);
+
+      RComboBox * cbChReg = new RComboBox(inquiryBox);
+      cbChReg->setFixedWidth(300);
+      regLayout->addWidget(cbChReg, 2, 1);
+
+      QLineEdit * leChRegRW = new QLineEdit(inquiryBox);
+      leChRegRW->setFixedWidth(120);
+      leChRegRW->setReadOnly(true);
+      regLayout->addWidget(leChRegRW, 2, 2);
+
+      QLineEdit * leChRegValue = new QLineEdit(inquiryBox);
+      leChRegValue->setReadOnly(true);
+      leChRegValue->setFixedWidth(120);
+      regLayout->addWidget(leChRegValue, 2, 3);
+
+      QLineEdit * leChRegSet = new QLineEdit(inquiryBox);
+      leChRegSet->setFixedWidth(120);
+      regLayout->addWidget(leChRegSet, 2, 4);
+
+      connect(cbDigi, &RComboBox::currentIndexChanged, this, [=](int index){
+        enableSignalSlot = false;
+
+        cbCh->clear();
+        for( int i = 0; i < digi[index]->GetNChannels(); i ++ ) cbCh->addItem("Ch-" + QString::number(i), i);
+
+        if( digi[index]->GetDPPType() == V1730_DPP_PHA_CODE ) chRegList = RegisterPHAList;
+        if( digi[index]->GetDPPType() == V1730_DPP_PSD_CODE ) chRegList = RegisterPSDList;
+
+        cbChReg->clear();
+        for( int i = 0; i < (int) chRegList.size(); i++ ){
+          cbChReg->addItem(QString::fromStdString(chRegList[i].GetName()) + " [0x" + QString::number(chRegList[i].GetAddress(), 16).toUpper() + "]", chRegList[i].GetAddress());
+        }
+        enableSignalSlot = true;
+      });
+
+      cbDigi->currentIndexChanged(0);
+
+      connect(cbBdReg, &RComboBox::currentIndexChanged, this, [=](int index){
+        if( !enableSignalSlot ) return;
+
+        if( RegisterPHAPSDBoardList[index].GetRWType() == RW::WriteONLY ) {
+          leBdRegRW->setText("Write ONLY" );
+          leBdRegValue->setText("");
+          leBdRegSet->setEnabled(true);
+          return;
+        }
+
+        uint32_t value = digi[ cbDigi->currentIndex() ] ->ReadRegister(RegisterPHAPSDBoardList[index]);
+        leBdRegValue->setText( "0x" + QString::number(value, 16).toUpper());
+
+        if( RegisterPHAPSDBoardList[index].GetRWType() == RW::ReadONLY ) {
+          leBdRegRW->setText("Read ONLY" );
+          leBdRegSet->setEnabled(false);
+          return;
+        }
+
+        if( RegisterPHAPSDBoardList[index].GetRWType() == RW::ReadWrite ) {
+          leBdRegRW->setText("Read/Write" );
+          leBdRegSet->setEnabled(true);
+        }
+      });
+
+      cbBdReg->currentIndexChanged(0);
+
+      connect(cbCh, &RComboBox::currentIndexChanged, this, [=](int index){
+        if( !enableSignalSlot ) return;
+        int regIndex = cbChReg->currentIndex();
+
+        uint32_t value = digi[ cbDigi->currentIndex() ] ->ReadRegister(chRegList[regIndex], cbCh->currentIndex(), index);
+        leChRegValue->setText( "0x" + QString::number(value, 16).toUpper());
+      });
+    
+      connect(cbChReg, &RComboBox::currentIndexChanged, this, [=](int index){
+        if( !enableSignalSlot ) return;
+
+        if( chRegList[index].GetRWType() == RW::WriteONLY ) {
+          leChRegRW->setText("Write ONLY" );
+          leChRegValue->setText("");
+          leChRegSet->setEnabled(true);
+          return;
+        }
+
+        uint32_t value = digi[ cbDigi->currentIndex() ] ->ReadRegister(chRegList[index], cbCh->currentIndex());
+        leChRegValue->setText( "0x" + QString::number(value, 16).toUpper());
+
+        if( chRegList[index].GetRWType() == RW::ReadONLY ) {
+          leChRegRW->setText("Read ONLY" );
+          leChRegSet->setEnabled(false);
+          return;
+        }
+
+        if( chRegList[index].GetRWType() == RW::ReadWrite ) {
+          leChRegRW->setText("Read/Write" );
+          leChRegSet->setEnabled(true);
+        }
+      });
+      cbChReg->currentIndexChanged(0);
+
+      connect( leBdRegSet, &QLineEdit::textChanged, this, [=](){
+        if( !enableSignalSlot ) return;
+        leBdRegSet->setStyleSheet("color : blue;");
+      });
+      connect( leBdRegSet, &QLineEdit::returnPressed, this, [=](){
+        if( !enableSignalSlot ) return;
+        QString text = leBdRegSet->text();
+
+        if( text.contains("0x") ){
+          uint32_t value = std::stoul(text.toStdString(), nullptr, 16);
+          int index = cbDigi->currentIndex();
+          int regID = cbBdReg->currentIndex();
+          digi[index]->WriteRegister(RegisterPHAPSDBoardList[regID], value);
+          leBdRegSet->setStyleSheet("");
+
+          cbBdReg->currentIndexChanged(regID);
+
+        }else{
+          leBdRegSet->setText("use Hex 0xAB123");
+          leBdRegSet->setStyleSheet("color : red;");
+        }
+      });
+
+      connect( leChRegSet, &QLineEdit::textChanged, this, [=](){
+        if( !enableSignalSlot ) return;
+        leChRegSet->setStyleSheet("color : blue;");
+      });
+      connect( leChRegSet, &QLineEdit::returnPressed, this, [=](){
+        if( !enableSignalSlot ) return;
+        QString text = leChRegSet->text();
+
+        if( text.contains("0x") ){
+          uint32_t value = std::stoul(text.toStdString(), nullptr, 16);
+          int index = cbDigi->currentIndex();
+          int regID = cbChReg->currentIndex();
+          int ch = cbCh->currentIndex();
+          digi[index]->WriteRegister(chRegList[regID], value, ch);
+          leChRegSet->setStyleSheet("");
+
+          cbChReg->currentIndexChanged(regID);
+        }else{
+          leChRegSet->setText("use Hex 0xAB123");
+          leChRegSet->setStyleSheet("color : red;");
+        }
+      });
+
+    }
+
+  {//^================ Copy
+    const int div = 8;
+
+    QGroupBox * copyBox = new QGroupBox("Copy Settings", inquiryTab);
+    layout->addWidget(copyBox);
+
+    QGridLayout * copyLayout = new QGridLayout(copyBox);
+    copyLayout->setAlignment(Qt::AlignLeft);
+
+    //---------- copy from
+    QGroupBox * copyFromBox = new QGroupBox("Copy From", copyBox);
+    copyFromBox->setFixedWidth(400);
+    copyLayout->addWidget(copyFromBox, 0, 0, div + 1, 2);
+
+    QGridLayout * copyFromLayout = new QGridLayout(copyFromBox);
+    
+    cbFromBoard = new RComboBox(copyFromBox);
+    for( unsigned int i = 0; i < nDigi; i++) cbFromBoard->addItem("Digi-" + QString::number(digi[i]->GetSerialNumber()), i);
+    copyFromLayout->addWidget(cbFromBoard, 0, 0, 1, 2*div);
+    connect(cbFromBoard, &RComboBox::currentIndexChanged, this, &DigiSettingsPanel::CheckRadioAndCheckedButtons);
+
+    for( int i = 0 ; i < MaxNChannels; i++ ){
+      QLabel * leCh = new QLabel(QString::number(i), copyFromBox);
+      leCh->setAlignment(Qt::AlignRight);
+      copyFromLayout->addWidget(leCh, i%div + 1, 2*(i/div));
+      rbCh[i] = new QRadioButton(copyFromBox);
+      copyFromLayout->addWidget(rbCh[i], i%div + 1, 2*(i/div) + 1);
+      connect(rbCh[i], &QRadioButton::clicked, this, &DigiSettingsPanel::CheckRadioAndCheckedButtons);
+
+      int id1 = cbFromBoard->currentIndex();
+      if( i >= digi[id1]->GetNChannels() ) rbCh[i]->setEnabled(false);
+    }
+
+    //---------- Acton buttons
+    bnCopyBoard = new QPushButton("Copy Board",copyBox);
+    bnCopyBoard->setFixedSize(120, 50);
+    copyLayout->addWidget(bnCopyBoard, 2, 2);
+
+    bnCopyChannel = new QPushButton("Copy Channel(s)", copyBox);
+    bnCopyChannel->setFixedSize(120, 50);
+    copyLayout->addWidget(bnCopyChannel, 3, 2);
+
+    //---------- copy to
+    QGroupBox * copyToBox = new QGroupBox("Copy To", copyBox);
+    copyToBox->setFixedWidth(400);
+    copyLayout->addWidget(copyToBox, 0, 3, div + 1, 2);
+
+    QGridLayout * copyToLayout = new QGridLayout(copyToBox);
+
+    cbToBoard = new RComboBox(copyToBox);
+    for( unsigned int i = 0; i < nDigi; i++) cbToBoard->addItem("Digi-" + QString::number(digi[i]->GetSerialNumber()), i);
+    copyToLayout->addWidget(cbToBoard, 0, 0, 1, 2*div);
+    connect(cbToBoard, &RComboBox::currentIndexChanged, this, &DigiSettingsPanel::CheckRadioAndCheckedButtons);
+
+    for( int i = 0 ; i < MaxNChannels; i++ ){
+      QLabel * leCh = new QLabel(QString::number(i), copyToBox);
+      leCh->setAlignment(Qt::AlignRight);
+      copyToLayout->addWidget(leCh, i%div + 1, 2*(i/div));
+      chkCh[i] = new QCheckBox(copyToBox);
+      copyToLayout->addWidget(chkCh[i], i%div + 1, 2*(i/div) + 1);
+      connect(chkCh[i], &QCheckBox::clicked, this, &DigiSettingsPanel::CheckRadioAndCheckedButtons);
+
+      int id1 = cbToBoard->currentIndex();
+      if( i >= digi[id1]->GetNChannels() ) chkCh[i]->setEnabled(false);
+    }
+
+    bnCopyBoard->setEnabled(false);
+    bnCopyChannel->setEnabled(false);
+
+    connect(bnCopyBoard, &QPushButton::clicked, this, [=](){
+      int fromIndex = cbFromBoard->currentIndex();
+      int toIndex = cbToBoard->currentIndex();
+
+      SendLogMsg("Copy Settings from DIG:" +  QString::number(digi[fromIndex]->GetSerialNumber()) + " to DIG:" +  QString::number(digi[toIndex]->GetSerialNumber()));
+      
+      //Copy Board Setting
+      for( int i = 0; i < (int) RegisterPHAPSDBoardList.size(); i++){
+        if( RegisterPHAPSDBoardList[i].GetRWType() != RW::WriteONLY ) continue;
+        uint32_t value = digi[fromIndex]->GetSettingFromMemory(RegisterPHAPSDBoardList[i]);
+        digi[toIndex]->WriteRegister(RegisterPHAPSDBoardList[i], value);
+      }
+
+      std::vector<Reg> regList;
+      if( digi[fromIndex]->GetDPPType() == V1730_DPP_PHA_CODE ) regList = RegisterPHAList;
+      if( digi[fromIndex]->GetDPPType() == V1730_DPP_PSD_CODE ) regList = RegisterPSDList;
+
+      for( int i = 0; i < digi[toIndex]->GetNChannels() ; i++){
+        //Copy setting
+        for( int k = 0; k < (int) regList.size(); k ++){
+          if( regList[k].GetRWType() != RW::ReadWrite ) continue;
+
+          uint32_t value = digi[fromIndex]->GetSettingFromMemory(regList[k], i);
+          digi[toIndex]->WriteRegister(regList[k], value, i);
+
+          usleep(10000); // wait for 10 milisec
+        }
+      }
+      
+      SendLogMsg("------ done");
+      return true;
+
+    });
+
+    connect(bnCopyChannel, &QPushButton::clicked, this, [=](){
+      int fromIndex = cbFromBoard->currentIndex();
+      int toIndex = cbToBoard->currentIndex();
+
+      std::vector<Reg> regList;
+      if( digi[fromIndex]->GetDPPType() == V1730_DPP_PHA_CODE ) regList = RegisterPHAList;
+      if( digi[fromIndex]->GetDPPType() == V1730_DPP_PSD_CODE ) regList = RegisterPSDList;
+
+      int fromCh = -1;
+      for( int i = 0; i < MaxNChannels; i++) {
+        if( rbCh[i]->isChecked() ) {
+          fromCh = i;
+          break;
+        }
+      }
+
+      if( fromCh == -1 ) return;
+
+      for( int i = 0; i < MaxNChannels; i++){
+        if( ! chkCh[i]->isChecked() ) return;
+        //Copy setting
+        for( int k = 0; k < (int) regList.size(); k ++){
+          if( regList[k].GetRWType() != RW::ReadWrite ) continue;
+
+          uint32_t value = digi[fromIndex]->GetSettingFromMemory(regList[k], fromCh);
+          digi[toIndex]->WriteRegister(regList[k], value, i);
+
+        }
+      }
+    });
+
+  }
+}
+
+//&###########################################################
+void DigiSettingsPanel::SetUpChannelMask(unsigned int digiID){
+
+  QString lbStr = "Channel Mask :";
+  if( digi[digiID]->GetDPPType() == DPPType::DPP_QDC_CODE ) lbStr = "Group Mask :";
+
+  QLabel * chMaskLabel = new QLabel(lbStr, this);
   chMaskLabel->setAlignment(Qt::AlignRight | Qt::AlignCenter);
-  bdCfgLayout[ID]->addWidget(chMaskLabel, 0, 0);
+  bdCfgLayout[digiID]->addWidget(chMaskLabel, 0, 0);
 
   QWidget * chWiget = new QWidget(this);
-  bdCfgLayout[ID]->addWidget(chWiget, 0, 1, 1, 3);
+  bdCfgLayout[digiID]->addWidget(chWiget, 0, 1, 1, 3);
 
   QGridLayout * chLayout = new QGridLayout(chWiget);
   chLayout->setAlignment(Qt::AlignLeft);
   chLayout->setSpacing(0);
 
-  for( int i = 0; i < digi[ID]->GetNChannels(); i++){
-    bnChEnableMask[ID][i] = new QPushButton(this);
-    bnChEnableMask[ID][i]->setFixedSize(QSize(20,20));
-    bnChEnableMask[ID][i]->setToolTip("Ch-" + QString::number(i));
-    bnChEnableMask[ID][i]->setToolTipDuration(-1);
+  int nChGrp = digi[digiID]->GetNChannels();
+  if( digi[digiID]->GetDPPType() == DPPType::DPP_QDC_CODE ) nChGrp = digi[digiID]->GetNCoupledCh();
+
+  for( int i = 0; i < nChGrp; i++){
+    bnChEnableMask[digiID][i] = new QPushButton(this);
+    bnChEnableMask[digiID][i]->setFixedSize(QSize(20,20));
+    bnChEnableMask[digiID][i]->setToolTip("Ch-" + QString::number(i));
+    bnChEnableMask[digiID][i]->setToolTipDuration(-1);
     QLabel * chIDLabel = new QLabel(QString::number(i), this);
     chIDLabel->setAlignment(Qt::AlignBottom | Qt::AlignHCenter);
     chLayout->addWidget(chIDLabel, 0, i);
-    chLayout->addWidget(bnChEnableMask[ID][i], 1, i );
+    chLayout->addWidget(bnChEnableMask[digiID][i], 1, i );
 
-    connect(bnChEnableMask[ID][i], &QPushButton::clicked, this, [=](){
+    connect(bnChEnableMask[digiID][i], &QPushButton::clicked, this, [=](){
       if( !enableSignalSlot) return;
 
-      if( bnChEnableMask[ID][i]->styleSheet() == "" ){
-         bnChEnableMask[ID][i]->setStyleSheet("background-color : green;");
-         digi[ID]->SetBits(DPP::ChannelEnableMask, {1, i}, 1, i);
+      if( bnChEnableMask[digiID][i]->styleSheet() == "" ){
+         bnChEnableMask[digiID][i]->setStyleSheet("background-color : green;");
+
+         if( digi[digiID]->GetDPPType() == DPPType::DPP_QDC_CODE ){
+           digi[digiID]->SetBits(DPP::QDC::GroupEnableMask, {1, i}, 1, i);
+         }else{
+           digi[digiID]->SetBits(DPP::ChannelEnableMask, {1, i}, 1, i);
+         }
       }else{
-         bnChEnableMask[ID][i]->setStyleSheet("");
-         digi[ID]->SetBits(DPP::ChannelEnableMask, {1, i}, 0, i);
+         bnChEnableMask[digiID][i]->setStyleSheet("");
+         if( digi[digiID]->GetDPPType() == DPPType::DPP_QDC_CODE ){
+           digi[digiID]->SetBits(DPP::QDC::GroupEnableMask, {1, i}, 0, i);
+         }else{
+           digi[digiID]->SetBits(DPP::ChannelEnableMask, {1, i}, 0, i);
+         }
       }
 
-      if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) UpdatePHASetting();
-      if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) UpdatePSDSetting();
+      if( digi[digiID]->GetDPPType() == V1730_DPP_PHA_CODE ) UpdateSettings_PHA();
+      if( digi[digiID]->GetDPPType() == V1730_DPP_PSD_CODE ) UpdateSettings_PSD();
+      if( digi[digiID]->GetDPPType() == V1740_DPP_QDC_CODE ) UpdateSettings_QDC();
 
       emit UpdateOtherPanels();
     });
@@ -1763,9 +1780,9 @@ void DigiSettingsPanel::SetUpPSDBoard(){
   SetUpCheckBox(chkTraceRecording[ID],     "Record Trace", bdCfgLayout[ID], 2, 1, DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace);
   SetUpCheckBox(chkEnableExtra2[ID],       "Enable Extra", bdCfgLayout[ID], 3, 1, DPP::BoardConfiguration, DPP::Bit_BoardConfig::EnableExtra2);
 
-  SetUpComboBoxBit(cbAnaProbe1[ID],     "Ana. Probe ", bdCfgLayout[ID], 1, 2, DPP::Bit_BoardConfig::ListAnaProbe_PSD, DPP::BoardConfiguration, DPP::Bit_BoardConfig::AnaProbe_PSD, 1, 0);
-  SetUpComboBoxBit(cbDigiProbe1[ID], "Digi. Probe 1 ", bdCfgLayout[ID], 3, 2, DPP::Bit_BoardConfig::ListDigiProbe1_PSD, DPP::BoardConfiguration, DPP::Bit_BoardConfig::DigiProbel1_PHA, 1, 0);
-  SetUpComboBoxBit(cbDigiProbe2[ID], "Digi. Probe 2 ", bdCfgLayout[ID], 4, 2, DPP::Bit_BoardConfig::ListDigiProbe2_PSD, DPP::BoardConfiguration, DPP::Bit_BoardConfig::DigiProbel2_PHA, 1, 0);
+  SetUpComboBoxBit(cbAnaProbe1[ID],     "Ana. Probe ", bdCfgLayout[ID], 1, 2, DPP::Bit_BoardConfig::ListAnaProbe_PSD, DPP::BoardConfiguration, DPP::Bit_BoardConfig::AnalogProbe1, 1, 0);
+  SetUpComboBoxBit(cbDigiProbe1[ID], "Digi. Probe 1 ", bdCfgLayout[ID], 3, 2, DPP::Bit_BoardConfig::ListDigiProbe1_PSD, DPP::BoardConfiguration, DPP::Bit_BoardConfig::DigiProbel1_PSD, 1, 0);
+  SetUpComboBoxBit(cbDigiProbe2[ID], "Digi. Probe 2 ", bdCfgLayout[ID], 4, 2, DPP::Bit_BoardConfig::ListDigiProbe2_PSD, DPP::BoardConfiguration, DPP::Bit_BoardConfig::DigiProbel2_PSD, 1, 0);
 
 }
 
@@ -2457,7 +2474,7 @@ void DigiSettingsPanel::UpdatePanelFromMemory(){
 
   if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) {
     chkDecimateTrace[ID]->setChecked(   Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::DisableDigiTrace_PSD) );
-    int temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::AnaProbe_PSD);
+    int temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::AnalogProbe1);
     for( int i = 0; i < cbAnaProbe1[ID]->count(); i++){
       if( cbAnaProbe1[ID]->itemData(i).toInt() == temp) {
         cbAnaProbe1[ID]->setCurrentIndex(i);
@@ -2607,8 +2624,8 @@ void DigiSettingsPanel::UpdatePanelFromMemory(){
     }
   }
 
-  if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) UpdatePHASetting();
-  if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) UpdatePSDSetting();
+  if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) UpdateSettings_PHA();
+  if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) UpdateSettings_PSD();
 
   enableSignalSlot = true;
 }
@@ -2806,7 +2823,7 @@ void DigiSettingsPanel::SyncAllChannelsTab_PHA(){
 }
 
 
-void DigiSettingsPanel::UpdatePHASetting(){
+void DigiSettingsPanel::UpdateSettings_PHA(){
 
   enableSignalSlot = false;
 
@@ -2933,7 +2950,7 @@ void DigiSettingsPanel::SyncAllChannelsTab_PSD(){
     }
 
 }
-void DigiSettingsPanel::UpdatePSDSetting(){
+void DigiSettingsPanel::UpdateSettings_PSD(){
 
   enableSignalSlot = false;
 
@@ -3012,6 +3029,14 @@ void DigiSettingsPanel::UpdatePSDSetting(){
   enableSignalSlot = true;
 
   SyncAllChannelsTab_PSD();
+
+}
+
+void DigiSettingsPanel::SyncAllChannelsTab_QDC(){
+
+}
+
+void DigiSettingsPanel::UpdateSettings_QDC(){
 
 }
 

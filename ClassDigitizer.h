@@ -28,6 +28,7 @@ class Digitizer{
     int                   boardID;       /// board identity
     int                   handle;        /// i don't know why, but better separete the handle from boardID
     int                   NChannel;      /// number of channel
+    int                   NCoupledCh;    /// number of Coupled channel
     int                   ADCbits;       /// ADC bit
     int                   DPPType;       /// DPP verion
     unsigned int          ADCFullSize;   /// pow(2, ADCbits) - 1
@@ -108,7 +109,7 @@ class Digitizer{
     bool        GetChannelOnOff(unsigned ch) { channelMask = GetSettingFromMemory(DPP::ChannelEnableMask); return (channelMask & ( 1 << ch) );} 
     float       GetTick2ns()                   const {return tick2ns;}
     int         GetNChannels()               const {return NChannel;}
-    int         GetNCoupledCh()              const { return DPPType != DPPType::DPP_QDC_CODE ? NChannel/2 : NChannel/8;}
+    int         GetNCoupledCh()              const {return NCoupledCh;}
     int         GetHandle()                  const {return handle;}
     int         GetDPPType()                 const {return DPPType;}
     std::string GetDPPString(int DPPType = 0);  /// if no input, use digitizer DPPType

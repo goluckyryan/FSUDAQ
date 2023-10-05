@@ -661,7 +661,7 @@ void Scope::SetUpPSDPanel(){
   }
   connect(cbAnaProbe1, &RComboBox::currentIndexChanged, this, [=](){
     if( !enableSignalSlot ) return;
-    digi[ID]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::AnaProbe_PSD, cbAnaProbe1->currentData().toInt(), cbScopeCh->currentIndex());
+    digi[ID]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::AnalogProbe1, cbAnaProbe1->currentData().toInt(), cbScopeCh->currentIndex());
     //dataTrace[0]->setName(cbAnaProbe1->currentText());
 
     switch( cbAnaProbe1->currentIndex() ){
@@ -875,7 +875,7 @@ void Scope::UpdatePSDPanel(){
 
   uint32_t BdCfg = digi[ID]->GetSettingFromMemory(DPP::BoardConfiguration, ch);
 
-  int temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::AnaProbe_PSD);
+  int temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::AnalogProbe1);
   for( int i = 0; i < cbAnaProbe1->count(); i++){
     if( cbAnaProbe1->itemData(i).toInt() == temp ) {
       cbAnaProbe1->setCurrentIndex(i);

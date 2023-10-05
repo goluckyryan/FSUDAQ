@@ -30,7 +30,7 @@ class Reg{
       rwType = RW::ReadWrite;
       group = 0;
       maxBit = 0;
-      partialStep = 0;
+      partialStep = 0; //for time parameter, partial step * tick2ns = full step
       comboList.clear();
     }
     Reg(std::string name, uint32_t address, RW type = RW::ReadWrite, bool group = false, unsigned int max = 0, int pStep = 0){
@@ -68,8 +68,9 @@ class Reg{
 
     std::vector<std::pair<std::string, unsigned int>> GetComboList() const {return comboList;}
 
-    uint32_t  ActualAddress(int ch = -1){
-      if( address == 0x8180 ) return  (ch < 0 ? address : (address + 4*(ch/2)));
+    uint32_t  ActualAddress(int ch = -1, int subCh = 0){ //for QDC, ch is groupID
+      if( address == 0x8180 ) return  (ch < 0 ? address : (address + 4*(ch/2))); // DPP::TriggerValidationMask_G
+      if( address == 0x10D0 ) return  (ch < 0 ? address + 0x7000 + (ch << 8): (address + (ch << 8) + 4*subCh)); // DPP::QDC::TriggerThreshold_G
       if( address <  0x8000 ){
         if( group ) {
           if( ch < 0 ) return address + 0x7000;
@@ -81,7 +82,7 @@ class Reg{
       return 0;
     }
 
-    unsigned short Index (unsigned short ch);
+    unsigned short Index (unsigned short ch, int subCh = 0);
     uint32_t CalAddress(unsigned int index); /// output actual address, also write the registerAddress
     
     void SetName(std::string str) {this->name = str;}
@@ -105,10 +106,12 @@ inline void Reg::Print() const{
   printf(" Max Value : 0x%X = %d \n", maxBit, maxBit);
 }
 
-inline  unsigned short Reg::Index (unsigned short ch){
+inline  unsigned short Reg::Index (unsigned short ch, int subCh){ //for QDC, ch = group
   unsigned short index;
-  if( address == 0x8180){
+  if( address == 0x8180){ //DPP::TriggerValidationMask_G
     index = ((address + 4*(ch/2)) & 0x0FFF) / 4;
+  }else if( address == 0x10D0){ //DPP::QDC::TriggerThreshold_G
+    index = ((address + (ch << 8) + 4*subCh) & 0x0FFF) / 4;
   }else if( address < 0x8000){
     index = (address + (ch << 8)) / 4;
   }else{
@@ -204,14 +207,20 @@ const Reg SoftwareClear_W              ("SoftwareClear_W"              , 0xEF28,
 namespace DPP {
 
   namespace Bit_BoardConfig{
+
+    /// -------------------- shared with PHA, PSD, and QDC
+    const std::pair<unsigned short, unsigned short> AnalogProbe1 = {2, 12} ; 
+    const std::pair<unsigned short, unsigned short> RecordTrace = {1, 16} ; 
+
+    /// -------------------- shared with PHA and PSD
     const std::pair<unsigned short, unsigned short> EnableAutoDataFlush = {1, 0} ; /// length, smallest pos
-    const std::pair<unsigned short, unsigned short> DecimateTrace = {1, 1} ; 
     const std::pair<unsigned short, unsigned short> TrigPropagation = {1, 2} ; 
     const std::pair<unsigned short, unsigned short> DualTrace = {1, 11} ; 
-    const std::pair<unsigned short, unsigned short> AnalogProbe1 = {2, 12} ; 
-    const std::pair<unsigned short, unsigned short> AnalogProbe2 = {2, 14} ; 
-    const std::pair<unsigned short, unsigned short> RecordTrace = {1, 16} ; 
     const std::pair<unsigned short, unsigned short> EnableExtra2 = {1, 17} ; 
+
+    /// -------------------- PHA only
+    const std::pair<unsigned short, unsigned short> DecimateTrace = {1, 1} ; 
+    const std::pair<unsigned short, unsigned short> AnalogProbe2 = {2, 14} ; 
     const std::pair<unsigned short, unsigned short> DigiProbel1_PHA = {4, 20} ; 
     const std::pair<unsigned short, unsigned short> DigiProbel2_PHA = {3, 26} ; 
 
@@ -240,9 +249,7 @@ namespace DPP {
 
     const std::vector<std::pair<std::string, unsigned int>> ListDigiProbe2_PHA = {{"Trigger", 0}};
 
-    ///--------------------------
-
-    const std::pair<unsigned short, unsigned short> AnaProbe_PSD = {3, 11} ; 
+    ///------------------------ PSD only
     const std::pair<unsigned short, unsigned short> DigiProbel1_PSD = {3, 23} ; 
     const std::pair<unsigned short, unsigned short> DigiProbel2_PSD = {3, 26} ; 
     const std::pair<unsigned short, unsigned short> DisableDigiTrace_PSD = {1, 31} ; 
@@ -269,6 +276,11 @@ namespace DPP {
                                                                                   {"Baseline Freeze", 6},
                                                                                   {"Trigger", 7}};
 
+    /// -------------------- QDC only
+    const std::pair<unsigned short, unsigned short> ExtTriggerMode_QDC = {2, 20} ; 
+    const std::vector<std::pair<std::string, unsigned int>> ListExtTriggerMode_QDC = {{"Trigger", 0},
+                                                                                      {"Veto", 1},
+                                                                                      {"Anti-Veto", 2}};
   }
   
   namespace Bit_DPPAlgorithmControl_PHA {
@@ -676,7 +688,7 @@ namespace DPP {
     const Reg ThresholdForPSDCut             ("ThresholdForPSDCut"             , 0x1078, RW::ReadWrite, false,  0x3FF, -1); /// R/W
     const Reg PurGapThreshold                ("PurGapThreshold"                , 0x107C, RW::ReadWrite, false,  0xFFF, -1); /// R/W
     const Reg DPPAlgorithmControl2_G         ("DPPAlgorithmControl2_G"         , 0x1084, RW::ReadWrite,  true, {}); /// R/W 
-    const Reg EarlyBaselineFreeze            ("EarlyBaselineFreeze"            , 0x10D8, RW::ReadWrite,  true,  0x3FF,  4); /// R/W
+    const Reg EarlyBaselineFreeze            ("EarlyBaselineFreeze"            , 0x10D8, RW::ReadWrite, false,  0x3FF,  4); /// R/W
 
     namespace Bit_CFDSetting {
       const std::pair<unsigned short, unsigned short> CFDDealy = {8, 0} ;
@@ -781,16 +793,14 @@ namespace DPP {
     const Reg ChannelMask_G                 ("Channel Group Mask"            , 0x10A8, RW::ReadWrite, true,   0xFF, 1); /// R/W
     const Reg DCOffset_LowCh_G              ("DC offset for low ch."         , 0x10C0, RW::ReadWrite, true, {}); /// R/W
     const Reg DCOffset_HighCh_G             ("DC offset for high ch."        , 0x10C4, RW::ReadWrite, true, {}); /// R/W
-    const Reg TriggerThreshold_G            ("Trigger Threshold"             , 0x10D0, RW::ReadWrite, true, {}); /// R/W
-
-
-
-
-
+    const Reg TriggerThreshold_G            ("Trigger Threshold"             , 0x10D0, RW::ReadWrite, true, 0xFFF, 1); /// R/W
 
 
     const Reg NumberEventsPerAggregate      ("Number of Events per Aggregate", 0x8020, RW::ReadWrite, false, 0x3FF, 1); /// R/W
     const Reg RecordLength                  ("Record Length"                 , 0x8024, RW::ReadWrite, false, 0xFFF, 1); /// R/W
+
+    const Reg GroupEnableMask               ("Group Enable Mask"             , 0x8120, RW::ReadWrite, false, 0xFF, 1); /// R/W
+
   }
 
 } // end of DPP namepace Register
@@ -868,15 +878,11 @@ const std::vector<Reg> RegisterQDCList = { //TODO
   DPP::QDC::ChannelMask_G,
   DPP::QDC::DCOffset_LowCh_G,
   DPP::QDC::DCOffset_HighCh_G,
-  DPP::QDC::TriggerThreshold_G,
-
-  DPP::QDC::NumberEventsPerAggregate,
-  DPP::QDC::RecordLength
-
+  DPP::QDC::TriggerThreshold_G
 };
 
 /// Only Board Setting 
-const std::vector<Reg> RegisterDPPList = {
+const std::vector<Reg> RegisterPHAPSDBoardList = {
   
   DPP::BoardConfiguration          ,
   DPP::AggregateOrganization       ,
@@ -942,6 +948,73 @@ const std::vector<Reg> RegisterDPPList = {
   DPP::ROM_BoardSerialNumByte0_R   ,
   DPP::ROM_VCXO_Type_R             
   
+};
+
+const std::vector<Reg> RegisterQDCBoardList = {
+
+  DPP::BoardConfiguration  ,
+  DPP::AggregateOrganization,
+  DPP::QDC::NumberEventsPerAggregate,
+  DPP::QDC::RecordLength ,
+  DPP::AcquisitionControl,
+  DPP::AcquisitionStatus_R,
+  DPP::SoftwareTrigger_W,
+  DPP::GlobalTriggerMask,
+  DPP::FrontPanelTRGOUTEnableMask,
+  DPP::LVDSIOData,
+  DPP::FrontPanelIOControl,
+  DPP::QDC::GroupEnableMask,
+  DPP::ROCFPGAFirmwareRevision_R,
+  DPP::VoltageLevelModeConfig,
+  DPP::SoftwareClockSync_W,
+  DPP::BoardInfo_R,
+  DPP::AnalogMonitorMode,
+  DPP::EventSize_R,
+  DPP::TimeBombDowncounter_R,
+  DPP::FanSpeedControl,
+  DPP::RunStartStopDelay,
+  DPP::BoardFailureStatus_R,
+  DPP::DisableExternalTrigger,
+  DPP::FrontPanelLVDSIONewFeatures,
+  DPP::BufferOccupancyGain,
+  DPP::ExtendedVetoDelay,
+  DPP::ReadoutControl,
+  DPP::ReadoutStatus_R,
+  DPP::BoardID,
+  DPP::MCSTBaseAddressAndControl,
+  DPP::RelocationAddress,
+  DPP::InterruptStatusID,
+  DPP::InterruptEventNumber,
+  DPP::MaxAggregatePerBlockTransfer,
+  DPP::Scratch                     ,
+  DPP::SoftwareReset_W             ,
+  DPP::SoftwareClear_W             ,
+  DPP::ConfigurationReload_W       ,
+  DPP::ROMChecksum_R               ,
+  DPP::ROMChecksumByte2_R          ,
+  DPP::ROMChecksumByte1_R          ,
+  DPP::ROMChecksumByte0_R          ,
+  DPP::ROMConstantByte2_R          ,
+  DPP::ROMConstantByte1_R          ,
+  DPP::ROMConstantByte0_R          ,
+  DPP::ROM_C_Code_R                ,
+  DPP::ROM_R_Code_R                ,
+  DPP::ROM_IEEE_OUI_Byte2_R        ,
+  DPP::ROM_IEEE_OUI_Byte1_R        ,
+  DPP::ROM_IEEE_OUI_Byte0_R        ,
+  DPP::ROM_BoardVersion_R          ,
+  DPP::ROM_BoardFromFactor_R       ,
+  DPP::ROM_BoardIDByte1_R          ,
+  DPP::ROM_BoardIDByte0_R          ,
+  DPP::ROM_PCB_rev_Byte3_R         ,
+  DPP::ROM_PCB_rev_Byte2_R         ,
+  DPP::ROM_PCB_rev_Byte1_R         ,
+  DPP::ROM_PCB_rev_Byte0_R         ,
+  DPP::ROM_FlashType_R             ,
+  DPP::ROM_BoardSerialNumByte1_R   ,
+  DPP::ROM_BoardSerialNumByte0_R   ,
+  DPP::ROM_VCXO_Type_R             
+
 };
 
 #endif

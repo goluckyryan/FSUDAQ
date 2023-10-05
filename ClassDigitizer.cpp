@@ -22,6 +22,7 @@ void Digitizer::Initalization(){
   boardID = -1;
   handle = -1;
   NChannel = 16;
+  NCoupledCh = 8;
   ADCbits  = 1;
   DPPType = 0;
   ADCFullSize = 0;
@@ -103,9 +104,9 @@ int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose
       NChannel = BoardInfo.Channels;
       channelMask = pow(2, NChannel)-1;
       switch(BoardInfo.Model){
-            case CAEN_DGTZ_V1730: tick2ns = 2.0; break; ///ns -> 500 MSamples/s
-            case CAEN_DGTZ_V1725: tick2ns = 4.0; break; ///ns -> 250 MSamples/s
-            case CAEN_DGTZ_V1740: tick2ns = 16.0; break; ///ns -> 62.5 MSamples/s
+            case CAEN_DGTZ_V1730: tick2ns =  2.0; NCoupledCh = 8; break; ///ns -> 500 MSamples/s
+            case CAEN_DGTZ_V1725: tick2ns =  4.0; NCoupledCh = 8; break; ///ns -> 250 MSamples/s
+            case CAEN_DGTZ_V1740: tick2ns = 16.0; NCoupledCh = 8; break; ///ns -> 62.5 MSamples/s
             default : tick2ns = 4.0; break;
       }
       data->tick2ns = tick2ns;
@@ -603,9 +604,9 @@ Reg Digitizer::FindRegister(uint32_t address){
   
   Reg tempReg;  
   ///========= Find Match Register
-  for( int p = 0; p < (int) RegisterDPPList[p]; p++){
-    if( address == RegisterDPPList[p].GetAddress() ) {
-      tempReg = RegisterDPPList[p];
+  for( int p = 0; p < (int) RegisterPHAPSDBoardList[p]; p++){
+    if( address == RegisterPHAPSDBoardList[p].GetAddress() ) {
+      tempReg = RegisterPHAPSDBoardList[p];
       break;
     }
   }
@@ -639,9 +640,9 @@ void Digitizer::ReadAllSettingsFromBoard(bool force){
   printf("===== Digitizer::%s \n", __func__);
 
   /// board setting
-  for( int p = 0; p < (int) RegisterDPPList.size(); p++){
-    if( RegisterDPPList[p].GetRWType() == RW::WriteONLY) continue;
-    ReadRegister(RegisterDPPList[p]); 
+  for( int p = 0; p < (int) RegisterPHAPSDBoardList.size(); p++){
+    if( RegisterPHAPSDBoardList[p].GetRWType() == RW::WriteONLY) continue;
+    ReadRegister(RegisterPHAPSDBoardList[p]); 
   }
   
   channelMask = GetSettingFromMemory(DPP::ChannelEnableMask);
@@ -673,9 +674,9 @@ void Digitizer::ProgramSettingsToBoard(){
   Reg haha;
   
   /// board setting
-  for( int p = 0; p < (int) RegisterDPPList.size(); p++){
-    if( RegisterDPPList[p].GetRWType() == RW::ReadWrite) {
-      haha = RegisterDPPList[p];
+  for( int p = 0; p < (int) RegisterPHAPSDBoardList.size(); p++){
+    if( RegisterPHAPSDBoardList[p].GetRWType() == RW::ReadWrite) {
+      haha = RegisterPHAPSDBoardList[p];
       WriteRegister(haha, GetSettingFromMemory(haha), -1, false); 
       usleep(1 * 1000);
     }
@@ -850,8 +851,8 @@ void Digitizer::SaveAllSettingsAsText(std::string fileName){
     uint32_t actualAddress = haha.CalAddress(i);
     
     ///printf("%7d--- 0x%04X,  0x%04X\n", i, haha->GetAddress(), haha->ActualAddress());
-    for( int p = 0; p < (int) RegisterDPPList.size(); p++){
-      if( haha.GetAddress() == (uint32_t) RegisterDPPList[p] ) haha = RegisterDPPList[p];
+    for( int p = 0; p < (int) RegisterPHAPSDBoardList.size(); p++){
+      if( haha.GetAddress() == (uint32_t) RegisterPHAPSDBoardList[p] ) haha = RegisterPHAPSDBoardList[p];
     }
     if( DPPType == V1730_DPP_PHA_CODE) {
       for( int p = 0; p < (int) RegisterPHAList.size(); p++){

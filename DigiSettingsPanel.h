@@ -42,9 +42,10 @@ private:
 
   void CleanUpGroupBox(QGroupBox * & gBox);
 
-  void SetUpChannelMask();
+  void SetUpChannelMask(unsigned int digiID);
   void SetUpACQReadOutTab();
   void SetUpGlobalTriggerMaskAndFrontPanelMask(QGridLayout * & gLayout);
+  void SetUpInquiryCopyTab();
 
   void SetUpPHABoard();
   void SetUpPHAChannel();
@@ -63,9 +64,11 @@ private:
   void UpdateBoardAndChannelsStatus(); // ReadRegister
 
   void SyncAllChannelsTab_PHA();
-  void UpdatePHASetting();
+  void UpdateSettings_PHA();
   void SyncAllChannelsTab_PSD();
-  void UpdatePSDSetting();
+  void UpdateSettings_PSD();
+  void SyncAllChannelsTab_QDC();
+  void UpdateSettings_QDC();
 
   void CheckRadioAndCheckedButtons();
 
