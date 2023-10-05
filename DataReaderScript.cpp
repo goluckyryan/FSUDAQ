@@ -93,8 +93,8 @@ int main(int argc, char **argv){
   if (argc <= 1)    {
     printf("Incorrect number of arguments:\n");
     printf("%s [inFile]  [DPPType] \n", argv[0]);
-    printf("                +-- PHA = %d\n", V1730_DPP_PHA_CODE);   
-    printf("                +-- PSD = %d\n", V1730_DPP_PSD_CODE);   
+    printf("                +-- PHA = %d\n", DPPType::DPP_PHA_CODE);   
+    printf("                +-- PSD = %d\n", DPPType::DPP_PSD_CODE);
     return 1;
   }
 

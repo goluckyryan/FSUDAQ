@@ -75,8 +75,8 @@ int main(int argc, char **argv) {
     TString typeStr = &inFileName[i][snPos+9];
     typeStr.Resize(3);
 
-    if( typeStr == "PHA" ) type[i] = V1730_DPP_PHA_CODE;
-    if( typeStr == "PSD" ) type[i] = V1730_DPP_PSD_CODE;
+    if( typeStr == "PHA" ) type[i] = DPPType::DPP_PHA_CODE;
+    if( typeStr == "PSD" ) type[i] = DPPType::DPP_PSD_CODE;
 
     int order = atoi(&inFileName[i][snPos+13]);
     ID[i] = sn + order * 1000;

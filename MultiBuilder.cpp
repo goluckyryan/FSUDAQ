@@ -199,7 +199,7 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
             em.fineTime = data[bd]->fineTime[ch][nextIndex[bd][ch]];
 
             if( !skipTrace ) em.trace = data[bd]->Waveform1[ch][nextIndex[bd][ch]];
-            if( typeList[bd] == V1730_DPP_PSD_CODE ) em.energy2 = data[bd]->Energy2[ch][nextIndex[bd][ch]];
+            if( typeList[bd] == DPPType::DPP_PSD_CODE ) em.energy2 = data[bd]->Energy2[ch][nextIndex[bd][ch]];
 
             events[eventIndex].push_back(em);
             nextIndex[bd][ch]++;
@@ -300,7 +300,7 @@ void MultiBuilder::BuildEventsBackWard(int maxNumEvent, bool verbose){
             em.ch = ch;
             em.energy = data[bd]->Energy[ch][nextIndex[bd][ch]];
             em.timestamp = time;
-            if( typeList[bd] == V1730_DPP_PSD_CODE ) em.energy2 = data[bd]->Energy2[ch][nextIndex[bd][ch]];
+            if( typeList[bd] == DPPType::DPP_PSD_CODE ) em.energy2 = data[bd]->Energy2[ch][nextIndex[bd][ch]];
 
             events[eventIndex].push_back(em);
             nextIndex[bd][ch]--;

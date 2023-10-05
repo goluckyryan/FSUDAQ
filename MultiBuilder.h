@@ -2,7 +2,6 @@
 #define MuLTI_BUILDER_H
 
 #include "ClassData.h"
-#include "ClassDigitizer.h"
 
 #define MaxNEvent 100000 // circular, this number should be at least nDigi * MaxNChannel * MaxNData
 
