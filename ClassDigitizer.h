@@ -109,6 +109,7 @@ class Digitizer{
     bool        GetChannelOnOff(unsigned ch) { channelMask = GetSettingFromMemory(DPP::ChannelEnableMask); return (channelMask & ( 1 << ch) );} 
     float       GetTick2ns()                   const {return tick2ns;}
     int         GetNChannels()               const {return NChannel;}
+    int         GetRegChannels()             const {return DPPType == DPPType::DPP_QDC_CODE ? NCoupledCh : NChannel;}
     int         GetNCoupledCh()              const {return NCoupledCh;}
     int         GetHandle()                  const {return handle;}
     int         GetDPPType()                 const {return DPPType;}

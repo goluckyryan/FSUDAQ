@@ -13,7 +13,6 @@
 #include <vector>
 #include <sys/stat.h>
 
-//#include "CAENDigitizerType.h"
 #include "macro.h"
 
 #define MaxNData 10000 /// store 10k events per channels
@@ -59,6 +58,8 @@ class Data{
     std::vector<short> Waveform2[MaxNChannels][MaxNData];
     std::vector<bool>  DigiWaveform1[MaxNChannels][MaxNData];
     std::vector<bool>  DigiWaveform2[MaxNChannels][MaxNData];
+    std::vector<bool>  DigiWaveform3[MaxNChannels][MaxNData];
+    std::vector<bool>  DigiWaveform4[MaxNChannels][MaxNData];
 
   public:
     Data();
@@ -94,12 +95,13 @@ class Data{
     unsigned int nw;
     //bool SaveWaveToMemory;
 
-
     ///for temperary
     std::vector<short> tempWaveform1; 
     std::vector<short> tempWaveform2; 
     std::vector<bool> tempDigiWaveform1;
     std::vector<bool> tempDigiWaveform2;
+    std::vector<bool> tempDigiWaveform3;
+    std::vector<bool> tempDigiWaveform4;
 
     FILE * outFile;
     uint64_t FinishedOutFilesSize; // sum of files size.
@@ -114,6 +116,7 @@ class Data{
 
     int DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDecode, int verbose);
     int DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDecode, int verbose);
+    int DecodeQDCGroupedChannelBlock(unsigned int ChannelMask, bool fastDecode, int verbose);
 
     
 };
@@ -180,6 +183,8 @@ inline void Data::ClearData(){
       Waveform2[ch][j].clear();
       DigiWaveform1[ch][j].clear();
       DigiWaveform2[ch][j].clear();
+      DigiWaveform3[ch][j].clear();
+      DigiWaveform4[ch][j].clear();
     }
 
     NumEventsDecoded[ch] = 0;
@@ -195,6 +200,8 @@ inline void Data::ClearData(){
   tempWaveform2.clear();
   tempDigiWaveform1.clear();
   tempDigiWaveform2.clear();
+  tempDigiWaveform3.clear();
+  tempDigiWaveform4.clear();
 }
 
 inline void Data::ClearBuffer(){
@@ -414,6 +421,9 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
         }
         if( DPPType == DPPType::DPP_PSD_CODE ) {
           if ( DecodePSDDualChannelBlock(chMask, fastDecode, verbose) < 0 ) break;
+        }
+        if( DPPType == DPPType::DPP_QDC_CODE ) {
+          if ( DecodeQDCGroupedChannelBlock(chMask, fastDecode, verbose) < 0 ) break;
         }
       }
     }else{
@@ -855,10 +865,16 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
         }
       }
     }
-    nw = nw +1 ; word = ReadBuffer(nw, verbose);
-    unsigned int extra = word;
+
+    unsigned int extra = 0;
     unsigned long long extTimeStamp = 0;
-    if( extraOption == 0 || extraOption == 2 ) extTimeStamp = (extra >> 16);
+
+    if( hasExtra ){
+      nw = nw +1 ; word = ReadBuffer(nw, verbose);
+      extra = word;
+      extTimeStamp = 0;
+      if( extraOption == 0 || extraOption == 2 ) extTimeStamp = (extra >> 16);
+    }
     
     unsigned long long timeStamp = (extTimeStamp << 31) ;
     timeStamp = timeStamp + timeStamp0;
@@ -876,16 +892,16 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
         DataIndex[channel] = 0;
       }
 
+      Energy2[channel][DataIndex[channel]] = Qshort;
+      Energy[channel][DataIndex[channel]] = Qlong;
+      Timestamp[channel][DataIndex[channel]] = timeStamp;
+      if( extraOption == 2 ) fineTime[channel][DataIndex[channel]] = extra & 0x3FF;
+
       NumEventsDecoded[channel] ++; 
       if( !pileup){
         NumNonPileUpDecoded[channel] ++; 
         TotNumNonPileUpEvents[channel] ++;
       }
-
-      Energy2[channel][DataIndex[channel]] = Qshort;
-      Energy[channel][DataIndex[channel]] = Qlong;
-      Timestamp[channel][DataIndex[channel]] = timeStamp;
-      if( extraOption == 2 ) fineTime[channel][DataIndex[channel]] = extra & 0x3FF;
 
       if( !fastDecode ) {
         if( hasDualTrace ){
@@ -917,5 +933,144 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
 
   return nw;
 }
+
+//*=================================================
+inline int Data::DecodeQDCGroupedChannelBlock(unsigned int ChannelMask, bool fastDecode, int verbose){
+
+  nw = nw + 1; 
+  unsigned int word = ReadBuffer(nw, verbose);
+  
+  if( (word >> 31) != 1 ) return 0;
+
+  unsigned int aggSize = ( word & 0x3FFFFF ) ;
+  if( verbose >= 2 ) printf(" size : %d \n",  aggSize);
+
+  unsigned int nEvents = 0;
+  nw = nw + 1; word = ReadBuffer(nw, verbose);
+  unsigned int nSample = ( word & 0xFFFF )  * 8;
+  unsigned int analogProbe = ( (word >> 22 ) & 0x3 );
+  bool hasWaveForm  = ( (word >> 27 ) & 0x1 );
+  bool hasExtra     = ( (word >> 28 ) & 0x1 );
+  bool hasTimeStamp = ( (word >> 29 ) & 0x1 );
+  bool hasEnergy    = ( (word >> 30 ) & 0x1 );
+  if( (word >> 31 ) != 1 ) return 0;
+
+  if( verbose >= 2 ) {
+    printf("Charge : %d, Time: %d, Wave : %d, Extra: %d\n", hasEnergy, hasTimeStamp, hasWaveForm, hasExtra);
+    printf(".... analog Probe (%d): ", analogProbe);
+      switch(analogProbe){
+        case 0 : printf("Input\n"); break;
+        case 1 : printf("Smoothed Input\n"); break;
+        case 2 : printf("Baseline\n"); break;
+      }
+  }
+
+  nEvents = (aggSize -2) / (nSample/2 + 2 + hasExtra );
+  if( verbose >= 2 ) printf("----------------- nEvents : %d, fast decode : %d\n", nEvents, fastDecode);
+
+  ///========= Decode an event
+  for( unsigned int ev = 0; ev < nEvents ; ev++){
+    if( verbose >= 2 ) printf("--------------------------- event : %d\n", ev);
+    nw = nw +1 ; word = ReadBuffer(nw, verbose);
+    unsigned int timeStamp0 = (word & 0xFFFFFFFF);
+    if( verbose >= 2 ) printf("timeStamp %u \n", timeStamp0);
+
+    // bool channelTag = ((word >> 31) & 0x1);
+    // int channel = ChannelMask*2 + channelTag;
+    
+    ///===== read waveform
+    if( !fastDecode ) {
+      tempWaveform1.clear();
+      tempDigiWaveform1.clear();
+      tempDigiWaveform2.clear();
+      tempDigiWaveform3.clear();
+      tempDigiWaveform4.clear();
+    }
+    
+    if( fastDecode ){
+      nw += nSample/2;
+    }else{
+      for( unsigned int wi = 0; wi < nSample/2; wi++){
+        nw = nw +1 ; word = ReadBuffer(nw, verbose-4);
+
+        tempWaveform1.push_back(( word & 0xFFF));          
+        tempWaveform1.push_back((( word >> 16) & 0xFFF));          
+
+        tempDigiWaveform1.push_back((( word >> 12 ) & 0x1 )); //Gate
+        tempDigiWaveform1.push_back((( word >> 28 ) & 0x1 ));
+
+        tempDigiWaveform2.push_back((( word >> 13 ) & 0x1 )); //Trigger
+        tempDigiWaveform2.push_back((( word >> 29 ) & 0x1 ));
+
+        tempDigiWaveform3.push_back((( word >> 14 ) & 0x1 )); //Triger Hold Off
+        tempDigiWaveform3.push_back((( word >> 30 ) & 0x1 ));
+        
+        tempDigiWaveform4.push_back((( word >> 15 ) & 0x1 )); //Over-Threshold
+        tempDigiWaveform4.push_back((( word >> 31 ) & 0x1 ));
+
+        if( verbose >= 3 ){
+          printf("%4d| %5d, %d, %d, %d, %d \n",   2*wi, (word & 0xFFF)         , (( word >> 12 ) & 0x1 ), (( word >> 13 ) & 0x1 ), (( word >> 14 ) & 0x1 ), (( word >> 15 ) & 0x1 ));
+          printf("%4d| %5d, %d, %d, %d, %d \n", 2*wi+1, (( word >> 16) & 0xFFF), (( word >> 28 ) & 0x1 ), (( word >> 29 ) & 0x1 ), (( word >> 30 ) & 0x1 ), (( word >> 31 ) & 0x1 ));
+        }
+      }
+    }
+
+    unsigned long long extTimeStamp = 0;
+    unsigned int baseline = 0;
+    unsigned long extra = 0;
+    if( hasExtra ){
+      nw = nw +1 ; word = ReadBuffer(nw, verbose);
+      extra = word;
+      baseline = (word & 0xFFF);
+      extTimeStamp = (word >> 16);
+    }
+    
+    unsigned long long timeStamp = (extTimeStamp << 31) ;
+    timeStamp = timeStamp + timeStamp0;
+    
+    nw = nw +1 ; word = ReadBuffer(nw, verbose);
+    unsigned int energy  = (( word >> 16) & 0xFFFF);
+    bool pileup = ((word >> 27) & 0x1);
+    bool OverRange = ((word >> 26)& 0x1);
+    unsigned short subCh = ((word >> 28)& 0xF);
+
+    unsigned short channel = ChannelMask*8 + subCh;
+    
+    DataIndex[channel] ++; 
+    if( DataIndex[channel] >= MaxNData ) {
+      LoopIndex[channel] ++;
+      DataIndex[channel] = 0;
+    }
+
+    Energy[channel][DataIndex[channel]] = energy;
+    Timestamp[channel][DataIndex[channel]] = timeStamp;
+
+    NumEventsDecoded[channel] ++; 
+    if( !pileup && !OverRange){
+      NumNonPileUpDecoded[channel] ++; 
+      TotNumNonPileUpEvents[channel] ++;
+    }
+
+    if( !fastDecode ) {
+      Waveform1[channel][DataIndex[channel]] = tempWaveform1;
+      DigiWaveform1[channel][DataIndex[channel]] = tempDigiWaveform1;
+      DigiWaveform2[channel][DataIndex[channel]] = tempDigiWaveform2;
+      DigiWaveform3[channel][DataIndex[channel]] = tempDigiWaveform3;
+      DigiWaveform4[channel][DataIndex[channel]] = tempDigiWaveform4;
+    }
+
+     
+    if( verbose >= 2 ) printf("extra : 0x%lx, baseline : %d\n", extra, baseline);
+    
+    if( verbose >= 1 ) printf("ch : %2d, energy : %d, timestamp : %llu\n", 
+                                channel, energy, timeStamp);
+    
+    
+  }
+
+  return nw;
+
+}
+
 
 #endif

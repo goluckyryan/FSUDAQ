@@ -47,19 +47,22 @@ private:
   void SetUpGlobalTriggerMaskAndFrontPanelMask(QGridLayout * & gLayout);
   void SetUpInquiryCopyTab();
 
-  void SetUpPHABoard();
-  void SetUpPHAChannel();
+  void SetUpBoard_PHA();
+  void SetUpChannel_PHA();
   
-  void SetUpPSDBoard();
-  void SetUpPSDChannel();
+  void SetUpBoard_PSD();
+  void SetUpChannel_PSD();
+  
+  void SetUpBoard_QDC();
+  void SetUpChannel_QDC();
 
   void UpdateSpinBox(RSpinBox * &sb, Reg para, int ch);
   void UpdateComboBox(RComboBox * &cb, Reg para, int ch);
   void UpdateComboBoxBit(RComboBox * &cb, uint32_t fullBit, std::pair<unsigned short, unsigned short> bit);
 
-  void SyncSpinBox(RSpinBox *(&spb)[][MaxNChannels+1]);
-  void SyncComboBox(RComboBox *(&cb)[][MaxNChannels+1]);
-  void SyncCheckBox(QCheckBox *(&chk)[][MaxNChannels+1]);
+  void SyncSpinBox(RSpinBox *(&spb)[][MaxRegChannel+1]);
+  void SyncComboBox(RComboBox *(&cb)[][MaxRegChannel+1]);
+  void SyncCheckBox(QCheckBox *(&chk)[][MaxRegChannel+1]);
 
   void UpdateBoardAndChannelsStatus(); // ReadRegister
 
@@ -80,8 +83,8 @@ private:
 
   RComboBox * cbFromBoard;
   RComboBox * cbToBoard;
-  QRadioButton * rbCh[MaxNChannels]; // Copy from ch
-  QCheckBox * chkCh[MaxNChannels]; // Copy to Ch
+  QRadioButton * rbCh[MaxRegChannel]; // Copy from ch
+  QCheckBox * chkCh[MaxRegChannel]; // Copy to Ch
   QPushButton * bnCopyBoard;
   QPushButton * bnCopyChannel;
 
@@ -124,7 +127,7 @@ private:
   RComboBox * cbDigiProbe1[MaxNDigitizer];
   RComboBox * cbDigiProbe2[MaxNDigitizer];
 
-  QPushButton * bnChEnableMask[MaxNDigitizer][MaxNChannels];
+  QPushButton * bnChEnableMask[MaxNDigitizer][MaxRegChannel];
   RComboBox * cbAggOrg[MaxNDigitizer];
   RSpinBox * sbAggNum[MaxNDigitizer];
   QCheckBox * chkEnableExternalTrigger[MaxNDigitizer];
@@ -152,11 +155,11 @@ private:
   QCheckBox * chkEnableExtendedBlockTransfer[MaxNDigitizer];
 
   /// ============================= trigger validation mask
-  RComboBox * cbMaskLogic[MaxNDigitizer][MaxNChannels/2];
-  RSpinBox * sbMaskMajorLevel[MaxNDigitizer][MaxNChannels/2];
-  QCheckBox * chkMaskExtTrigger[MaxNDigitizer][MaxNChannels/2];
-  QCheckBox * chkMaskSWTrigger[MaxNDigitizer][MaxNChannels/2];
-  QPushButton * bnTriggerMask[MaxNDigitizer][MaxNChannels/2][MaxNChannels/2];
+  RComboBox * cbMaskLogic[MaxNDigitizer][MaxRegChannel/2];
+  RSpinBox * sbMaskMajorLevel[MaxNDigitizer][MaxRegChannel/2];
+  QCheckBox * chkMaskExtTrigger[MaxNDigitizer][MaxRegChannel/2];
+  QCheckBox * chkMaskSWTrigger[MaxNDigitizer][MaxRegChannel/2];
+  QPushButton * bnTriggerMask[MaxNDigitizer][MaxRegChannel/2][MaxRegChannel/2];
 
   /// ============================= board Status
   QPushButton * bnACQStatus[MaxNDigitizer][9];
@@ -167,12 +170,12 @@ private:
   QLineEdit * leReadOutStatus[MaxNDigitizer];
 
   /// ============================= Mask Configure
-  QPushButton * bnGlobalTriggerMask[MaxNDigitizer][MaxNChannels/2];
+  QPushButton * bnGlobalTriggerMask[MaxNDigitizer][MaxRegChannel/2];
   RSpinBox * sbGlbMajCoinWin[MaxNDigitizer];
   RSpinBox * sbGlbMajLvl[MaxNDigitizer];
   RComboBox * cbGlbUseOtherTriggers[MaxNDigitizer]; // combine bit 30, 31
 
-  QPushButton * bnTRGOUTMask[MaxNDigitizer][MaxNChannels/2];
+  QPushButton * bnTRGOUTMask[MaxNDigitizer][MaxRegChannel/2];
   RSpinBox * sbTRGOUTMajLvl[MaxNDigitizer];
   RComboBox * cbTRGOUTLogic[MaxNDigitizer];
   RComboBox * cbTRGOUTUseOtherTriggers[MaxNDigitizer]; // combine bit 30, 31
@@ -183,93 +186,107 @@ private:
   RComboBox * chSelection[MaxNDigitizer];
 
   //----------- common for PHA and PSD
-  RSpinBox * sbRecordLength[MaxNDigitizer][MaxNChannels + 1];
-  RComboBox * cbDynamicRange[MaxNDigitizer][MaxNChannels + 1];
-  RSpinBox * sbPreTrigger[MaxNDigitizer][MaxNChannels + 1];
-  RSpinBox * sbThreshold[MaxNDigitizer][MaxNChannels + 1];
-  RSpinBox * sbDCOffset[MaxNDigitizer][MaxNChannels + 1];
-  RComboBox * cbPolarity[MaxNDigitizer][MaxNChannels + 1];
-  RSpinBox * sbShapedTrigWidth[MaxNDigitizer][MaxNChannels + 1];
-  RSpinBox * sbTriggerHoldOff[MaxNDigitizer][MaxNChannels + 1];
-  RComboBox * cbTrigMode[MaxNDigitizer][MaxNChannels + 1];
-  RComboBox * cbBaseLineAvg[MaxNDigitizer][MaxNChannels + 1];
-  RSpinBox * sbNumEventAgg[MaxNDigitizer][MaxNChannels + 1];
-  RSpinBox * sbVetoWidth[MaxNDigitizer][MaxNChannels + 1];
-  RComboBox * cbVetoStep[MaxNDigitizer][MaxNChannels + 1];
+  RSpinBox * sbRecordLength[MaxNDigitizer][MaxRegChannel + 1];
+  RComboBox * cbDynamicRange[MaxNDigitizer][MaxRegChannel + 1];
+  RSpinBox * sbPreTrigger[MaxNDigitizer][MaxRegChannel + 1];
+  RSpinBox * sbThreshold[MaxNDigitizer][MaxRegChannel + 1];
+  RSpinBox * sbDCOffset[MaxNDigitizer][MaxRegChannel + 1];
+  RComboBox * cbPolarity[MaxNDigitizer][MaxRegChannel + 1];
+  RSpinBox * sbShapedTrigWidth[MaxNDigitizer][MaxRegChannel + 1];
+  RSpinBox * sbTriggerHoldOff[MaxNDigitizer][MaxRegChannel + 1];
+  RComboBox * cbTrigMode[MaxNDigitizer][MaxRegChannel + 1];
+  RComboBox * cbBaseLineAvg[MaxNDigitizer][MaxRegChannel + 1];
+  RSpinBox * sbNumEventAgg[MaxNDigitizer][MaxRegChannel + 1];
+  RSpinBox * sbVetoWidth[MaxNDigitizer][MaxRegChannel + 1];
+  RComboBox * cbVetoStep[MaxNDigitizer][MaxRegChannel + 1];
 
-  RComboBox * cbLocalShapedTrigger[MaxNDigitizer][MaxNChannels + 1];
-  RComboBox * cbLocalTriggerValid[MaxNDigitizer][MaxNChannels + 1];
-  RComboBox * cbExtra2Option[MaxNDigitizer][MaxNChannels + 1];
-  RComboBox * cbVetoSource[MaxNDigitizer][MaxNChannels + 1];
-  QCheckBox * chkDisableSelfTrigger[MaxNDigitizer][MaxNChannels + 1];
-  RComboBox * cbTrigCount[MaxNDigitizer][MaxNChannels + 1];
+  RComboBox * cbLocalShapedTrigger[MaxNDigitizer][MaxRegChannel + 1];
+  RComboBox * cbLocalTriggerValid[MaxNDigitizer][MaxRegChannel + 1];
+  RComboBox * cbExtra2Option[MaxNDigitizer][MaxRegChannel + 1];
+  RComboBox * cbVetoSource[MaxNDigitizer][MaxRegChannel + 1];
+  QCheckBox * chkDisableSelfTrigger[MaxNDigitizer][MaxRegChannel + 1];
+  RComboBox * cbTrigCount[MaxNDigitizer][MaxRegChannel + 1];
 
-  RComboBox * cbTRGOUTChannelProbe[MaxNDigitizer][MaxNChannels + 1];
+  RComboBox * cbTRGOUTChannelProbe[MaxNDigitizer][MaxRegChannel + 1];
 
   //---------- PHA
-  RComboBox * cbRCCR2Smoothing[MaxNDigitizer][MaxNChannels + 1];
-  RSpinBox * sbInputRiseTime[MaxNDigitizer][MaxNChannels + 1];
-  RSpinBox * sbRiseTimeValidWin[MaxNDigitizer][MaxNChannels + 1];
+  RComboBox * cbRCCR2Smoothing[MaxNDigitizer][MaxRegChannel + 1];
+  RSpinBox * sbInputRiseTime[MaxNDigitizer][MaxRegChannel + 1];
+  RSpinBox * sbRiseTimeValidWin[MaxNDigitizer][MaxRegChannel + 1];
 
-  RSpinBox * sbTrapRiseTime[MaxNDigitizer][MaxNChannels + 1];
-  RSpinBox * sbTrapFlatTop[MaxNDigitizer][MaxNChannels + 1];
-  RSpinBox * sbDecay[MaxNDigitizer][MaxNChannels + 1];
-  RSpinBox * sbTrapScaling[MaxNDigitizer][MaxNChannels + 1];
-  RSpinBox * sbPeaking[MaxNDigitizer][MaxNChannels + 1];
-  RSpinBox * sbPeakingHoldOff[MaxNDigitizer][MaxNChannels + 1];
-  RComboBox * cbPeakAvg[MaxNDigitizer][MaxNChannels + 1];
-  QCheckBox * chkActiveBaseline[MaxNDigitizer][MaxNChannels + 1];
-  QCheckBox * chkBaselineRestore[MaxNDigitizer][MaxNChannels + 1];
-  RSpinBox * sbFineGain[MaxNDigitizer][MaxNChannels + 1];
+  RSpinBox * sbTrapRiseTime[MaxNDigitizer][MaxRegChannel + 1];
+  RSpinBox * sbTrapFlatTop[MaxNDigitizer][MaxRegChannel + 1];
+  RSpinBox * sbDecay[MaxNDigitizer][MaxRegChannel + 1];
+  RSpinBox * sbTrapScaling[MaxNDigitizer][MaxRegChannel + 1];
+  RSpinBox * sbPeaking[MaxNDigitizer][MaxRegChannel + 1];
+  RSpinBox * sbPeakingHoldOff[MaxNDigitizer][MaxRegChannel + 1];
+  RComboBox * cbPeakAvg[MaxNDigitizer][MaxRegChannel + 1];
+  QCheckBox * chkActiveBaseline[MaxNDigitizer][MaxRegChannel + 1];
+  QCheckBox * chkBaselineRestore[MaxNDigitizer][MaxRegChannel + 1];
+  RSpinBox * sbFineGain[MaxNDigitizer][MaxRegChannel + 1];
 
-  QCheckBox * chkEnableRollOver[MaxNDigitizer][MaxNChannels + 1];
-  QCheckBox * chkEnablePileUp[MaxNDigitizer][MaxNChannels + 1];
-  QCheckBox * chkTagCorrelation[MaxNDigitizer][MaxNChannels + 1];
-  RComboBox * cbDecimateTrace[MaxNDigitizer][MaxNChannels + 1];
-  RComboBox * cbDecimateGain[MaxNDigitizer][MaxNChannels + 1];
+  QCheckBox * chkEnableRollOver[MaxNDigitizer][MaxRegChannel + 1];
+  QCheckBox * chkEnablePileUp[MaxNDigitizer][MaxRegChannel + 1];
+  QCheckBox * chkTagCorrelation[MaxNDigitizer][MaxRegChannel + 1];
+  RComboBox * cbDecimateTrace[MaxNDigitizer][MaxRegChannel + 1];
+  RComboBox * cbDecimateGain[MaxNDigitizer][MaxRegChannel + 1];
 
   //---------------- PSD
-  RComboBox * cbChargeSensitivity[MaxNDigitizer][MaxNChannels + 1];
-  QCheckBox * chkChargePedestal[MaxNDigitizer][MaxNChannels + 1];
-  RComboBox * cbTriggerOpt[MaxNDigitizer][MaxNChannels + 1];
-  RComboBox * cbDiscriMode[MaxNDigitizer][MaxNChannels + 1];
-  QCheckBox * chkPileUpInGate[MaxNDigitizer][MaxNChannels + 1];
-  QCheckBox * chkTestPule[MaxNDigitizer][MaxNChannels + 1];
-  RComboBox * cbTestPulseRate[MaxNDigitizer][MaxNChannels + 1];
-  QCheckBox * chkBaseLineCal[MaxNDigitizer][MaxNChannels + 1];
-  QCheckBox * chkDiscardQLong[MaxNDigitizer][MaxNChannels + 1];
-  QCheckBox * chkRejPileUp[MaxNDigitizer][MaxNChannels + 1];
-  QCheckBox * chkCutBelow[MaxNDigitizer][MaxNChannels + 1];
-  QCheckBox * chkCutAbove[MaxNDigitizer][MaxNChannels + 1];
-  QCheckBox * chkRejOverRange[MaxNDigitizer][MaxNChannels + 1];
-  QCheckBox * chkDisableTriggerHysteresis[MaxNDigitizer][MaxNChannels + 1];
-  QCheckBox * chkDisableOppositePulse[MaxNDigitizer][MaxNChannels + 1];
+  RComboBox * cbChargeSensitivity[MaxNDigitizer][MaxRegChannel + 1];
+  QCheckBox * chkChargePedestal[MaxNDigitizer][MaxRegChannel + 1];
+  RComboBox * cbTriggerOpt[MaxNDigitizer][MaxRegChannel + 1];
+  RComboBox * cbDiscriMode[MaxNDigitizer][MaxRegChannel + 1];
+  QCheckBox * chkPileUpInGate[MaxNDigitizer][MaxRegChannel + 1];
+  QCheckBox * chkTestPule[MaxNDigitizer][MaxRegChannel + 1];
+  RComboBox * cbTestPulseRate[MaxNDigitizer][MaxRegChannel + 1];
+  QCheckBox * chkBaseLineCal[MaxNDigitizer][MaxRegChannel + 1];
+  QCheckBox * chkDiscardQLong[MaxNDigitizer][MaxRegChannel + 1];
+  QCheckBox * chkRejPileUp[MaxNDigitizer][MaxRegChannel + 1];
+  QCheckBox * chkCutBelow[MaxNDigitizer][MaxRegChannel + 1];
+  QCheckBox * chkCutAbove[MaxNDigitizer][MaxRegChannel + 1];
+  QCheckBox * chkRejOverRange[MaxNDigitizer][MaxRegChannel + 1];
+  QCheckBox * chkDisableTriggerHysteresis[MaxNDigitizer][MaxRegChannel + 1];
+  QCheckBox * chkDisableOppositePulse[MaxNDigitizer][MaxRegChannel + 1];
 
-  RSpinBox * sbChargeZeroSupZero[MaxNDigitizer][MaxNChannels + 1];
-  RSpinBox * sbShortGate[MaxNDigitizer][MaxNChannels + 1];
-  RSpinBox * sbLongGate[MaxNDigitizer][MaxNChannels + 1];
-  RSpinBox * sbGateOffset[MaxNDigitizer][MaxNChannels + 1];
-  RSpinBox * sbFixedBaseline[MaxNDigitizer][MaxNChannels + 1];
-  RSpinBox * sbTriggerLatency[MaxNDigitizer][MaxNChannels + 1];
-  RSpinBox * sbPSDCutThreshold[MaxNDigitizer][MaxNChannels + 1];
-  RSpinBox * sbPURGAPThreshold[MaxNDigitizer][MaxNChannels + 1];
+  RSpinBox * sbChargeZeroSupZero[MaxNDigitizer][MaxRegChannel + 1];
+  RSpinBox * sbShortGate[MaxNDigitizer][MaxRegChannel + 1];
+  RSpinBox * sbLongGate[MaxNDigitizer][MaxRegChannel + 1];
+  RSpinBox * sbGateOffset[MaxNDigitizer][MaxRegChannel + 1];
+  RSpinBox * sbFixedBaseline[MaxNDigitizer][MaxRegChannel + 1];
+  RSpinBox * sbTriggerLatency[MaxNDigitizer][MaxRegChannel + 1];
+  RSpinBox * sbPSDCutThreshold[MaxNDigitizer][MaxRegChannel + 1];
+  RSpinBox * sbPURGAPThreshold[MaxNDigitizer][MaxRegChannel + 1];
 
-  RSpinBox * sbCFDDely[MaxNDigitizer][MaxNChannels + 1];
-  RComboBox * cbCFDFraction[MaxNDigitizer][MaxNChannels + 1];
-  RComboBox * cbCFDInterpolation[MaxNDigitizer][MaxNChannels + 1];
+  RSpinBox * sbCFDDely[MaxNDigitizer][MaxRegChannel + 1];
+  RComboBox * cbCFDFraction[MaxNDigitizer][MaxRegChannel + 1];
+  RComboBox * cbCFDInterpolation[MaxNDigitizer][MaxRegChannel + 1];
 
-  RComboBox * cbSmoothedChargeIntegration[MaxNDigitizer][MaxNChannels + 1];
-  QCheckBox * chkMarkSaturation[MaxNDigitizer][MaxNChannels + 1];
-  RComboBox * cbAdditionLocalTrigValid[MaxNDigitizer][MaxNChannels + 1];
+  RComboBox * cbSmoothedChargeIntegration[MaxNDigitizer][MaxRegChannel + 1];
+  QCheckBox * chkMarkSaturation[MaxNDigitizer][MaxRegChannel + 1];
+  RComboBox * cbAdditionLocalTrigValid[MaxNDigitizer][MaxRegChannel + 1];
 
-  RComboBox * cbVetoMode[MaxNDigitizer][MaxNChannels + 1];
-  QCheckBox * chkResetTimestampByTRGIN[MaxNDigitizer][MaxNChannels + 1];
+  RComboBox * cbVetoMode[MaxNDigitizer][MaxRegChannel + 1];
+  QCheckBox * chkResetTimestampByTRGIN[MaxNDigitizer][MaxRegChannel + 1];
 
+  //------------------- QDC
+  RComboBox * cbExtTriggerMode[MaxNDigitizer];
+  RSpinBox * sbRecordLength_QDC[MaxNDigitizer];
+  RSpinBox * sbEventPreAgg_QDC[MaxNDigitizer];
 
+  //...... reuse varaible
+  //Gate Width          -> sbShortGate
+  //Gate offset         -> sbGateOffset
+  //PreTrigger          -> sbPreTrigger
+  //Trig Hold off with  -> sbTriggerHoldOff
+  //Trig out width      -> sbShapedTrigWidth
+
+  QCheckBox * chkOverthreshold[MaxNDigitizer][MaxRegChannel+1];
+  RSpinBox * sbOverThresholdWidth[MaxNDigitizer][MaxRegChannel + 1];
+  //RSpinBox * sbSubChOffset[MaxNDigitizer][MaxRegChannel + 1];
 
   //---------------- channel status
-  QPushButton * bnChStatus[MaxNDigitizer][MaxNChannels][3];
-  QLineEdit * leADCTemp[MaxNDigitizer][MaxNChannels];
+  QPushButton * bnChStatus[MaxNDigitizer][MaxRegChannel][3];
+  QLineEdit * leADCTemp[MaxNDigitizer][MaxRegChannel];
 
 };
 

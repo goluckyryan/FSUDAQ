@@ -31,7 +31,7 @@ void MultiBuilder::ClearEvents(){
   for( int i = 0; i < MaxNEvent; i++) events[i].clear();
 
   for( int i = 0; i < MaxNDigitizer; i++){
-    for( int j = 0; j < MaxNChannels; j++){
+    for( int j = 0; j < MaxRegChannel; j++){
       loopIndex[i][j] = 0;
       nextIndex[i][j] = -1;
       chExhaused[i][j] = false;
@@ -51,7 +51,7 @@ void MultiBuilder::PrintStat(){
 
   printf("Total number of evet built : %ld\n", totalEventBuilt);
   for( int i = 0; i < nData ; i++){
-    for( int ch = 0; ch < MaxNChannels ; ch++){
+    for( int ch = 0; ch < MaxRegChannel ; ch++){
       printf("%d %3d %2d | %7d (%d)\n", i, snList[i], ch, nextIndex[i][ch], loopIndex[i][ch]);
     }
   }
@@ -68,11 +68,11 @@ void MultiBuilder::FindEarlistTimeAndCh(bool verbose){
   
   for( int i = 0; i < nData; i++){
 
-    for( int j = 0; j < MaxNChannels; j++ ){
+    for( int j = 0; j < MaxRegChannel; j++ ){
       chExhaused[i][j] = false;
     }
 
-    for(unsigned int ch = 0; ch < MaxNChannels; ch ++){
+    for(unsigned int ch = 0; ch < MaxRegChannel; ch ++){
       if( data[i]->Timestamp[ch][data[i]->DataIndex[ch]] == 0 || data[i]->DataIndex[ch] == -1 || loopIndex[i][ch] * MaxNData + nextIndex[i][ch] > data[i]->LoopIndex[ch] * MaxNData +  data[i]->DataIndex[ch]) {
         nExhaushedCh ++;
         chExhaused[i][ch] = true;
@@ -104,11 +104,11 @@ void MultiBuilder::FindLatestTimeAndCh(bool verbose){
   
   for( int i = 0; i < nData; i++){
 
-    for( int j = 0; j < MaxNChannels; j++ ){
+    for( int j = 0; j < MaxRegChannel; j++ ){
       chExhaused[i][j] = false;
     }
 
-    for(unsigned int ch = 0; ch < MaxNChannels; ch ++){
+    for(unsigned int ch = 0; ch < MaxRegChannel; ch ++){
       // printf(" %d, %d | %d", i, ch, nextIndex[i][ch]);
       if( nextIndex[i][ch] < 0 ) {
         nExhaushedCh ++;
@@ -137,7 +137,7 @@ void MultiBuilder::FindLatestTimeOfData(bool verbose){
   latestCh = -1;
   latestDigi = -1;
   for( int i = 0; i < nData; i++){
-    for( unsigned ch = 0; ch < MaxNChannels; ch++ ){
+    for( unsigned ch = 0; ch < MaxRegChannel; ch++ ){
       int index = data[i]->DataIndex[ch];
       if( index == -1 ) continue;
       if( data[i]->Timestamp[ch][index] > latestTime ) {
@@ -155,7 +155,7 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
   FindLatestTimeOfData(verbose);
 
   FindEarlistTimeAndCh(verbose);
-  if( earlistCh == -1 || nExhaushedCh == nData * MaxNChannels) return; /// no data
+  if( earlistCh == -1 || nExhaushedCh == nData * MaxRegChannel) return; /// no data
 
   eventBuilt = 0;
   //======= Start building event
@@ -177,8 +177,8 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
       // printf("##### %d/%d | ", k, nData);
       // data[k]->PrintAllData(true, 10);
 
-      for( unsigned int i = 0; i < MaxNChannels; i++){
-        int ch = (i + earlistCh ) % MaxNChannels;
+      for( unsigned int i = 0; i < MaxRegChannel; i++){
+        int ch = (i + earlistCh ) % MaxRegChannel;
         if( chExhaused[bd][ch] ) continue;
         if( loopIndex[bd][ch] * MaxNData + nextIndex[bd][ch] > data[bd]->LoopIndex[ch] * MaxNData +  data[bd]->DataIndex[ch]) {
           nExhaushedCh ++;
@@ -234,7 +234,7 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
         printf("%02d, %02d | %d |  %5d %llu \n", bd, chxxx, nextIndex[bd][chxxx], events[eventIndex][i].energy, events[eventIndex][i].timestamp); 
       }
 
-      if( nExhaushedCh == nData * MaxNChannels ) {
+      if( nExhaushedCh == nData * MaxRegChannel ) {
         printf("######################### no more event to be built\n"); 
         break;
       } 
@@ -249,7 +249,7 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
       break;
     }
 
-  }while(nExhaushedCh < nData * MaxNChannels);
+  }while(nExhaushedCh < nData * MaxRegChannel);
 
 }
 
@@ -259,7 +259,7 @@ void MultiBuilder::BuildEventsBackWard(int maxNumEvent, bool verbose){
 
   // remember the end of DataIndex, prevent over build
   for( int k = 0; k < nData; k++){
-    for( int i = 0; i < MaxNChannels; i++){
+    for( int i = 0; i < MaxRegChannel; i++){
       nextIndex[k][i] = data[k]->DataIndex[i];
     }
   }
@@ -281,8 +281,8 @@ void MultiBuilder::BuildEventsBackWard(int maxNumEvent, bool verbose){
     for( int k = 0; k < nData; k++){
       int bd = (k + latestDigi) % nData;
 
-      for( unsigned int i = 0; i < MaxNChannels; i++){
-        int ch = (i + latestCh) % MaxNChannels;
+      for( unsigned int i = 0; i < MaxRegChannel; i++){
+        int ch = (i + latestCh) % MaxRegChannel;
         if( chExhaused[bd][ch] ) continue;
         //if( nextIndex[bd][ch] <= lastBackWardIndex[bd][ch] || nextIndex[bd][ch] < 0){
         if( nextIndex[bd][ch] < 0){
@@ -330,7 +330,7 @@ void MultiBuilder::BuildEventsBackWard(int maxNumEvent, bool verbose){
         printf("%02d, %02d | %d |  %5d %llu \n", bd, chxxx, nextIndex[bd][chxxx], events[eventIndex][i].energy, events[eventIndex][i].timestamp); 
       }
 
-      if( nExhaushedCh == nData * MaxNChannels ) {
+      if( nExhaushedCh == nData * MaxRegChannel ) {
         printf("######################### no more event to be built\n"); 
         break;
       } 
@@ -338,11 +338,11 @@ void MultiBuilder::BuildEventsBackWard(int maxNumEvent, bool verbose){
 
     }
 
-  }while(nExhaushedCh < nData * MaxNChannels && eventBuilt <= maxNumEvent);
+  }while(nExhaushedCh < nData * MaxRegChannel && eventBuilt <= maxNumEvent);
 
   // // remember the end of DataIndex, prevent over build
   // for( int k = 0; k < nData; k++){
-  //   for( int i = 0; i < MaxNChannels; i++){
+  //   for( int i = 0; i < MaxRegChannel; i++){
   //     lastBackWardIndex[k][i] = data[k]->DataIndex[i];
   //   }
   // }

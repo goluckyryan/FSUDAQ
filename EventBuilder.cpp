@@ -261,7 +261,7 @@ int main(int argc, char **argv) {
       //check if Data Index near MaxNData. if near by 50%, break
       //printf("-----------------------------------\n");
       for( int i = 0; i < nGroup; i++){
-        for( int ch = 0; ch < MaxNChannels; ch ++){
+        for( int ch = 0; ch < MaxRegChannel; ch ++){
           if( data[i]->LoopIndex[ch]*MaxNData + data[i]->DataIndex[ch] - lastLoopIndex[i][ch]*MaxNData - lastDataIndex[i][ch] > MaxNData * 0.5 ) {
             breakFlag = true;
             //printf("digi:%d | ch: %d DataIndex: %d (%d) \n", data[i]->boardSN, ch, data[i]->DataIndex[ch], lastDataIndex[i][ch]);

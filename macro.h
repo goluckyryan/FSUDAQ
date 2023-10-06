@@ -6,7 +6,8 @@
 
 #define MaxNDigitizer MaxNPorts * MaxNBoards
 
-#define MaxNChannels 16 //for QDC, this is group.
+#define MaxRegChannel 16 
+#define MaxNChannels 64
 #define MaxRecordLength 0x3fff * 8 
 #define MaxSaveFileSize  1024 * 1024 * 1024 * 2
 

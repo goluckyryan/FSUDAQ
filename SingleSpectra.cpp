@@ -34,7 +34,7 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
     connect( cbDigi, &RComboBox::currentIndexChanged, this, &SingleSpectra::ChangeHistView);
 
     cbCh   = new RComboBox(this);
-    for( int i = 0; i < MaxNChannels; i++) cbCh->addItem("ch-" + QString::number( i ), i);
+    for( int i = 0; i < MaxRegChannel; i++) cbCh->addItem("ch-" + QString::number( i ), i);
     ctrlLayout->addWidget(cbCh, 0, 2, 1, 2);
     connect( cbCh, &RComboBox::currentIndexChanged, this, &SingleSpectra::ChangeHistView);
 
@@ -42,7 +42,7 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
     ctrlLayout->addWidget(bnClearHist, 0, 4, 1, 2);
     connect(bnClearHist, &QPushButton::clicked, this, [=](){
       for( unsigned int i = 0; i < nDigi; i++){
-        for( int j = 0; j < MaxNChannels; j++){
+        for( int j = 0; j < MaxRegChannel; j++){
           if( hist[i][j] ) hist[i][j]->Clear();
           lastFilledIndex[i][j] = -1;
           loopFilledIndex[i][j] = 0;
@@ -107,7 +107,7 @@ SingleSpectra::~SingleSpectra(){
 
 void SingleSpectra::ClearInternalDataCount(){
   for( unsigned int i = 0; i < nDigi; i++){
-    for( int ch = 0; ch < MaxNChannels ; ch++) {
+    for( int ch = 0; ch < MaxRegChannel ; ch++) {
       lastFilledIndex[i][ch] = -1;
       loopFilledIndex[i][ch] = 0;
     }

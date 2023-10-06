@@ -70,11 +70,11 @@ private:
   Data ** data; // assume all data has MaxNChannel (16) 
 
   unsigned short timeWindow;
-  int loopIndex[MaxNDigitizer][MaxNChannels];
-  int nextIndex[MaxNDigitizer][MaxNChannels];
+  int loopIndex[MaxNDigitizer][MaxRegChannel];
+  int nextIndex[MaxNDigitizer][MaxRegChannel];
 
   int nExhaushedCh;
-  bool chExhaused[MaxNDigitizer][MaxNChannels];
+  bool chExhaused[MaxNDigitizer][MaxRegChannel];
 
   void FindEarlistTimeAndCh(bool verbose = false); // search thtough the nextIndex
   unsigned long long earlistTime;
@@ -87,7 +87,7 @@ private:
 
   void FindLatestTimeOfData(bool verbose = false);
 
-  int lastBackWardIndex[MaxNDigitizer][MaxNChannels];
+  int lastBackWardIndex[MaxNDigitizer][MaxRegChannel];
 
 };
 

@@ -292,10 +292,10 @@ int main(int argc, char* argv[]){
   
   int Nb;                                  /// number of byte
   char *buffer = NULL;                     /// readout buffer
-  uint32_t DataIndex[MaxNChannels];
+  uint32_t DataIndex[MaxRegChannel];
   uint32_t AllocatedSize, BufferSize;
-  CAEN_DGTZ_DPP_PHA_Event_t  *Events[MaxNChannels];  /// events buffer
-  CAEN_DGTZ_DPP_PHA_Waveforms_t   *Waveform[MaxNChannels];     /// waveforms buffer
+  CAEN_DGTZ_DPP_PHA_Event_t  *Events[MaxRegChannel];  /// events buffer
+  CAEN_DGTZ_DPP_PHA_Waveforms_t   *Waveform[MaxRegChannel];     /// waveforms buffer
   
   ret = CAEN_DGTZ_MallocReadoutBuffer(handle, &buffer, &AllocatedSize);
   printf("allowcated %d byte ( %d words) for buffer\n", AllocatedSize, AllocatedSize/4); 

@@ -278,9 +278,14 @@ namespace DPP {
 
     /// -------------------- QDC only
     const std::pair<unsigned short, unsigned short> ExtTriggerMode_QDC = {2, 20} ; 
+
     const std::vector<std::pair<std::string, unsigned int>> ListExtTriggerMode_QDC = {{"Trigger", 0},
                                                                                       {"Veto", 1},
                                                                                       {"Anti-Veto", 2}};
+
+    const std::vector<std::pair<std::string, unsigned int>> ListAnaProbe_QDC = {{"Input", 0},
+                                                                                {"Smoothed Input", 1},
+                                                                                {"Baseline", 2}};
   }
   
   namespace Bit_DPPAlgorithmControl_PHA {
@@ -398,9 +403,11 @@ namespace DPP {
   namespace Bit_AcquistionControl {
     const std::pair<unsigned short, unsigned short> StartStopMode = {2, 0} ;
     const std::pair<unsigned short, unsigned short> ACQStartArm = {1, 2} ;
+    const std::pair<unsigned short, unsigned short> TrigCountMode_QDC = {1, 3} ;
     const std::pair<unsigned short, unsigned short> PLLRef = {1, 6} ;
     const std::pair<unsigned short, unsigned short> LVDSBusyEnable = {1, 8} ;
     const std::pair<unsigned short, unsigned short> LVDSVetoEnable = {1, 9} ;
+    const std::pair<unsigned short, unsigned short> LVDSRunInMode = {1, 11} ;
     const std::pair<unsigned short, unsigned short> VetoTRGOut = {1, 12} ;
 
     const std::vector<std::pair<std::string, unsigned int>> ListStartStopMode = {{"SW controlled", 0},
@@ -413,6 +420,9 @@ namespace DPP {
 
     const std::vector<std::pair<std::string, unsigned int>> ListPLLRef = {{"Internal 50 MHz", 0},
                                                                           {"Ext. CLK-IN", 1}};
+
+    const std::vector<std::pair<std::string, unsigned int>> ListTrigCountMode_QDC = {{"Comb. ch", 0},
+                                                                                     {"Comb. ch + TRG-IN + SW", 1}};
   }
 
   namespace Bit_AcqStatus {
@@ -782,7 +792,7 @@ namespace DPP {
     const Reg GateWidth_G                   ("GateWidth"                     , 0x1030, RW::ReadWrite, true, 0xFFF, 1); /// R/W
     const Reg GateOffset_G                  ("GateOfset"                     , 0x1034, RW::ReadWrite, true,  0xFF, 1); /// R/W
     const Reg FixedBaseline_G               ("FixedBaseline"                 , 0x1038, RW::ReadWrite, true, 0xFFF, 1); /// R/W
-    const Reg Pretrigger_G                  ("PreTrigger"                    , 0x103C, RW::ReadWrite, true,  0xFF, 1); /// R/W
+    const Reg PreTrigger_G                  ("PreTrigger"                    , 0x103C, RW::ReadWrite, true,  0xFF, 1); /// R/W
     const Reg DPPAlgorithmControl_G         ("DPPAlgorithmControl"           , 0x1040, RW::ReadWrite, true, {}); /// R/W
     const Reg TriggerHoldOffWidth_G         ("Trigger Hold-off width"        , 0x1074, RW::ReadWrite, true, 0xFFFF, 1); /// R/W
     const Reg TRGOUTWidth_G                 ("Trigger out width"             , 0x1078, RW::ReadWrite, true, 0xFFFF, 1); /// R/W
@@ -798,8 +808,54 @@ namespace DPP {
 
     const Reg NumberEventsPerAggregate      ("Number of Events per Aggregate", 0x8020, RW::ReadWrite, false, 0x3FF, 1); /// R/W
     const Reg RecordLength                  ("Record Length"                 , 0x8024, RW::ReadWrite, false, 0xFFF, 1); /// R/W
-
     const Reg GroupEnableMask               ("Group Enable Mask"             , 0x8120, RW::ReadWrite, false, 0xFF, 1); /// R/W
+
+    namespace Bit_DPPAlgorithmControl {
+      const std::pair<unsigned short, unsigned short> ChargeSensitivity = {3, 0} ; /// length, smallest pos
+      const std::pair<unsigned short, unsigned short> InternalTestPulse = {1, 4};
+      const std::pair<unsigned short, unsigned short> TestPulseRate = {2, 5};
+      const std::pair<unsigned short, unsigned short> OverThresholdWitdhEnable = {1, 7};
+      const std::pair<unsigned short, unsigned short> ChargePedestal = {1, 8};
+      const std::pair<unsigned short, unsigned short> InputSmoothingFactor = {3, 12};
+      const std::pair<unsigned short, unsigned short> Polarity = {1, 16};
+      const std::pair<unsigned short, unsigned short> TriggerMode = {2, 18};
+      const std::pair<unsigned short, unsigned short> BaselineAvg = {3, 20};
+      const std::pair<unsigned short, unsigned short> DisableSelfTrigger = {1, 24};
+      const std::pair<unsigned short, unsigned short> DisableTriggerHysteresis = {1, 30};
+
+      const std::vector<std::pair<std::string, unsigned int>> ListChargeSensitivity = {{"0.16 pC", 0},
+                                                                                       {"0.32 pC", 1},
+                                                                                       {"0.64 pC", 2},
+                                                                                       {"1.28 pC", 3},
+                                                                                       {"2.56 pC", 4},
+                                                                                       {"5.12 pC", 5},
+                                                                                       {"10.24 pC", 6},
+                                                                                       {"20.48 pC", 7}};
+
+      const std::vector<std::pair<std::string, unsigned int>> ListTestPulseRate = {{"1 kHz", 0},
+                                                                                   {"10 kHz", 1},
+                                                                                   {"100 kHz", 2},
+                                                                                   {"1 MHz", 3}};
+
+      const std::vector<std::pair<std::string, unsigned int>> ListInputSmoothingFactor = {{"Disabled", 0},
+                                                                                          {"2 samples", 1},
+                                                                                          {"4 samples", 2},
+                                                                                          {"8 samples", 3},
+                                                                                          {"16 samples", 4},
+                                                                                          {"32 samples", 5},
+                                                                                          {"64 samples", 6}};
+      
+      const std::vector<std::pair<std::string, unsigned int>> ListPolarity = {{"Positive", 0},
+                                                                              {"Negative", 1}};
+    
+      const std::vector<std::pair<std::string, unsigned int>> ListTrigMode = {{"Self-Trigger", 0},
+                                                                              {"Coupled OR", 1}};
+    
+      const std::vector<std::pair<std::string, unsigned int>> ListBaselineAvg = {{"Fixed", 0},
+                                                                                 {"4 samples", 1},
+                                                                                 {"16 samples", 2},
+                                                                                 {"64 samples", 3}};
+    }
 
   }
 
@@ -865,13 +921,15 @@ const std::vector<Reg> RegisterPSDList = {
   DPP::TriggerValidationMask_G   
 };
 
-const std::vector<Reg> RegisterQDCList = { //TODO
+const std::vector<Reg> RegisterQDCList = {
   DPP::QDC::GateWidth_G,
   DPP::QDC::GateOffset_G,
   DPP::QDC::FixedBaseline_G,
-  DPP::QDC::Pretrigger_G,
+  DPP::QDC::PreTrigger_G,
   DPP::QDC::DPPAlgorithmControl_G,
   DPP::QDC::TriggerHoldOffWidth_G,
+  DPP::QDC::TRGOUTWidth_G,
+  DPP::QDC::OverThresholdWidth_G,
   DPP::QDC::GroupStatus_RG,
   DPP::QDC::AMCFirmwareRevision_RG,
   DPP::QDC::DCOffset_G,
