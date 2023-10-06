@@ -68,9 +68,8 @@ class Reg{
 
     std::vector<std::pair<std::string, unsigned int>> GetComboList() const {return comboList;}
 
-    uint32_t  ActualAddress(int ch = -1, int subCh = 0){ //for QDC, ch is groupID
+    uint32_t  ActualAddress(int ch = -1){ //for QDC, ch is groupID
       if( address == 0x8180 ) return  (ch < 0 ? address : (address + 4*(ch/2))); // DPP::TriggerValidationMask_G
-      if( address == 0x10D0 ) return  (ch < 0 ? address + 0x7000 + (ch << 8): (address + (ch << 8) + 4*subCh)); // DPP::QDC::TriggerThreshold_G
       if( address <  0x8000 ){
         if( group ) {
           if( ch < 0 ) return address + 0x7000;
@@ -82,7 +81,7 @@ class Reg{
       return 0;
     }
 
-    unsigned short Index (unsigned short ch, int subCh = 0);
+    unsigned short Index (unsigned short ch);
     uint32_t CalAddress(unsigned int index); /// output actual address, also write the registerAddress
     
     void SetName(std::string str) {this->name = str;}
@@ -106,12 +105,10 @@ inline void Reg::Print() const{
   printf(" Max Value : 0x%X = %d \n", maxBit, maxBit);
 }
 
-inline  unsigned short Reg::Index (unsigned short ch, int subCh){ //for QDC, ch = group
+inline  unsigned short Reg::Index (unsigned short ch){ //for QDC, ch = group
   unsigned short index;
   if( address == 0x8180){ //DPP::TriggerValidationMask_G
     index = ((address + 4*(ch/2)) & 0x0FFF) / 4;
-  }else if( address == 0x10D0){ //DPP::QDC::TriggerThreshold_G
-    index = ((address + (ch << 8) + 4*subCh) & 0x0FFF) / 4;
   }else if( address < 0x8000){
     index = (address + (ch << 8)) / 4;
   }else{
@@ -803,7 +800,14 @@ namespace DPP {
     const Reg ChannelMask_G                 ("Channel Group Mask"            , 0x10A8, RW::ReadWrite, true,   0xFF, 1); /// R/W
     const Reg DCOffset_LowCh_G              ("DC offset for low ch."         , 0x10C0, RW::ReadWrite, true, {}); /// R/W
     const Reg DCOffset_HighCh_G             ("DC offset for high ch."        , 0x10C4, RW::ReadWrite, true, {}); /// R/W
-    const Reg TriggerThreshold_G            ("Trigger Threshold"             , 0x10D0, RW::ReadWrite, true, 0xFFF, 1); /// R/W
+    const Reg TriggerThreshold_G_sub0       ("Trigger Threshold sub0"             , 0x10D0, RW::ReadWrite, true, 0xFFF, 1); /// R/W
+    const Reg TriggerThreshold_G_sub1       ("Trigger Threshold sub1"             , 0x10D4, RW::ReadWrite, true, 0xFFF, 1); /// R/W
+    const Reg TriggerThreshold_G_sub2       ("Trigger Threshold sub2"             , 0x10D8, RW::ReadWrite, true, 0xFFF, 1); /// R/W
+    const Reg TriggerThreshold_G_sub3       ("Trigger Threshold sub3"             , 0x10DC, RW::ReadWrite, true, 0xFFF, 1); /// R/W
+    const Reg TriggerThreshold_G_sub4       ("Trigger Threshold sub4"             , 0x10E0, RW::ReadWrite, true, 0xFFF, 1); /// R/W
+    const Reg TriggerThreshold_G_sub5       ("Trigger Threshold sub5"             , 0x10E4, RW::ReadWrite, true, 0xFFF, 1); /// R/W
+    const Reg TriggerThreshold_G_sub6       ("Trigger Threshold sub6"             , 0x10E8, RW::ReadWrite, true, 0xFFF, 1); /// R/W
+    const Reg TriggerThreshold_G_sub7       ("Trigger Threshold sub7"             , 0x10EC, RW::ReadWrite, true, 0xFFF, 1); /// R/W
 
 
     const Reg NumberEventsPerAggregate      ("Number of Events per Aggregate", 0x8020, RW::ReadWrite, false, 0x3FF, 1); /// R/W
@@ -936,7 +940,14 @@ const std::vector<Reg> RegisterQDCList = {
   DPP::QDC::ChannelMask_G,
   DPP::QDC::DCOffset_LowCh_G,
   DPP::QDC::DCOffset_HighCh_G,
-  DPP::QDC::TriggerThreshold_G
+  DPP::QDC::TriggerThreshold_G_sub0,
+  DPP::QDC::TriggerThreshold_G_sub1,
+  DPP::QDC::TriggerThreshold_G_sub2,
+  DPP::QDC::TriggerThreshold_G_sub3,
+  DPP::QDC::TriggerThreshold_G_sub4,
+  DPP::QDC::TriggerThreshold_G_sub5,
+  DPP::QDC::TriggerThreshold_G_sub6,
+  DPP::QDC::TriggerThreshold_G_sub7
 };
 
 /// Only Board Setting 

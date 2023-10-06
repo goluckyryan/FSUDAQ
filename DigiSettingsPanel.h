@@ -282,7 +282,8 @@ private:
 
   QCheckBox * chkOverthreshold[MaxNDigitizer][MaxRegChannel+1];
   RSpinBox * sbOverThresholdWidth[MaxNDigitizer][MaxRegChannel + 1];
-  //RSpinBox * sbSubChOffset[MaxNDigitizer][MaxRegChannel + 1];
+  RSpinBox * sbSubChOffset[MaxNDigitizer][MaxRegChannel + 1][8];
+  RSpinBox * sbSubChThreshold[MaxNDigitizer][MaxRegChannel + 1][8];
 
   //---------------- channel status
   QPushButton * bnChStatus[MaxNDigitizer][MaxRegChannel][3];
