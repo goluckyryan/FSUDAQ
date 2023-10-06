@@ -33,36 +33,36 @@ class Data{
     float tick2ns;  /// only use in TriggerRate calculation
     
     unsigned int nByte;               /// number of byte from read buffer
-    uint32_t AllocatedSize;      
-    
-    double TriggerRate[MaxNChannels]; /// Hz
-    double NonPileUpRate[MaxNChannels]; /// Hz
-    unsigned long TotNumNonPileUpEvents[MaxNChannels];
-    unsigned short NumEventsDecoded[MaxNChannels];  /// reset at every decode
-    unsigned short NumNonPileUpDecoded[MaxNChannels]; /// reset at every decode
+    uint32_t AllocatedSize;
+
+    float          TriggerRate          [MaxNChannels]; /// Hz
+    float          NonPileUpRate        [MaxNChannels]; /// Hz
+    unsigned long  TotNumNonPileUpEvents[MaxNChannels]; /// also exclude overthrow
+    unsigned short NumEventsDecoded     [MaxNChannels]; /// reset at every decode
+    unsigned short NumNonPileUpDecoded  [MaxNChannels]; /// reset at every decode
 
     /// store data for event building and deduce the trigger rate.
     //it is a circular memory
     bool IsNotRollOverFakeAgg;
 
-    int                LoopIndex[MaxNChannels];     /// number of loop in the circular memory
-    int                DataIndex[MaxNChannels];
+    int       LoopIndex[MaxNChannels];     /// number of loop in the circular memory
+    int       DataIndex[MaxNChannels];
 
     unsigned long long Timestamp[MaxNChannels][MaxNData]; /// 47 bit
-    unsigned short     fineTime[MaxNChannels][MaxNData];  /// 10 bits, in unit of tick2ns / 1000 = ps
-    unsigned short     Energy[MaxNChannels][MaxNData];   /// 15 bit
-    unsigned short     Energy2[MaxNChannels][MaxNData];  /// 15 bit, in PSD, Energy = Qshort, Energy2 = Qlong
-    bool               PileUp[MaxNChannels][MaxNData];   /// pile up flag
+    unsigned short     fineTime [MaxNChannels][MaxNData];  /// 10 bits, in unit of tick2ns / 1000 = ps
+    unsigned short     Energy   [MaxNChannels][MaxNData];   /// 15 bit
+    unsigned short     Energy2  [MaxNChannels][MaxNData];  /// 15 bit, in PSD, Energy = Qshort, Energy2 = Qlong
+    bool               PileUp   [MaxNChannels][MaxNData];   /// pile up flag
     
-    std::vector<short> Waveform1[MaxNChannels][MaxNData];
-    std::vector<short> Waveform2[MaxNChannels][MaxNData];
+    std::vector<short> Waveform1    [MaxNChannels][MaxNData]; // used at least 14 MB
+    std::vector<short> Waveform2    [MaxNChannels][MaxNData];
     std::vector<bool>  DigiWaveform1[MaxNChannels][MaxNData];
     std::vector<bool>  DigiWaveform2[MaxNChannels][MaxNData];
     std::vector<bool>  DigiWaveform3[MaxNChannels][MaxNData];
     std::vector<bool>  DigiWaveform4[MaxNChannels][MaxNData];
 
   public:
-    Data();
+    Data(unsigned short numCh);
     ~Data();
   
     void Allocate80MBMemory();
@@ -91,9 +91,9 @@ class Data{
     void ZeroTotalFileSize() { FinishedOutFilesSize = 0; }
   
   protected:
-    
+  
+    const unsigned short numChannel;
     unsigned int nw;
-    //bool SaveWaveToMemory;
 
     ///for temperary
     std::vector<short> tempWaveform1; 
@@ -118,12 +118,11 @@ class Data{
     int DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDecode, int verbose);
     int DecodeQDCGroupedChannelBlock(unsigned int ChannelMask, bool fastDecode, int verbose);
 
-    
 };
 
 //==========================================
 
-inline Data::Data(){
+inline Data::Data(unsigned short numCh): numChannel(numCh){
   tick2ns = 2.0;
   boardSN = 0;
   DPPType = DPPType::DPP_PHA_CODE;
@@ -298,7 +297,7 @@ inline void Data::PrintStat() const{
   }
   printf("%2s | %6s | %9s | %9s | %6s | %6s(%4s)\n", "ch", "# Evt.", "Rate [Hz]", "Accept", "Tot. Evt.", "index", "loop");
   printf("---+--------+-----------+-----------+----------\n");
-  for(int ch = 0; ch < MaxNChannels; ch++){
+  for(int ch = 0; ch < numChannel; ch++){
     printf("%2d | %6d | %9.2f | %9.2f | %6lu | %6d(%2d)\n", ch, NumEventsDecoded[ch], TriggerRate[ch], NonPileUpRate[ch], TotNumNonPileUpEvents[ch], DataIndex[ch], LoopIndex[ch]);
   }
   printf("---+--------+-----------+-----------+----------\n");
@@ -312,7 +311,7 @@ inline void Data::PrintAllData(bool tableMode, unsigned int maxRowDisplay) const
 
     int MaxEntry = 0;
     printf("%4s|", "");
-    for( int ch = 0; ch < MaxNChannels; ch++){
+    for( int ch = 0; ch < numChannel; ch++){
       if( LoopIndex[ch] > 0 ) {
         MaxEntry = MaxNData-1;
       }else{
@@ -326,7 +325,7 @@ inline void Data::PrintAllData(bool tableMode, unsigned int maxRowDisplay) const
 
     do{
       printf("%4d|", entry ); 
-      for( int ch = 0; ch < MaxNChannels; ch++){
+      for( int ch = 0; ch < numChannel; ch++){
         if( DataIndex[ch] < 0 ) continue;
         printf(" %5d,%12lld |", Energy[ch][entry], Timestamp[ch][entry]);
       }
@@ -337,7 +336,7 @@ inline void Data::PrintAllData(bool tableMode, unsigned int maxRowDisplay) const
     }while(entry <= MaxEntry);
 
   }else{
-    for( int ch = 0; ch < MaxNChannels ; ch++){
+    for( int ch = 0; ch < numChannel ; ch++){
       if( DataIndex[ch] < 0  ) continue;
       printf("------------ ch : %d, DataIndex : %d, loop : %d\n", ch, DataIndex[ch], LoopIndex[ch]);
       for( int ev = 0; ev <= (LoopIndex[ch] > 0 ? MaxNData : DataIndex[ch]) ; ev++){

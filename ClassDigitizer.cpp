@@ -16,8 +16,8 @@ Digitizer::~Digitizer(){
 
 void Digitizer::Initalization(){
 
-  data = new Data();
-  
+  data = nullptr; 
+
   portID = -1;
   boardID = -1;
   handle = -1;
@@ -109,6 +109,8 @@ int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose
             case CAEN_DGTZ_V1740: tick2ns = 16.0; NCoupledCh = 8; break; ///ns -> 62.5 MSamples/s
             default : tick2ns = 4.0; break;
       }
+
+      data = new Data(NChannel);
       data->tick2ns = tick2ns;
       data->boardSN = BoardInfo.SerialNumber;
       ADCbits = BoardInfo.ADC_NBits;

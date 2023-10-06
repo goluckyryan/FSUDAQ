@@ -84,7 +84,8 @@ int main(int argc, char **argv){
   for( int i = 0; i < nFile; i++){
     inFile[i] = fopen(inFileName[i].Data(), "r");
     if( inFile[i] ){
-      data[i] = new Data();
+      if( type[i] == DPPType::DPP_PHA_CODE || type[i] == DPPType::DPP_PSD_CODE ) data[i] = new Data(16);
+      if( type[i] == DPPType::DPP_QDC_CODE ) data[i] = new Data(64);
       data[i]->DPPType = type[i];
       data[i]->boardSN = ID[i]%1000;
     }else{

@@ -6,9 +6,9 @@
 
 int main(){
 
-  Digitizer * digi = new Digitizer();
+  //Digitizer * digi = new Digitizer();
 
-  Data * data = digi->GetData();
+  Data * data = new Data(16);
 
   std::random_device rd;
   std::mt19937 gen(rd());
@@ -56,6 +56,6 @@ int main(){
 
   }
 
-  delete digi;
+  delete data;
 
 }
