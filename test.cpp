@@ -37,9 +37,15 @@ int main(int argc, char* argv[]){
     printf("OverThreshold %d: 0x%d \n", grp, digi->GetSettingFromMemory(DPP::QDC::OverThresholdWidth, grp));
   }
 
+  int ret;
+  //int ret = CAEN_DGTZ_WriteRegister(digi->GetHandle(), 0x8024, 0x60);
+
+  digi->WriteRegister(DPP::QDC::RecordLength, 0x60, -1, true);
+
   unsigned int returnData;
-  int ret = CAEN_DGTZ_ReadRegister(digi->GetHandle(), 0x8024, &returnData);
+  ret = CAEN_DGTZ_ReadRegister(digi->GetHandle(), 0x8024, &returnData);
   printf("ret : %d | 0x%08x\n", ret, returnData);  
+
 
   printf("Record Length: 0x%d \n", digi->GetSettingFromMemory(DPP::QDC::RecordLength, 0));
   

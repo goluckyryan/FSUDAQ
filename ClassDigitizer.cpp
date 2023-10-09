@@ -358,7 +358,7 @@ void Digitizer::StartACQ(){
     //return;
   }
 
-  if( DPPType == V1730_DPP_PSD_CODE) bufferSize = 80 * 1024 * 1024; //TODO allocate 80 MB for PSD
+  if( DPPType == V1730_DPP_PSD_CODE) bufferSize = 160 * 1024 * 1024; //TODO allocate 80 MB for PSD
   
   data->AllocateMemory(bufferSize);
   ret = CAEN_DGTZ_SWStartAcquisition(handle);
@@ -511,9 +511,14 @@ void Digitizer::WriteRegister (Reg registerAddress, uint32_t value, int ch, bool
 
   if( ret == 0 && isSave2MemAndFile && registerAddress.GetRWType() == RW::ReadWrite) {
     if( ch < 0 ) {
-      for(int i = 0; i < NChannel; i++){
-        SetSettingToMemory(registerAddress, value, i);
-        SaveSettingToFile(registerAddress, value, i);
+      if( registerAddress.GetAddress() < 0x8000 ){
+        for(int i = 0; i < NChannel; i++){
+          SetSettingToMemory(registerAddress, value, i);
+          SaveSettingToFile(registerAddress, value, i);
+        }
+      }else{
+        SetSettingToMemory(registerAddress, value, 0);
+        SaveSettingToFile(registerAddress, value, 0);
       }
     }else{
       SetSettingToMemory(registerAddress, value, ch);
@@ -536,8 +541,8 @@ uint32_t Digitizer::ReadRegister(Reg registerAddress, unsigned short ch, bool is
 
   ret = CAEN_DGTZ_ReadRegister(handle, registerAddress.ActualAddress(ch), &returnData);
   
-  //if( ret == 0 && isSave2MemAndFile) {
-  if( isSave2MemAndFile) {
+  if( ret == 0 && isSave2MemAndFile) {
+  //if( isSave2MemAndFile) {
     SetSettingToMemory(registerAddress, returnData, ch);
     SaveSettingToFile(registerAddress, returnData, ch);
   }

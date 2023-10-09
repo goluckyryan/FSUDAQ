@@ -873,8 +873,6 @@ void MainWindow::SetupScalar(){
     }
   }
 
-  printf("=================== z \n");
-
 }
 
 void MainWindow::CleanUpScalar(){
@@ -1509,9 +1507,18 @@ void MainWindow::UpdateAllPanels(int panelID){
     if(scalar) {
       for( unsigned int iDigi = 0; iDigi < nDigi; iDigi++){
         uint32_t chMask =  digi[iDigi]->GetChannelMask();
-        for( int i = 0; i < digi[iDigi]->GetNChannels(); i++){
-          leTrigger[iDigi][i]->setEnabled( (chMask >> i) & 0x1 );
-          leAccept[iDigi][i]->setEnabled( (chMask >> i) & 0x1 );
+        for( int ch = 0; ch < digi[iDigi]->GetNChannels(); ch++){
+          // leTrigger[iDigi][i]->setEnabled( (chMask >> i) & 0x1 );
+          // leAccept[iDigi][i]->setEnabled( (chMask >> i) & 0x1 );
+
+          if( digi[iDigi]->IsChEqRegCh() ){
+            leTrigger[iDigi][ch]->setEnabled( (chMask >> ch) & 0x1 );
+            leAccept[iDigi][ch]->setEnabled( (chMask >> ch) & 0x1 );
+          }else{
+            int grpID = ch/digi[iDigi]->GetRegChannels();
+            leTrigger[iDigi][ch]->setEnabled( (chMask >> grpID) & 0x1 );
+            leAccept[iDigi][ch]->setEnabled( (chMask >> grpID) & 0x1 );
+          }
         }
       } 
     }
@@ -1576,7 +1583,7 @@ void MainWindow::CheckElog(){
     WriteElog("Testing communication.", "Testing communication.", "Other", 0);
     AppendElog("test append elog.");
   }else{
-    LogMsg("Elog missing inputs. skip.");
+    LogMsg("<font style=\"color : red;\">Elog missing inputs. skip.</font>");
     return;
   }
 

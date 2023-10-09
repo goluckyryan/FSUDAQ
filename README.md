@@ -108,6 +108,7 @@ Those file can be compiled using
 * DC offset issue. When porgram default settings, the DC offset is not the same for all channels.
 * for PHA firmware, when the trigger average changed, the Events per Agg need to be changed.
 * Sometimes, the buffer is not in time order, and make the trigger/Accept rate to be nagative. This is nothing to do with the program but the digitizer settings. Recommand reporgram the digitizer.
+* in 1740D, QDC, Record Length and Over Threshold WIdth cannot read from digitizer, although the register is correct.
 
 # Known Bugs
 

@@ -788,7 +788,7 @@ namespace DPP {
   namespace QDC { // Register already grouped in channel. and there no control for indiviual channel except the Fine DC offset and threshold, so it is like no group
     const Reg GateWidth                   ("GateWidth"                     , 0x1030, RW::ReadWrite, false, 0xFFF, 1); /// R/W
     const Reg GateOffset                  ("GateOfset"                     , 0x1034, RW::ReadWrite, false,  0xFF, 1); /// R/W
-    const Reg FixedBaseline               ("FixedBaseline"                 , 0x1038, RW::ReadWrite, false, 0xFFF, 1); /// R/W
+    const Reg FixedBaseline               ("FixedBaseline"                 , 0x1038, RW::ReadWrite, false, 0xFFF, -1); /// R/W
     const Reg PreTrigger                  ("PreTrigger"                    , 0x103C, RW::ReadWrite, false,  0xFF, 1); /// R/W
     const Reg DPPAlgorithmControl         ("DPPAlgorithmControl"           , 0x1040, RW::ReadWrite, false, {}); /// R/W
     const Reg TriggerHoldOffWidth         ("Trigger Hold-off width"        , 0x1074, RW::ReadWrite, false, 0xFFFF, 1); /// R/W
@@ -796,22 +796,22 @@ namespace DPP {
     const Reg OverThresholdWidth          ("Over Threshold width"          , 0x107C, RW::ReadWrite, false, 0xFFFF, 1); /// R/W
     const Reg GroupStatus_R               ("Group Status"                  , 0x1088, RW::ReadONLY,  false, {});  /// R/
     const Reg AMCFirmwareRevision_R       ("AMC firmware version"          , 0x108C, RW::ReadONLY,  false, {});  /// R/
-    const Reg DCOffset                    ("DC offset"                     , 0x1098, RW::ReadWrite, false, 0xFFFF, 1); /// R/W
+    const Reg DCOffset                    ("DC offset"                     , 0x1098, RW::ReadWrite, false, 0xFFFF, -1); /// R/W
     const Reg ChannelMask                 ("Channel Group Mask"            , 0x10A8, RW::ReadWrite, false,   0xFF, 1); /// R/W
-    const Reg DCOffset_LowCh              ("DC offset for low ch."         , 0x10C0, RW::ReadWrite, false, {}); /// R/W
-    const Reg DCOffset_HighCh             ("DC offset for high ch."        , 0x10C4, RW::ReadWrite, false, {}); /// R/W
-    const Reg TriggerThreshold_sub0       ("Trigger Threshold sub0"             , 0x10D0, RW::ReadWrite, false, 0xFFF, 1); /// R/W
-    const Reg TriggerThreshold_sub1       ("Trigger Threshold sub1"             , 0x10D4, RW::ReadWrite, false, 0xFFF, 1); /// R/W
-    const Reg TriggerThreshold_sub2       ("Trigger Threshold sub2"             , 0x10D8, RW::ReadWrite, false, 0xFFF, 1); /// R/W
-    const Reg TriggerThreshold_sub3       ("Trigger Threshold sub3"             , 0x10DC, RW::ReadWrite, false, 0xFFF, 1); /// R/W
-    const Reg TriggerThreshold_sub4       ("Trigger Threshold sub4"             , 0x10E0, RW::ReadWrite, false, 0xFFF, 1); /// R/W
-    const Reg TriggerThreshold_sub5       ("Trigger Threshold sub5"             , 0x10E4, RW::ReadWrite, false, 0xFFF, 1); /// R/W
-    const Reg TriggerThreshold_sub6       ("Trigger Threshold sub6"             , 0x10E8, RW::ReadWrite, false, 0xFFF, 1); /// R/W
-    const Reg TriggerThreshold_sub7       ("Trigger Threshold sub7"             , 0x10EC, RW::ReadWrite, false, 0xFFF, 1); /// R/W
+    const Reg DCOffset_LowCh              ("DC offset for low ch."         , 0x10C0, RW::ReadWrite, false, 0xFFFFFFFF, -1); /// R/W
+    const Reg DCOffset_HighCh             ("DC offset for high ch."        , 0x10C4, RW::ReadWrite, false, 0xFFFFFFFF, -1); /// R/W
+    const Reg TriggerThreshold_sub0       ("Trigger Threshold sub0"             , 0x10D0, RW::ReadWrite, false, 0xFFF, -1); /// R/W
+    const Reg TriggerThreshold_sub1       ("Trigger Threshold sub1"             , 0x10D4, RW::ReadWrite, false, 0xFFF, -1); /// R/W
+    const Reg TriggerThreshold_sub2       ("Trigger Threshold sub2"             , 0x10D8, RW::ReadWrite, false, 0xFFF, -1); /// R/W
+    const Reg TriggerThreshold_sub3       ("Trigger Threshold sub3"             , 0x10DC, RW::ReadWrite, false, 0xFFF, -1); /// R/W
+    const Reg TriggerThreshold_sub4       ("Trigger Threshold sub4"             , 0x10E0, RW::ReadWrite, false, 0xFFF, -1); /// R/W
+    const Reg TriggerThreshold_sub5       ("Trigger Threshold sub5"             , 0x10E4, RW::ReadWrite, false, 0xFFF, -1); /// R/W
+    const Reg TriggerThreshold_sub6       ("Trigger Threshold sub6"             , 0x10E8, RW::ReadWrite, false, 0xFFF, -1); /// R/W
+    const Reg TriggerThreshold_sub7       ("Trigger Threshold sub7"             , 0x10EC, RW::ReadWrite, false, 0xFFF, -1); /// R/W
 
 
     const Reg NumberEventsPerAggregate      ("Number of Events per Aggregate", 0x8020, RW::ReadWrite, false, 0x3FF, 1); /// R/W
-    const Reg RecordLength                  ("Record Length"                 , 0x8024, RW::ReadWrite, false, 0xFFF, 1); /// R/W
+    const Reg RecordLength                  ("Record Length"                 , 0x8024, RW::ReadWrite, false, 0x1FFF, 1); /// R/W
     const Reg GroupEnableMask               ("Group Enable Mask"             , 0x8120, RW::ReadWrite, false, 0xFF, 1); /// R/W
 
     namespace Bit_DPPAlgorithmControl {

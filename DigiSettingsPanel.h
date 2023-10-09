@@ -38,7 +38,7 @@ private:
   void SetUpCheckBox(QCheckBox * &chkBox, QString label, QGridLayout *gLayout, int row, int col, Reg para, std::pair<unsigned short, unsigned short> bit, int ch = -1, int colSpan = 1);
   void SetUpComboBoxBit(RComboBox * &cb, QString label, QGridLayout *gLayout, int row, int col, std::vector<std::pair<std::string, unsigned int>> items, Reg para, std::pair<unsigned short, unsigned short> bit, int colspan = 1, int ch = -1);
   void SetUpComboBox(RComboBox * &cb, QString label, QGridLayout *gLayout, int row, int col, Reg para, int ch = -1);
-  void SetUpSpinBox(RSpinBox * &sb, QString label, QGridLayout *gLayout, int row, int col, Reg para, int ch = -1);
+  void SetUpSpinBox(RSpinBox * &sb, QString label, QGridLayout *gLayout, int row, int col, Reg para, int ch = -1, bool isBoard = false);
 
   void CleanUpGroupBox(QGroupBox * & gBox);
 
@@ -284,6 +284,8 @@ private:
   RSpinBox * sbOverThresholdWidth[MaxNDigitizer][MaxRegChannel + 1];
   RSpinBox * sbSubChOffset[MaxNDigitizer][MaxRegChannel + 1][8];
   RSpinBox * sbSubChThreshold[MaxNDigitizer][MaxRegChannel + 1][8];
+  QLabel   * lbSubCh[MaxNDigitizer][8];
+  QLabel   * lbSubCh2[MaxNDigitizer][8];
 
   //---------------- channel status
   QPushButton * bnChStatus[MaxNDigitizer][MaxRegChannel][3];
