@@ -26,6 +26,29 @@ int getch(void);
 //^======================================
 int main(int argc, char* argv[]){
 
+
+  Digitizer * digi = new Digitizer(0, 2, false, true);
+
+  digi->ReadAllSettingsFromBoard();
+
+  printf("Record Length: 0x%d \n", digi->GetSettingFromMemory(DPP::QDC::RecordLength, 0));
+
+  for( int grp = 0; grp < 8; grp ++){
+    printf("OverThreshold %d: 0x%d \n", grp, digi->GetSettingFromMemory(DPP::QDC::OverThresholdWidth, grp));
+  }
+
+  unsigned int returnData;
+  int ret = CAEN_DGTZ_ReadRegister(digi->GetHandle(), 0x8024, &returnData);
+  printf("ret : %d | 0x%08x\n", ret, returnData);  
+
+  printf("Record Length: 0x%d \n", digi->GetSettingFromMemory(DPP::QDC::RecordLength, 0));
+  
+  digi->CloseDigitizer();
+  delete digi;
+
+ 
+  /*
+
   const int nBoard = 1;
   Digitizer **dig = new Digitizer *[nBoard];
   
@@ -35,13 +58,17 @@ int main(int argc, char* argv[]){
     dig[i] = new Digitizer(board, port, false, true);
   }
 
-  dig[0]->StopACQ();
+  //   dig[i]->StopACQ();
   // dig[0]->WriteRegister(DPP::SoftwareClear_W, 1);
 
   // dig[0]->ProgramBoard();
-  // dig[0]->ProgramPSDBoard();
+  // dig[0]->ProgramBoard_PSD();
 
   // const float tick2ns = dig[0]->GetTick2ns();
+
+  //dig[2]->ReadRegister(DPP::QDC::RecordLength, 0, 0, "");
+
+  /******************
 
   Data * data =  dig[0]->GetData();
   data->ClearData();
@@ -69,7 +96,7 @@ int main(int argc, char* argv[]){
 
   dig[0]->StopACQ();
 
-
+  */
 
   
 
@@ -158,6 +185,7 @@ int main(int argc, char* argv[]){
   app->Run();
   */
 
+  /*
   printf("Closing digitizers..............\n");
   for( int i = 0; i < nBoard; i++){
     if(dig[i]->IsConnected()) dig[i]->StopACQ();
@@ -175,7 +203,7 @@ int main(int argc, char* argv[]){
   dig->LoadSettingBinaryToMemory("expDir/settings/setting_323.bin");
 
   
-  //dig->ProgramPHABoard();
+  //dig->ProgramBoard_PHA();
   //dig->OpenSettingBinary("setting_323.bin");
   //dig->ReadAllSettingsFromBoard();
   

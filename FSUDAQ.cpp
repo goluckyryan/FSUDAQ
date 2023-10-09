@@ -624,13 +624,19 @@ void MainWindow::OpenDigitizers(){
     if( !file.open(QIODevice::Text | QIODevice::ReadOnly) ) {
 
       if( digi[i]->GetDPPType() == V1730_DPP_PHA_CODE ) {
-        //digi[i]->ProgramPHABoard();
+        //digi[i]->ProgramBoard_PHA();
         //LogMsg("<b>" + fileName + "</b> not found. Program predefined PHA settings.");
         LogMsg("<b>" + fileName + "</b> not found.");
       }
 
       if( digi[i]->GetDPPType() == V1730_DPP_PSD_CODE ){
-        //digi[i]->ProgramPSDBoard();
+        //digi[i]->ProgramBoard_PSD();
+        //LogMsg("<b>" + fileName + "</b> not found. Program predefined PSD settings.");
+        LogMsg("<b>" + fileName + "</b> not found.");
+      }
+
+      if( digi[i]->GetDPPType() == V1740_DPP_QDC_CODE ){
+        //digi[i]->ProgramBoard_QDC();
         //LogMsg("<b>" + fileName + "</b> not found. Program predefined PSD settings.");
         LogMsg("<b>" + fileName + "</b> not found.");
       }
@@ -756,6 +762,8 @@ void MainWindow::WaitForDigitizersOpen(bool onOff){
 //***************************************************************
 void MainWindow::SetupScalar(){
 
+  // printf("%s\n", __func__);
+
   scalar = new QMainWindow(this);
   scalar->setWindowTitle("Scalar");
 
@@ -824,7 +832,7 @@ void MainWindow::SetupScalar(){
     leTrigger[iDigi] = new QLineEdit *[digi[iDigi]->GetNChannels()];
     leAccept[iDigi] = new QLineEdit *[digi[iDigi]->GetNChannels()];
     uint32_t chMask =  digi[iDigi]->GetChannelMask();
-    for( int ch = 0; ch < maxNChannel; ch++){
+    for( int ch = 0; ch < digi[iDigi]->GetNChannels(); ch++){
 
       if( ch == 0 ){
           QLabel * lbDigi = new QLabel("Digi-" + QString::number(digi[iDigi]->GetSerialNumber()), scalar); 
@@ -852,12 +860,21 @@ void MainWindow::SetupScalar(){
       leAccept[iDigi][ch]->setAlignment(Qt::AlignRight);
       leAccept[iDigi][ch]->setStyleSheet("background-color: #F0F0F0;");
 
-      leTrigger[iDigi][ch]->setEnabled( (chMask >> ch) & 0x1 );
-      leAccept[iDigi][ch]->setEnabled( (chMask >> ch) & 0x1 );
+      if( digi[iDigi]->IsChEqRegCh() ){
+        leTrigger[iDigi][ch]->setEnabled( (chMask >> ch) & 0x1 );
+        leAccept[iDigi][ch]->setEnabled( (chMask >> ch) & 0x1 );
+      }else{
+        int grpID = ch/digi[iDigi]->GetRegChannels();
+        leTrigger[iDigi][ch]->setEnabled( (chMask >> grpID) & 0x1 );
+        leAccept[iDigi][ch]->setEnabled( (chMask >> grpID) & 0x1 );
+      }
       
       scalarLayout->addWidget(leAccept[iDigi][ch], rowID, 2*iDigi+2);
     }
   }
+
+  printf("=================== z \n");
+
 }
 
 void MainWindow::CleanUpScalar(){
@@ -1558,6 +1575,9 @@ void MainWindow::CheckElog(){
   if( elogIP != "" && elogName != "" &&  elogUser != "" && elogPWD != "" ){
     WriteElog("Testing communication.", "Testing communication.", "Other", 0);
     AppendElog("test append elog.");
+  }else{
+    LogMsg("Elog missing inputs. skip.");
+    return;
   }
 
   if( elogID >= 0 ) {

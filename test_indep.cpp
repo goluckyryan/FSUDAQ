@@ -180,7 +180,7 @@ int main(int argc, char* argv[]){
   CAEN_DGTZ_BoardInfo_t BoardInfo;
   ret = (int) CAEN_DGTZ_GetInfo(handle, &BoardInfo);
   int NChannel = BoardInfo.Channels;
-  uint32_t channelMask = 0xFFFF;
+  uint32_t regChannelMask = 0xFFFF;
   float tick2ns = 4.0;
   switch(BoardInfo.Model){
         case CAEN_DGTZ_V1730: tick2ns = 2.0; break; ///ns -> 500 MSamples/s
@@ -259,7 +259,7 @@ int main(int argc, char* argv[]){
   ///  DPPParams.decimation[i] = 0 ; /// waveform decimation, 2^n, when n = 0, disable
   ///  DPPParams.blho[i] = 0;        /// not use
   ///}
-  ///ret = CAEN_DGTZ_SetDPPParameters(handle, channelMask, &DPPParams);
+  ///ret = CAEN_DGTZ_SetDPPParameters(handle, regChannelMask, &DPPParams);
   
   ret |= CAEN_DGTZ_WriteRegister(handle, DPP::PHA::DecayTime + 0x7000 , 5000 ); 
   ret |= CAEN_DGTZ_WriteRegister(handle, DPP::PHA::TrapezoidFlatTop + 0x7000 , 62 ); 

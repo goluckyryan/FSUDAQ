@@ -22,6 +22,8 @@ void Digitizer::Initalization(){
   boardID = -1;
   handle = -1;
   NChannel = 16;
+  NRegChannel = 16;
+  isChEqRegCh = true;
   NCoupledCh = 8;
   ADCbits  = 1;
   DPPType = 0;
@@ -29,7 +31,7 @@ void Digitizer::Initalization(){
   tick2ns = 0; 
   BoardInfo = {};
 
-  channelMask = 0xFFFF;
+  regChannelMask = 0xFFFF;
   VMEBaseAddress = 0;
   LinkType = CAEN_DGTZ_USB;      /// default USB
   IOlev = CAEN_DGTZ_IOLevel_NIM; ///default NIM  
@@ -60,13 +62,14 @@ void Digitizer::Reset(){
 
 void Digitizer::PrintBoard (){
   printf("Connected to Model %s with handle %d using %s\n", BoardInfo.ModelName, handle, LinkType == CAEN_DGTZ_USB ? "USB" : "Optical Link");
-  printf("Sampling rate : %.0f MHz = %.1f ns \n", 1000/tick2ns, tick2ns);
-  printf("Number of Channels : %d = 0x%X\n", NChannel, channelMask);
-  printf("SerialNumber :\e[1m\e[33m %d\e[0m\n", BoardInfo.SerialNumber);
-  printf("DPPType : %d (%s)\n", DPPType, GetDPPString().c_str());
-  printf("ADC bit is \e[33m%d\e[0m, %d = 0x%X\n", ADCbits, ADCFullSize, ADCFullSize);
-  printf("ROC FPGA Release is %s\n", BoardInfo.ROC_FirmwareRel);
-  printf("AMC FPGA Release is %s\n", BoardInfo.AMC_FirmwareRel);
+  printf("        Sampling rate : %.0f MHz = %.1f ns \n", 1000/tick2ns, tick2ns);
+  printf("No. of Input Channels : %d \n", NChannel);
+  printf("  No. of Reg Channels : %d, mask : 0x%X\n", NRegChannel, regChannelMask);
+  printf("         SerialNumber :\e[1m\e[33m %d\e[0m\n", BoardInfo.SerialNumber);
+  printf("              DPPType : %d (%s)\n", DPPType, GetDPPString().c_str());
+  printf("              ADC bit : \e[33m%d\e[0m, %d = 0x%X\n", ADCbits, ADCFullSize, ADCFullSize);
+  printf("     ROC FPGA Release : %s\n", BoardInfo.ROC_FirmwareRel);
+  printf("     AMC FPGA Release : %s\n", BoardInfo.AMC_FirmwareRel);
 }
 
 int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose){
@@ -101,12 +104,19 @@ int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose
       if( verbose) printf("Can't read board info\n");
     }else{
       isConnected = true;
-      NChannel = BoardInfo.Channels;
-      channelMask = pow(2, NChannel)-1;
+      NRegChannel = BoardInfo.Channels;
+      NChannel = NRegChannel;
+      isChEqRegCh = true;
+      regChannelMask = pow(2, NChannel)-1;
       switch(BoardInfo.Model){
-            case CAEN_DGTZ_V1730: tick2ns =  2.0; NCoupledCh = 8; break; ///ns -> 500 MSamples/s
-            case CAEN_DGTZ_V1725: tick2ns =  4.0; NCoupledCh = 8; break; ///ns -> 250 MSamples/s
-            case CAEN_DGTZ_V1740: tick2ns = 16.0; NCoupledCh = 8; break; ///ns -> 62.5 MSamples/s
+            case CAEN_DGTZ_V1730: tick2ns =  2.0; NCoupledCh = NChannel/2; break; ///ns -> 500 MSamples/s
+            case CAEN_DGTZ_V1725: tick2ns =  4.0; NCoupledCh = NChannel/2; break; ///ns -> 250 MSamples/s
+            case CAEN_DGTZ_V1740: {
+              NChannel = 64;
+              NCoupledCh = NRegChannel;
+              isChEqRegCh = false;
+              tick2ns = 16.0; break; ///ns -> 62.5 MSamples/s
+            }
             default : tick2ns = 4.0; break;
       }
 
@@ -134,7 +144,7 @@ int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose
     case 0x8B : data->DPPTypeStr = "PHA"; break;  // x730
     case 0x8C : data->DPPTypeStr = "ZLE"; break;  // x730
     case 0x8D : data->DPPTypeStr = "DAW"; break;  // x730
-    default : data->DPPTypeStr = "STD"; break; // stardard
+    default :   data->DPPTypeStr = "STD"; break; // stardard
   }
   /// change address 0xEF08 (5 bits), this will reflected in the 2nd word of the Board Agg. header.
   ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardID, (DPPType & 0xF));
@@ -143,63 +153,68 @@ int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose
     if (DPPType < 0x80 ) {
       printf("This digitizer does not have DPP-PHA firmware\n");
     }else {
-      printf("\t==== This digitizer has a DPP firmware!\n");    
-      printf("\e[32m\t %s \e[0m", GetDPPString().c_str());
+      printf("\t==== This digitizer has a DPP firmware!");    
+      printf("\e[32m\t %s \e[0m\n", GetDPPString().c_str());
     }
   }
   ErrorMsg("========== Set BoardID");
   
   ///======================= Check virtual probe
-  int probes[MAX_SUPPORTED_PROBES];
-  int numProbes;
-  ret = CAEN_DGTZ_GetDPP_SupportedVirtualProbes(handle, 1, probes, &numProbes);
-  ErrorMsg("=== Get Supported Virtual Probes");
-  if( verbose ){
-    printf("\t==== supported virtual probe (number of Probe : %d)\n", numProbes);
-    for( int i = 0 ; i < numProbes; i++){
-      switch (probes[i]){
-         case  0: printf("\t\t CAEN_DGTZ_DPP_VIRTUALPROBE_Input\n"); break;
-         case  1: printf("\t\t CAEN_DGTZ_DPP_VIRTUALPROBE_Delta\n"); break;
-         case  2: printf("\t\t CAEN_DGTZ_DPP_VIRTUALPROBE_Delta2\n"); break;
-         case  3: printf("\t\t CAEN_DGTZ_DPP_VIRTUALPROBE_Trapezoid\n"); break;
-         case  4: printf("\t\t CAEN_DGTZ_DPP_VIRTUALPROBE_TrapezoidReduced\n"); break;
-         case  5: printf("\t\t CAEN_DGTZ_DPP_VIRTUALPROBE_Baseline\n"); break;
-         case  6: printf("\t\t CAEN_DGTZ_DPP_VIRTUALPROBE_Threshold\n"); break;
-         case  7: printf("\t\t CAEN_DGTZ_DPP_VIRTUALPROBE_CFD\n"); break;
-         case  8: printf("\t\t CAEN_DGTZ_DPP_VIRTUALPROBE_SmoothedInput\n"); break;
-         case  9: printf("\t\t CAEN_DGTZ_DPP_VIRTUALPROBE_None\n"); break;
-         case 10: printf("\t\t CAEN_DGTZ_DPP_DIGITALPROBE_TRGWin\n"); break;
-         case 11: printf("\t\t CAEN_DGTZ_DPP_DIGITALPROBE_Armed\n"); break;
-         case 12: printf("\t\t CAEN_DGTZ_DPP_DIGITALPROBE_PkRun\n"); break;
-         case 13: printf("\t\t CAEN_DGTZ_DPP_DIGITALPROBE_Peaking\n"); break;
-         case 14: printf("\t\t CAEN_DGTZ_DPP_DIGITALPROBE_CoincWin\n"); break;
-         case 15: printf("\t\t CAEN_DGTZ_DPP_DIGITALPROBE_BLHoldoff\n"); break;
-         case 16: printf("\t\t CAEN_DGTZ_DPP_DIGITALPROBE_TRGHoldoff\n"); break;
-         case 17: printf("\t\t CAEN_DGTZ_DPP_DIGITALPROBE_TRGVal\n"); break;
-         case 18: printf("\t\t CAEN_DGTZ_DPP_DIGITALPROBE_ACQVeto\n"); break;
-         case 19: printf("\t\t CAEN_DGTZ_DPP_DIGITALPROBE_BFMVeto\n"); break;
-         case 20: printf("\t\t CAEN_DGTZ_DPP_DIGITALPROBE_ExtTRG\n"); break;
-         case 21: printf("\t\t CAEN_DGTZ_DPP_DIGITALPROBE_OverThr\n"); break;
-         case 22: printf("\t\t CAEN_DGTZ_DPP_DIGITALPROBE_TRGOut\n"); break;
-         case 23: printf("\t\t CAEN_DGTZ_DPP_DIGITALPROBE_Coincidence \n"); break;
-         case 24: printf("\t\t CAEN_DGTZ_DPP_DIGITALPROBE_PileUp \n"); break;
-         case 25: printf("\t\t CAEN_DGTZ_DPP_DIGITALPROBE_Gate \n");  break;
-         case 26: printf("\t\t CAEN_DGTZ_DPP_DIGITALPROBE_GateShort \n"); break;
-         case 27: printf("\t\t CAEN_DGTZ_DPP_DIGITALPROBE_Trigger \n"); break;
-         case 28: printf("\t\t CAEN_DGTZ_DPP_DIGITALPROBE_None  \n"); break;
-         case 29: printf("\t\t CAEN_DGTZ_DPP_DIGITALPROBE_BLFreeze  \n"); break;
-         case 30: printf("\t\t CAEN_DGTZ_DPP_DIGITALPROBE_Busy  \n"); break;
-         case 31: printf("\t\t CAEN_DGTZ_DPP_DIGITALPROBE_PrgVeto \n"); break;
-      }  
+  if( DPPType != DPPType::DPP_QDC_CODE ){
+    int probes[MAX_SUPPORTED_PROBES];
+    int numProbes;
+    ret = CAEN_DGTZ_GetDPP_SupportedVirtualProbes(handle, 1, probes, &numProbes);
+    ErrorMsg("=== Get Supported Virtual Probes");
+    if( verbose ){
+      printf("\t==== supported virtual probe (number of Probe : %d)\n", numProbes);
+      for( int i = 0 ; i < numProbes; i++){
+        printf("\t\t %8d ", probes[i]);
+        switch (probes[i]){
+          case  0: printf("CAEN_DGTZ_DPP_VIRTUALPROBE_Input\n"            ); break;
+          case  1: printf("CAEN_DGTZ_DPP_VIRTUALPROBE_Delta\n"            ); break;
+          case  2: printf("CAEN_DGTZ_DPP_VIRTUALPROBE_Delta2\n"           ); break;
+          case  3: printf("CAEN_DGTZ_DPP_VIRTUALPROBE_Trapezoid\n"        ); break;
+          case  4: printf("CAEN_DGTZ_DPP_VIRTUALPROBE_TrapezoidReduced\n" ); break;
+          case  5: printf("CAEN_DGTZ_DPP_VIRTUALPROBE_Baseline\n"         ); break;
+          case  6: printf("CAEN_DGTZ_DPP_VIRTUALPROBE_Threshold\n"        ); break;
+          case  7: printf("CAEN_DGTZ_DPP_VIRTUALPROBE_CFD\n"              ); break;
+          case  8: printf("CAEN_DGTZ_DPP_VIRTUALPROBE_SmoothedInput\n"    ); break;
+          case  9: printf("CAEN_DGTZ_DPP_VIRTUALPROBE_None\n"             ); break;
+          case 10: printf("CAEN_DGTZ_DPP_DIGITALPROBE_TRGWin\n"           ); break;
+          case 11: printf("CAEN_DGTZ_DPP_DIGITALPROBE_Armed\n"            ); break;
+          case 12: printf("CAEN_DGTZ_DPP_DIGITALPROBE_PkRun\n"            ); break;
+          case 13: printf("CAEN_DGTZ_DPP_DIGITALPROBE_Peaking\n"          ); break;
+          case 14: printf("CAEN_DGTZ_DPP_DIGITALPROBE_CoincWin\n"         ); break;
+          case 15: printf("CAEN_DGTZ_DPP_DIGITALPROBE_BLHoldoff\n"        ); break;
+          case 16: printf("CAEN_DGTZ_DPP_DIGITALPROBE_TRGHoldoff\n"       ); break;
+          case 17: printf("CAEN_DGTZ_DPP_DIGITALPROBE_TRGVal\n"           ); break;
+          case 18: printf("CAEN_DGTZ_DPP_DIGITALPROBE_ACQVeto\n"          ); break;
+          case 19: printf("CAEN_DGTZ_DPP_DIGITALPROBE_BFMVeto\n"          ); break;
+          case 20: printf("CAEN_DGTZ_DPP_DIGITALPROBE_ExtTRG\n"           ); break;
+          case 21: printf("CAEN_DGTZ_DPP_DIGITALPROBE_OverThr\n"          ); break;
+          case 22: printf("CAEN_DGTZ_DPP_DIGITALPROBE_TRGOut\n"           ); break;
+          case 23: printf("CAEN_DGTZ_DPP_DIGITALPROBE_Coincidence \n"     ); break;
+          case 24: printf("CAEN_DGTZ_DPP_DIGITALPROBE_PileUp \n"          ); break;
+          case 25: printf("CAEN_DGTZ_DPP_DIGITALPROBE_Gate \n"            );  break;
+          case 26: printf("CAEN_DGTZ_DPP_DIGITALPROBE_GateShort \n"       ); break;
+          case 27: printf("CAEN_DGTZ_DPP_DIGITALPROBE_Trigger \n"         ); break;
+          case 28: printf("CAEN_DGTZ_DPP_DIGITALPROBE_None  \n"           ); break;
+          case 29: printf("CAEN_DGTZ_DPP_DIGITALPROBE_BLFreeze  \n"       ); break;
+          case 30: printf("CAEN_DGTZ_DPP_DIGITALPROBE_Busy  \n"           ); break;
+          case 31: printf("CAEN_DGTZ_DPP_DIGITALPROBE_PrgVeto \n"         ); break;
+          default : printf("Unknown probe\n"); break; 
+        }  
+      }
     }
-  }
-  
+  }  
   ErrorMsg("end of OpenDigitizer");
   
   if( isConnected ) isDummy = false;
   
   if( isConnected  && program) {
-    ProgramBoard();
+    if( DPPType == DPPType::DPP_PHA_CODE ) ProgramBoard_PHA();
+    if( DPPType == DPPType::DPP_PSD_CODE ) ProgramBoard_PSD();
+    if( DPPType == DPPType::DPP_QDC_CODE ) ProgramBoard_QDC();
   }
   
   //if( isConnected ) ReadAllSettingsFromBoard(); 
@@ -220,77 +235,22 @@ int Digitizer::CloseDigitizer(){
 }
 
 
-void Digitizer::SetChannelMask(uint32_t mask){
+void Digitizer::SetRegChannelMask(uint32_t mask){
   if( !isConnected ) return;
-  channelMask = mask;
-  ret |= CAEN_DGTZ_SetChannelEnableMask(handle, channelMask);
-  SaveSettingToFile(DPP::ChannelEnableMask, mask);
-  SetSettingToMemory(DPP::ChannelEnableMask, mask);
+  regChannelMask = mask;
+  ret |= CAEN_DGTZ_SetChannelEnableMask(handle, regChannelMask);
+  SaveSettingToFile(DPP::RegChannelEnableMask, mask);
+  SetSettingToMemory(DPP::RegChannelEnableMask, mask);
   ErrorMsg(__func__);
 }
 
-void Digitizer::SetChannelOnOff(unsigned short ch, bool onOff){
+void Digitizer::SetRegChannelOnOff(unsigned short ch, bool onOff){
   if( !isConnected ) return;
-  channelMask = ((channelMask & ~( 1 << ch) ) | ( onOff << ch)) ;
-  SetChannelMask(channelMask);
+  regChannelMask = ((regChannelMask & ~( 1 << ch) ) | ( onOff << ch)) ;
+  SetRegChannelMask(regChannelMask);
 }
 
-int Digitizer::ProgramBoard(){
-  
-  printf("----- program Board\n");
-  ret = CAEN_DGTZ_Reset(handle);
-  if (ret) {
-    printf("ERROR: can't reset the digitizer.\n");
-    return -1;
-  }
-  
-  /// Board Configuration without PHA or PSD fireware
-  ///bx0000 0000 0000 0000 0000 0000 0001 0000  = 
-  ///                                 |   | +- (1) trigger overlap not allowed
-  ///                                 |   +- (3) test pattern disable  
-  ///                                 + (6) Self-trigger polarity, 1 = negative, 0 = Positive
-  ret = CAEN_DGTZ_WriteRegister(handle,  (uint32_t) BoardConfiguration , 0x000E0114);  /// Channel Control Reg (indiv trg, seq readout) ??
-  
-  /// Set the I/O level (CAEN_DGTZ_IOLevel_NIM or CAEN_DGTZ_IOLevel_TTL)
-  ret |= CAEN_DGTZ_SetIOLevel(handle, IOlev);
-
-  /// Set the enabled channels
-  ret |= CAEN_DGTZ_SetChannelEnableMask(handle, channelMask);
-
-  /// Set the number of samples for each waveform
-  ret |= CAEN_DGTZ_SetRecordLength(handle, 2000);
-  
-  /// Set Extras 2 to enable, this override Accusition mode, focring list mode
-  ret |= CAEN_DGTZ_WriteRegister(handle, BoardConfiguration , 0x00E8114 );
-  
-  /// Set the digitizer acquisition mode (CAEN_DGTZ_SW_CONTROLLED or CAEN_DGTZ_S_IN_CONTROLLED)
-  ret |= CAEN_DGTZ_SetAcquisitionMode(handle, CAEN_DGTZ_SW_CONTROLLED); /// software command
-  
-  CAEN_DGTZ_DPP_AcqMode_t  AcqMode = CAEN_DGTZ_DPP_ACQ_MODE_List; 
-  ret |= CAEN_DGTZ_SetDPPAcquisitionMode(handle, AcqMode, CAEN_DGTZ_DPP_SAVE_PARAM_EnergyAndTime);
-
-  /** Set the digitizer's behaviour when an external trigger arrives:
-  CAEN_DGTZ_TRGMODE_DISABLED: do nothing
-  CAEN_DGTZ_TRGMODE_EXTOUT_ONLY: generate the Trigger Output signal
-  CAEN_DGTZ_TRGMODE_ACQ_ONLY = generate acquisition trigger
-  CAEN_DGTZ_TRGMODE_ACQ_AND_EXTOUT = generate both Trigger Output and acquisition trigger
-  see CAENDigitizer user manual, chapter "Trigger configuration" for details */
-  //TODO set bit
-  ret |= CAEN_DGTZ_SetExtTriggerInputMode(handle, CAEN_DGTZ_TRGMODE_ACQ_ONLY);
-
-  ret |= CAEN_DGTZ_SetRunSynchronizationMode(handle, CAEN_DGTZ_RUN_SYNC_Disabled);  
-
-  /// Set how many events to accumulate in the board memory before being available for readout
-  ret |= CAEN_DGTZ_WriteRegister(handle, DPP::NumberEventsPerAggregate_G + 0x7000, 100);
-  ret |= CAEN_DGTZ_WriteRegister(handle, DPP::AggregateOrganization, 0);
-  ret |= CAEN_DGTZ_WriteRegister(handle, DPP::MaxAggregatePerBlockTransfer, 50);
-
-  ErrorMsg(__func__);
-  return ret;
-
-}
-
-int Digitizer::ProgramPHABoard(){
+int Digitizer::ProgramBoard_PHA(){
   
   printf("===== Digitizer::%s\n", __func__);
 
@@ -344,7 +304,7 @@ int Digitizer::ProgramPHABoard(){
   return ret;
 }
 
-int Digitizer::ProgramPSDBoard(){
+int Digitizer::ProgramBoard_PSD(){
 
   printf("===== Digitizer::%s\n", __func__);
 
@@ -375,7 +335,7 @@ int Digitizer::ProgramPSDBoard(){
   return ret;
 }
 
-int Digitizer::ProgramQDCBoard(){
+int Digitizer::ProgramBoard_QDC(){
 
   printf("===== Digitizer::%s\n", __func__);
   Reset();
@@ -454,7 +414,7 @@ unsigned int Digitizer::CalByteForBuffer(){
   
   if( isConnected ){
     numAggBLT = ReadRegister(DPP::MaxAggregatePerBlockTransfer, 0, false);
-    chMask    = ReadRegister(DPP::ChannelEnableMask, 0, false);
+    chMask    = ReadRegister(DPP::RegChannelEnableMask, 0, false);
     boardCfg  = ReadRegister(DPP::BoardConfiguration, 0, false);
     aggOrgan  = ReadRegister(DPP::AggregateOrganization, 0, false);
 
@@ -464,7 +424,7 @@ unsigned int Digitizer::CalByteForBuffer(){
     }
   }else{
     numAggBLT = GetSettingFromMemory(DPP::MaxAggregatePerBlockTransfer);
-    chMask    = GetSettingFromMemory(DPP::ChannelEnableMask);
+    chMask    = GetSettingFromMemory(DPP::RegChannelEnableMask);
     boardCfg  = GetSettingFromMemory(DPP::BoardConfiguration);
     aggOrgan  = GetSettingFromMemory(DPP::AggregateOrganization);
     for( int pCh = 0; pCh < NChannel/2; pCh++){
@@ -564,8 +524,10 @@ void Digitizer::WriteRegister (Reg registerAddress, uint32_t value, int ch, bool
       }
     }
   }
-  
-  ErrorMsg("WriteRegister:" + std::to_string(registerAddress));
+
+  std::stringstream ss;
+  ss << std::hex << registerAddress.ActualAddress(ch);
+  ErrorMsg("WriteRegister:0x" + ss.str()+ "(" + registerAddress.GetName() + ")");
 }
 
 uint32_t Digitizer::ReadRegister(Reg registerAddress, unsigned short ch, bool isSave2MemAndFile, std::string str ){
@@ -574,11 +536,16 @@ uint32_t Digitizer::ReadRegister(Reg registerAddress, unsigned short ch, bool is
 
   ret = CAEN_DGTZ_ReadRegister(handle, registerAddress.ActualAddress(ch), &returnData);
   
-  if( ret == 0 && isSave2MemAndFile) {
+  //if( ret == 0 && isSave2MemAndFile) {
+  if( isSave2MemAndFile) {
     SetSettingToMemory(registerAddress, returnData, ch);
     SaveSettingToFile(registerAddress, returnData, ch);
   }
-  ErrorMsg("ReadRegister:" + std::to_string(registerAddress));
+
+  std::stringstream ss;
+  ss << std::hex << registerAddress.ActualAddress(ch);
+
+  ErrorMsg("ReadRegister:0x" + ss.str() + "(" + registerAddress.GetName() + ")");
   if( str != "" ) printf("%s : 0x%04X(0x%04X) is 0x%08X \n", str.c_str(), 
                              registerAddress.ActualAddress(ch), registerAddress.GetAddress(), returnData);
   return returnData;
@@ -606,27 +573,42 @@ Reg Digitizer::FindRegister(uint32_t address){
   
   Reg tempReg;  
   ///========= Find Match Register
-  for( int p = 0; p < (int) RegisterPHAPSDBoardList[p]; p++){
-    if( address == RegisterPHAPSDBoardList[p].GetAddress() ) {
-      tempReg = RegisterPHAPSDBoardList[p];
-      break;
+  if( DPPType == DPPType::DPP_PHA_CODE || DPPType == DPPType::DPP_PSD_CODE ){
+    for( int p = 0; p < (int) RegisterBoardList_PHAPSD[p]; p++){
+      if( address == RegisterBoardList_PHAPSD[p].GetAddress() ) {
+        tempReg = RegisterBoardList_PHAPSD[p];
+        break;
+      }
     }
-  }
-  if( tempReg.GetName() == ""){
-    if( DPPType == V1730_DPP_PHA_CODE ){
-      for( int p = 0; p < (int) RegisterPHAList[p]; p++){
-        if( address == RegisterPHAList[p].GetAddress() ) {
-          tempReg = RegisterPHAList[p];
-          break;
+    if( tempReg.GetName() == ""){
+      if( DPPType == V1730_DPP_PHA_CODE ){
+        for( int p = 0; p < (int) RegisterChannelList_PHA[p]; p++){
+          if( address == RegisterChannelList_PHA[p].GetAddress() ) {
+            tempReg = RegisterChannelList_PHA[p];
+            break;
+          }
+        }
+      }
+      if( DPPType == V1730_DPP_PSD_CODE ){
+        for( int p = 0; p < (int) RegisterChannelList_PSD[p]; p++){
+          if( address == RegisterChannelList_PSD[p].GetAddress() ) {
+            tempReg = RegisterChannelList_PSD[p];
+            break;
+          }
         }
       }
     }
-    if( DPPType == V1730_DPP_PSD_CODE ){
-      for( int p = 0; p < (int) RegisterPSDList[p]; p++){
-        if( address == RegisterPSDList[p].GetAddress() ) {
-          tempReg = RegisterPSDList[p];
-          break;
-        }
+  }else{
+    for( int p = 0; p < (int) RegisterBoardList_QDC[p]; p++){
+      if( address == RegisterBoardList_QDC[p].GetAddress() ) {
+        tempReg = RegisterBoardList_QDC[p];
+        break;
+      }
+    }
+    for( int p = 0; p < (int) RegisterChannelList_QDC[p]; p++){
+      if( address == RegisterChannelList_QDC[p].GetAddress() ) {
+        tempReg = RegisterChannelList_QDC[p];
+        break;
       }
     }
   }
@@ -639,31 +621,49 @@ void Digitizer::ReadAllSettingsFromBoard(bool force){
   if( AcqRun ) return;
   if( isSettingFilledinMemeory && !force) return;
 
-  printf("===== Digitizer::%s \n", __func__);
+  printf("===== Digitizer(%d)::%s \n", GetSerialNumber(),  __func__);
 
   /// board setting
-  for( int p = 0; p < (int) RegisterPHAPSDBoardList.size(); p++){
-    if( RegisterPHAPSDBoardList[p].GetRWType() == RW::WriteONLY) continue;
-    ReadRegister(RegisterPHAPSDBoardList[p]); 
-  }
-  
-  channelMask = GetSettingFromMemory(DPP::ChannelEnableMask);
-  
-  /// Channels Setting
-  for( int ch = 0; ch < NChannel; ch ++){
-    if( DPPType == V1730_DPP_PHA_CODE ){
-      for( int p = 0; p < (int) RegisterPHAList.size(); p++){
-        if( RegisterPHAList[p].GetRWType() == RW::WriteONLY) continue;
-        ReadRegister(RegisterPHAList[p], ch); 
+  if( DPPType == DPPType::DPP_PHA_CODE || DPPType == DPPType::DPP_PSD_CODE ){
+
+    for( int p = 0; p < (int) RegisterBoardList_PHAPSD.size(); p++){
+      if( RegisterBoardList_PHAPSD[p].GetRWType() == RW::WriteONLY) continue;
+      ReadRegister(RegisterBoardList_PHAPSD[p]); 
+    }
+    regChannelMask = GetSettingFromMemory(DPP::RegChannelEnableMask);
+    
+    /// Channels Setting
+    for( int ch = 0; ch < NChannel; ch ++){
+      if( DPPType == V1730_DPP_PHA_CODE ){
+        for( int p = 0; p < (int) RegisterChannelList_PHA.size(); p++){
+          if( RegisterChannelList_PHA[p].GetRWType() == RW::WriteONLY) continue;
+          ReadRegister(RegisterChannelList_PHA[p], ch); 
+        }
+      }
+      if( DPPType == V1730_DPP_PSD_CODE ){
+        for( int p = 0; p < (int) RegisterChannelList_PSD.size(); p++){
+          if( RegisterChannelList_PSD[p].GetRWType() == RW::WriteONLY) continue;
+          ReadRegister(RegisterChannelList_PSD[p], ch); 
+        }
       }
     }
-    if( DPPType == V1730_DPP_PSD_CODE ){
-      for( int p = 0; p < (int) RegisterPSDList.size(); p++){
-        if( RegisterPSDList[p].GetRWType() == RW::WriteONLY) continue;
-        ReadRegister(RegisterPSDList[p], ch); 
+
+  }else{
+    for( int p = 0; p < (int) RegisterBoardList_QDC.size(); p++){
+      if( RegisterBoardList_QDC[p].GetRWType() == RW::WriteONLY) continue;
+      ReadRegister(RegisterBoardList_QDC[p]); 
+    }
+    regChannelMask = GetSettingFromMemory(DPP::QDC::GroupEnableMask);
+
+    for( int ch = 0; ch < GetRegChannels(); ch ++){
+      for( int p = 0; p < (int) RegisterChannelList_QDC.size(); p++){
+        if( RegisterChannelList_QDC[p].GetRWType() == RW::WriteONLY) continue;
+        ReadRegister(RegisterChannelList_QDC[p], ch); 
       }
     }
+
   }
+  
   isSettingFilledinMemeory = true;
 
 }
@@ -675,34 +675,58 @@ void Digitizer::ProgramSettingsToBoard(){
 
   Reg haha;
   
-  /// board setting
-  for( int p = 0; p < (int) RegisterPHAPSDBoardList.size(); p++){
-    if( RegisterPHAPSDBoardList[p].GetRWType() == RW::ReadWrite) {
-      haha = RegisterPHAPSDBoardList[p];
-      WriteRegister(haha, GetSettingFromMemory(haha), -1, false); 
-      usleep(1 * 1000);
+  if( DPPType == DPPType::DPP_PHA_CODE || DPPType == DPPType::DPP_PSD_CODE ){
+  
+    /// board setting
+    for( int p = 0; p < (int) RegisterBoardList_PHAPSD.size(); p++){
+      if( RegisterBoardList_PHAPSD[p].GetRWType() == RW::ReadWrite) {
+        haha = RegisterBoardList_PHAPSD[p];
+        WriteRegister(haha, GetSettingFromMemory(haha), -1, false); 
+        usleep(1 * 1000);
+      }
     }
-  }
-  /// Channels Setting
-  for( int ch = 0; ch < NChannel; ch ++){
-    if( DPPType == V1730_DPP_PHA_CODE ){
-      for( int p = 0; p < (int) RegisterPHAList.size(); p++){
-        if( RegisterPHAList[p].GetRWType() == RW::ReadWrite ){
-          haha = RegisterPHAList[p];
+    /// Channels Setting
+    for( int ch = 0; ch < NChannel; ch ++){
+      if( DPPType == V1730_DPP_PHA_CODE ){
+        for( int p = 0; p < (int) RegisterChannelList_PHA.size(); p++){
+          if( RegisterChannelList_PHA[p].GetRWType() == RW::ReadWrite ){
+            haha = RegisterChannelList_PHA[p];
+            WriteRegister(haha, GetSettingFromMemory(haha, ch), ch, false); 
+            usleep(1 * 1000);
+          }
+        }
+      }
+      if( DPPType == V1730_DPP_PSD_CODE ){
+        for( int p = 0; p < (int) RegisterChannelList_PSD.size(); p++){
+          if( RegisterChannelList_PSD[p].GetRWType() == RW::ReadWrite){
+            haha = RegisterChannelList_PSD[p];
+            WriteRegister(haha, GetSettingFromMemory(haha, ch), ch, false); 
+            usleep(1 * 1000);
+          }
+        }
+      }
+    }
+
+  }else{
+    /// board setting
+    for( int p = 0; p < (int) RegisterBoardList_QDC.size(); p++){
+      if( RegisterBoardList_QDC[p].GetRWType() == RW::ReadWrite) {
+        haha = RegisterBoardList_QDC[p];
+        WriteRegister(haha, GetSettingFromMemory(haha), -1, false); 
+        usleep(1 * 1000);
+      }
+    }
+    /// Channels Setting
+    for( int ch = 0; ch < GetRegChannels(); ch ++){
+      for( int p = 0; p < (int) RegisterChannelList_QDC.size(); p++){
+        if( RegisterChannelList_QDC[p].GetRWType() == RW::ReadWrite ){
+          haha = RegisterChannelList_QDC[p];
           WriteRegister(haha, GetSettingFromMemory(haha, ch), ch, false); 
           usleep(1 * 1000);
         }
       }
     }
-    if( DPPType == V1730_DPP_PSD_CODE ){
-      for( int p = 0; p < (int) RegisterPSDList.size(); p++){
-        if( RegisterPSDList[p].GetRWType() == RW::ReadWrite){
-          haha = RegisterPSDList[p];
-          WriteRegister(haha, GetSettingFromMemory(haha, ch), ch, false); 
-          usleep(1 * 1000);
-        }
-      }
-    }
+
   } 
 }
 
@@ -852,19 +876,33 @@ void Digitizer::SaveAllSettingsAsText(std::string fileName){
     haha.SetName("");
     uint32_t actualAddress = haha.CalAddress(i);
     
-    ///printf("%7d--- 0x%04X,  0x%04X\n", i, haha->GetAddress(), haha->ActualAddress());
-    for( int p = 0; p < (int) RegisterPHAPSDBoardList.size(); p++){
-      if( haha.GetAddress() == (uint32_t) RegisterPHAPSDBoardList[p] ) haha = RegisterPHAPSDBoardList[p];
-    }
-    if( DPPType == V1730_DPP_PHA_CODE) {
-      for( int p = 0; p < (int) RegisterPHAList.size(); p++){
-        if( haha.GetAddress() == (uint32_t) RegisterPHAList[p] ) haha = RegisterPHAList[p];
+
+    if ( DPPType == V1730_DPP_PHA_CODE || DPPType == V1730_DPP_PSD_CODE ){
+      ///printf("%7d--- 0x%04X,  0x%04X\n", i, haha->GetAddress(), haha->ActualAddress());
+      for( int p = 0; p < (int) RegisterBoardList_PHAPSD.size(); p++){
+        if( haha.GetAddress() == (uint32_t) RegisterBoardList_PHAPSD[p] ) haha = RegisterBoardList_PHAPSD[p];
       }
-    }
-    if( DPPType == V1730_DPP_PSD_CODE) {
-      for( int p = 0; p < (int) RegisterPSDList.size(); p++){
-        if( haha.GetAddress() == (uint32_t) RegisterPSDList[p] ) haha = RegisterPSDList[p];
+
+      if( DPPType == V1730_DPP_PHA_CODE) {
+        for( int p = 0; p < (int) RegisterChannelList_PHA.size(); p++){
+          if( haha.GetAddress() == (uint32_t) RegisterChannelList_PHA[p] ) haha = RegisterChannelList_PHA[p];
+        }
       }
+      if( DPPType == V1730_DPP_PSD_CODE) {
+        for( int p = 0; p < (int) RegisterChannelList_PSD.size(); p++){
+          if( haha.GetAddress() == (uint32_t) RegisterChannelList_PSD[p] ) haha = RegisterChannelList_PSD[p];
+        }
+      }
+    }else{
+
+     for( int p = 0; p < (int) RegisterBoardList_QDC.size(); p++){
+        if( haha.GetAddress() == (uint32_t) RegisterBoardList_QDC[p] ) haha = RegisterBoardList_QDC[p];
+      }
+
+      for( int p = 0; p < (int) RegisterChannelList_QDC.size(); p++){
+        if( haha.GetAddress() == (uint32_t) RegisterChannelList_QDC[p] ) haha = RegisterChannelList_QDC[p];
+      }
+
     }
     if( haha.GetName() != "" )  {
       std::string typeStr ;
@@ -902,40 +940,40 @@ std::string Digitizer::GetDPPString(int DPPType){
 void Digitizer::ErrorMsg(std::string header){
   switch (ret){
     ///case CAEN_DGTZ_Success                 : /**   0 */ printf("%s | Operation completed successfully.\n", header.c_str()); break;
-    case CAEN_DGTZ_CommError               : /**  -1 */ printf("%s %d | Communication Error.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_GenericError            : /**  -2 */ printf("%s %d | Unspecified error.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_InvalidParam            : /**  -3 */ printf("%s %d | Invalid parameter.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_InvalidLinkType         : /**  -4 */ printf("%s %d | Invalid Link Type.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_InvalidHandle           : /**  -5 */ printf("%s %d | Invalid device handler.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_MaxDevicesError         : /**  -6 */ printf("%s %d | Maximum number of devices exceeded.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_BadBoardType            : /**  -7 */ printf("%s %d | Operation not allowed on this type of board.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_BadInterruptLev         : /**  -8 */ printf("%s %d | The interrupt level is not allowed.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_BadEventNumber          : /**  -9 */ printf("%s %d | The event number is bad.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_ReadDeviceRegisterFail  : /** -10 */ printf("%s %d | Unable to read the registry.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_WriteDeviceRegisterFail : /** -11 */ printf("%s %d | Unable to write the registry.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_InvalidChannelNumber    : /** -13 */ printf("%s %d | The channel number is invalid.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_ChannelBusy             : /** -14 */ printf("%s %d | The channel is busy.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_FPIOModeInvalid         : /** -15 */ printf("%s %d | Invalid FPIO mode.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_WrongAcqMode            : /** -16 */ printf("%s %d | Wrong Acquistion mode.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_FunctionNotAllowed      : /** -17 */ printf("%s %d | This function is not allowed on this module.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_Timeout                 : /** -18 */ printf("%s %d | Communication Timeout.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_InvalidBuffer           : /** -19 */ printf("%s %d | The buffer is invalid.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_EventNotFound           : /** -20 */ printf("%s %d | The event is not found.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_InvalidEvent            : /** -21 */ printf("%s %d | The event is invalid.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_OutOfMemory             : /** -22 */ printf("%s %d | Out of memory.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_CalibrationError        : /** -23 */ printf("%s %d | Unable to calibrate the board.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_DigitizerNotFound       : /** -24 */ printf("%s %d | Unbale to open the digitizer.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_DigitizerAlreadyOpen    : /** -25 */ printf("%s %d | The digitizer is already open.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_DigitizerNotReady       : /** -26 */ printf("%s %d | The digitizer is not ready.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_InterruptNotConfigured  : /** -27 */ printf("%s %d | The digitizer has no IRQ configured.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_DigitizerMemoryCorrupted: /** -28 */ printf("%s %d | The digitizer flash memory is corrupted.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_DPPFirmwareNotSupported : /** -29 */ printf("%s %d | The digitier DPP firmware is not supported in this lib version.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_InvalidLicense          : /** -30 */ printf("%s %d | Invalid firmware licence.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_InvalidDigitizerStatus  : /** -31 */ printf("%s %d | The digitizer is found in a corrupted status.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_UnsupportedTrace        : /** -32 */ printf("%s %d | The given trace is not supported.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_InvalidProbe            : /** -33 */ printf("%s %d | The given probe is not supported.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_UnsupportedBaseAddress  : /** -34 */ printf("%s %d | The base address is not supported.\n", header.c_str(), BoardInfo.SerialNumber); break;
-    case CAEN_DGTZ_NotYetImplemented       : /** -99 */ printf("%s %d | The function is not yet implemented.\n", header.c_str(), BoardInfo.SerialNumber); break;
+    case CAEN_DGTZ_CommError               : /**  -1 */ printf("%s %d | %d, Communication Error.\n",                         header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_GenericError            : /**  -2 */ printf("%s %d | %d, Unspecified error.\n",                           header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_InvalidParam            : /**  -3 */ printf("%s %d | %d, Invalid parameter.\n",                           header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_InvalidLinkType         : /**  -4 */ printf("%s %d | %d, Invalid Link Type.\n",                           header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_InvalidHandle           : /**  -5 */ printf("%s %d | %d, Invalid device handler.\n",                      header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_MaxDevicesError         : /**  -6 */ printf("%s %d | %d, Maximum number of devices exceeded.\n",          header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_BadBoardType            : /**  -7 */ printf("%s %d | %d, Operation not allowed on this type of board.\n", header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_BadInterruptLev         : /**  -8 */ printf("%s %d | %d, The interrupt level is not allowed.\n",          header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_BadEventNumber          : /**  -9 */ printf("%s %d | %d, The event number is bad.\n",                     header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_ReadDeviceRegisterFail  : /** -10 */ printf("%s %d | %d, Unable to read the registry.\n",                 header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_WriteDeviceRegisterFail : /** -11 */ printf("%s %d | %d, Unable to write the registry.\n",                header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_InvalidChannelNumber    : /** -13 */ printf("%s %d | %d, The channel number is invalid.\n",               header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_ChannelBusy             : /** -14 */ printf("%s %d | %d, The channel is busy.\n",                         header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_FPIOModeInvalid         : /** -15 */ printf("%s %d | %d, Invalid FPIO mode.\n",                           header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_WrongAcqMode            : /** -16 */ printf("%s %d | %d, Wrong Acquistion mode.\n",                       header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_FunctionNotAllowed      : /** -17 */ printf("%s %d | %d, This function is not allowed on this module.\n", header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_Timeout                 : /** -18 */ printf("%s %d | %d, Communication Timeout.\n",                       header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_InvalidBuffer           : /** -19 */ printf("%s %d | %d, The buffer is invalid.\n",                       header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_EventNotFound           : /** -20 */ printf("%s %d | %d, The event is not found.\n",                      header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_InvalidEvent            : /** -21 */ printf("%s %d | %d, The event is invalid.\n",                        header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_OutOfMemory             : /** -22 */ printf("%s %d | %d, Out of memory.\n",                               header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_CalibrationError        : /** -23 */ printf("%s %d | %d, Unable to calibrate the board.\n",               header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_DigitizerNotFound       : /** -24 */ printf("%s %d | %d, Unbale to open the digitizer.\n",                header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_DigitizerAlreadyOpen    : /** -25 */ printf("%s %d | %d, The digitizer is already open.\n",               header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_DigitizerNotReady       : /** -26 */ printf("%s %d | %d, The digitizer is not ready.\n",                  header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_InterruptNotConfigured  : /** -27 */ printf("%s %d | %d, The digitizer has no IRQ configured.\n",         header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_DigitizerMemoryCorrupted: /** -28 */ printf("%s %d | %d, The digitizer flash memory is corrupted.\n",     header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_DPPFirmwareNotSupported : /** -29 */ printf("%s %d | %d, The digitier DPP firmware is not supported in this lib version.\n", header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_InvalidLicense          : /** -30 */ printf("%s %d | %d, Invalid firmware licence.\n",                     header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_InvalidDigitizerStatus  : /** -31 */ printf("%s %d | %d, The digitizer is found in a corrupted status.\n", header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_UnsupportedTrace        : /** -32 */ printf("%s %d | %d, The given trace is not supported.\n",             header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_InvalidProbe            : /** -33 */ printf("%s %d | %d, The given probe is not supported.\n",             header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_UnsupportedBaseAddress  : /** -34 */ printf("%s %d | %d, The base address is not supported.\n",            header.c_str(), BoardInfo.SerialNumber, ret); break;
+    case CAEN_DGTZ_NotYetImplemented       : /** -99 */ printf("%s %d | %d, The function is not yet implemented.\n",          header.c_str(), BoardInfo.SerialNumber, ret); break;
   }
   
 }

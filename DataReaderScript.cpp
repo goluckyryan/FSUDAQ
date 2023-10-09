@@ -9,7 +9,7 @@ This can be loaded to root and run the DataReader()
 
 void DataReader(std::string fileName, int DPPType){
 
-  Data * data = new Data();  
+  Data * data = new Data(64);  
   data->DPPType = DPPType;
 
   FILE * haha = fopen(fileName.c_str(), "r");

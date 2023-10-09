@@ -27,7 +27,9 @@ class Digitizer{
     int                   portID;        /// port ID for optical link for using PCIe card, from 0, 1, 2, 3
     int                   boardID;       /// board identity
     int                   handle;        /// i don't know why, but better separete the handle from boardID
-    int                   NChannel;      /// number of channel
+    int                   NChannel;      /// number of physical input channel
+    int                   NRegChannel;   /// number of Register channel
+    bool                  isChEqRegCh;   /// is number of physical input channel = Register channel
     int                   NCoupledCh;    /// number of Coupled channel
     int                   ADCbits;       /// ADC bit
     int                   DPPType;       /// DPP verion
@@ -36,7 +38,7 @@ class Digitizer{
     CAEN_DGTZ_BoardInfo_t BoardInfo;
     
     //^----- adjustable parameters
-    uint32_t                 channelMask ;   /// the channel mask from NChannel
+    uint32_t                 regChannelMask ;   /// the channel mask from NChannel
     uint32_t                 VMEBaseAddress; /// For direct USB or Optical-link connection, VMEBaseAddress must be 0    
     CAEN_DGTZ_ConnectionType LinkType;       /// USB or Optic
     CAEN_DGTZ_IOLevel_t      IOlev;          /// TTL signal (1 = 1.5 to 5V, 0 = 0 to 0.7V ) or NIM signal (1 = -1 to -0.8V, 0 = 0V)
@@ -67,8 +69,8 @@ class Digitizer{
     //^------ portID is for optical link for using PCIe card, from 0, 1, 2, 3
     int  OpenDigitizer(int boardID, int portID = 0, bool program = false, bool verbose = false);
     void SetDPPType        (int type) { this->DPPType = type;} /// for manual override, or, digitizer does not open
-    void SetChannelMask    (uint32_t mask);
-    void SetChannelOnOff   (unsigned short ch, bool onOff);
+    void SetRegChannelMask    (uint32_t mask);
+    void SetRegChannelOnOff   (unsigned short ch, bool onOff);
     int  CloseDigitizer();
     void Initalization();
     void Reset();
@@ -76,10 +78,9 @@ class Digitizer{
     bool IsConnected()     {return isConnected;}
     
     void         PrintBoard()      ;    
-    virtual int  ProgramBoard()    ; /// program a generic board, no program channel
-    int          ProgramPHABoard() ; /// program a default PHA board with dual trace
-    int          ProgramPSDBoard() ; 
-    int          ProgramQDCBoard() ;
+    int          ProgramBoard_PHA() ; /// program a default PHA board with dual trace
+    int          ProgramBoard_PSD() ; 
+    int          ProgramBoard_QDC() ;
     
     //^================ ACQ control
     void   StopACQ();
@@ -105,12 +106,13 @@ class Digitizer{
     CAEN_DGTZ_BoardInfo_t GetBoardInfo()     const {return BoardInfo;}
     std::string GetModelName()               const {return BoardInfo.ModelName;}
     int         GetSerialNumber()            const {return BoardInfo.SerialNumber;}
-    int         GetChannelMask()             { channelMask = GetSettingFromMemory(DPP::ChannelEnableMask); return channelMask;}
-    bool        GetChannelOnOff(unsigned ch) { channelMask = GetSettingFromMemory(DPP::ChannelEnableMask); return (channelMask & ( 1 << ch) );} 
+    int         GetChannelMask()             { regChannelMask = GetSettingFromMemory(DPP::RegChannelEnableMask); return regChannelMask;}
+    bool        GetChannelOnOff(unsigned ch) { regChannelMask = GetSettingFromMemory(DPP::RegChannelEnableMask); return (regChannelMask & ( 1 << ch) );} 
     float       GetTick2ns()                   const {return tick2ns;}
     int         GetNChannels()               const {return NChannel;}
-    int         GetRegChannels()             const {return DPPType == DPPType::DPP_QDC_CODE ? NCoupledCh : NChannel;}
-    int         GetNCoupledCh()              const {return NCoupledCh;}
+    int         GetRegChannels()             const {return NRegChannel;}
+    bool        IsChEqRegCh()                const {return isChEqRegCh;}
+    int         GetCoupledChannels()         const {return NCoupledCh;}
     int         GetHandle()                  const {return handle;}
     int         GetDPPType()                 const {return DPPType;}
     std::string GetDPPString(int DPPType = 0);  /// if no input, use digitizer DPPType

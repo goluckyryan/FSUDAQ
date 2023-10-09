@@ -171,7 +171,7 @@ const Reg FrontPanelTRGOUTEnableMask   ("FrontPanelTRGOUTEnableMask"   , 0x8110,
 const Reg PostTrigger                  ("PostTrigger"                  , 0x8114, RW::ReadWrite, false, {});  /// R/W
 const Reg LVDSIOData                   ("LVDSIOData"                   , 0x8118, RW::ReadWrite, false, {});  /// R/W
 const Reg FrontPanelIOControl          ("FrontPanelIOControl"          , 0x811C, RW::ReadWrite, false, {});  /// R/W
-const Reg ChannelEnableMask            ("ChannelEnableMask"            , 0x8120, RW::ReadWrite, false, {});  /// R/W
+const Reg RegChannelEnableMask            ("RegChannelEnableMask"            , 0x8120, RW::ReadWrite, false, {});  /// R/W
 const Reg ROCFPGAFirmwareRevision_R    ("ROCFPGAFirmwareRevision_R"    , 0x8124, RW::ReadONLY , false, {});  /// R
 const Reg EventStored_R                ("EventStored_R"                , 0x812C, RW::ReadONLY , false, {});  /// R
 const Reg VoltageLevelModeConfig       ("VoltageLevelModeConfig"       , 0x8138, RW::ReadWrite, false, {});  /// R/W
@@ -543,7 +543,7 @@ namespace DPP {
   const Reg FrontPanelTRGOUTEnableMask  ("FrontPanelTRGOUTEnableMask"  , 0x8110, RW::ReadWrite, false, {});  /// R/W
   const Reg LVDSIOData                  ("LVDSIOData"                  , 0x8118, RW::ReadWrite, false, {});  /// R/W
   const Reg FrontPanelIOControl         ("FrontPanelIOControl"         , 0x811C, RW::ReadWrite, false, {});  /// R/W
-  const Reg ChannelEnableMask           ("ChannelEnableMask"           , 0x8120, RW::ReadWrite, false, {});  /// R/W
+  const Reg RegChannelEnableMask           ("RegChannelEnableMask"           , 0x8120, RW::ReadWrite, false, {});  /// R/W
   const Reg ROCFPGAFirmwareRevision_R   ("ROCFPGAFirmwareRevision_R"   , 0x8124, RW::ReadONLY , false, {});  /// R
   const Reg EventStored_R               ("EventStored_R"               , 0x812C, RW::ReadONLY , false, {});  /// R
   const Reg VoltageLevelModeConfig      ("VoltageLevelModeConfig"      , 0x8138, RW::ReadWrite, false, {});  /// R/W
@@ -785,29 +785,29 @@ namespace DPP {
 
   }
 
-  namespace QDC {
-    const Reg GateWidth_G                   ("GateWidth"                     , 0x1030, RW::ReadWrite, true, 0xFFF, 1); /// R/W
-    const Reg GateOffset_G                  ("GateOfset"                     , 0x1034, RW::ReadWrite, true,  0xFF, 1); /// R/W
-    const Reg FixedBaseline_G               ("FixedBaseline"                 , 0x1038, RW::ReadWrite, true, 0xFFF, 1); /// R/W
-    const Reg PreTrigger_G                  ("PreTrigger"                    , 0x103C, RW::ReadWrite, true,  0xFF, 1); /// R/W
-    const Reg DPPAlgorithmControl_G         ("DPPAlgorithmControl"           , 0x1040, RW::ReadWrite, true, {}); /// R/W
-    const Reg TriggerHoldOffWidth_G         ("Trigger Hold-off width"        , 0x1074, RW::ReadWrite, true, 0xFFFF, 1); /// R/W
-    const Reg TRGOUTWidth_G                 ("Trigger out width"             , 0x1078, RW::ReadWrite, true, 0xFFFF, 1); /// R/W
-    const Reg OverThresholdWidth_G          ("Over Threshold width"          , 0x107C, RW::ReadWrite, true, 0xFFFF, 1); /// R/W
-    const Reg GroupStatus_RG                ("Group Status"                  , 0x1088, RW::ReadONLY, true, {});  /// R/
-    const Reg AMCFirmwareRevision_RG        ("AMC firmware version"          , 0x108C, RW::ReadONLY, true, {});  /// R/
-    const Reg DCOffset_G                    ("DC offset"                     , 0x1098, RW::ReadWrite, true, 0xFFFF, 1); /// R/W
-    const Reg ChannelMask_G                 ("Channel Group Mask"            , 0x10A8, RW::ReadWrite, true,   0xFF, 1); /// R/W
-    const Reg DCOffset_LowCh_G              ("DC offset for low ch."         , 0x10C0, RW::ReadWrite, true, {}); /// R/W
-    const Reg DCOffset_HighCh_G             ("DC offset for high ch."        , 0x10C4, RW::ReadWrite, true, {}); /// R/W
-    const Reg TriggerThreshold_G_sub0       ("Trigger Threshold sub0"             , 0x10D0, RW::ReadWrite, true, 0xFFF, 1); /// R/W
-    const Reg TriggerThreshold_G_sub1       ("Trigger Threshold sub1"             , 0x10D4, RW::ReadWrite, true, 0xFFF, 1); /// R/W
-    const Reg TriggerThreshold_G_sub2       ("Trigger Threshold sub2"             , 0x10D8, RW::ReadWrite, true, 0xFFF, 1); /// R/W
-    const Reg TriggerThreshold_G_sub3       ("Trigger Threshold sub3"             , 0x10DC, RW::ReadWrite, true, 0xFFF, 1); /// R/W
-    const Reg TriggerThreshold_G_sub4       ("Trigger Threshold sub4"             , 0x10E0, RW::ReadWrite, true, 0xFFF, 1); /// R/W
-    const Reg TriggerThreshold_G_sub5       ("Trigger Threshold sub5"             , 0x10E4, RW::ReadWrite, true, 0xFFF, 1); /// R/W
-    const Reg TriggerThreshold_G_sub6       ("Trigger Threshold sub6"             , 0x10E8, RW::ReadWrite, true, 0xFFF, 1); /// R/W
-    const Reg TriggerThreshold_G_sub7       ("Trigger Threshold sub7"             , 0x10EC, RW::ReadWrite, true, 0xFFF, 1); /// R/W
+  namespace QDC { // Register already grouped in channel. and there no control for indiviual channel except the Fine DC offset and threshold, so it is like no group
+    const Reg GateWidth                   ("GateWidth"                     , 0x1030, RW::ReadWrite, false, 0xFFF, 1); /// R/W
+    const Reg GateOffset                  ("GateOfset"                     , 0x1034, RW::ReadWrite, false,  0xFF, 1); /// R/W
+    const Reg FixedBaseline               ("FixedBaseline"                 , 0x1038, RW::ReadWrite, false, 0xFFF, 1); /// R/W
+    const Reg PreTrigger                  ("PreTrigger"                    , 0x103C, RW::ReadWrite, false,  0xFF, 1); /// R/W
+    const Reg DPPAlgorithmControl         ("DPPAlgorithmControl"           , 0x1040, RW::ReadWrite, false, {}); /// R/W
+    const Reg TriggerHoldOffWidth         ("Trigger Hold-off width"        , 0x1074, RW::ReadWrite, false, 0xFFFF, 1); /// R/W
+    const Reg TRGOUTWidth                 ("Trigger out width"             , 0x1078, RW::ReadWrite, false, 0xFFFF, 1); /// R/W
+    const Reg OverThresholdWidth          ("Over Threshold width"          , 0x107C, RW::ReadWrite, false, 0xFFFF, 1); /// R/W
+    const Reg GroupStatus_R               ("Group Status"                  , 0x1088, RW::ReadONLY,  false, {});  /// R/
+    const Reg AMCFirmwareRevision_R       ("AMC firmware version"          , 0x108C, RW::ReadONLY,  false, {});  /// R/
+    const Reg DCOffset                    ("DC offset"                     , 0x1098, RW::ReadWrite, false, 0xFFFF, 1); /// R/W
+    const Reg ChannelMask                 ("Channel Group Mask"            , 0x10A8, RW::ReadWrite, false,   0xFF, 1); /// R/W
+    const Reg DCOffset_LowCh              ("DC offset for low ch."         , 0x10C0, RW::ReadWrite, false, {}); /// R/W
+    const Reg DCOffset_HighCh             ("DC offset for high ch."        , 0x10C4, RW::ReadWrite, false, {}); /// R/W
+    const Reg TriggerThreshold_sub0       ("Trigger Threshold sub0"             , 0x10D0, RW::ReadWrite, false, 0xFFF, 1); /// R/W
+    const Reg TriggerThreshold_sub1       ("Trigger Threshold sub1"             , 0x10D4, RW::ReadWrite, false, 0xFFF, 1); /// R/W
+    const Reg TriggerThreshold_sub2       ("Trigger Threshold sub2"             , 0x10D8, RW::ReadWrite, false, 0xFFF, 1); /// R/W
+    const Reg TriggerThreshold_sub3       ("Trigger Threshold sub3"             , 0x10DC, RW::ReadWrite, false, 0xFFF, 1); /// R/W
+    const Reg TriggerThreshold_sub4       ("Trigger Threshold sub4"             , 0x10E0, RW::ReadWrite, false, 0xFFF, 1); /// R/W
+    const Reg TriggerThreshold_sub5       ("Trigger Threshold sub5"             , 0x10E4, RW::ReadWrite, false, 0xFFF, 1); /// R/W
+    const Reg TriggerThreshold_sub6       ("Trigger Threshold sub6"             , 0x10E8, RW::ReadWrite, false, 0xFFF, 1); /// R/W
+    const Reg TriggerThreshold_sub7       ("Trigger Threshold sub7"             , 0x10EC, RW::ReadWrite, false, 0xFFF, 1); /// R/W
 
 
     const Reg NumberEventsPerAggregate      ("Number of Events per Aggregate", 0x8020, RW::ReadWrite, false, 0x3FF, 1); /// R/W
@@ -865,7 +865,7 @@ namespace DPP {
 
 } // end of DPP namepace Register
 
-const std::vector<Reg> RegisterPHAList = {
+const std::vector<Reg> RegisterChannelList_PHA = {
   DPP::RecordLength_G             ,
   DPP::InputDynamicRange          ,
   DPP::NumberEventsPerAggregate_G ,
@@ -895,7 +895,7 @@ const std::vector<Reg> RegisterPHAList = {
   DPP::TriggerValidationMask_G   
 };
 
-const std::vector<Reg> RegisterPSDList = {
+const std::vector<Reg> RegisterChannelList_PSD = {
   DPP::RecordLength_G             ,
   DPP::InputDynamicRange          ,
   DPP::NumberEventsPerAggregate_G ,
@@ -925,33 +925,33 @@ const std::vector<Reg> RegisterPSDList = {
   DPP::TriggerValidationMask_G   
 };
 
-const std::vector<Reg> RegisterQDCList = {
-  DPP::QDC::GateWidth_G,
-  DPP::QDC::GateOffset_G,
-  DPP::QDC::FixedBaseline_G,
-  DPP::QDC::PreTrigger_G,
-  DPP::QDC::DPPAlgorithmControl_G,
-  DPP::QDC::TriggerHoldOffWidth_G,
-  DPP::QDC::TRGOUTWidth_G,
-  DPP::QDC::OverThresholdWidth_G,
-  DPP::QDC::GroupStatus_RG,
-  DPP::QDC::AMCFirmwareRevision_RG,
-  DPP::QDC::DCOffset_G,
-  DPP::QDC::ChannelMask_G,
-  DPP::QDC::DCOffset_LowCh_G,
-  DPP::QDC::DCOffset_HighCh_G,
-  DPP::QDC::TriggerThreshold_G_sub0,
-  DPP::QDC::TriggerThreshold_G_sub1,
-  DPP::QDC::TriggerThreshold_G_sub2,
-  DPP::QDC::TriggerThreshold_G_sub3,
-  DPP::QDC::TriggerThreshold_G_sub4,
-  DPP::QDC::TriggerThreshold_G_sub5,
-  DPP::QDC::TriggerThreshold_G_sub6,
-  DPP::QDC::TriggerThreshold_G_sub7
+const std::vector<Reg> RegisterChannelList_QDC = {
+  DPP::QDC::GateWidth,
+  DPP::QDC::GateOffset,
+  DPP::QDC::FixedBaseline,
+  DPP::QDC::PreTrigger,
+  DPP::QDC::DPPAlgorithmControl,
+  DPP::QDC::TriggerHoldOffWidth,
+  DPP::QDC::TRGOUTWidth,
+  DPP::QDC::OverThresholdWidth,
+  DPP::QDC::GroupStatus_R,
+  DPP::QDC::AMCFirmwareRevision_R,
+  DPP::QDC::DCOffset,
+  DPP::QDC::ChannelMask,
+  DPP::QDC::DCOffset_LowCh,
+  DPP::QDC::DCOffset_HighCh,
+  DPP::QDC::TriggerThreshold_sub0,
+  DPP::QDC::TriggerThreshold_sub1,
+  DPP::QDC::TriggerThreshold_sub2,
+  DPP::QDC::TriggerThreshold_sub3,
+  DPP::QDC::TriggerThreshold_sub4,
+  DPP::QDC::TriggerThreshold_sub5,
+  DPP::QDC::TriggerThreshold_sub6,
+  DPP::QDC::TriggerThreshold_sub7
 };
 
 /// Only Board Setting 
-const std::vector<Reg> RegisterPHAPSDBoardList = {
+const std::vector<Reg> RegisterBoardList_PHAPSD = {
   
   DPP::BoardConfiguration          ,
   DPP::AggregateOrganization       ,
@@ -964,7 +964,7 @@ const std::vector<Reg> RegisterPHAPSDBoardList = {
   DPP::FrontPanelTRGOUTEnableMask  ,
   DPP::LVDSIOData                  ,
   DPP::FrontPanelIOControl         ,
-  DPP::ChannelEnableMask           ,
+  DPP::RegChannelEnableMask           ,
   DPP::ROCFPGAFirmwareRevision_R   ,
   DPP::EventStored_R               ,
   DPP::VoltageLevelModeConfig      ,
@@ -1019,7 +1019,7 @@ const std::vector<Reg> RegisterPHAPSDBoardList = {
   
 };
 
-const std::vector<Reg> RegisterQDCBoardList = {
+const std::vector<Reg> RegisterBoardList_QDC = {
 
   DPP::BoardConfiguration  ,
   DPP::AggregateOrganization,
