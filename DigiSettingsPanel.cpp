@@ -73,7 +73,7 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
       SetUpInfo("Link Type ", digi[ID]->GetLinkType() == CAEN_DGTZ_USB ? "USB" : "Optical Link" , infoLayout[ID], 0, 4);
 
       SetUpInfo(      "S/N No. ", std::to_string(digi[ID]->GetSerialNumber()), infoLayout[ID], 1, 0);
-      SetUpInfo("No. Input Ch. ", std::to_string(digi[ID]->GetNChannels()), infoLayout[ID], 1, 2);
+      SetUpInfo("No. Input Ch. ", std::to_string(digi[ID]->GetNumInputCh()), infoLayout[ID], 1, 2);
       SetUpInfo("Sampling Rate ", std::to_string((int) digi[ID]->GetTick2ns()) + " ns = " + std::to_string(  (1000/digi[ID]->GetTick2ns())) + " MHz" , infoLayout[ID], 1, 4);
 
       SetUpInfo("ADC bit ", std::to_string(digi[ID]->GetADCBits()), infoLayout[ID], 2, 0);
@@ -955,7 +955,7 @@ void DigiSettingsPanel::SetUpInquiryCopyTab(){
         enableSignalSlot = false;
 
         cbCh->clear();
-        for( int i = 0; i < digi[index]->GetNChannels(); i ++ ) cbCh->addItem("Ch-" + QString::number(i), i);
+        for( int i = 0; i < digi[index]->GetNumInputCh(); i ++ ) cbCh->addItem("Ch-" + QString::number(i), i);
 
         if( digi[index]->GetDPPType() == V1730_DPP_PHA_CODE ) chRegList = RegisterChannelList_PHA;
         if( digi[index]->GetDPPType() == V1730_DPP_PSD_CODE ) chRegList = RegisterChannelList_PSD;
@@ -1108,7 +1108,7 @@ void DigiSettingsPanel::SetUpInquiryCopyTab(){
       connect(rbCh[i], &QRadioButton::clicked, this, &DigiSettingsPanel::CheckRadioAndCheckedButtons);
 
       int id1 = cbFromBoard->currentIndex();
-      if( i >= digi[id1]->GetRegChannels() ) rbCh[i]->setEnabled(false);
+      if( i >= digi[id1]->GetNumRegChannels() ) rbCh[i]->setEnabled(false);
     }
 
     //---------- Acton buttons
@@ -1141,7 +1141,7 @@ void DigiSettingsPanel::SetUpInquiryCopyTab(){
       connect(chkCh[i], &QCheckBox::clicked, this, &DigiSettingsPanel::CheckRadioAndCheckedButtons);
 
       int id1 = cbToBoard->currentIndex();
-      if( i >= digi[id1]->GetRegChannels() ) chkCh[i]->setEnabled(false);
+      if( i >= digi[id1]->GetNumRegChannels() ) chkCh[i]->setEnabled(false);
     }
 
     bnCopyBoard->setEnabled(false);
@@ -1164,7 +1164,7 @@ void DigiSettingsPanel::SetUpInquiryCopyTab(){
       if( digi[fromIndex]->GetDPPType() == V1730_DPP_PHA_CODE ) regList = RegisterChannelList_PHA;
       if( digi[fromIndex]->GetDPPType() == V1730_DPP_PSD_CODE ) regList = RegisterChannelList_PSD;
 
-      for( int i = 0; i < digi[toIndex]->GetRegChannels() ; i++){
+      for( int i = 0; i < digi[toIndex]->GetNumRegChannels() ; i++){
         //Copy setting
         for( int k = 0; k < (int) regList.size(); k ++){
           if( regList[k].GetRWType() != RW::ReadWrite ) continue;
@@ -1232,8 +1232,8 @@ void DigiSettingsPanel::SetUpChannelMask(unsigned int digiID){
   chLayout->setAlignment(Qt::AlignLeft);
   chLayout->setSpacing(0);
 
-  int nChGrp = digi[digiID]->GetRegChannels();
-  if( digi[digiID]->GetDPPType() == DPPType::DPP_QDC_CODE ) nChGrp = digi[digiID]->GetRegChannels();
+  int nChGrp = digi[digiID]->GetNumRegChannels();
+  if( digi[digiID]->GetDPPType() == DPPType::DPP_QDC_CODE ) nChGrp = digi[digiID]->GetNumRegChannels();
 
   for( int i = 0; i < nChGrp; i++){
     bnChEnableMask[digiID][i] = new QPushButton(this);
@@ -1390,7 +1390,7 @@ void DigiSettingsPanel::SetUpChannel_PHA(){
   QHBoxLayout * papa = new QHBoxLayout(jaja);
   papa->setAlignment(Qt::AlignLeft);
 
-  const unsigned short numChannel = digi[ID]->GetRegChannels();
+  const unsigned short numChannel = digi[ID]->GetNumRegChannels();
 
   {//^============================== Channel selection
     QLabel * lbChSel = new QLabel ("Channel : ", this);
@@ -1525,7 +1525,7 @@ void DigiSettingsPanel::SetUpChannel_PHA(){
 
     connect(bnADCCali, &QPushButton::clicked, this, [=](){
       digi[ID]->WriteRegister(DPP::ADCCalibration_W, 1);
-      for( int i = 0 ; i < digi[ID]->GetRegChannels(); i++ ) digi[ID]->ReadRegister(DPP::ChannelStatus_R, i);
+      for( int i = 0 ; i < digi[ID]->GetNumRegChannels(); i++ ) digi[ID]->ReadRegister(DPP::ChannelStatus_R, i);
       UpdatePanelFromMemory();
     });
   }
@@ -1553,7 +1553,7 @@ void DigiSettingsPanel::SetUpChannel_PHA(){
 
       QLabel * lb0 = new QLabel("Ch.", this); lb0->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb0, 0, 0);
       
-      for( int ch = 0; ch < digi[ID]->GetRegChannels(); ch++){
+      for( int ch = 0; ch < digi[ID]->GetNumRegChannels(); ch++){
       
         QLabel * chid = new QLabel(QString::number(ch), this);
         chid->setAlignment(Qt::AlignRight | Qt::AlignCenter);
@@ -1616,7 +1616,7 @@ void DigiSettingsPanel::SetUpChannel_PHA(){
 
       QLabel * lb0 = new QLabel("Ch.", this); lb0->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb0, 0, 0);
       
-      for( int ch = 0; ch < digi[ID]->GetRegChannels(); ch++){
+      for( int ch = 0; ch < digi[ID]->GetNumRegChannels(); ch++){
         QLabel * chid = new QLabel(QString::number(ch), this);
         chid->setAlignment(Qt::AlignRight | Qt::AlignCenter);
         chid->setFixedWidth(20);
@@ -1676,7 +1676,7 @@ void DigiSettingsPanel::SetUpChannel_PHA(){
 
       QLabel * lb0 = new QLabel("Ch.", this); lb0->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb0, 0, 0);
       
-      for( int ch = 0; ch < digi[ID]->GetRegChannels(); ch++){
+      for( int ch = 0; ch < digi[ID]->GetNumRegChannels(); ch++){
       
         QLabel * chid = new QLabel(QString::number(ch), this);
         chid->setAlignment(Qt::AlignRight | Qt::AlignCenter);
@@ -1740,7 +1740,7 @@ void DigiSettingsPanel::SetUpChannel_PHA(){
 
       QLabel * lb0 = new QLabel("Ch.", this); lb0->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb0, 0, 0);
 
-      for( int ch = 0; ch < digi[ID]->GetRegChannels(); ch++){
+      for( int ch = 0; ch < digi[ID]->GetNumRegChannels(); ch++){
         QLabel * chid = new QLabel(QString::number(ch), this);
         chid->setAlignment(Qt::AlignRight | Qt::AlignCenter);
         chid->setFixedWidth(20);
@@ -1839,7 +1839,7 @@ void DigiSettingsPanel::SetUpChannel_PSD(){
   QHBoxLayout * papa = new QHBoxLayout(jaja);
   papa->setAlignment(Qt::AlignLeft);
 
-  const unsigned short numChannel = digi[ID]->GetRegChannels();
+  const unsigned short numChannel = digi[ID]->GetNumRegChannels();
 
   {//^============================== Channel selection
     QLabel * lbChSel = new QLabel ("Ch : ", this);
@@ -2024,7 +2024,7 @@ void DigiSettingsPanel::SetUpChannel_PSD(){
 
     connect(bnADCCali, &QPushButton::clicked, this, [=](){
       digi[ID]->WriteRegister(DPP::ADCCalibration_W, 1);
-      for( int i = 0 ; i < digi[ID]->GetRegChannels(); i++ ) digi[ID]->ReadRegister(DPP::ChannelStatus_R, i);
+      for( int i = 0 ; i < digi[ID]->GetNumRegChannels(); i++ ) digi[ID]->ReadRegister(DPP::ChannelStatus_R, i);
       UpdatePanelFromMemory();
     });
   }
@@ -2052,7 +2052,7 @@ void DigiSettingsPanel::SetUpChannel_PSD(){
 
       QLabel * lb0 = new QLabel("Ch.", this); lb0->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb0, 0, 0);
       
-      for( int ch = 0; ch < digi[ID]->GetRegChannels(); ch++){
+      for( int ch = 0; ch < digi[ID]->GetNumRegChannels(); ch++){
       
         QLabel * chid = new QLabel(QString::number(ch), this);
         chid->setAlignment(Qt::AlignRight | Qt::AlignCenter);
@@ -2163,7 +2163,7 @@ void DigiSettingsPanel::SetUpChannel_PSD(){
 
       QLabel * lb0 = new QLabel("Ch.", this); lb0->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb0, 0, 0);
       
-      for( int ch = 0; ch < digi[ID]->GetRegChannels(); ch++){
+      for( int ch = 0; ch < digi[ID]->GetNumRegChannels(); ch++){
         QLabel * chid = new QLabel(QString::number(ch), this);
         chid->setAlignment(Qt::AlignRight | Qt::AlignCenter);
         chid->setFixedWidth(20);
@@ -2246,7 +2246,7 @@ void DigiSettingsPanel::SetUpChannel_PSD(){
 
       QLabel * lb0 = new QLabel("Ch.", this); lb0->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb0, 0, 0);
       
-      for( int ch = 0; ch < digi[ID]->GetRegChannels(); ch++){
+      for( int ch = 0; ch < digi[ID]->GetNumRegChannels(); ch++){
       
         QLabel * chid = new QLabel(QString::number(ch), this);
         chid->setAlignment(Qt::AlignRight | Qt::AlignCenter);
@@ -2314,7 +2314,7 @@ void DigiSettingsPanel::SetUpChannel_PSD(){
 
       QLabel * lb0 = new QLabel("Ch.", this); lb0->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb0, 0, 0);
 
-      for( int ch = 0; ch < digi[ID]->GetRegChannels(); ch++){
+      for( int ch = 0; ch < digi[ID]->GetNumRegChannels(); ch++){
         QLabel * chid = new QLabel(QString::number(ch), this);
         chid->setAlignment(Qt::AlignRight | Qt::AlignCenter);
         chid->setFixedWidth(20);
@@ -2419,7 +2419,7 @@ void DigiSettingsPanel::SetUpChannel_QDC(){
   QHBoxLayout * papa = new QHBoxLayout(jaja);
   papa->setAlignment(Qt::AlignLeft);
 
-  const unsigned short numGroup = digi[ID]->GetRegChannels();
+  const unsigned short numGroup = digi[ID]->GetNumRegChannels();
 
   {//^============================== Group selection
     QLabel * lbChSel = new QLabel ("Group : ", this);
@@ -2668,7 +2668,7 @@ void DigiSettingsPanel::SetUpChannel_QDC(){
 
       QLabel * lb0 = new QLabel("Grp.", this); lb0->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb0, 0, 0);
       
-      for( int ch = 0; ch < digi[ID]->GetRegChannels(); ch++){
+      for( int ch = 0; ch < digi[ID]->GetNumRegChannels(); ch++){
       
         QLabel * chid = new QLabel(QString::number(ch), this);
         chid->setAlignment(Qt::AlignRight | Qt::AlignCenter);
@@ -2774,7 +2774,7 @@ void DigiSettingsPanel::SetUpChannel_QDC(){
 
       QLabel * lb0 = new QLabel("Ch.", this); lb0->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb0, 0, 0);
       
-      for( int ch = 0; ch < digi[ID]->GetRegChannels(); ch++){
+      for( int ch = 0; ch < digi[ID]->GetNumRegChannels(); ch++){
         QLabel * chid = new QLabel(QString::number(ch), this);
         chid->setAlignment(Qt::AlignRight | Qt::AlignCenter);
         chid->setFixedWidth(20);
@@ -2872,7 +2872,7 @@ void DigiSettingsPanel::SetUpChannel_QDC(){
 
       QLabel * lb0 = new QLabel("Ch.", this); lb0->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb0, 0, 0);
       
-      for( int ch = 0; ch < digi[ID]->GetRegChannels(); ch++){
+      for( int ch = 0; ch < digi[ID]->GetNumRegChannels(); ch++){
       
         QLabel * chid = new QLabel(QString::number(ch), this);
         chid->setAlignment(Qt::AlignRight | Qt::AlignCenter);
@@ -2929,7 +2929,7 @@ void DigiSettingsPanel::SetUpChannel_QDC(){
 
       QLabel * lb0 = new QLabel("Ch.", this); lb0->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb0, 0, 0);
 
-      for( int ch = 0; ch < digi[ID]->GetRegChannels(); ch++){
+      for( int ch = 0; ch < digi[ID]->GetNumRegChannels(); ch++){
         QLabel * chid = new QLabel(QString::number(ch), this);
         chid->setAlignment(Qt::AlignRight | Qt::AlignCenter);
         chid->setFixedWidth(20);
@@ -3005,7 +3005,7 @@ void DigiSettingsPanel::UpdateBoardAndChannelsStatus(){
   }
 
   //*========================================== Channel Status
-  for( int i = 0; i < digi[ID]->GetRegChannels(); i++){
+  for( int i = 0; i < digi[ID]->GetNumRegChannels(); i++){
     uint32_t chStatus = digi[ID]->ReadRegister(DPP::ChannelStatus_R, i);
 
     if( digi[ID]->GetDPPType() == DPPType::DPP_PHA_CODE ||  digi[ID]->GetDPPType() == DPPType::DPP_PSD_CODE ){
@@ -3123,7 +3123,7 @@ void DigiSettingsPanel::UpdatePanelFromMemory(){
   }
   //*========================================
   uint32_t chMask = digi[ID]->GetSettingFromMemory(DPP::RegChannelEnableMask);
-  for( int i = 0; i < digi[ID]->GetRegChannels(); i++){
+  for( int i = 0; i < digi[ID]->GetNumRegChannels(); i++){
     if( (chMask >> i ) & 0x1 ) {
       bnChEnableMask[ID][i]->setStyleSheet("background-color: green;");
     }else{
@@ -3191,7 +3191,7 @@ void DigiSettingsPanel::UpdatePanelFromMemory(){
   uint32_t glbTrgMask = digi[ID]->GetSettingFromMemory(DPP::GlobalTriggerMask);
 
   if(  digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE || digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ){
-    for( int i = 0; i < digi[ID]->GetRegChannels(); i++){
+    for( int i = 0; i < digi[ID]->GetNumRegChannels(); i++){
       if( (glbTrgMask >> i ) & 0x1 ){
         bnGlobalTriggerMask[ID][i]->setStyleSheet("background-color: green;");
       }else{
@@ -3206,7 +3206,7 @@ void DigiSettingsPanel::UpdatePanelFromMemory(){
 
   //*========================================
   uint32_t TRGOUTMask = digi[ID]->GetSettingFromMemory(DPP::FrontPanelTRGOUTEnableMask);
-  for( int i = 0; i < digi[ID]->GetRegChannels(); i++){
+  for( int i = 0; i < digi[ID]->GetNumRegChannels(); i++){
     if( (TRGOUTMask >> i ) & 0x1 ){
       bnTRGOUTMask[ID][i]->setStyleSheet("background-color: green;");
     }else{
@@ -3328,7 +3328,7 @@ void DigiSettingsPanel::UpdateComboBoxBit(RComboBox * & cb, uint32_t fullBit, st
 void DigiSettingsPanel::SyncSpinBox(RSpinBox *(&spb)[][MaxRegChannel+1]){
   if( !enableSignalSlot ) return;
 
-  const int nCh = digi[ID]->GetRegChannels();
+  const int nCh = digi[ID]->GetNumRegChannels();
 
   int ch = chSelection[ID]->currentData().toInt();
 
@@ -3360,7 +3360,7 @@ void DigiSettingsPanel::SyncSpinBox(RSpinBox *(&spb)[][MaxRegChannel+1]){
 void DigiSettingsPanel::SyncComboBox(RComboBox *(&cb)[][MaxRegChannel+1]){
   if( !enableSignalSlot ) return;
 
-  const int nCh = digi[ID]->GetRegChannels();
+  const int nCh = digi[ID]->GetNumRegChannels();
 
   int ch = chSelection[ID]->currentData().toInt();
 
@@ -3391,7 +3391,7 @@ void DigiSettingsPanel::SyncComboBox(RComboBox *(&cb)[][MaxRegChannel+1]){
 void DigiSettingsPanel::SyncCheckBox(QCheckBox *(&chk)[][MaxRegChannel+1]){
   if( !enableSignalSlot ) return;
 
-  const int nCh = digi[ID]->GetRegChannels();
+  const int nCh = digi[ID]->GetNumRegChannels();
   int ch = chSelection[ID]->currentData().toInt();
   if( ch >= 0 ){
     enableSignalSlot = false;
@@ -3469,7 +3469,7 @@ void DigiSettingsPanel::UpdateSettings_PHA(){
 
   //printf("------ %s \n", __func__);
 
-  for( int ch = 0; ch < digi[ID]->GetRegChannels(); ch ++){
+  for( int ch = 0; ch < digi[ID]->GetNumRegChannels(); ch ++){
     UpdateSpinBox(sbRecordLength[ID][ch],     DPP::RecordLength_G, ch);
     UpdateSpinBox(sbPreTrigger[ID][ch],       DPP::PreTrigger, ch);
     UpdateSpinBox(sbInputRiseTime[ID][ch],    DPP::PHA::InputRiseTime, ch);
@@ -3596,7 +3596,7 @@ void DigiSettingsPanel::UpdateSettings_PSD(){
 
   // printf("------ %s \n", __func__);
 
-  for(int ch = 0; ch < digi[ID]->GetRegChannels(); ch ++){
+  for(int ch = 0; ch < digi[ID]->GetNumRegChannels(); ch ++){
 
     UpdateSpinBox(sbRecordLength[ID][ch],      DPP::RecordLength_G, ch);
     UpdateSpinBox(sbPreTrigger[ID][ch],        DPP::PreTrigger, ch);
@@ -3700,7 +3700,7 @@ void DigiSettingsPanel::SyncAllChannelsTab_QDC(){
 
   //Sync sub-DC-offset
   //SYnc Threshold
-  const int nGrp = digi[ID]->GetRegChannels();
+  const int nGrp = digi[ID]->GetNumRegChannels();
 
   int grp = chSelection[ID]->currentData().toInt();
 
@@ -3746,7 +3746,7 @@ void DigiSettingsPanel::SyncAllChannelsTab_QDC(){
 void DigiSettingsPanel::UpdateSettings_QDC(){
   enableSignalSlot = false;
 
-  for(int grp = 0; grp < digi[ID]->GetRegChannels(); grp ++){
+  for(int grp = 0; grp < digi[ID]->GetNumRegChannels(); grp ++){
 
     UpdateSpinBox(sbPreTrigger[ID][grp],         DPP::QDC::PreTrigger, grp);
     UpdateSpinBox(sbDCOffset[ID][grp],           DPP::QDC::DCOffset, grp);
@@ -3822,8 +3822,8 @@ void DigiSettingsPanel::CheckRadioAndCheckedButtons(){
   int id2 = cbToBoard->currentIndex();
 
   for( int i = 0 ; i < MaxRegChannel; i++){
-    if( i >= digi[id1]->GetRegChannels() ) rbCh[i]->setEnabled(false);
-    if( i >= digi[id2]->GetRegChannels() ) chkCh[i]->setEnabled(false);
+    if( i >= digi[id1]->GetNumRegChannels() ) rbCh[i]->setEnabled(false);
+    if( i >= digi[id2]->GetNumRegChannels() ) chkCh[i]->setEnabled(false);
   }
 
   if( digi[id1]->GetDPPType() != digi[id2]->GetDPPType() ){
@@ -3839,18 +3839,18 @@ void DigiSettingsPanel::CheckRadioAndCheckedButtons(){
   }
 
   int chFromIndex = -1;
-  for( int i = 0 ; i < digi[id1]->GetRegChannels() ; i++){
+  for( int i = 0 ; i < digi[id1]->GetNumRegChannels() ; i++){
     if( rbCh[i]->isChecked() && cbFromBoard->currentIndex() == cbToBoard->currentIndex()){
       chFromIndex = i;
       chkCh[i]->setChecked(false);
     }
   }
 
-  for( int i = 0 ; i < digi[id1]->GetRegChannels() ; i++)  chkCh[i]->setEnabled(true);
+  for( int i = 0 ; i < digi[id1]->GetNumRegChannels() ; i++)  chkCh[i]->setEnabled(true);
 
   if( chFromIndex >= 0 && cbFromBoard->currentIndex() == cbToBoard->currentIndex() ) chkCh[chFromIndex]->setEnabled(false);
   bool isToIndexCleicked = false;
-  for( int i = 0 ; i < digi[id1]->GetRegChannels() ; i++){
+  for( int i = 0 ; i < digi[id1]->GetNumRegChannels() ; i++){
     if( chkCh[i]->isChecked() ){
       isToIndexCleicked = true;
     }

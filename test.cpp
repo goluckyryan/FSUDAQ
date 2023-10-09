@@ -29,26 +29,34 @@ int main(int argc, char* argv[]){
 
   Digitizer * digi = new Digitizer(0, 2, false, true);
 
-  digi->ReadAllSettingsFromBoard();
 
-  printf("Record Length: 0x%d \n", digi->GetSettingFromMemory(DPP::QDC::RecordLength, 0));
+  Data * data =  digi->GetData();
 
-  for( int grp = 0; grp < 8; grp ++){
-    printf("OverThreshold %d: 0x%d \n", grp, digi->GetSettingFromMemory(DPP::QDC::OverThresholdWidth, grp));
+  data->ClearData();
+
+
+  digi->StartACQ();
+
+
+  for( int i = 0; i < 9; i ++ ){
+    usleep(1000*1000);
+    digi->ReadData();
+    data->DecodeBuffer(false, 200);
+    data->PrintStat();
+
+    //data->SaveData();
+
+    // int index = data->NumEventsDecoded[0];
+    // printf("-------------- %ld \n", data->Waveform1[0][index].size());
+
+    //data->PrintAllData();
+
   }
 
-  int ret;
-  //int ret = CAEN_DGTZ_WriteRegister(digi->GetHandle(), 0x8024, 0x60);
-
-  digi->WriteRegister(DPP::QDC::RecordLength, 0x60, -1, true);
-
-  unsigned int returnData;
-  ret = CAEN_DGTZ_ReadRegister(digi->GetHandle(), 0x8024, &returnData);
-  printf("ret : %d | 0x%08x\n", ret, returnData);  
+  digi->StopACQ();
 
 
-  printf("Record Length: 0x%d \n", digi->GetSettingFromMemory(DPP::QDC::RecordLength, 0));
-  
+
   digi->CloseDigitizer();
   delete digi;
 

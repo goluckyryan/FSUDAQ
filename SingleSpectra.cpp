@@ -70,7 +70,7 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
 
     for( unsigned int i = 0; i < MaxNDigitizer; i++){
       if( i >= nDigi ) continue;
-      for( int j = 0; j < digi[i]->GetNChannels(); j++){
+      for( int j = 0; j < digi[i]->GetNumInputCh(); j++){
         if( i < nDigi ) {
           hist[i][j] = new Histogram1D("Digi-" + QString::number(digi[i]->GetSerialNumber()) +", Ch-" +  QString::number(j), "Raw Energy [ch]", nBin, xMin, xMax);
         }else{
@@ -99,7 +99,7 @@ SingleSpectra::~SingleSpectra(){
   SaveSetting();
 
   for( unsigned int i = 0; i < nDigi; i++ ){
-    for( int ch = 0; ch < digi[i]->GetNChannels(); ch++){
+    for( int ch = 0; ch < digi[i]->GetNumInputCh(); ch++){
       delete hist[i][ch];
     }
   }
@@ -135,7 +135,7 @@ void SingleSpectra::FillHistograms(){
   for( int i = 0; i < nDigi; i++){
 
     digiMTX[i].lock();
-    for( int ch = 0; ch < digi[i]->GetNChannels(); ch ++ ){
+    for( int ch = 0; ch < digi[i]->GetNumInputCh(); ch ++ ){
       int lastIndex = digi[i]->GetData()->DataIndex[ch];
       int loopIndex = digi[i]->GetData()->LoopIndex[ch];
 
@@ -170,7 +170,7 @@ void SingleSpectra::SaveSetting(){
 
   for( unsigned int i = 0; i < nDigi; i++){
     file.write(("======= " + QString::number(digi[i]->GetSerialNumber()) + "\n").toStdString().c_str());
-    for( int ch = 0; ch < digi[i]->GetNChannels() ; ch++){
+    for( int ch = 0; ch < digi[i]->GetNumInputCh() ; ch++){
       QString a = QString::number(ch).rightJustified(2, ' ');
       QString b = QString::number(hist[i][ch]->GetNBin()).rightJustified(6, ' ');
       QString c = QString::number(hist[i][ch]->GetXMin()).rightJustified(6, ' ');

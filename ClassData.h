@@ -92,7 +92,7 @@ class Data{
   
   protected:
   
-    const unsigned short numChannel;
+    const unsigned short numInputCh;
     unsigned int nw;
 
     ///for temperary
@@ -122,7 +122,7 @@ class Data{
 
 //==========================================
 
-inline Data::Data(unsigned short numCh): numChannel(numCh){
+inline Data::Data(unsigned short numCh): numInputCh(numCh){
   tick2ns = 2.0;
   boardSN = 0;
   DPPType = DPPType::DPP_PHA_CODE;
@@ -297,7 +297,7 @@ inline void Data::PrintStat() const{
   }
   printf("%2s | %6s | %9s | %9s | %6s | %6s(%4s)\n", "ch", "# Evt.", "Rate [Hz]", "Accept", "Tot. Evt.", "index", "loop");
   printf("---+--------+-----------+-----------+----------\n");
-  for(int ch = 0; ch < numChannel; ch++){
+  for(int ch = 0; ch < numInputCh; ch++){
     printf("%2d | %6d | %9.2f | %9.2f | %6lu | %6d(%2d)\n", ch, NumEventsDecoded[ch], TriggerRate[ch], NonPileUpRate[ch], TotNumNonPileUpEvents[ch], DataIndex[ch], LoopIndex[ch]);
   }
   printf("---+--------+-----------+-----------+----------\n");
@@ -311,7 +311,7 @@ inline void Data::PrintAllData(bool tableMode, unsigned int maxRowDisplay) const
 
     int MaxEntry = 0;
     printf("%4s|", "");
-    for( int ch = 0; ch < numChannel; ch++){
+    for( int ch = 0; ch < numInputCh; ch++){
       if( LoopIndex[ch] > 0 ) {
         MaxEntry = MaxNData-1;
       }else{
@@ -325,7 +325,7 @@ inline void Data::PrintAllData(bool tableMode, unsigned int maxRowDisplay) const
 
     do{
       printf("%4d|", entry ); 
-      for( int ch = 0; ch < numChannel; ch++){
+      for( int ch = 0; ch < numInputCh; ch++){
         if( DataIndex[ch] < 0 ) continue;
         printf(" %5d,%12lld |", Energy[ch][entry], Timestamp[ch][entry]);
       }
@@ -336,7 +336,7 @@ inline void Data::PrintAllData(bool tableMode, unsigned int maxRowDisplay) const
     }while(entry <= MaxEntry);
 
   }else{
-    for( int ch = 0; ch < numChannel ; ch++){
+    for( int ch = 0; ch < numInputCh ; ch++){
       if( DataIndex[ch] < 0  ) continue;
       printf("------------ ch : %d, DataIndex : %d, loop : %d\n", ch, DataIndex[ch], LoopIndex[ch]);
       for( int ev = 0; ev <= (LoopIndex[ch] > 0 ? MaxNData : DataIndex[ch]) ; ev++){
@@ -411,9 +411,9 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
         NumNonPileUpDecoded[ch] = 0;
       }
       
-      for( int chMask = 0; chMask < MaxNChannels/2 ; chMask ++ ){
+      for( int chMask = 0; chMask < 8 ; chMask ++ ){ // the max numnber of RegChannel is 8 for PHA, PSD, QDC
         if( ((ChannelMask >> chMask) & 0x1 ) == 0 ) continue;
-        if( verbose >= 2 ) printf("==================== Dual Channel Block, ch Mask : %d, nw : %d\n", chMask *2, nw);
+        if( verbose >= 2 ) printf("==================== Dual/Group Channel Block, ch Mask : %d, nw : %d\n", chMask *2, nw);
 
         if( DPPType == DPPType::DPP_PHA_CODE ) {
           if ( DecodePHADualChannelBlock(chMask, fastDecode, verbose) < 0 ) break;

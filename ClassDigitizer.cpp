@@ -21,9 +21,9 @@ void Digitizer::Initalization(){
   portID = -1;
   boardID = -1;
   handle = -1;
-  NChannel = 16;
-  NRegChannel = 16;
-  isChEqRegCh = true;
+  NumInputCh = 16;
+  NumRegChannel = 16;
+  isInputChEqRegCh = true;
   NCoupledCh = 8;
   ADCbits  = 1;
   DPPType = 0;
@@ -63,8 +63,8 @@ void Digitizer::Reset(){
 void Digitizer::PrintBoard (){
   printf("Connected to Model %s with handle %d using %s\n", BoardInfo.ModelName, handle, LinkType == CAEN_DGTZ_USB ? "USB" : "Optical Link");
   printf("        Sampling rate : %.0f MHz = %.1f ns \n", 1000/tick2ns, tick2ns);
-  printf("No. of Input Channels : %d \n", NChannel);
-  printf("  No. of Reg Channels : %d, mask : 0x%X\n", NRegChannel, regChannelMask);
+  printf("No. of Input Channels : %d \n", NumInputCh);
+  printf("  No. of Reg Channels : %d, mask : 0x%X\n", NumRegChannel, regChannelMask);
   printf("         SerialNumber :\e[1m\e[33m %d\e[0m\n", BoardInfo.SerialNumber);
   printf("              DPPType : %d (%s)\n", DPPType, GetDPPString().c_str());
   printf("              ADC bit : \e[33m%d\e[0m, %d = 0x%X\n", ADCbits, ADCFullSize, ADCFullSize);
@@ -104,23 +104,23 @@ int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose
       if( verbose) printf("Can't read board info\n");
     }else{
       isConnected = true;
-      NRegChannel = BoardInfo.Channels;
-      NChannel = NRegChannel;
-      isChEqRegCh = true;
-      regChannelMask = pow(2, NChannel)-1;
+      NumRegChannel = BoardInfo.Channels;
+      NumInputCh = NumRegChannel;
+      isInputChEqRegCh = true;
+      regChannelMask = pow(2, NumInputCh)-1;
       switch(BoardInfo.Model){
-            case CAEN_DGTZ_V1730: tick2ns =  2.0; NCoupledCh = NChannel/2; break; ///ns -> 500 MSamples/s
-            case CAEN_DGTZ_V1725: tick2ns =  4.0; NCoupledCh = NChannel/2; break; ///ns -> 250 MSamples/s
+            case CAEN_DGTZ_V1730: tick2ns =  2.0; NCoupledCh = NumInputCh/2; break; ///ns -> 500 MSamples/s
+            case CAEN_DGTZ_V1725: tick2ns =  4.0; NCoupledCh = NumInputCh/2; break; ///ns -> 250 MSamples/s
             case CAEN_DGTZ_V1740: {
-              NChannel = 64;
-              NCoupledCh = NRegChannel;
-              isChEqRegCh = false;
+              NumInputCh = 64;
+              NCoupledCh = NumRegChannel;
+              isInputChEqRegCh = false;
               tick2ns = 16.0; break; ///ns -> 62.5 MSamples/s
             }
             default : tick2ns = 4.0; break;
       }
 
-      data = new Data(NChannel);
+      data = new Data(NumInputCh);
       data->tick2ns = tick2ns;
       data->boardSN = BoardInfo.SerialNumber;
       ADCbits = BoardInfo.ADC_NBits;
@@ -243,6 +243,15 @@ void Digitizer::SetRegChannelMask(uint32_t mask){
   SetSettingToMemory(DPP::RegChannelEnableMask, mask);
   ErrorMsg(__func__);
 }
+
+bool Digitizer::GetInputChannelOnOff(unsigned ch) { 
+  regChannelMask = GetSettingFromMemory(DPP::RegChannelEnableMask); 
+
+  if( isInputChEqRegCh ) return (regChannelMask & ( 1 << ch) );
+
+  int grpID = ch/8; //may change for not grouped in 8;
+  return (regChannelMask & ( 1 << grpID) );
+} 
 
 void Digitizer::SetRegChannelOnOff(unsigned short ch, bool onOff){
   if( !isConnected ) return;
@@ -408,8 +417,8 @@ unsigned int Digitizer::CalByteForBuffer(){
   unsigned int numAggBLT;
   unsigned int chMask   ;    
   unsigned int boardCfg ;
-  unsigned int eventAgg[NChannel/2];
-  unsigned int recordLength[NChannel/2];
+  unsigned int eventAgg[NumInputCh/2];
+  unsigned int recordLength[NumInputCh/2];
   unsigned int aggOrgan;
   
   if( isConnected ){
@@ -418,7 +427,7 @@ unsigned int Digitizer::CalByteForBuffer(){
     boardCfg  = ReadRegister(DPP::BoardConfiguration, 0, false);
     aggOrgan  = ReadRegister(DPP::AggregateOrganization, 0, false);
 
-    for( int pCh = 0; pCh < NChannel/2; pCh++){
+    for( int pCh = 0; pCh < NumInputCh/2; pCh++){
       eventAgg[pCh]     = ReadRegister(DPP::NumberEventsPerAggregate_G, pCh * 2 , false);
       recordLength[pCh] = ReadRegister(DPP::RecordLength_G, pCh * 2 , false);
     }
@@ -427,7 +436,7 @@ unsigned int Digitizer::CalByteForBuffer(){
     chMask    = GetSettingFromMemory(DPP::RegChannelEnableMask);
     boardCfg  = GetSettingFromMemory(DPP::BoardConfiguration);
     aggOrgan  = GetSettingFromMemory(DPP::AggregateOrganization);
-    for( int pCh = 0; pCh < NChannel/2; pCh++){
+    for( int pCh = 0; pCh < NumInputCh/2; pCh++){
       eventAgg[pCh]     = GetSettingFromMemory(DPP::NumberEventsPerAggregate_G, pCh * 2 );
       recordLength[pCh] = GetSettingFromMemory(DPP::RecordLength_G, pCh * 2);
     }
@@ -438,13 +447,13 @@ unsigned int Digitizer::CalByteForBuffer(){
   ///printf("Max number of Agg per Readout : %u \n", numAggBLT);
   ///printf("             is Extra2 enabed : %u \n", ((boardCfg >> 17) & 0x1) );
   ///printf("               is Record wave : %u \n", ((boardCfg >> 16) & 0x1) );
-  ///for( int pCh = 0; pCh < NChannel/2; pCh++){
+  ///for( int pCh = 0; pCh < NumInputCh/2; pCh++){
   ///  printf("Paired Ch : %d, RecordLength (bit value): %u, Event per Agg. : %u \n", pCh, recordLength[pCh], eventAgg[pCh]);
   ///}
 
   unsigned int bufferSize = aggOrgan; // just for get rip of the warning in complier
   bufferSize = 0;
-  for( int pCh = 0; pCh < NChannel/2 ; pCh++){
+  for( int pCh = 0; pCh < NumInputCh/2 ; pCh++){
     if( (chMask & ( 3 << (2 * pCh) )) == 0 ) continue; 
     bufferSize +=  2 + ( 2  + ((boardCfg >> 17) & 0x1) + ((boardCfg >> 16) & 0x1)*recordLength[pCh]*4 ) * eventAgg[pCh] ;
   }
@@ -512,7 +521,7 @@ void Digitizer::WriteRegister (Reg registerAddress, uint32_t value, int ch, bool
   if( ret == 0 && isSave2MemAndFile && registerAddress.GetRWType() == RW::ReadWrite) {
     if( ch < 0 ) {
       if( registerAddress.GetAddress() < 0x8000 ){
-        for(int i = 0; i < NChannel; i++){
+        for(int i = 0; i < NumInputCh; i++){
           SetSettingToMemory(registerAddress, value, i);
           SaveSettingToFile(registerAddress, value, i);
         }
@@ -638,7 +647,7 @@ void Digitizer::ReadAllSettingsFromBoard(bool force){
     regChannelMask = GetSettingFromMemory(DPP::RegChannelEnableMask);
     
     /// Channels Setting
-    for( int ch = 0; ch < NChannel; ch ++){
+    for( int ch = 0; ch < NumInputCh; ch ++){
       if( DPPType == V1730_DPP_PHA_CODE ){
         for( int p = 0; p < (int) RegisterChannelList_PHA.size(); p++){
           if( RegisterChannelList_PHA[p].GetRWType() == RW::WriteONLY) continue;
@@ -660,7 +669,7 @@ void Digitizer::ReadAllSettingsFromBoard(bool force){
     }
     regChannelMask = GetSettingFromMemory(DPP::QDC::GroupEnableMask);
 
-    for( int ch = 0; ch < GetRegChannels(); ch ++){
+    for( int ch = 0; ch < GetNumRegChannels(); ch ++){
       for( int p = 0; p < (int) RegisterChannelList_QDC.size(); p++){
         if( RegisterChannelList_QDC[p].GetRWType() == RW::WriteONLY) continue;
         ReadRegister(RegisterChannelList_QDC[p], ch); 
@@ -691,7 +700,7 @@ void Digitizer::ProgramSettingsToBoard(){
       }
     }
     /// Channels Setting
-    for( int ch = 0; ch < NChannel; ch ++){
+    for( int ch = 0; ch < NumInputCh; ch ++){
       if( DPPType == V1730_DPP_PHA_CODE ){
         for( int p = 0; p < (int) RegisterChannelList_PHA.size(); p++){
           if( RegisterChannelList_PHA[p].GetRWType() == RW::ReadWrite ){
@@ -722,7 +731,7 @@ void Digitizer::ProgramSettingsToBoard(){
       }
     }
     /// Channels Setting
-    for( int ch = 0; ch < GetRegChannels(); ch ++){
+    for( int ch = 0; ch < GetNumRegChannels(); ch ++){
       for( int p = 0; p < (int) RegisterChannelList_QDC.size(); p++){
         if( RegisterChannelList_QDC[p].GetRWType() == RW::ReadWrite ){
           haha = RegisterChannelList_QDC[p];

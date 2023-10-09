@@ -179,7 +179,7 @@ int main(int argc, char* argv[]){
   
   CAEN_DGTZ_BoardInfo_t BoardInfo;
   ret = (int) CAEN_DGTZ_GetInfo(handle, &BoardInfo);
-  int NChannel = BoardInfo.Channels;
+  int NInputCh = BoardInfo.Channels;
   uint32_t regChannelMask = 0xFFFF;
   float tick2ns = 4.0;
   switch(BoardInfo.Model){
@@ -240,7 +240,7 @@ int main(int argc, char* argv[]){
   printf("======== program Channels\n");
   ///CAEN_DGTZ_DPP_PHA_Params_t DPPParams;
   ///memset(&DPPParams, 0, sizeof(CAEN_DGTZ_DPP_PHA_Params_t));
-  ///for(int i = 0; i < NChannel; i++){
+  ///for(int i = 0; i < NInputCh; i++){
   ///  DPPParams.M[i] = 5000;        /// decay time [ns]
   ///  DPPParams.m[i] = 992;         /// flat-top [ns]
   ///  DPPParams.k[i] = 96;          /// rise-time [ns]
@@ -301,7 +301,7 @@ int main(int argc, char* argv[]){
   printf("allowcated %d byte ( %d words) for buffer\n", AllocatedSize, AllocatedSize/4); 
   ret |= CAEN_DGTZ_MallocDPPEvents(handle, reinterpret_cast<void**>(&Events), &AllocatedSize) ;
   printf("allowcated %d byte for Events\n", AllocatedSize); 
-  for( int i = 0 ; i < NChannel; i++){
+  for( int i = 0 ; i < NInputCh; i++){
     ret |= CAEN_DGTZ_MallocDPPWaveforms(handle, reinterpret_cast<void**>(&Waveform[i]), &AllocatedSize);
     printf("allowcated %d byte for waveform-%d\n", AllocatedSize, i); 
   }
@@ -333,7 +333,7 @@ int main(int argc, char* argv[]){
     return 0;
   }
 
-  for (int ch = 0; ch < NChannel; ch++) {
+  for (int ch = 0; ch < NInputCh; ch++) {
     if( DataIndex[ch] > 0 ) printf("------------------------ %d, %d\n", ch, DataIndex[ch]);
     for (int ev = 0; ev < DataIndex[ch]; ev++) {
       ///TrgCnt[ch]++;

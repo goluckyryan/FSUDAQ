@@ -27,9 +27,9 @@ class Digitizer{
     int                   portID;        /// port ID for optical link for using PCIe card, from 0, 1, 2, 3
     int                   boardID;       /// board identity
     int                   handle;        /// i don't know why, but better separete the handle from boardID
-    int                   NChannel;      /// number of physical input channel
-    int                   NRegChannel;   /// number of Register channel
-    bool                  isChEqRegCh;   /// is number of physical input channel = Register channel
+    int                   NumInputCh;      /// number of physical input channel
+    int                   NumRegChannel;   /// number of Register channel
+    bool                  isInputChEqRegCh;   /// is number of physical input channel = Register channel
     int                   NCoupledCh;    /// number of Coupled channel
     int                   ADCbits;       /// ADC bit
     int                   DPPType;       /// DPP verion
@@ -38,7 +38,7 @@ class Digitizer{
     CAEN_DGTZ_BoardInfo_t BoardInfo;
     
     //^----- adjustable parameters
-    uint32_t                 regChannelMask ;   /// the channel mask from NChannel
+    uint32_t                 regChannelMask ;   /// the channel mask from NumInputCh
     uint32_t                 VMEBaseAddress; /// For direct USB or Optical-link connection, VMEBaseAddress must be 0    
     CAEN_DGTZ_ConnectionType LinkType;       /// USB or Optic
     CAEN_DGTZ_IOLevel_t      IOlev;          /// TTL signal (1 = 1.5 to 5V, 0 = 0 to 0.7V ) or NIM signal (1 = -1 to -0.8V, 0 = 0V)
@@ -106,12 +106,12 @@ class Digitizer{
     CAEN_DGTZ_BoardInfo_t GetBoardInfo()     const {return BoardInfo;}
     std::string GetModelName()               const {return BoardInfo.ModelName;}
     int         GetSerialNumber()            const {return BoardInfo.SerialNumber;}
-    int         GetChannelMask()             { regChannelMask = GetSettingFromMemory(DPP::RegChannelEnableMask); return regChannelMask;}
-    bool        GetChannelOnOff(unsigned ch) { regChannelMask = GetSettingFromMemory(DPP::RegChannelEnableMask); return (regChannelMask & ( 1 << ch) );} 
-    float       GetTick2ns()                   const {return tick2ns;}
-    int         GetNChannels()               const {return NChannel;}
-    int         GetRegChannels()             const {return NRegChannel;}
-    bool        IsChEqRegCh()                const {return isChEqRegCh;}
+    int         GetRegChannelMask()          { regChannelMask = GetSettingFromMemory(DPP::RegChannelEnableMask); return regChannelMask;}
+    bool        GetInputChannelOnOff(unsigned ch) ;
+    float       GetTick2ns()                 const {return tick2ns;}
+    int         GetNumInputCh()              const {return NumInputCh;}
+    int         GetNumRegChannels()          const {return NumRegChannel;}
+    bool        IsInputChEqRegCh()           const {return isInputChEqRegCh;}
     int         GetCoupledChannels()         const {return NCoupledCh;}
     int         GetHandle()                  const {return handle;}
     int         GetDPPType()                 const {return DPPType;}

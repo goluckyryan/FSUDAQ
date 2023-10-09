@@ -790,7 +790,7 @@ void MainWindow::SetupScalar(){
 
   unsigned short maxNChannel = 0;
   for( unsigned int k = 0; k < nDigi; k ++ ){
-    if( digi[k]->GetNChannels() > maxNChannel ) maxNChannel = digi[k]->GetNChannels();
+    if( digi[k]->GetNumInputCh() > maxNChannel ) maxNChannel = digi[k]->GetNumInputCh();
   }
 
   scalar->setGeometry(0, 0, 10 + nDigi * 200, 110 + maxNChannel * 20);
@@ -829,10 +829,10 @@ void MainWindow::SetupScalar(){
   leAccept = new QLineEdit**[nDigi];
   for( unsigned int iDigi = 0; iDigi < nDigi; iDigi++){
     rowID = 2;
-    leTrigger[iDigi] = new QLineEdit *[digi[iDigi]->GetNChannels()];
-    leAccept[iDigi] = new QLineEdit *[digi[iDigi]->GetNChannels()];
-    uint32_t chMask =  digi[iDigi]->GetChannelMask();
-    for( int ch = 0; ch < digi[iDigi]->GetNChannels(); ch++){
+    leTrigger[iDigi] = new QLineEdit *[digi[iDigi]->GetNumInputCh()];
+    leAccept[iDigi] = new QLineEdit *[digi[iDigi]->GetNumInputCh()];
+    uint32_t chMask =  digi[iDigi]->GetRegChannelMask();
+    for( int ch = 0; ch < digi[iDigi]->GetNumInputCh(); ch++){
 
       if( ch == 0 ){
           QLabel * lbDigi = new QLabel("Digi-" + QString::number(digi[iDigi]->GetSerialNumber()), scalar); 
@@ -860,11 +860,11 @@ void MainWindow::SetupScalar(){
       leAccept[iDigi][ch]->setAlignment(Qt::AlignRight);
       leAccept[iDigi][ch]->setStyleSheet("background-color: #F0F0F0;");
 
-      if( digi[iDigi]->IsChEqRegCh() ){
+      if( digi[iDigi]->IsInputChEqRegCh() ){
         leTrigger[iDigi][ch]->setEnabled( (chMask >> ch) & 0x1 );
         leAccept[iDigi][ch]->setEnabled( (chMask >> ch) & 0x1 );
       }else{
-        int grpID = ch/digi[iDigi]->GetRegChannels();
+        int grpID = ch/digi[iDigi]->GetNumRegChannels();
         leTrigger[iDigi][ch]->setEnabled( (chMask >> grpID) & 0x1 );
         leAccept[iDigi][ch]->setEnabled( (chMask >> grpID) & 0x1 );
       }
@@ -884,7 +884,7 @@ void MainWindow::CleanUpScalar(){
   if( leTrigger == nullptr ) return;
 
   for( unsigned int i = 0; i < nDigi; i++){
-    for( int ch = 0; ch < digi[i]->GetNChannels(); ch ++){
+    for( int ch = 0; ch < digi[i]->GetNumInputCh(); ch ++){
       delete leTrigger[i][ch];
       delete leAccept[i][ch];
     }
@@ -925,11 +925,11 @@ void MainWindow::UpdateScalar(){
     // printf("### %d ", iDigi);
     // digi[iDigi]->GetData()->PrintAllData(true, 10);
     if( chkSaveData->isChecked() ) totalFileSize += digi[iDigi]->GetData()->GetTotalFileSize();
-    for( int i = 0; i < digi[iDigi]->GetNChannels(); i++){
+    for( int i = 0; i < digi[iDigi]->GetNumInputCh(); i++){
       QString a = "";
       QString b = "";
       
-      if( digi[iDigi]->GetChannelOnOff(i) == true ) {
+      if( digi[iDigi]->GetInputChannelOnOff(i) == true ) {
         //printf(" %3d %2d | %7.2f %7.2f \n", digi[iDigi]->GetSerialNumber(), i, digi[iDigi]->GetData()->TriggerRate[i], digi[iDigi]->GetData()->NonPileUpRate[i]);
         QString a = QString::number(digi[iDigi]->GetData()->TriggerRate[i], 'f', 2);
         QString b = QString::number(digi[iDigi]->GetData()->NonPileUpRate[i], 'f', 2);
@@ -1506,16 +1506,16 @@ void MainWindow::UpdateAllPanels(int panelID){
 
     if(scalar) {
       for( unsigned int iDigi = 0; iDigi < nDigi; iDigi++){
-        uint32_t chMask =  digi[iDigi]->GetChannelMask();
-        for( int ch = 0; ch < digi[iDigi]->GetNChannels(); ch++){
+        uint32_t chMask =  digi[iDigi]->GetRegChannelMask();
+        for( int ch = 0; ch < digi[iDigi]->GetNumInputCh(); ch++){
           // leTrigger[iDigi][i]->setEnabled( (chMask >> i) & 0x1 );
           // leAccept[iDigi][i]->setEnabled( (chMask >> i) & 0x1 );
 
-          if( digi[iDigi]->IsChEqRegCh() ){
+          if( digi[iDigi]->IsInputChEqRegCh() ){
             leTrigger[iDigi][ch]->setEnabled( (chMask >> ch) & 0x1 );
             leAccept[iDigi][ch]->setEnabled( (chMask >> ch) & 0x1 );
           }else{
-            int grpID = ch/digi[iDigi]->GetRegChannels();
+            int grpID = ch/digi[iDigi]->GetNumRegChannels();
             leTrigger[iDigi][ch]->setEnabled( (chMask >> grpID) & 0x1 );
             leAccept[iDigi][ch]->setEnabled( (chMask >> grpID) & 0x1 );
           }
