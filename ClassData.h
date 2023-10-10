@@ -373,6 +373,11 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
     return;
   } 
 
+  for( int ch = 0; ch < MaxNChannels; ch ++) {
+    NumEventsDecoded[ch] = 0;
+    NumNonPileUpDecoded[ch] = 0;
+  }
+
   if( nByte == 0 ) return;
   nw = 0;
   
@@ -395,6 +400,7 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
         switch(BoardID){
           case 0x8 : DPPType = DPPType::DPP_PSD_CODE; break;
           case 0xB : DPPType = DPPType::DPP_PHA_CODE; break;
+          case 0x7 : DPPType = DPPType::DPP_QDC_CODE; break;
         }
       }
       
@@ -404,16 +410,11 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
       
       nw = nw + 1; 
       unsigned int bdAggTimeTag = ReadBuffer(nw, verbose);
-      if( verbose >= 2 ) printf("Agg Counter : %u \n", bdAggTimeTag);
-
-      for( int ch = 0; ch < MaxNChannels; ch ++) {
-        NumEventsDecoded[ch] = 0;
-        NumNonPileUpDecoded[ch] = 0;
-      }
+      if( verbose >= 2 ) printf("Agg Time Tag : %u \n", bdAggTimeTag);
       
       for( int chMask = 0; chMask < 8 ; chMask ++ ){ // the max numnber of RegChannel is 8 for PHA, PSD, QDC
         if( ((ChannelMask >> chMask) & 0x1 ) == 0 ) continue;
-        if( verbose >= 2 ) printf("==================== Dual/Group Channel Block, ch Mask : %d, nw : %d\n", chMask *2, nw);
+        if( verbose >= 2 ) printf("==================== Dual/Group Channel Block, ch Mask : 0x%X, nw : %d\n", chMask *2, nw);
 
         if( DPPType == DPPType::DPP_PHA_CODE ) {
           if ( DecodePHADualChannelBlock(chMask, fastDecode, verbose) < 0 ) break;
@@ -435,6 +436,8 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
   
   ///Calculate trigger rate and first and last Timestamp
   for(int ch = 0; ch < MaxNChannels; ch++){
+    if( ch > numInputCh ) continue;
+
     if( NumEventsDecoded[ch] > 0 ) {
       // printf("%s | ch %d | %d %d \n", __func__, ch, LoopIndex[ch], DataIndex[ch]);
       IsNotRollOverFakeAgg = true;
@@ -510,6 +513,7 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
   unsigned int nSample = 0; /// wave form;
   unsigned int nEvents = 0;
   unsigned int extra2Option = 0;
+  bool hasWaveForm = false;
   bool hasExtra2 = false;
   bool hasDualTrace = 0 ;
   if( hasFormatInfo ){
@@ -604,56 +608,58 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
     if( fastDecode ){
       nw += nSample/2;
     }else{
-      for( unsigned int wi = 0; wi < nSample/2; wi++){
-        nw = nw +1 ; word = ReadBuffer(nw, verbose-2);
-        ///The CAEN manual is wrong, the bit [31:16] is anaprobe 1
-        bool isTrigger1 = (( word >> 31 ) & 0x1 );
-        bool dp1 = (( word >> 30 ) & 0x1 );
-        unsigned short wave1 = (( word >> 16) & 0x3FFF);
-        short trace1 = 0;
-        if( wave1 & 0x2000){
-          trace1 = static_cast<short>(~wave1 + 1 + 0x3FFF);
-          trace1 = - trace1;
-        }else{
-          trace1 = static_cast<short>(wave1);
-        }
-        
-        ///The CAEN manual is wrong, the bit [31:16] is anaprobe 2
-        bool isTrigger0 = (( word >> 15 ) & 0x1 );
-        bool dp0 = (( word >> 14 ) & 0x1 );
-        unsigned short wave0 = ( word & 0x3FFF);
-        short trace0 = 0;
-        if( wave0 & 0x2000){
-          trace0 = static_cast<short>(~wave0 + 1 + 0x3FFF);
-          trace0 = - trace0;
-        }else{
-          trace0 = static_cast<short>(wave0);
-        }
-        
-        if( hasDualTrace ){
-          tempWaveform1.push_back(trace1);
-          tempWaveform2.push_back(trace0);
-          tempDigiWaveform1.push_back(dp1);
-          tempDigiWaveform2.push_back(dp0);
-        }else{
-          tempWaveform1.push_back(trace1);          
-          tempWaveform1.push_back(trace0);
-          tempDigiWaveform1.push_back(dp1);
-          tempDigiWaveform1.push_back(dp0);
-        }
-
-        if( isTrigger0 == 1 ) triggerAtSample = 2*wi ;      
-        if( isTrigger1 == 1 ) triggerAtSample = 2*wi + 1;
-        
-        if( verbose >= 4 ){
-          if( !hasDualTrace ){ 
-            printf("%4d| %5d, %d, %d \n",   2*wi, trace0, dp0, isTrigger0);
-            printf("%4d| %5d, %d, %d \n", 2*wi+1, trace1, dp1, isTrigger1);
+      if( hasWaveForm ){
+        for( unsigned int wi = 0; wi < nSample/2; wi++){
+          nw = nw +1 ; word = ReadBuffer(nw, verbose-2);
+          ///The CAEN manual is wrong, the bit [31:16] is anaprobe 1
+          bool isTrigger1 = (( word >> 31 ) & 0x1 );
+          bool dp1 = (( word >> 30 ) & 0x1 );
+          unsigned short wave1 = (( word >> 16) & 0x3FFF);
+          short trace1 = 0;
+          if( wave1 & 0x2000){
+            trace1 = static_cast<short>(~wave1 + 1 + 0x3FFF);
+            trace1 = - trace1;
           }else{
-            printf("%4d| %5d, %5d | %d, %d | %d  %d\n",   wi, trace0, trace1, dp0, dp1, isTrigger0, isTrigger1);
+            trace1 = static_cast<short>(wave1);
           }
-        }
-      }    
+          
+          ///The CAEN manual is wrong, the bit [31:16] is anaprobe 2
+          bool isTrigger0 = (( word >> 15 ) & 0x1 );
+          bool dp0 = (( word >> 14 ) & 0x1 );
+          unsigned short wave0 = ( word & 0x3FFF);
+          short trace0 = 0;
+          if( wave0 & 0x2000){
+            trace0 = static_cast<short>(~wave0 + 1 + 0x3FFF);
+            trace0 = - trace0;
+          }else{
+            trace0 = static_cast<short>(wave0);
+          }
+          
+          if( hasDualTrace ){
+            tempWaveform1.push_back(trace1);
+            tempWaveform2.push_back(trace0);
+            tempDigiWaveform1.push_back(dp1);
+            tempDigiWaveform2.push_back(dp0);
+          }else{
+            tempWaveform1.push_back(trace1);          
+            tempWaveform1.push_back(trace0);
+            tempDigiWaveform1.push_back(dp1);
+            tempDigiWaveform1.push_back(dp0);
+          }
+
+          if( isTrigger0 == 1 ) triggerAtSample = 2*wi ;      
+          if( isTrigger1 == 1 ) triggerAtSample = 2*wi + 1;
+          
+          if( verbose >= 4 ){
+            if( !hasDualTrace ){ 
+              printf("%4d| %5d, %d, %d \n",   2*wi, trace0, dp0, isTrigger0);
+              printf("%4d| %5d, %d, %d \n", 2*wi+1, trace1, dp1, isTrigger1);
+            }else{
+              printf("%4d| %5d, %5d | %d, %d | %d  %d\n",   wi, trace0, trace1, dp0, dp1, isTrigger0, isTrigger1);
+            }
+          }
+        } 
+      }   
     }
     unsigned long long extTimeStamp = 0;
     unsigned int extra2 = 0;
@@ -708,7 +714,7 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
         TotNumNonPileUpEvents[channel] ++;
       }
 
-      if( !fastDecode ) {
+      if( !fastDecode && hasWaveForm) {
         if( hasDualTrace ){
           Waveform1[channel][DataIndex[channel]] = tempWaveform1;
           Waveform2[channel][DataIndex[channel]] = tempWaveform2;
@@ -836,31 +842,33 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
     if( fastDecode ){
       nw += nSample/2;
     }else{
-      for( unsigned int wi = 0; wi < nSample/2; wi++){
-        nw = nw +1 ; word = ReadBuffer(nw, verbose-4);
-        bool dp2b = (( word >> 31 ) & 0x1 );
-        bool dp1b = (( word >> 30 ) & 0x1 );
-        unsigned short waveb = (( word >> 16) & 0x3FFF);
-        
-        bool dp2a = (( word >> 15 ) & 0x1 );
-        bool dp1a = (( word >> 14 ) & 0x1 );
-        unsigned short wavea = ( word & 0x3FFF);
-        
-        if( hasDualTrace ){
-          tempWaveform1.push_back(wavea);
-          tempWaveform2.push_back(waveb);
-        }else{
-          tempWaveform1.push_back(wavea);          
-          tempWaveform1.push_back(waveb);          
-        }
-        tempDigiWaveform1.push_back(dp1a);
-        tempDigiWaveform1.push_back(dp1b);
-        tempDigiWaveform2.push_back(dp2a);
-        tempDigiWaveform2.push_back(dp2b);
-        
-        if( verbose >= 3 ){
-          printf("%4d| %5d, %d, %d \n",   2*wi, wavea, dp1a, dp2a);
-          printf("%4d| %5d, %d, %d \n", 2*wi+1, waveb, dp1b, dp2b);
+      if( hasWaveForm ){
+        for( unsigned int wi = 0; wi < nSample/2; wi++){
+          nw = nw +1 ; word = ReadBuffer(nw, verbose-4);
+          bool dp2b = (( word >> 31 ) & 0x1 );
+          bool dp1b = (( word >> 30 ) & 0x1 );
+          unsigned short waveb = (( word >> 16) & 0x3FFF);
+          
+          bool dp2a = (( word >> 15 ) & 0x1 );
+          bool dp1a = (( word >> 14 ) & 0x1 );
+          unsigned short wavea = ( word & 0x3FFF);
+          
+          if( hasDualTrace ){
+            tempWaveform1.push_back(wavea);
+            tempWaveform2.push_back(waveb);
+          }else{
+            tempWaveform1.push_back(wavea);          
+            tempWaveform1.push_back(waveb);          
+          }
+          tempDigiWaveform1.push_back(dp1a);
+          tempDigiWaveform1.push_back(dp1b);
+          tempDigiWaveform2.push_back(dp2a);
+          tempDigiWaveform2.push_back(dp2b);
+          
+          if( verbose >= 3 ){
+            printf("%4d| %5d, %d, %d \n",   2*wi, wavea, dp1a, dp2a);
+            printf("%4d| %5d, %d, %d \n", 2*wi+1, waveb, dp1b, dp2b);
+          }
         }
       }
     }
@@ -902,7 +910,7 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
         TotNumNonPileUpEvents[channel] ++;
       }
 
-      if( !fastDecode ) {
+      if( !fastDecode && hasWaveForm) {
         if( hasDualTrace ){
           Waveform1[channel][DataIndex[channel]] = tempWaveform1;
           Waveform2[channel][DataIndex[channel]] = tempWaveform2;
@@ -942,7 +950,7 @@ inline int Data::DecodeQDCGroupedChannelBlock(unsigned int ChannelMask, bool fas
   if( (word >> 31) != 1 ) return 0;
 
   unsigned int aggSize = ( word & 0x3FFFFF ) ;
-  if( verbose >= 2 ) printf(" size : %d \n",  aggSize);
+  if( verbose >= 2 ) printf(" Group agg. size : %d words\n",  aggSize);
 
   unsigned int nEvents = 0;
   nw = nw + 1; word = ReadBuffer(nw, verbose);
@@ -952,7 +960,7 @@ inline int Data::DecodeQDCGroupedChannelBlock(unsigned int ChannelMask, bool fas
   bool hasExtra     = ( (word >> 28 ) & 0x1 );
   bool hasTimeStamp = ( (word >> 29 ) & 0x1 );
   bool hasEnergy    = ( (word >> 30 ) & 0x1 );
-  if( (word >> 31 ) != 1 ) return 0;
+  if( (word >> 31 ) != 0 ) return 0;
 
   if( verbose >= 2 ) {
     printf("Charge : %d, Time: %d, Wave : %d, Extra: %d\n", hasEnergy, hasTimeStamp, hasWaveForm, hasExtra);
@@ -973,12 +981,9 @@ inline int Data::DecodeQDCGroupedChannelBlock(unsigned int ChannelMask, bool fas
     nw = nw +1 ; word = ReadBuffer(nw, verbose);
     unsigned int timeStamp0 = (word & 0xFFFFFFFF);
     if( verbose >= 2 ) printf("timeStamp %u \n", timeStamp0);
-
-    // bool channelTag = ((word >> 31) & 0x1);
-    // int channel = ChannelMask*2 + channelTag;
     
     ///===== read waveform
-    if( !fastDecode ) {
+    if( !fastDecode && hasWaveForm ) {
       tempWaveform1.clear();
       tempDigiWaveform1.clear();
       tempDigiWaveform2.clear();
@@ -989,27 +994,29 @@ inline int Data::DecodeQDCGroupedChannelBlock(unsigned int ChannelMask, bool fas
     if( fastDecode ){
       nw += nSample/2;
     }else{
-      for( unsigned int wi = 0; wi < nSample/2; wi++){
-        nw = nw +1 ; word = ReadBuffer(nw, verbose-4);
+      if( hasWaveForm ){
+        for( unsigned int wi = 0; wi < nSample/2; wi++){
+          nw = nw +1 ; word = ReadBuffer(nw, verbose-4);
 
-        tempWaveform1.push_back(( word & 0xFFF));          
-        tempWaveform1.push_back((( word >> 16) & 0xFFF));          
+          tempWaveform1.push_back(( word & 0xFFF));          
+          tempWaveform1.push_back((( word >> 16) & 0xFFF));          
 
-        tempDigiWaveform1.push_back((( word >> 12 ) & 0x1 )); //Gate
-        tempDigiWaveform1.push_back((( word >> 28 ) & 0x1 ));
+          tempDigiWaveform1.push_back((( word >> 12 ) & 0x1 )); //Gate
+          tempDigiWaveform1.push_back((( word >> 28 ) & 0x1 ));
 
-        tempDigiWaveform2.push_back((( word >> 13 ) & 0x1 )); //Trigger
-        tempDigiWaveform2.push_back((( word >> 29 ) & 0x1 ));
+          tempDigiWaveform2.push_back((( word >> 13 ) & 0x1 )); //Trigger
+          tempDigiWaveform2.push_back((( word >> 29 ) & 0x1 ));
 
-        tempDigiWaveform3.push_back((( word >> 14 ) & 0x1 )); //Triger Hold Off
-        tempDigiWaveform3.push_back((( word >> 30 ) & 0x1 ));
-        
-        tempDigiWaveform4.push_back((( word >> 15 ) & 0x1 )); //Over-Threshold
-        tempDigiWaveform4.push_back((( word >> 31 ) & 0x1 ));
+          tempDigiWaveform3.push_back((( word >> 14 ) & 0x1 )); //Triger Hold Off
+          tempDigiWaveform3.push_back((( word >> 30 ) & 0x1 ));
+          
+          tempDigiWaveform4.push_back((( word >> 15 ) & 0x1 )); //Over-Threshold
+          tempDigiWaveform4.push_back((( word >> 31 ) & 0x1 ));
 
-        if( verbose >= 3 ){
-          printf("%4d| %5d, %d, %d, %d, %d \n",   2*wi, (word & 0xFFF)         , (( word >> 12 ) & 0x1 ), (( word >> 13 ) & 0x1 ), (( word >> 14 ) & 0x1 ), (( word >> 15 ) & 0x1 ));
-          printf("%4d| %5d, %d, %d, %d, %d \n", 2*wi+1, (( word >> 16) & 0xFFF), (( word >> 28 ) & 0x1 ), (( word >> 29 ) & 0x1 ), (( word >> 30 ) & 0x1 ), (( word >> 31 ) & 0x1 ));
+          if( verbose >= 3 ){
+            printf("%4d| %5d, %d, %d, %d, %d \n",   2*wi, (word & 0xFFF)         , (( word >> 12 ) & 0x1 ), (( word >> 13 ) & 0x1 ), (( word >> 14 ) & 0x1 ), (( word >> 15 ) & 0x1 ));
+            printf("%4d| %5d, %d, %d, %d, %d \n", 2*wi+1, (( word >> 16) & 0xFFF), (( word >> 28 ) & 0x1 ), (( word >> 29 ) & 0x1 ), (( word >> 30 ) & 0x1 ), (( word >> 31 ) & 0x1 ));
+          }
         }
       }
     }
@@ -1022,13 +1029,14 @@ inline int Data::DecodeQDCGroupedChannelBlock(unsigned int ChannelMask, bool fas
       extra = word;
       baseline = (word & 0xFFF);
       extTimeStamp = (word >> 16);
+      if( verbose >= 2 ) printf("extra : 0x%lx, baseline : %d\n", extra, baseline);
     }
     
     unsigned long long timeStamp = (extTimeStamp << 31) ;
     timeStamp = timeStamp + timeStamp0;
     
     nw = nw +1 ; word = ReadBuffer(nw, verbose);
-    unsigned int energy  = (( word >> 16) & 0xFFFF);
+    unsigned int energy  = ( word  & 0xFFFF);
     bool pileup = ((word >> 27) & 0x1);
     bool OverRange = ((word >> 26)& 0x1);
     unsigned short subCh = ((word >> 28)& 0xF);
@@ -1050,7 +1058,7 @@ inline int Data::DecodeQDCGroupedChannelBlock(unsigned int ChannelMask, bool fas
       TotNumNonPileUpEvents[channel] ++;
     }
 
-    if( !fastDecode ) {
+    if( !fastDecode && hasWaveForm) {
       Waveform1[channel][DataIndex[channel]] = tempWaveform1;
       DigiWaveform1[channel][DataIndex[channel]] = tempDigiWaveform1;
       DigiWaveform2[channel][DataIndex[channel]] = tempDigiWaveform2;
@@ -1058,14 +1066,12 @@ inline int Data::DecodeQDCGroupedChannelBlock(unsigned int ChannelMask, bool fas
       DigiWaveform4[channel][DataIndex[channel]] = tempDigiWaveform4;
     }
 
-     
-    if( verbose >= 2 ) printf("extra : 0x%lx, baseline : %d\n", extra, baseline);
-    
-    if( verbose >= 1 ) printf("ch : %2d, energy : %d, timestamp : %llu\n", 
-                                channel, energy, timeStamp);
-    
-    
+    if( verbose == 1 ) printf("ch : %2d, energy : %d, timestamp : %llu\n",  channel, energy, timeStamp);
+    if( verbose > 1 ) printf("ch : %2d, energy : %d, timestamp : %llu, pileUp : %d, OverRange : %d\n",  channel, energy, timeStamp, pileup, OverRange);
+
+    if( verbose == 1) printf("Decoded : %d, total : %ld \n", NumEventsDecoded[channel], TotNumNonPileUpEvents[channel]);
   }
+
 
   return nw;
 

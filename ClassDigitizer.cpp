@@ -361,13 +361,18 @@ int Digitizer::ProgramBoard_QDC(){
 void Digitizer::StartACQ(){
   if ( AcqRun ) return;
   
-  unsigned int bufferSize = CalByteForBuffer();
-  if( bufferSize  > 160 * 1024 * 1024 ){
-    printf("============= buffer size bigger than 160 MB (%u)\n", bufferSize );
-    //return;
+  unsigned int bufferSize = 0;
+  if( DPPType == V1730_DPP_PHA_CODE ){
+    bufferSize = CalByteForBuffer();
+    if( bufferSize  > 160 * 1024 * 1024 ){
+      printf("============= buffer size bigger than 160 MB (%u)\n", bufferSize );
+      //return;
+    }
   }
 
-  if( DPPType == V1730_DPP_PSD_CODE) bufferSize = 160 * 1024 * 1024; //TODO allocate 80 MB for PSD
+  if( DPPType == V1730_DPP_PSD_CODE) bufferSize = 160 * 1024 * 1024; //TODO allocate 160 MB for PSD
+  if( DPPType == V1740_DPP_QDC_CODE) bufferSize = 160 * 1024 * 1024; //TODO allocate 160 MB for QDC
+
   
   data->AllocateMemory(bufferSize);
   ret = CAEN_DGTZ_SWStartAcquisition(handle);

@@ -270,7 +270,6 @@ private:
 
   //------------------- QDC
   RComboBox * cbExtTriggerMode[MaxNDigitizer];
-  RSpinBox * sbRecordLength_QDC[MaxNDigitizer];
   RSpinBox * sbEventPreAgg_QDC[MaxNDigitizer];
 
   //...... reuse varaible
@@ -280,8 +279,8 @@ private:
   //Trig Hold off with  -> sbTriggerHoldOff
   //Trig out width      -> sbShapedTrigWidth
 
-  QCheckBox * chkOverthreshold[MaxNDigitizer][MaxRegChannel+1];
-  RSpinBox * sbOverThresholdWidth[MaxNDigitizer][MaxRegChannel + 1];
+  //QCheckBox * chkOverthreshold[MaxNDigitizer][MaxRegChannel+1]; //TODO need firmware version 4.25 & 135.17
+  //RSpinBox * sbOverThresholdWidth[MaxNDigitizer][MaxRegChannel + 1];
   RSpinBox * sbSubChOffset[MaxNDigitizer][MaxRegChannel + 1][8];
   RSpinBox * sbSubChThreshold[MaxNDigitizer][MaxRegChannel + 1][8];
   QLabel   * lbSubCh[MaxNDigitizer][8];

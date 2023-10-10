@@ -786,6 +786,7 @@ namespace DPP {
   }
 
   namespace QDC { // Register already grouped in channel. and there no control for indiviual channel except the Fine DC offset and threshold, so it is like no group
+    const Reg RecordLength                ("Record Length"                 , 0x1024, RW::ReadWrite, false, 0x1FFF, 1); /// R/W
     const Reg GateWidth                   ("GateWidth"                     , 0x1030, RW::ReadWrite, false, 0xFFF, 1); /// R/W
     const Reg GateOffset                  ("GateOfset"                     , 0x1034, RW::ReadWrite, false,  0xFF, 1); /// R/W
     const Reg FixedBaseline               ("FixedBaseline"                 , 0x1038, RW::ReadWrite, false, 0xFFF, -1); /// R/W
@@ -793,11 +794,11 @@ namespace DPP {
     const Reg DPPAlgorithmControl         ("DPPAlgorithmControl"           , 0x1040, RW::ReadWrite, false, {}); /// R/W
     const Reg TriggerHoldOffWidth         ("Trigger Hold-off width"        , 0x1074, RW::ReadWrite, false, 0xFFFF, 1); /// R/W
     const Reg TRGOUTWidth                 ("Trigger out width"             , 0x1078, RW::ReadWrite, false, 0xFFFF, 1); /// R/W
-    const Reg OverThresholdWidth          ("Over Threshold width"          , 0x107C, RW::ReadWrite, false, 0xFFFF, 1); /// R/W
+    //const Reg OverThresholdWidth          ("Over Threshold width"          , 0x107C, RW::ReadWrite, false, 0xFFFF, 1); /// R/W // need firmware version 4.25 & 135.17
     const Reg GroupStatus_R               ("Group Status"                  , 0x1088, RW::ReadONLY,  false, {});  /// R/
     const Reg AMCFirmwareRevision_R       ("AMC firmware version"          , 0x108C, RW::ReadONLY,  false, {});  /// R/
     const Reg DCOffset                    ("DC offset"                     , 0x1098, RW::ReadWrite, false, 0xFFFF, -1); /// R/W
-    const Reg ChannelMask                 ("Channel Group Mask"            , 0x10A8, RW::ReadWrite, false,   0xFF, 1); /// R/W
+    const Reg SubChannelMask              ("SubChannel Mask"               , 0x10A8, RW::ReadWrite, false,   0xFF, 1); /// R/W
     const Reg DCOffset_LowCh              ("DC offset for low ch."         , 0x10C0, RW::ReadWrite, false, 0xFFFFFFFF, -1); /// R/W
     const Reg DCOffset_HighCh             ("DC offset for high ch."        , 0x10C4, RW::ReadWrite, false, 0xFFFFFFFF, -1); /// R/W
     const Reg TriggerThreshold_sub0       ("Trigger Threshold sub0"             , 0x10D0, RW::ReadWrite, false, 0xFFF, -1); /// R/W
@@ -811,14 +812,13 @@ namespace DPP {
 
 
     const Reg NumberEventsPerAggregate      ("Number of Events per Aggregate", 0x8020, RW::ReadWrite, false, 0x3FF, 1); /// R/W
-    const Reg RecordLength                  ("Record Length"                 , 0x8024, RW::ReadWrite, false, 0x1FFF, 1); /// R/W
     const Reg GroupEnableMask               ("Group Enable Mask"             , 0x8120, RW::ReadWrite, false, 0xFF, 1); /// R/W
 
     namespace Bit_DPPAlgorithmControl {
       const std::pair<unsigned short, unsigned short> ChargeSensitivity = {3, 0} ; /// length, smallest pos
       const std::pair<unsigned short, unsigned short> InternalTestPulse = {1, 4};
       const std::pair<unsigned short, unsigned short> TestPulseRate = {2, 5};
-      const std::pair<unsigned short, unsigned short> OverThresholdWitdhEnable = {1, 7};
+      //const std::pair<unsigned short, unsigned short> OverThresholdWitdhEnable = {1, 7}; ///need firmware version 4.25 & 135.17
       const std::pair<unsigned short, unsigned short> ChargePedestal = {1, 8};
       const std::pair<unsigned short, unsigned short> InputSmoothingFactor = {3, 12};
       const std::pair<unsigned short, unsigned short> Polarity = {1, 16};
@@ -926,6 +926,7 @@ const std::vector<Reg> RegisterChannelList_PSD = {
 };
 
 const std::vector<Reg> RegisterChannelList_QDC = {
+  DPP::QDC::RecordLength,
   DPP::QDC::GateWidth,
   DPP::QDC::GateOffset,
   DPP::QDC::FixedBaseline,
@@ -933,11 +934,11 @@ const std::vector<Reg> RegisterChannelList_QDC = {
   DPP::QDC::DPPAlgorithmControl,
   DPP::QDC::TriggerHoldOffWidth,
   DPP::QDC::TRGOUTWidth,
-  DPP::QDC::OverThresholdWidth,
+  //DPP::QDC::OverThresholdWidth,
   DPP::QDC::GroupStatus_R,
   DPP::QDC::AMCFirmwareRevision_R,
   DPP::QDC::DCOffset,
-  DPP::QDC::ChannelMask,
+  DPP::QDC::SubChannelMask,
   DPP::QDC::DCOffset_LowCh,
   DPP::QDC::DCOffset_HighCh,
   DPP::QDC::TriggerThreshold_sub0,
@@ -1024,7 +1025,6 @@ const std::vector<Reg> RegisterBoardList_QDC = {
   DPP::BoardConfiguration  ,
   DPP::AggregateOrganization,
   DPP::QDC::NumberEventsPerAggregate,
-  DPP::QDC::RecordLength ,
   DPP::AcquisitionControl,
   DPP::AcquisitionStatus_R,
   DPP::SoftwareTrigger_W,

@@ -28,20 +28,62 @@ int main(int argc, char* argv[]){
 
 
   Digitizer * digi = new Digitizer(0, 2, false, true);
+  digi->Reset();
+  digi->WriteRegister(DPP::SoftwareClear_W, 1);
 
+  digi->WriteRegister(DPP::QDC::RecordLength, 6000/16, -1);
+  digi->WriteRegister(DPP::QDC::GateWidth, 100/16, -1);
+  digi->WriteRegister(DPP::QDC::GateOffset, 0, -1);
+  digi->WriteRegister(DPP::QDC::FixedBaseline, 0, -1);
+  digi->WriteRegister(DPP::QDC::PreTrigger, 1000/16, -1);
+  //digi->WriteRegister(DPP::QDC::DPPAlgorithmControl, 0x300112); // with test pulse
+  digi->WriteRegister(DPP::QDC::DPPAlgorithmControl, 0x300102); // No test pulse
+  digi->WriteRegister(DPP::QDC::TriggerHoldOffWidth, 100/16, -1);
+  digi->WriteRegister(DPP::QDC::TRGOUTWidth, 100/16, -1);
+  //digi->WriteRegister(DPP::QDC::OverThresholdWidth, 100/16, -1);
+  //digi->WriteRegister(DPP::QDC::DCOffset, 100/16, -1);
+  digi->WriteRegister(DPP::QDC::SubChannelMask, 0xFF, -1);
+
+  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub0, 100, -1);
+  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub1, 100, -1);
+  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub2, 100, -1);
+  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub3, 100, -1);
+  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub4, 100, -1);
+  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub5, 100, -1);
+  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub6, 100, -1);
+  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub7, 100, -1);
+
+
+  digi->WriteRegister(DPP::BoardConfiguration, 0xC0110);
+  digi->WriteRegister(DPP::AggregateOrganization, 0x0);
+  digi->WriteRegister(DPP::QDC::NumberEventsPerAggregate, 0x7FF);
+  digi->WriteRegister(DPP::AcquisitionControl, 0x0);
+  digi->WriteRegister(DPP::GlobalTriggerMask, 0x0);
+  digi->WriteRegister(DPP::FrontPanelTRGOUTEnableMask, 0x0);
+  digi->WriteRegister(DPP::FrontPanelIOControl, 0x0);
+  digi->WriteRegister(DPP::QDC::GroupEnableMask, 0xFF);
+  digi->WriteRegister(DPP::MaxAggregatePerBlockTransfer, 0x3FF);
+
+
+  digi->WriteRegister(DPP::QDC::DPPAlgorithmControl, 0x300112, 0); // with  pulse for grp 0
+
+  digi->WriteRegister(DPP::BoardID, 0x7);
+
+  // digi->PrintSettingFromMemory();
 
   Data * data =  digi->GetData();
 
   data->ClearData();
 
+  data->PrintStat();
+
 
   digi->StartACQ();
 
-
-  for( int i = 0; i < 9; i ++ ){
+  for( int i = 0; i < 10; i ++ ){
     usleep(1000*1000);
     digi->ReadData();
-    data->DecodeBuffer(false, 200);
+    data->DecodeBuffer(false, 0);
     data->PrintStat();
 
     //data->SaveData();
@@ -81,8 +123,6 @@ int main(int argc, char* argv[]){
   // const float tick2ns = dig[0]->GetTick2ns();
 
   //dig[2]->ReadRegister(DPP::QDC::RecordLength, 0, 0, "");
-
-  /******************
 
   Data * data =  dig[0]->GetData();
   data->ClearData();
@@ -206,10 +246,9 @@ int main(int argc, char* argv[]){
     delete dig[i];
   }
   delete [] dig;
-  
-  /*********************/
+  */
 
-  /**////##################### Demo for loading and change setting without open a digitizer
+  ////##################### Demo for loading and change setting without open a digitizer
   
   /**
   Digitizer * dig = new Digitizer();
