@@ -412,7 +412,7 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
       unsigned int bdAggTimeTag = ReadBuffer(nw, verbose);
       if( verbose >= 2 ) printf("Agg Time Tag : %u \n", bdAggTimeTag);
       
-      for( int chMask = 0; chMask < 8 ; chMask ++ ){ // the max numnber of RegChannel is 8 for PHA, PSD, QDC
+      for( int chMask = 0; chMask < 8 ; chMask ++ ){ // the max numnber of Coupled/RegChannel is 8 for PHA, PSD, QDC
         if( ((ChannelMask >> chMask) & 0x1 ) == 0 ) continue;
         if( verbose >= 2 ) printf("==================== Dual/Group Channel Block, ch Mask : 0x%X, nw : %d\n", chMask *2, nw);
 
@@ -526,7 +526,7 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
       unsigned int digitalProbe = ( (word >> 16 ) & 0xF );
       unsigned int analogProbe2 = ( (word >> 20 ) & 0x3 );
       unsigned int analogProbe1 = ( (word >> 22 ) & 0x3 );
-      bool hasWaveForm  = ( (word >> 27 ) & 0x1 );
+      hasWaveForm  = ( (word >> 27 ) & 0x1 );
       bool hasTimeStamp = ( (word >> 29 ) & 0x1 );
       bool hasEnergy    = ( (word >> 30 ) & 0x1 );
       hasDualTrace = ( (word >> 31 ) & 0x1 );

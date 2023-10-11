@@ -1216,6 +1216,7 @@ void MainWindow::SetSyncMode(){
       digi[i]->WriteRegister(DPP::AcquisitionControl, 0);
       digi[i]->WriteRegister(DPP::FrontPanelIOControl, 0);
     }
+    if( digiSettings && digiSettings->isVisible() ) digiSettings->UpdatePanelFromMemory();
     dialog.accept();
   });
   
@@ -1223,9 +1224,10 @@ void MainWindow::SetSyncMode(){
     digi[0]->WriteRegister(DPP::AcquisitionControl, 0);
     digi[0]->WriteRegister(DPP::FrontPanelIOControl, 0x10000); //RUN
     for(unsigned int i = 1; i < nDigi; i++){
-      digi[i]->WriteRegister(DPP::AcquisitionControl, 2);
+      digi[i]->WriteRegister(DPP::AcquisitionControl, 0x42);
       digi[i]->WriteRegister(DPP::FrontPanelIOControl, 0x10000); // S-IN
     }
+    if( digiSettings && digiSettings->isVisible() ) digiSettings->UpdatePanelFromMemory();
     dialog.accept();
   });
   
@@ -1233,17 +1235,19 @@ void MainWindow::SetSyncMode(){
     digi[0]->WriteRegister(DPP::AcquisitionControl, 0);
     digi[0]->WriteRegister(DPP::FrontPanelIOControl, 0x10000); //RUN
     for(unsigned int i = 1; i < nDigi; i++){
-      digi[i]->WriteRegister(DPP::AcquisitionControl, 1);
+      digi[i]->WriteRegister(DPP::AcquisitionControl, 0x41);
       digi[i]->WriteRegister(DPP::FrontPanelIOControl, 0x30000); // S-IN
     }
+    if( digiSettings && digiSettings->isVisible() ) digiSettings->UpdatePanelFromMemory();
     dialog.accept();
   });  
 
   connect(bnMethod3, &QPushButton::clicked, [&](){
     for(unsigned int i = 0; i < nDigi; i++){
-      digi[i]->WriteRegister(DPP::AcquisitionControl, 1);
+      digi[i]->WriteRegister(DPP::AcquisitionControl, 0x41);
       digi[i]->WriteRegister(DPP::FrontPanelIOControl, 0x30000); // S-IN
     }
+    if( digiSettings && digiSettings->isVisible() ) digiSettings->UpdatePanelFromMemory();
     dialog.accept();
   });
 
@@ -1507,6 +1511,7 @@ void MainWindow::UpdateAllPanels(int panelID){
     if(scalar) {
       for( unsigned int iDigi = 0; iDigi < nDigi; iDigi++){
         uint32_t chMask =  digi[iDigi]->GetRegChannelMask();
+        uint32_t subChMask = 0;
         for( int ch = 0; ch < digi[iDigi]->GetNumInputCh(); ch++){
           // leTrigger[iDigi][i]->setEnabled( (chMask >> i) & 0x1 );
           // leAccept[iDigi][i]->setEnabled( (chMask >> i) & 0x1 );
@@ -1518,7 +1523,18 @@ void MainWindow::UpdateAllPanels(int panelID){
             int grpID = ch/digi[iDigi]->GetNumRegChannels();
             leTrigger[iDigi][ch]->setEnabled( (chMask >> grpID) & 0x1 );
             leAccept[iDigi][ch]->setEnabled( (chMask >> grpID) & 0x1 );
+
+            if( (chMask >> grpID ) & 0x1 ){
+
+              int subCh = ch%digi[iDigi]->GetNumRegChannels();
+              if( subCh == 0 ) subChMask = digi[iDigi]->GetSettingFromMemory(DPP::QDC::SubChannelMask, grpID);
+
+              leTrigger[iDigi][ch]->setEnabled( (subChMask >> subCh) & 0x1 );
+              leAccept[iDigi][ch]->setEnabled( (subChMask >> subCh) & 0x1 );
+
+            }
           }
+
         }
       } 
     }

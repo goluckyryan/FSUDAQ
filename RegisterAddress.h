@@ -798,7 +798,7 @@ namespace DPP {
     const Reg GroupStatus_R               ("Group Status"                  , 0x1088, RW::ReadONLY,  false, {});  /// R/
     const Reg AMCFirmwareRevision_R       ("AMC firmware version"          , 0x108C, RW::ReadONLY,  false, {});  /// R/
     const Reg DCOffset                    ("DC offset"                     , 0x1098, RW::ReadWrite, false, 0xFFFF, -1); /// R/W
-    const Reg SubChannelMask              ("SubChannel Mask"               , 0x10A8, RW::ReadWrite, false,   0xFF, 1); /// R/W
+    const Reg SubChannelMask              ("SubChannel Mask"               , 0x10A8, RW::ReadWrite, false,   0xFF, -1); /// R/W
     const Reg DCOffset_LowCh              ("DC offset for low ch."         , 0x10C0, RW::ReadWrite, false, 0xFFFFFFFF, -1); /// R/W
     const Reg DCOffset_HighCh             ("DC offset for high ch."        , 0x10C4, RW::ReadWrite, false, 0xFFFFFFFF, -1); /// R/W
     const Reg TriggerThreshold_sub0       ("Trigger Threshold sub0"             , 0x10D0, RW::ReadWrite, false, 0xFFF, -1); /// R/W
@@ -811,8 +811,8 @@ namespace DPP {
     const Reg TriggerThreshold_sub7       ("Trigger Threshold sub7"             , 0x10EC, RW::ReadWrite, false, 0xFFF, -1); /// R/W
 
 
-    const Reg NumberEventsPerAggregate      ("Number of Events per Aggregate", 0x8020, RW::ReadWrite, false, 0x3FF, 1); /// R/W
-    const Reg GroupEnableMask               ("Group Enable Mask"             , 0x8120, RW::ReadWrite, false, 0xFF, 1); /// R/W
+    const Reg NumberEventsPerAggregate      ("Number of Events per Aggregate", 0x8020, RW::ReadWrite, false, 0x3FF, -1); /// R/W
+    const Reg GroupEnableMask               ("Group Enable Mask"             , 0x8120, RW::ReadWrite, false, 0xFF, -1); /// R/W
 
     namespace Bit_DPPAlgorithmControl {
       const std::pair<unsigned short, unsigned short> ChargeSensitivity = {3, 0} ; /// length, smallest pos

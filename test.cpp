@@ -26,16 +26,55 @@ int getch(void);
 //^======================================
 int main(int argc, char* argv[]){
 
+  Digitizer * digi = new Digitizer(0, 0, false, true);
 
+  digi->Reset();
+  digi->ProgramBoard_PHA();
+
+  for( int ch = 0; ch < 16; ch++){
+    printf("%2d | 0x%X \n", ch, digi->GetSettingFromMemory(DPP::ChannelDCOffset, ch));
+  }
+
+  //digi->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, 1, -1);
+
+  // Data * data = digi->GetData();
+
+  // digi->StartACQ();
+
+  // for( int i = 0; i < 4; i ++ ){
+  //   usleep(1000*1000);
+  //   digi->ReadData();
+  //   data->DecodeBuffer(false, 100);
+  //   data->PrintStat();
+
+  //   //data->SaveData();
+
+  //   // int index = data->NumEventsDecoded[0];
+  //   // printf("-------------- %ld \n", data->Waveform1[0][index].size());
+
+  //   //data->PrintAllData();
+
+  // }
+
+  // digi->StopACQ();
+
+
+
+  digi->CloseDigitizer();
+  delete digi;
+
+
+
+  /********************** DPP-PHA
   Digitizer * digi = new Digitizer(0, 2, false, true);
   digi->Reset();
   digi->WriteRegister(DPP::SoftwareClear_W, 1);
 
   digi->WriteRegister(DPP::QDC::RecordLength, 6000/16, -1);
-  digi->WriteRegister(DPP::QDC::GateWidth, 100/16, -1);
+  digi->WriteRegister(DPP::QDC::PreTrigger, 1000/16, -1);
+  digi->WriteRegister(DPP::QDC::GateWidth, 200/16, -1);
   digi->WriteRegister(DPP::QDC::GateOffset, 0, -1);
   digi->WriteRegister(DPP::QDC::FixedBaseline, 0, -1);
-  digi->WriteRegister(DPP::QDC::PreTrigger, 1000/16, -1);
   //digi->WriteRegister(DPP::QDC::DPPAlgorithmControl, 0x300112); // with test pulse
   digi->WriteRegister(DPP::QDC::DPPAlgorithmControl, 0x300102); // No test pulse
   digi->WriteRegister(DPP::QDC::TriggerHoldOffWidth, 100/16, -1);
@@ -44,19 +83,19 @@ int main(int argc, char* argv[]){
   //digi->WriteRegister(DPP::QDC::DCOffset, 100/16, -1);
   digi->WriteRegister(DPP::QDC::SubChannelMask, 0xFF, -1);
 
-  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub0, 100, -1);
-  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub1, 100, -1);
-  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub2, 100, -1);
-  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub3, 100, -1);
-  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub4, 100, -1);
-  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub5, 100, -1);
-  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub6, 100, -1);
-  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub7, 100, -1);
+  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub0, 10, -1);
+  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub1, 10, -1);
+  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub2, 10, -1);
+  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub3, 10, -1);
+  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub4, 10, -1);
+  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub5, 10, -1);
+  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub6, 10, -1);
+  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub7, 10, -1);
 
 
   digi->WriteRegister(DPP::BoardConfiguration, 0xC0110);
-  digi->WriteRegister(DPP::AggregateOrganization, 0x0);
-  digi->WriteRegister(DPP::QDC::NumberEventsPerAggregate, 0x7FF);
+  digi->WriteRegister(DPP::AggregateOrganization, 0x1);
+  digi->WriteRegister(DPP::QDC::NumberEventsPerAggregate, 0x4);
   digi->WriteRegister(DPP::AcquisitionControl, 0x0);
   digi->WriteRegister(DPP::GlobalTriggerMask, 0x0);
   digi->WriteRegister(DPP::FrontPanelTRGOUTEnableMask, 0x0);
@@ -65,7 +104,7 @@ int main(int argc, char* argv[]){
   digi->WriteRegister(DPP::MaxAggregatePerBlockTransfer, 0x3FF);
 
 
-  digi->WriteRegister(DPP::QDC::DPPAlgorithmControl, 0x300112, 0); // with  pulse for grp 0
+  //digi->WriteRegister(DPP::QDC::DPPAlgorithmControl, 0x300112, 0); // with  pulse for grp 0
 
   digi->WriteRegister(DPP::BoardID, 0x7);
 

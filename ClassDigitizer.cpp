@@ -295,8 +295,24 @@ int Digitizer::ProgramBoard_PHA(){
   address = DPP::PHA::PeakHoldOff;             ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 0x3E );
   address = DPP::PHA::TriggerHoldOffWidth;     ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 0x3E );
   address = DPP::PHA::RiseTimeValidationWindow;ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 0x0 );
-  
-  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::ChannelDCOffset) + 0x7000 , 0x0CCC );
+
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x0, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x1, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x2, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x3, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x4, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x5, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x6, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x7, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x8, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x9, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xA, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xB, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xC, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xD, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xE, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xF, 0xAAAA);
+
   ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PreTrigger) + 0x7000 , 32 );
   ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::InputDynamicRange) + 0x7000 , 0x0 );
   
@@ -305,9 +321,12 @@ int Digitizer::ProgramBoard_PHA(){
   ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::MaxAggregatePerBlockTransfer), 4);
   ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::DPPAlgorithmControl) + 0x7000, 0xC30200f);
   
-  if( ret != 0 ) { printf("==== set channels error.\n"); return 0;}
+  if( ret != 0 ) { printf("!!!!!!!! set channels error.\n");}
   
   isSettingFilledinMemeory = false; /// unlock the ReadAllSettingsFromBoard();
+
+  usleep(1000*300);
+
   ReadAllSettingsFromBoard();
   
   return ret;
@@ -328,7 +347,22 @@ int Digitizer::ProgramBoard_PSD(){
 
   ret |= CAEN_DGTZ_SetChannelEnableMask(handle, 0xFFFF);
 
-  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::ChannelDCOffset) + 0x7000 , 0xEEEE );
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x0, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x1, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x2, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x3, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x4, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x5, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x6, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x7, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x8, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x9, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xA, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xB, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xC, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xD, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xE, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xF, 0xAAAA);
 
   ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PreTrigger) + 0x7000 , 20 );
   ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::RecordLength_G) + 0x7000 , 80 );
@@ -337,9 +371,12 @@ int Digitizer::ProgramBoard_PSD(){
   ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PSD::LongGateWidth) + 0x7000 , 64 );
   ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PSD::GateOffset) + 0x7000 , 19 );
 
-  if( ret != 0 ) { printf("==== set channels error.\n"); return 0;}
+  if( ret != 0 ) { printf("!!!!!!!! set channels error.\n");}
   
   isSettingFilledinMemeory = false; /// unlock the ReadAllSettingsFromBoard();
+
+  usleep(1000*300);
+
   ReadAllSettingsFromBoard();
   return ret;
 }
@@ -349,9 +386,63 @@ int Digitizer::ProgramBoard_QDC(){
   printf("===== Digitizer::%s\n", __func__);
   Reset();
 
-  ret = CAEN_DGTZ_SetChannelEnableMask(handle, 0xFFFF);
+  int ret = 0;
+
+  WriteRegister(DPP::QDC::RecordLength, 6000/16, -1);
+  WriteRegister(DPP::QDC::GateWidth, 100/16, -1);
+  WriteRegister(DPP::QDC::GateOffset, 0, -1);
+  WriteRegister(DPP::QDC::FixedBaseline, 0, -1);
+  WriteRegister(DPP::QDC::PreTrigger, 1000/16, -1);
+  //WriteRegister(DPP::QDC::DPPAlgorithmControl, 0x300112); // with test pulse
+  WriteRegister(DPP::QDC::DPPAlgorithmControl, 0x300102); // No test pulse
+  WriteRegister(DPP::QDC::TriggerHoldOffWidth, 100/16, -1);
+  WriteRegister(DPP::QDC::TRGOUTWidth, 100/16, -1);
+  //WriteRegister(DPP::QDC::OverThresholdWidth, 100/16, -1);
+  //WriteRegister(DPP::QDC::DCOffset, 100/16, -1);
+  WriteRegister(DPP::QDC::SubChannelMask, 0xFF, -1);
+
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x0, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x1, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x2, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x3, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x4, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x5, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x6, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x7, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x8, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x9, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xA, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xB, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xC, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xD, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xE, 0xAAAA);
+  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xF, 0xAAAA);
+
+
+  WriteRegister(DPP::QDC::TriggerThreshold_sub0, 100, -1);
+  WriteRegister(DPP::QDC::TriggerThreshold_sub1, 100, -1);
+  WriteRegister(DPP::QDC::TriggerThreshold_sub2, 100, -1);
+  WriteRegister(DPP::QDC::TriggerThreshold_sub3, 100, -1);
+  WriteRegister(DPP::QDC::TriggerThreshold_sub4, 100, -1);
+  WriteRegister(DPP::QDC::TriggerThreshold_sub5, 100, -1);
+  WriteRegister(DPP::QDC::TriggerThreshold_sub6, 100, -1);
+  WriteRegister(DPP::QDC::TriggerThreshold_sub7, 100, -1);
+
+  WriteRegister(DPP::BoardConfiguration, 0xC0110);
+  WriteRegister(DPP::AggregateOrganization, 0x0);
+  WriteRegister(DPP::QDC::NumberEventsPerAggregate, 0x100);
+  WriteRegister(DPP::AcquisitionControl, 0x0);
+  WriteRegister(DPP::GlobalTriggerMask, 0x0);
+  WriteRegister(DPP::FrontPanelTRGOUTEnableMask, 0x0);
+  WriteRegister(DPP::FrontPanelIOControl, 0x0);
+  WriteRegister(DPP::QDC::GroupEnableMask, 0xFF);
+  WriteRegister(DPP::MaxAggregatePerBlockTransfer, 0x4);
+
+  if( ret != 0 ) { printf("!!!!!!!! set channels error.\n");}
 
   isSettingFilledinMemeory = false; /// unlock the ReadAllSettingsFromBoard();
+
+  usleep(1000*300);
   ReadAllSettingsFromBoard();
   return ret;
 
@@ -370,8 +461,8 @@ void Digitizer::StartACQ(){
     }
   }
 
-  if( DPPType == V1730_DPP_PSD_CODE) bufferSize = 160 * 1024 * 1024; //TODO allocate 160 MB for PSD
-  if( DPPType == V1740_DPP_QDC_CODE) bufferSize = 160 * 1024 * 1024; //TODO allocate 160 MB for QDC
+  if( DPPType == V1730_DPP_PSD_CODE) bufferSize = 100 * 1024 * 1024; //TODO allocate 160 MB for PSD
+  if( DPPType == V1740_DPP_QDC_CODE) bufferSize = 100 * 1024 * 1024; //TODO allocate 160 MB for QDC
 
   
   data->AllocateMemory(bufferSize);
@@ -511,7 +602,7 @@ void Digitizer::PrintACQStatue(){
 //===========================================================
 void Digitizer::WriteRegister (Reg registerAddress, uint32_t value, int ch, bool isSave2MemAndFile){
   
-  printf("%30s[0x%04X](ch-%02d) [0x%04X]: 0x%08X \n", registerAddress.GetNameChar(), registerAddress.GetAddress(),ch, registerAddress.ActualAddress(ch), value);
+  printf("%30s[0x%04X](digi-%d,ch-%02d) [0x%04X]: 0x%08X \n", registerAddress.GetNameChar(), registerAddress.GetAddress(),GetSerialNumber(), ch, registerAddress.ActualAddress(ch), value);
 
   if( !isConnected ) {
     //SetSettingToMemory(registerAddress, value, ch); //TODO should the binary setting be edited offline?

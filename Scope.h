@@ -59,14 +59,18 @@ private:
   void SetUpSpinBox(RSpinBox * &sb, QString str, int row, int col, const Reg para);
 
   void CleanUpSettingsGroupBox();
-  void SetUpPHAPanel();
-  void SetUpPSDPanel();
+  void SetUpPanel_PHA();
+  void SetUpPanel_PSD();
+  void SetUpPanel_QDC();
   void EnableControl(bool enable);
 
   void UpdateComobox(RComboBox * &cb, const Reg para);
   void UpdateSpinBox(RSpinBox * &sb, const Reg para);
-  void UpdatePHAPanel();
-  void UpdatePSDPanel();
+  void UpdatePanel_PHA();
+  void UpdatePanel_PSD();
+  void UpdatePanel_QDC();
+
+  void NullThePointers();
 
   Digitizer ** digi;
   unsigned short nDigi;
@@ -83,7 +87,7 @@ private:
 
   RChart * plot;
   RChartView * plotView;
-  QLineSeries * dataTrace[MaxNumberOfTrace]; // 2 analog, 2 digi
+  QLineSeries * dataTrace[MaxNumberOfTrace]; // 2 analog, 2 digi for PHA, PSD, 1 analog, 4 digi for QDC
 
   RComboBox * cbScopeDigi;
   RComboBox * cbScopeCh;
@@ -127,6 +131,11 @@ private:
   RSpinBox * sbShortGate;
   RSpinBox * sbLongGate;
   RSpinBox * sbGateOffset;
+
+  /// QDC
+  //sbShortGate -> GateWidth
+  //sbGateOffset -> GateOffset
+  //sbTriggerHoldOff ->Trigger Hold Off
 
 };
 

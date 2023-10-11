@@ -186,10 +186,11 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
       connect(bnProgramPreDefined, &QPushButton::clicked, this, [=](){         
         if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) digi[ID]->ProgramBoard_PHA();
         if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) digi[ID]->ProgramBoard_PSD();
+        if( digi[ID]->GetDPPType() == V1740_DPP_QDC_CODE ) digi[ID]->ProgramBoard_QDC();
 
         usleep(1000*500); // wait for 0.2 sec
 
-        ReadSettingsFromBoard();
+        UpdatePanelFromMemory();
         emit UpdateOtherPanels();
 
       }); 
@@ -2463,22 +2464,48 @@ void DigiSettingsPanel::SetUpChannel_QDC(){
       sbFixedBaseline[ID][numGroup]->setEnabled(  cbBaseLineAvg[ID][numGroup]->currentData().toInt() == 0);
     });
 
-    /// DC offset
-    QGroupBox * dcWidget = new QGroupBox("Fine DC offset [LSB]",inputBox);
+    /// DC offset + SubChannel On/Off
+    QGroupBox * dcWidget = new QGroupBox("SubCh On/Off + Fine DC offset [LSB]",inputBox);
     inputLayout->addWidget(dcWidget, 5, 0, 1, 4);
 
     QGridLayout * dcLayout = new QGridLayout(dcWidget);
     dcLayout->setSpacing(2);
 
-    int grpID = chSelection[ID]->currentIndex();
+    int grpID = chSelection[ID]->currentIndex() - 1;
 
     for( int i = 0; i < 8; i ++){
       lbSubCh[ID][i] = new QLabel("Sub-Ch:" + QString::number(grpID < 0 ? i : grpID*8 + i), dcWidget);
       lbSubCh[ID][i]->setAlignment(Qt::AlignRight | Qt::AlignCenter);
-      dcLayout->addWidget(lbSubCh[ID][i], 1 + i/4, 2*(i%4) );
+      dcLayout->addWidget(lbSubCh[ID][i], 1 + i/4, 3*(i%4) );
+
+      pbSubChMask[ID][8][i] = new QPushButton(inputBox);
+      pbSubChMask[ID][8][i]->setFixedSize(QSize(20,20));
+      dcLayout->addWidget(pbSubChMask[ID][8][i], 1 + i/4, 3*(i%4) + 1 );
+
+      connect(pbSubChMask[ID][8][i], &QPushButton::clicked, this, [=](){
+        if( !enableSignalSlot) return;
+
+        int grpID = chSelection[ID]->currentIndex() - 1;
+
+        if( pbSubChMask[ID][8][i]->styleSheet() == "" ){
+          pbSubChMask[ID][8][i]->setStyleSheet("background-color : green;");
+
+          digi[ID]->SetBits(DPP::QDC::SubChannelMask, {1, i}, 1, grpID);
+          
+        }else{
+          pbSubChMask[ID][8][i]->setStyleSheet("");
+          digi[ID]->SetBits(DPP::QDC::SubChannelMask, {1, i}, 0, grpID);
+        }
+
+        UpdateSettings_QDC();
+        SyncAllChannelsTab_QDC();
+
+        emit UpdateOtherPanels();
+      });
+
 
       sbSubChOffset[ID][8][i] = new RSpinBox(inputBox);
-      dcLayout->addWidget(sbSubChOffset[ID][8][i], 1 + i/4, 2*(i%4) + 1 );
+      dcLayout->addWidget(sbSubChOffset[ID][8][i], 1 + i/4, 3*(i%4) + 2 );
 
       sbSubChOffset[ID][8][i]->setMinimum(-1);
       sbSubChOffset[ID][8][i]->setMaximum(0xFF);
@@ -2652,7 +2679,7 @@ void DigiSettingsPanel::SetUpChannel_QDC(){
     QTabWidget * inputTab = new QTabWidget(this);
     inputLayout->addWidget(inputTab);
 
-    QStringList tabName = {"Common Settings", "Baseline", "Fine DC offset"};
+    QStringList tabName = {"Common Settings", "Baseline", "Fine DC offset", "Ch. On/Off"};
 
     const int nTab = tabName.count();
 
@@ -2684,6 +2711,7 @@ void DigiSettingsPanel::SetUpChannel_QDC(){
             QLabel * lb6 = new QLabel("Polarity", this); lb6->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb6, 0, 8);
             QLabel * lb7 = new QLabel("Input Smoothing", this); lb7->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb7, 0, 10);
           }
+
           SetUpSpinBox(sbDCOffset[ID][ch],           "", tabLayout, ch + 1, 1, DPP::QDC::DCOffset, ch);
           SetUpSpinBox(sbRecordLength[ID][ch],       "", tabLayout, ch + 1, 3, DPP::QDC::RecordLength, ch);
           SetUpSpinBox(sbPreTrigger[ID][ch],         "", tabLayout, ch + 1, 5, DPP::QDC::PreTrigger, ch);
@@ -2745,6 +2773,39 @@ void DigiSettingsPanel::SetUpChannel_QDC(){
 
             });
           };/// end of subCh 
+        }
+
+        if( i == 3 ){
+          for(int subCh = 0; subCh < 8; subCh ++ ){
+
+            if( ch == 0 ){
+              QLabel * lb0 = new QLabel("SubCh-" + QString::number(subCh), this); lb0->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb0, 0, subCh+1);
+            }
+
+            pbSubChMask[ID][ch][subCh] = new QPushButton(this);
+            pbSubChMask[ID][ch][subCh]->setFixedSize(QSize(20,20));
+            tabLayout->addWidget(pbSubChMask[ID][ch][subCh], ch + 1, subCh + 1 );
+
+            connect(pbSubChMask[ID][ch][subCh], &QPushButton::clicked, this, [=](){
+              if( !enableSignalSlot) return;
+
+              if( pbSubChMask[ID][ch][subCh]->styleSheet() == "" ){
+                pbSubChMask[ID][ch][subCh]->setStyleSheet("background-color : green;");
+
+                digi[ID]->SetBits(DPP::QDC::SubChannelMask, {1, subCh}, 1, ch);
+                
+              }else{
+                pbSubChMask[ID][ch][subCh]->setStyleSheet("");
+                digi[ID]->SetBits(DPP::QDC::SubChannelMask, {1, subCh}, 0, ch);
+              }
+
+              UpdatePanelFromMemory();
+              emit UpdateOtherPanels();
+              return;
+            });
+
+
+          }
         }
 
       }
@@ -3048,6 +3109,7 @@ void DigiSettingsPanel::UpdatePanelFromMemory(){
     chkTrigPropagation[ID]->setChecked( Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::TrigPropagation) );
   }
 
+  ///==========================================
   if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) {
     chkDecimateTrace[ID]->setChecked(   Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::DecimateTrace) );
     chkDualTrace[ID]->setChecked(       Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::DualTrace) );
@@ -3083,6 +3145,7 @@ void DigiSettingsPanel::UpdatePanelFromMemory(){
     }
   }
 
+  ///==========================================
   if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) {
     chkDecimateTrace[ID]->setChecked(   Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::DisableDigiTrace_PSD) );
     int temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::AnalogProbe1);
@@ -3109,6 +3172,7 @@ void DigiSettingsPanel::UpdatePanelFromMemory(){
     }
   }
 
+  ///==========================================
   if( digi[ID]->GetDPPType() == V1740_DPP_QDC_CODE ) {
     int temp = Digitizer::ExtractBits(BdCfg, DPP::Bit_BoardConfig::AnalogProbe1);
     for( int i = 0; i < cbAnaProbe1[ID]->count(); i++){
@@ -3126,6 +3190,7 @@ void DigiSettingsPanel::UpdatePanelFromMemory(){
       }
     }
   }
+
   //*========================================
   uint32_t chMask = digi[ID]->GetSettingFromMemory(DPP::RegChannelEnableMask);
   for( int i = 0; i < digi[ID]->GetNumRegChannels(); i++){
@@ -3196,7 +3261,7 @@ void DigiSettingsPanel::UpdatePanelFromMemory(){
   uint32_t glbTrgMask = digi[ID]->GetSettingFromMemory(DPP::GlobalTriggerMask);
 
   if(  digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE || digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ){
-    for( int i = 0; i < digi[ID]->GetNumRegChannels(); i++){
+    for( int i = 0; i < digi[ID]->GetCoupledChannels(); i++){
       if( (glbTrgMask >> i ) & 0x1 ){
         bnGlobalTriggerMask[ID][i]->setStyleSheet("background-color: green;");
       }else{
@@ -3211,7 +3276,7 @@ void DigiSettingsPanel::UpdatePanelFromMemory(){
 
   //*========================================
   uint32_t TRGOUTMask = digi[ID]->GetSettingFromMemory(DPP::FrontPanelTRGOUTEnableMask);
-  for( int i = 0; i < digi[ID]->GetNumRegChannels(); i++){
+  for( int i = 0; i < digi[ID]->GetCoupledChannels(); i++){
     if( (TRGOUTMask >> i ) & 0x1 ){
       bnTRGOUTMask[ID][i]->setStyleSheet("background-color: green;");
     }else{
@@ -3337,9 +3402,9 @@ void DigiSettingsPanel::SyncSpinBox(RSpinBox *(&spb)[][MaxRegChannel+1]){
     spb[ID][nCh]->setValue( spb[ID][ch]->value());
   }else{
     //check is all SpinBox has same value;
-    int count = 1;
+    int count = 0;
     const int value = spb[ID][0]->value();
-    for( int i = 1; i < nCh; i ++){
+    for( int i = 0; i < nCh; i ++){
       if( spb[ID][i]->value() == value ) count++;
 
       spb[ID][i]->setEnabled(bnChEnableMask[ID][i]->styleSheet() == "" ? false : true );
@@ -3370,9 +3435,9 @@ void DigiSettingsPanel::SyncComboBox(RComboBox *(&cb)[][MaxRegChannel+1]){
     enableSignalSlot = true;
   }else{
     //check is all SpinBox has same value;
-    int count = 1;
+    int count = 0;
     const QString text = cb[ID][0]->currentText();
-    for( int i = 1; i < nCh; i ++){
+    for( int i = 0; i < nCh; i ++){
       if( cb[ID][i]->currentText() == text ) count++;
       cb[ID][i]->setEnabled(bnChEnableMask[ID][i]->styleSheet() == "" ? false : true );
     }
@@ -3399,9 +3464,9 @@ void DigiSettingsPanel::SyncCheckBox(QCheckBox *(&chk)[][MaxRegChannel+1]){
     enableSignalSlot = true;
   }else{
     //check is all SpinBox has same value;
-    int count = 1;
+    int count = 0;
     const Qt::CheckState state = chk[ID][0]->checkState();
-    for( int i = 1; i < nCh; i ++){
+    for( int i = 0; i < nCh; i ++){
       if( chk[ID][i]->checkState() == state ) count++;
       chk[ID][i]->setEnabled(bnChEnableMask[ID][i]->styleSheet() == "" ? false : true );
     }
@@ -3710,31 +3775,53 @@ void DigiSettingsPanel::SyncAllChannelsTab_QDC(){
       enableSignalSlot = false;
       sbSubChOffset[ID][nGrp][subCh]->setValue(sbSubChOffset[ID][grp][subCh]->value());
       sbSubChThreshold[ID][nGrp][subCh]->setValue(sbSubChThreshold[ID][grp][subCh]->value());
+      pbSubChMask[ID][nGrp][subCh]->setStyleSheet(pbSubChMask[ID][grp][subCh]->styleSheet());
       
     }else{
-      int count0 = 1;
-      int count1 = 1;
+      int count0 = 0;
+      int count1 = 0;
+      int count2 = 0;
       
       const int value0 = sbSubChOffset[ID][0][subCh]->value();
       const int value1 = sbSubChThreshold[ID][0][subCh]->value();
-      for( int i = 1; i < nGrp; i ++){
+      const QString value2 = pbSubChMask[ID][0][subCh]->styleSheet();
+      for( int i = 0; i < nGrp; i ++){
         if( sbSubChOffset[ID][i][subCh]->value() == value0 ) count0++;
         if( sbSubChThreshold[ID][i][subCh]->value() == value1 ) count1++;
-        sbSubChOffset[ID][i][subCh]->setEnabled(bnChEnableMask[ID][i]->styleSheet() == "" ? false : true );
-        sbSubChThreshold[ID][i][subCh]->setEnabled(bnChEnableMask[ID][i]->styleSheet() == "" ? false : true );
+        if( pbSubChMask[ID][i][subCh]->styleSheet() == value2 ) count2++;
+
+        if( bnChEnableMask[ID][i]->styleSheet() == "" ){
+
+          sbSubChOffset[ID][i][subCh]->setEnabled(false);
+          sbSubChThreshold[ID][i][subCh]->setEnabled(false);
+
+        }else{
+
+          sbSubChOffset[ID][i][subCh]->setEnabled(pbSubChMask[ID][i][subCh]->styleSheet() == "" ? false : true );
+          sbSubChThreshold[ID][i][subCh]->setEnabled(pbSubChMask[ID][i][subCh]->styleSheet() == "" ? false : true );
+
+        }
+
       }
 
-      //printf("%d =? %d , %d, %f\n", count, nCh, value, spb[ID][0]->value());
+      // printf("%d =? %d , %d, %f\n", count1, subCh, value1, sbSubChThreshold[ID][nGrp][subCh]->value());
       enableSignalSlot = false;
       if( count0 != nGrp ){
         sbSubChOffset[ID][nGrp][subCh]->setValue(-1);
       }else{
         sbSubChOffset[ID][nGrp][subCh]->setValue(value0);
       }
+      
       if( count1 != nGrp ){
         sbSubChThreshold[ID][nGrp][subCh]->setValue(-1);
       }else{
         sbSubChThreshold[ID][nGrp][subCh]->setValue(value1);
+      }
+
+      if( count2 != nGrp ){
+        pbSubChMask[ID][nGrp][subCh]->setStyleSheet("background-color : brown;");
+      }else{
+        pbSubChMask[ID][nGrp][subCh]->setStyleSheet(value2);
       }
 
     }
@@ -3758,6 +3845,16 @@ void DigiSettingsPanel::UpdateSettings_QDC(){
     UpdateSpinBox(sbShortGate[ID][grp],          DPP::QDC::GateWidth, grp);
     UpdateSpinBox(sbGateOffset[ID][grp],         DPP::QDC::GateOffset, grp);
     //UpdateSpinBox(sbOverThresholdWidth[ID][grp], DPP::QDC::OverThresholdWidth, grp);
+
+    uint32_t subChMask = digi[ID]->GetSettingFromMemory(DPP::QDC::SubChannelMask, grp);
+
+    for( int i = 0; i < 8; i++) {
+      if( (subChMask >> i) & 0x1 ) {
+        pbSubChMask[ID][grp][i]->setStyleSheet("background-color : green;");
+      }else{
+        pbSubChMask[ID][grp][i]->setStyleSheet("");
+      }
+    }
 
     uint32_t dpp = digi[ID]->GetSettingFromMemory(DPP::QDC::DPPAlgorithmControl, grp);
 

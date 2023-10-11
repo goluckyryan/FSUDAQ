@@ -281,6 +281,7 @@ private:
 
   //QCheckBox * chkOverthreshold[MaxNDigitizer][MaxRegChannel+1]; //TODO need firmware version 4.25 & 135.17
   //RSpinBox * sbOverThresholdWidth[MaxNDigitizer][MaxRegChannel + 1];
+  QPushButton * pbSubChMask[MaxNDigitizer][MaxRegChannel+1][8];
   RSpinBox * sbSubChOffset[MaxNDigitizer][MaxRegChannel + 1][8];
   RSpinBox * sbSubChThreshold[MaxNDigitizer][MaxRegChannel + 1][8];
   QLabel   * lbSubCh[MaxNDigitizer][8];

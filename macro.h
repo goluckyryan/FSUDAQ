@@ -13,7 +13,7 @@
 
 #define MaxDisplayTraceDataLength 1250 //data point, 
 #define ScopeUpdateMiliSec  200 // msec
-#define MaxNumberOfTrace  4   // in an event
+#define MaxNumberOfTrace  5   // in an event
 
 #define SETTINGSIZE 2048
 
