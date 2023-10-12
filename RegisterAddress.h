@@ -786,6 +786,7 @@ namespace DPP {
   }
 
   namespace QDC { // Register already grouped in channel. and there no control for indiviual channel except the Fine DC offset and threshold, so it is like no group
+    const Reg NumberEventsPerAggregate    ("Number of Events per Aggregate", 0x1020, RW::ReadWrite, false, 0x3FF, -1); /// R/W
     const Reg RecordLength                ("Record Length"                 , 0x1024, RW::ReadWrite, false, 0x1FFF, 1); /// R/W
     const Reg GateWidth                   ("GateWidth"                     , 0x1030, RW::ReadWrite, false, 0xFFF, 1); /// R/W
     const Reg GateOffset                  ("GateOfset"                     , 0x1034, RW::ReadWrite, false,  0xFF, 1); /// R/W
@@ -811,7 +812,6 @@ namespace DPP {
     const Reg TriggerThreshold_sub7       ("Trigger Threshold sub7"             , 0x10EC, RW::ReadWrite, false, 0xFFF, -1); /// R/W
 
 
-    const Reg NumberEventsPerAggregate      ("Number of Events per Aggregate", 0x8020, RW::ReadWrite, false, 0x3FF, -1); /// R/W
     const Reg GroupEnableMask               ("Group Enable Mask"             , 0x8120, RW::ReadWrite, false, 0xFF, -1); /// R/W
 
     namespace Bit_DPPAlgorithmControl {

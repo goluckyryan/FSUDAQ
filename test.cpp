@@ -26,20 +26,30 @@ int getch(void);
 //^======================================
 int main(int argc, char* argv[]){
 
-  Digitizer * digi = new Digitizer(0, 0, false, true);
+  Digitizer * digi = new Digitizer(0, 2, false, true);
 
-  digi->Reset();
-  digi->ProgramBoard_PHA();
+  Reg reg("test", 0x1020, RW::ReadWrite, false, 0xFFF, -1);
+
+  digi->WriteRegister(reg, 0x13, -1);
+
+  digi->ReadAllSettingsFromBoard();
+
+  digi->GetSettingFromMemory(DPP::QDC::NumberEventsPerAggregate);
+
+
+  // digi->Reset();
+  // digi->ProgramBoard_PHA();
+
 
   for( int ch = 0; ch < 16; ch++){
-    printf("%2d | 0x%X \n", ch, digi->GetSettingFromMemory(DPP::ChannelDCOffset, ch));
+    printf("%2d | 0x%X \n", ch, digi->GetSettingFromMemory(reg, ch));
   }
 
   //digi->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, 1, -1);
 
   // Data * data = digi->GetData();
 
-  // digi->StartACQ();
+  //digi->StartACQ();
 
   // for( int i = 0; i < 4; i ++ ){
   //   usleep(1000*1000);

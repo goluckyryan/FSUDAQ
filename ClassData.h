@@ -434,7 +434,7 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
     ///printf("nw : %d ,x 4 = %d, nByte : %d \n", nw, 4*nw, nByte);
   }while(4*nw < nByte);
   
-  ///Calculate trigger rate and first and last Timestamp
+  ///^===================Calculate trigger rate and first and last Timestamp
   for(int ch = 0; ch < MaxNChannels; ch++){
     if( ch > numInputCh ) continue;
 
@@ -442,6 +442,8 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
       // printf("%s | ch %d | %d %d \n", __func__, ch, LoopIndex[ch], DataIndex[ch]);
       IsNotRollOverFakeAgg = true;
     }else{
+      TriggerRate[ch] = 0;
+      NonPileUpRate[ch] = 0;
       continue;
     }
 

@@ -321,10 +321,26 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
 
 MainWindow::~MainWindow(){
 
+  if( scalar ) {
+    scalarThread->Stop();
+    scalarThread->quit();
+    scalarThread->exit();
+    CleanUpScalar();
+    delete scalar;
+  }
+
   if( digi ) CloseDigitizers();
   SaveProgramSettings();
 
   if( scope ) delete scope;
+
+  if( histThread){
+    histThread->Stop();
+    histThread->quit();
+    histThread->wait();
+
+    delete histThread;
+  }
 
   if( canvas ) delete canvas;
 
@@ -332,13 +348,6 @@ MainWindow::~MainWindow(){
 
   if( digiSettings ) delete digiSettings;
 
-  if( scalar ) {
-    CleanUpScalar();
-    scalarThread->Stop();
-    scalarThread->quit();
-    scalarThread->exit();
-    delete scalarThread;
-  }
 
   delete influx;
 
@@ -688,8 +697,11 @@ void MainWindow::OpenDigitizers(){
 
 void MainWindow::CloseDigitizers(){
 
-  LogMsg("Closing Digitizer(s)....");
+  LogMsg("MainWindow::Closing Digitizer(s)....");
 
+  scalarThread->Stop();
+  scalarThread->quit();
+  scalarThread->exit();
   CleanUpScalar();
 
   if( scope ) {
@@ -697,6 +709,16 @@ void MainWindow::CloseDigitizers(){
     delete scope;
     scope = nullptr;
   }
+
+  if( histThread){
+    histThread->Stop();
+    histThread->quit();
+    histThread->wait();
+
+    delete histThread;
+    histThread = nullptr;
+  }
+
 
   if( canvas ){
     canvas->close();
@@ -713,22 +735,22 @@ void MainWindow::CloseDigitizers(){
   if( digi == nullptr ) return;
 
   for(unsigned int i = 0; i < nDigi; i ++){
-    digi[i]->CloseDigitizer();
-    delete digi[i];
-
-    if(readDataThread[i]->isRunning()){
-      readDataThread[i]->Stop();
-      readDataThread[i]->quit();
-      readDataThread[i]->wait();
-    }
-
+    readDataThread[i]->Stop();
+    readDataThread[i]->quit();
+    readDataThread[i]->wait();
     delete readDataThread[i];
+    printf(" readDataThread[%d] is deleted.\n", i);
   }
-  delete [] digi;
-  digi = nullptr;
 
   delete [] readDataThread;
   readDataThread = nullptr;
+
+  for(unsigned int i = 0; i < nDigi; i ++){
+    digi[i]->CloseDigitizer();
+    delete digi[i];
+  }
+  delete [] digi;
+  digi = nullptr;
 
   LogMsg("Done. Closed " + QString::number(nDigi) + " Digitizer(s).");
   nDigi = 0;
@@ -736,6 +758,8 @@ void MainWindow::CloseDigitizers(){
   WaitForDigitizersOpen(true);
   bnStartACQ->setStyleSheet("");
   bnStopACQ->setStyleSheet("");
+
+  printf("End of MainWindow::%s\n", __func__);
 
 }
 
@@ -785,7 +809,7 @@ void MainWindow::SetupScalar(){
   lbLastUpdateTime = nullptr;
   lbScalarACQStatus = nullptr;
 
-  scalarThread = new TimingThread();
+  scalarThread = new TimingThread(scalar);
   connect(scalarThread, &TimingThread::timeUp, this, &MainWindow::UpdateScalar);
 
   unsigned short maxNChannel = 0;
@@ -1051,11 +1075,9 @@ void MainWindow::StopACQ(){
   }
 
   for( unsigned int i = 0; i < nDigi; i++){
-    if( readDataThread[i]->isRunning() ) {
-      readDataThread[i]->Stop();
-      readDataThread[i]->quit();
-      readDataThread[i]->wait();
-    }
+    readDataThread[i]->Stop();
+    readDataThread[i]->quit();
+    readDataThread[i]->wait();
     digiMTX[i].lock();
     digi[i]->StopACQ();
     digiMTX[i].unlock();

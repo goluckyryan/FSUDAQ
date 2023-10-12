@@ -74,7 +74,7 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
 
       SetUpInfo(      "S/N No. ", std::to_string(digi[ID]->GetSerialNumber()), infoLayout[ID], 1, 0);
       SetUpInfo("No. Input Ch. ", std::to_string(digi[ID]->GetNumInputCh()), infoLayout[ID], 1, 2);
-      SetUpInfo("Sampling Rate ", std::to_string((int) digi[ID]->GetTick2ns()) + " ns = " + std::to_string(  (1000/digi[ID]->GetTick2ns())) + " MHz" , infoLayout[ID], 1, 4);
+      SetUpInfo("Sampling Rate ", std::to_string((int) digi[ID]->GetTick2ns()) + " ns = " + QString::number(  (1000/digi[ID]->GetTick2ns()), 'f', 1).toStdString() + " MHz" , infoLayout[ID], 1, 4);
 
       SetUpInfo("ADC bit ", std::to_string(digi[ID]->GetADCBits()), infoLayout[ID], 2, 0);
       SetUpInfo("ROC version ", digi[ID]->GetROCVersion(), infoLayout[ID], 2, 2);
@@ -2382,8 +2382,6 @@ void DigiSettingsPanel::SetUpBoard_QDC(){
   SetUpComboBoxBit(cbAnaProbe1[ID],      "Ana. Probe ",      bdCfgLayout[ID], 3, 0, DPP::Bit_BoardConfig::ListAnaProbe_QDC,       DPP::BoardConfiguration, DPP::Bit_BoardConfig::AnalogProbe1, 1, 0);
   SetUpComboBoxBit(cbExtTriggerMode[ID], "Ext. Trig. Mode ", bdCfgLayout[ID], 4, 0, DPP::Bit_BoardConfig::ListExtTriggerMode_QDC, DPP::BoardConfiguration, DPP::Bit_BoardConfig::ExtTriggerMode_QDC, 1, 0);  
 
-  SetUpSpinBox(sbEventPreAgg_QDC[ID],   "Event pre Agg. ",     bdCfgLayout[ID], 6, 0, DPP::QDC::NumberEventsPerAggregate, -1, true);
-
 }
 
 void DigiSettingsPanel::SetUpChannel_QDC(){
@@ -3320,12 +3318,6 @@ void DigiSettingsPanel::UpdatePanelFromMemory(){
         }
       }
     }
-  }
-
-  //*======================================== QDC only
-  if(  digi[ID]->GetDPPType() == V1740_DPP_QDC_CODE ){
-    uint32_t eventPreAgg = digi[ID]->GetSettingFromMemory(DPP::QDC::NumberEventsPerAggregate);
-    sbEventPreAgg_QDC[ID]->setValue(eventPreAgg & 0x3FF);
   }
 
   //*======================================== update channels/group setting

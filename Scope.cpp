@@ -680,6 +680,8 @@ void Scope::SetUpPanel_PHA(){
   dataTrace[3]->setName(cbDigiProbe2->currentText());
   cbDigiProbe2->setEnabled(false);
 
+  dataTrace[4]->setVisible(false);
+
   enableSignalSlot = true;
 
 }
@@ -750,6 +752,8 @@ void Scope::SetUpPanel_PSD(){
     digi[ID]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::DigiProbel1_PSD, cbDigiProbe1->currentData().toInt(), cbScopeCh->currentIndex());
     dataTrace[3]->setName(cbDigiProbe2->currentText());
   });
+
+  dataTrace[4]->setVisible(false);
 
   enableSignalSlot = true;
 }
@@ -846,9 +850,14 @@ void Scope::SetUpPanel_QDC() {
   connect(cbAnaProbe1, &RComboBox::currentIndexChanged, this, [=](){
     if( !enableSignalSlot ) return;
     digi[ID]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::AnalogProbe1, cbAnaProbe1->currentData().toInt(), cbScopeCh->currentIndex());
-    //dataTrace[0]->setName(cbAnaProbe1->currentText());
+    dataTrace[0]->setName(cbAnaProbe1->currentText());
 
   });
+
+  dataTrace[1]->setVisible(true); dataTrace[1]->setName("Gate");
+  dataTrace[2]->setVisible(true); dataTrace[2]->setName("Trigger");
+  dataTrace[3]->setVisible(true); dataTrace[3]->setName("Trigger HoldOff");
+  dataTrace[4]->setVisible(true); dataTrace[4]->setName("OverThreshold");
 
   enableSignalSlot = true;
 
