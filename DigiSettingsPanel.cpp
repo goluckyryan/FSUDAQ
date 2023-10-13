@@ -960,6 +960,7 @@ void DigiSettingsPanel::SetUpInquiryCopyTab(){
 
         if( digi[index]->GetDPPType() == V1730_DPP_PHA_CODE ) chRegList = RegisterChannelList_PHA;
         if( digi[index]->GetDPPType() == V1730_DPP_PSD_CODE ) chRegList = RegisterChannelList_PSD;
+        if( digi[index]->GetDPPType() == V1740_DPP_QDC_CODE ) chRegList = RegisterChannelList_QDC;
 
         cbChReg->clear();
         for( int i = 0; i < (int) chRegList.size(); i++ ){
@@ -973,25 +974,53 @@ void DigiSettingsPanel::SetUpInquiryCopyTab(){
       connect(cbBdReg, &RComboBox::currentIndexChanged, this, [=](int index){
         if( !enableSignalSlot ) return;
 
-        if( RegisterBoardList_PHAPSD[index].GetRWType() == RW::WriteONLY ) {
-          leBdRegRW->setText("Write ONLY" );
-          leBdRegValue->setText("");
-          leBdRegSet->setEnabled(true);
-          return;
-        }
+        int digiID = cbDigi->currentIndex();
 
-        uint32_t value = digi[ cbDigi->currentIndex() ] ->ReadRegister(RegisterBoardList_PHAPSD[index]);
-        leBdRegValue->setText( "0x" + QString::number(value, 16).toUpper());
+        if( digi[digiID]->GetDPPType() == V1740_DPP_QDC_CODE ){
 
-        if( RegisterBoardList_PHAPSD[index].GetRWType() == RW::ReadONLY ) {
-          leBdRegRW->setText("Read ONLY" );
-          leBdRegSet->setEnabled(false);
-          return;
-        }
+          if( RegisterBoardList_QDC[index].GetRWType() == RW::WriteONLY ) {
+            leBdRegRW->setText("Write ONLY" );
+            leBdRegValue->setText("");
+            leBdRegSet->setEnabled(true);
+            return;
+          }
 
-        if( RegisterBoardList_PHAPSD[index].GetRWType() == RW::ReadWrite ) {
-          leBdRegRW->setText("Read/Write" );
-          leBdRegSet->setEnabled(true);
+          uint32_t value = digi[ digiID ] ->ReadRegister(RegisterBoardList_QDC[index]);
+          leBdRegValue->setText( "0x" + QString::number(value, 16).toUpper());
+
+          if( RegisterBoardList_QDC[index].GetRWType() == RW::ReadONLY ) {
+            leBdRegRW->setText("Read ONLY" );
+            leBdRegSet->setEnabled(false);
+            return;
+          }
+
+          if( RegisterBoardList_QDC[index].GetRWType() == RW::ReadWrite ) {
+            leBdRegRW->setText("Read/Write" );
+            leBdRegSet->setEnabled(true);
+          }
+
+        }else{
+
+          if( RegisterBoardList_PHAPSD[index].GetRWType() == RW::WriteONLY ) {
+            leBdRegRW->setText("Write ONLY" );
+            leBdRegValue->setText("");
+            leBdRegSet->setEnabled(true);
+            return;
+          }
+
+          uint32_t value = digi[ digiID ] ->ReadRegister(RegisterBoardList_PHAPSD[index]);
+          leBdRegValue->setText( "0x" + QString::number(value, 16).toUpper());
+
+          if( RegisterBoardList_PHAPSD[index].GetRWType() == RW::ReadONLY ) {
+            leBdRegRW->setText("Read ONLY" );
+            leBdRegSet->setEnabled(false);
+            return;
+          }
+
+          if( RegisterBoardList_PHAPSD[index].GetRWType() == RW::ReadWrite ) {
+            leBdRegRW->setText("Read/Write" );
+            leBdRegSet->setEnabled(true);
+          }
         }
       });
 
@@ -1043,7 +1072,12 @@ void DigiSettingsPanel::SetUpInquiryCopyTab(){
           uint32_t value = std::stoul(text.toStdString(), nullptr, 16);
           int index = cbDigi->currentIndex();
           int regID = cbBdReg->currentIndex();
-          digi[index]->WriteRegister(RegisterBoardList_PHAPSD[regID], value);
+
+          if( digi[index]->GetDPPType() == V1740_DPP_QDC_CODE ){
+            digi[index]->WriteRegister(RegisterBoardList_QDC[regID], value);
+          }else{
+            digi[index]->WriteRegister(RegisterBoardList_PHAPSD[regID], value);
+          }
           leBdRegSet->setStyleSheet("");
 
           cbBdReg->currentIndexChanged(regID);
@@ -1281,7 +1315,7 @@ void DigiSettingsPanel::SetUpChannelMask(unsigned int digiID){
 }
 
 void DigiSettingsPanel::SetUpACQReadOutTab(){
-  SetUpSpinBox(sbAggNum[ID],        "Agg. Num. / read ", bdACQLayout[ID], 0, 0, DPP::MaxAggregatePerBlockTransfer, -1, true);
+  SetUpSpinBox(sbAggNum[ID],    "Max Agg. Num. / read ", bdACQLayout[ID], 0, 0, DPP::MaxAggregatePerBlockTransfer, -1, true);
   SetUpComboBox(cbAggOrg[ID], "Aggregate Organization ", bdACQLayout[ID], 1, 0, DPP::AggregateOrganization, 0);
 
   SetUpComboBoxBit(cbStartStopMode[ID], "Start/Stop Mode ", bdACQLayout[ID], 2, 0, DPP::Bit_AcquistionControl::ListStartStopMode,
@@ -3002,9 +3036,13 @@ void DigiSettingsPanel::SetUpChannel_QDC(){
         if( i == 0 ){
           if( ch == 0 ){
             QLabel * lb3 = new QLabel("Test Pulse Rate", this); lb3->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb3, 0, 3);
+            QLabel * lb4 = new QLabel("Event pre Agg.", this); lb4->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb4, 0, 5);
           }
           SetUpCheckBox(chkTestPule[ID][ch],   "Int. Test Pulse", tabLayout, ch + 1, 1, DPP::QDC::DPPAlgorithmControl, DPP::QDC::Bit_DPPAlgorithmControl::InternalTestPulse, ch);
           SetUpComboBoxBit(cbTestPulseRate[ID][ch],  "", tabLayout, ch + 1, 2, DPP::QDC::Bit_DPPAlgorithmControl::ListTestPulseRate, DPP::QDC::DPPAlgorithmControl, DPP::QDC::Bit_DPPAlgorithmControl::TestPulseRate, 1, ch);
+        
+          SetUpSpinBox(sbNumEventAgg[ID][ch], "", tabLayout, ch + 1, 4, DPP::QDC::NumberEventsPerAggregate, ch);
+
         }
       }
     }

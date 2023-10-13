@@ -782,7 +782,7 @@ void Scope::SetUpPanel_QDC() {
   SetUpSpinBox(sbGateOffset, "Gate Offset [ns] ", rowID, 2, DPP::QDC::GateOffset);
 
 
-  QLabel * lb = new QLabel("Threshold [LSB]", settingGroup);
+  QLabel * lb = new QLabel("Threshold [LSB] ", settingGroup);
   lb->setAlignment(Qt::AlignRight | Qt::AlignCenter);
   settingLayout->addWidget(lb, rowID, 4);
 
@@ -1103,10 +1103,22 @@ void Scope::UpdatePanel_QDC(){
   UpdateSpinBox(sbReordLength, DPP::QDC::RecordLength);
   UpdateSpinBox(sbPreTrigger, DPP::QDC::PreTrigger);
 
-
   UpdateSpinBox(sbShortGate, DPP::QDC::GateWidth);
   UpdateSpinBox(sbGateOffset, DPP::QDC::GateOffset);
 
+  int subCh = ch%8;
+  uint32_t threshold = 0 ;
+  switch( subCh ){
+    case 0 : threshold = digi[ID]->GetSettingFromMemory(DPP::QDC::TriggerThreshold_sub0, grp); break;
+    case 1 : threshold = digi[ID]->GetSettingFromMemory(DPP::QDC::TriggerThreshold_sub1, grp); break;
+    case 2 : threshold = digi[ID]->GetSettingFromMemory(DPP::QDC::TriggerThreshold_sub2, grp); break;
+    case 3 : threshold = digi[ID]->GetSettingFromMemory(DPP::QDC::TriggerThreshold_sub3, grp); break;
+    case 4 : threshold = digi[ID]->GetSettingFromMemory(DPP::QDC::TriggerThreshold_sub4, grp); break;
+    case 5 : threshold = digi[ID]->GetSettingFromMemory(DPP::QDC::TriggerThreshold_sub5, grp); break;
+    case 6 : threshold = digi[ID]->GetSettingFromMemory(DPP::QDC::TriggerThreshold_sub6, grp); break;
+    case 7 : threshold = digi[ID]->GetSettingFromMemory(DPP::QDC::TriggerThreshold_sub7, grp); break;
+  }
+  sbThreshold->setValue(threshold);
 
 
   uint32_t BdCfg = digi[ID]->GetSettingFromMemory(DPP::BoardConfiguration, 0);

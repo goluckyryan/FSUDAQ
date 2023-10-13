@@ -77,7 +77,7 @@ class Data{
     void DecodeBuffer(bool fastDecode, int verbose = 0); /// fastDecode will not save waveform
     void DecodeBuffer(char * &buffer, unsigned int size, bool fastDecode, int verbose = 0); // for outside data
   
-    void PrintStat() const;
+    void PrintStat(bool skipEmpty = true) const;
 
     void PrintAllData(bool tableMode = true, unsigned int maxRowDisplay = 0) const;
 
@@ -288,7 +288,7 @@ inline void Data::CloseSaveFile(){
 
 //^#######################################################
 //^####################################################### Print
-inline void Data::PrintStat() const{
+inline void Data::PrintStat(bool skipEmpty) const{
 
   printf("============================= Print Stat. Digi-%d\n", boardSN);
   if( !IsNotRollOverFakeAgg ) {
@@ -298,6 +298,7 @@ inline void Data::PrintStat() const{
   printf("%2s | %6s | %9s | %9s | %6s | %6s(%4s)\n", "ch", "# Evt.", "Rate [Hz]", "Accept", "Tot. Evt.", "index", "loop");
   printf("---+--------+-----------+-----------+----------\n");
   for(int ch = 0; ch < numInputCh; ch++){
+    if( skipEmpty && TriggerRate[ch] == 0 ) continue;
     printf("%2d | %6d | %9.2f | %9.2f | %6lu | %6d(%2d)\n", ch, NumEventsDecoded[ch], TriggerRate[ch], NonPileUpRate[ch], TotNumNonPileUpEvents[ch], DataIndex[ch], LoopIndex[ch]);
   }
   printf("---+--------+-----------+-----------+----------\n");
@@ -1017,6 +1018,7 @@ inline int Data::DecodeQDCGroupedChannelBlock(unsigned int ChannelMask, bool fas
 
           if( verbose >= 3 ){
             printf("%4d| %5d, %d, %d, %d, %d \n",   2*wi, (word & 0xFFF)         , (( word >> 12 ) & 0x1 ), (( word >> 13 ) & 0x1 ), (( word >> 14 ) & 0x1 ), (( word >> 15 ) & 0x1 ));
+            printf("%-22s", "");
             printf("%4d| %5d, %d, %d, %d, %d \n", 2*wi+1, (( word >> 16) & 0xFFF), (( word >> 28 ) & 0x1 ), (( word >> 29 ) & 0x1 ), (( word >> 30 ) & 0x1 ), (( word >> 31 ) & 0x1 ));
           }
         }

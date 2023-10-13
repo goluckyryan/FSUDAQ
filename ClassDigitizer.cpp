@@ -148,6 +148,7 @@ int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose
   }
   /// change address 0xEF08 (5 bits), this will reflected in the 2nd word of the Board Agg. header.
   ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardID, (DPPType & 0xF));
+
   if ( verbose ){
     PrintBoard();    
     if (DPPType < 0x80 ) {
@@ -210,7 +211,7 @@ int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose
   ErrorMsg("end of OpenDigitizer");
   
   if( isConnected ) isDummy = false;
-  
+
   if( isConnected  && program) {
     if( DPPType == DPPType::DPP_PHA_CODE ) ProgramBoard_PHA();
     if( DPPType == DPPType::DPP_PSD_CODE ) ProgramBoard_PSD();
@@ -316,12 +317,16 @@ int Digitizer::ProgramBoard_PHA(){
   ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PreTrigger) + 0x7000 , 32 );
   ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::InputDynamicRange) + 0x7000 , 0x0 );
   
-  ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::NumberEventsPerAggregate_G) + 0x7000, 511);
+  ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::NumberEventsPerAggregate_G) + 0x7000, 10);
   ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::AggregateOrganization), 2);
-  ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::MaxAggregatePerBlockTransfer), 4);
+  ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::MaxAggregatePerBlockTransfer), 100);
   ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::DPPAlgorithmControl) + 0x7000, 0xC30200f);
   
   if( ret != 0 ) { printf("!!!!!!!! set channels error.\n");}
+
+  /// change address 0xEF08 (5 bits), this will reflected in the 2nd word of the Board Agg. header.
+  ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardID, (DPPType & 0xF));
+  //WriteRegister(DPP::BoardID, (DPPType & 0xF));
   
   isSettingFilledinMemeory = false; /// unlock the ReadAllSettingsFromBoard();
 
@@ -372,6 +377,10 @@ int Digitizer::ProgramBoard_PSD(){
   ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PSD::GateOffset) + 0x7000 , 19 );
 
   if( ret != 0 ) { printf("!!!!!!!! set channels error.\n");}
+
+  /// change address 0xEF08 (5 bits), this will reflected in the 2nd word of the Board Agg. header.
+  ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardID, (DPPType & 0xF));
+  //WriteRegister(DPP::BoardID, (DPPType & 0xF));
   
   isSettingFilledinMemeory = false; /// unlock the ReadAllSettingsFromBoard();
 
@@ -388,9 +397,9 @@ int Digitizer::ProgramBoard_QDC(){
 
   int ret = 0;
 
-  WriteRegister(DPP::QDC::NumberEventsPerAggregate, 0x100, -1);
-  WriteRegister(DPP::QDC::RecordLength, 4000/16, -1);
-  WriteRegister(DPP::QDC::PreTrigger, 1000/16, -1);
+  WriteRegister(DPP::QDC::NumberEventsPerAggregate, 0x10, -1);
+  WriteRegister(DPP::QDC::RecordLength, 31, -1); // 248 sample = 3968 ns
+  WriteRegister(DPP::QDC::PreTrigger,  60, -1); // at 60 sample = 960 ns
 
   WriteRegister(DPP::QDC::GateWidth, 100/16, -1);
   WriteRegister(DPP::QDC::GateOffset, 0, -1);
@@ -417,12 +426,16 @@ int Digitizer::ProgramBoard_QDC(){
 
   WriteRegister(DPP::BoardConfiguration, 0xC0110);
   WriteRegister(DPP::AggregateOrganization, 0x0);
+  WriteRegister(DPP::MaxAggregatePerBlockTransfer, 100);
   WriteRegister(DPP::AcquisitionControl, 0x0);
   WriteRegister(DPP::GlobalTriggerMask, 0x0);
   WriteRegister(DPP::FrontPanelTRGOUTEnableMask, 0x0);
   WriteRegister(DPP::FrontPanelIOControl, 0x0);
   WriteRegister(DPP::QDC::GroupEnableMask, 0xFF);
-  WriteRegister(DPP::MaxAggregatePerBlockTransfer, 0x4);
+
+  /// change address 0xEF08 (5 bits), this will reflected in the 2nd word of the Board Agg. header.
+  ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardID, (DPPType & 0xF));
+  //WriteRegister(DPP::BoardID, (DPPType & 0xF));
 
   isSettingFilledinMemeory = false; /// unlock the ReadAllSettingsFromBoard();
 
@@ -758,6 +771,9 @@ void Digitizer::ReadAllSettingsFromBoard(bool force){
 
   }
   
+
+  printf("BoardID : 0x%X = DataFormat \n", GetSettingFromMemory(DPP::BoardID));
+
   isSettingFilledinMemeory = true;
 
 }

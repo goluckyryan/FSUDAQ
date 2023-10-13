@@ -26,127 +26,62 @@ int getch(void);
 //^======================================
 int main(int argc, char* argv[]){
 
-  Digitizer * digi = new Digitizer(0, 2, false, true);
-
-  Reg reg("test", 0x1020, RW::ReadWrite, false, 0xFFF, -1);
-
-  digi->WriteRegister(reg, 0x13, -1);
-
-  digi->ReadAllSettingsFromBoard();
-
-  digi->GetSettingFromMemory(DPP::QDC::NumberEventsPerAggregate);
-
-
-  // digi->Reset();
-  // digi->ProgramBoard_PHA();
-
-
-  for( int ch = 0; ch < 16; ch++){
-    printf("%2d | 0x%X \n", ch, digi->GetSettingFromMemory(reg, ch));
-  }
-
-  //digi->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, 1, -1);
-
-  // Data * data = digi->GetData();
-
-  //digi->StartACQ();
-
-  // for( int i = 0; i < 4; i ++ ){
-  //   usleep(1000*1000);
-  //   digi->ReadData();
-  //   data->DecodeBuffer(false, 100);
-  //   data->PrintStat();
-
-  //   //data->SaveData();
-
-  //   // int index = data->NumEventsDecoded[0];
-  //   // printf("-------------- %ld \n", data->Waveform1[0][index].size());
-
-  //   //data->PrintAllData();
-
-  // }
-
-  // digi->StopACQ();
-
-
-
-  digi->CloseDigitizer();
-  delete digi;
-
-
-
-  /********************** DPP-PHA
+  /********************** DPP-QDC */
   Digitizer * digi = new Digitizer(0, 2, false, true);
   digi->Reset();
+
+  digi->ProgramBoard_QDC();
+
   digi->WriteRegister(DPP::SoftwareClear_W, 1);
 
-  digi->WriteRegister(DPP::QDC::RecordLength, 6000/16, -1);
-  digi->WriteRegister(DPP::QDC::PreTrigger, 1000/16, -1);
-  digi->WriteRegister(DPP::QDC::GateWidth, 200/16, -1);
-  digi->WriteRegister(DPP::QDC::GateOffset, 0, -1);
-  digi->WriteRegister(DPP::QDC::FixedBaseline, 0, -1);
-  //digi->WriteRegister(DPP::QDC::DPPAlgorithmControl, 0x300112); // with test pulse
-  digi->WriteRegister(DPP::QDC::DPPAlgorithmControl, 0x300102); // No test pulse
-  digi->WriteRegister(DPP::QDC::TriggerHoldOffWidth, 100/16, -1);
-  digi->WriteRegister(DPP::QDC::TRGOUTWidth, 100/16, -1);
-  //digi->WriteRegister(DPP::QDC::OverThresholdWidth, 100/16, -1);
-  //digi->WriteRegister(DPP::QDC::DCOffset, 100/16, -1);
-  digi->WriteRegister(DPP::QDC::SubChannelMask, 0xFF, -1);
+  digi->WriteRegister(DPP::QDC::RecordLength, 31, -1); // T = N * 8 * 16
+  digi->WriteRegister(DPP::QDC::PreTrigger, 60, -1);
 
-  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub0, 10, -1);
-  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub1, 10, -1);
-  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub2, 10, -1);
-  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub3, 10, -1);
-  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub4, 10, -1);
-  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub5, 10, -1);
-  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub6, 10, -1);
-  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub7, 10, -1);
+  digi->WriteRegister(DPP::QDC::TriggerThreshold_sub2, 17, -1);
+  digi->SetBits(DPP::QDC::DPPAlgorithmControl, DPP::QDC::Bit_DPPAlgorithmControl::ChargeSensitivity, 0, -1);
+  digi->SetBits(DPP::QDC::DPPAlgorithmControl, DPP::QDC::Bit_DPPAlgorithmControl::InputSmoothingFactor, 4, -1);
+  digi->SetBits(DPP::QDC::DPPAlgorithmControl, DPP::QDC::Bit_DPPAlgorithmControl::BaselineAvg, 2, -1);
 
+  digi->WriteRegister(DPP::QDC::GateWidth, 608/16, -1);
 
-  digi->WriteRegister(DPP::BoardConfiguration, 0xC0110);
-  digi->WriteRegister(DPP::AggregateOrganization, 0x1);
-  digi->WriteRegister(DPP::QDC::NumberEventsPerAggregate, 0x4);
-  digi->WriteRegister(DPP::AcquisitionControl, 0x0);
-  digi->WriteRegister(DPP::GlobalTriggerMask, 0x0);
-  digi->WriteRegister(DPP::FrontPanelTRGOUTEnableMask, 0x0);
-  digi->WriteRegister(DPP::FrontPanelIOControl, 0x0);
-  digi->WriteRegister(DPP::QDC::GroupEnableMask, 0xFF);
-  digi->WriteRegister(DPP::MaxAggregatePerBlockTransfer, 0x3FF);
+  digi->WriteRegister(DPP::QDC::GroupEnableMask, 0x01);
 
+  digi->WriteRegister(DPP::QDC::NumberEventsPerAggregate, 10, -1);
+  digi->WriteRegister(DPP::AggregateOrganization, 0, -1);
+  digi->WriteRegister(DPP::MaxAggregatePerBlockTransfer, 100, -1);
 
-  //digi->WriteRegister(DPP::QDC::DPPAlgorithmControl, 0x300112, 0); // with  pulse for grp 0
+  digi->SetBits(DPP::QDC::DPPAlgorithmControl, DPP::QDC::Bit_DPPAlgorithmControl::Polarity, 0, -1);
 
-  digi->WriteRegister(DPP::BoardID, 0x7);
-
-  // digi->PrintSettingFromMemory();
+  digi->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::EnableExtra2, 1, -1);
+  digi->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, 1, -1);  
 
   Data * data =  digi->GetData();
 
-  data->ClearData();
-
-  data->PrintStat();
-
+  remove("haha_17121_QDC_000.fsu");
+  data->OpenSaveFile("haha");
 
   digi->StartACQ();
 
   for( int i = 0; i < 10; i ++ ){
     usleep(1000*1000);
     digi->ReadData();
-    data->DecodeBuffer(false, 0);
+    data->DecodeBuffer(true, 0);
+    //data->DecodeBuffer(false, 2);
+    data->SaveData();
     data->PrintStat();
 
-    //data->SaveData();
 
     // int index = data->NumEventsDecoded[0];
     // printf("-------------- %ld \n", data->Waveform1[0][index].size());
 
-    //data->PrintAllData();
 
   }
-
   digi->StopACQ();
 
 
+  data->CloseSaveFile();
+
+  data->PrintAllData();
 
   digi->CloseDigitizer();
   delete digi;

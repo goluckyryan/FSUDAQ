@@ -95,6 +95,7 @@ int main(int argc, char **argv){
     printf("%s [inFile]  [DPPType] \n", argv[0]);
     printf("                +-- PHA = %d\n", DPPType::DPP_PHA_CODE);   
     printf("                +-- PSD = %d\n", DPPType::DPP_PSD_CODE);
+    printf("                +-- QDC = %d\n", DPPType::DPP_QDC_CODE);
     return 1;
   }
 

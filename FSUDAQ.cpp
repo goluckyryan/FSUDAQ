@@ -326,7 +326,7 @@ MainWindow::~MainWindow(){
     scalarThread->quit();
     scalarThread->exit();
     CleanUpScalar();
-    delete scalar;
+    //don't need to delete scalar, it is managed by this
   }
 
   if( digi ) CloseDigitizers();
