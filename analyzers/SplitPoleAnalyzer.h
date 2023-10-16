@@ -49,23 +49,26 @@
 //     }
 // }
 
-namespace ChMap{
+namespace SPS{
+  namespace ChMap{
 
-  const short ScinR = 0;
-  const short ScinL = 1;
-  const short dFR = 9;
-  const short dFL = 8;
-  const short dBR = 10;
-  const short dBL = 11;
-  const short Cathode = 7;
-  const short AnodeF = 13;
-  const short AnodeB = 15;
+    const short ScinR = 0;
+    const short ScinL = 1;
+    const short dFR = 9;
+    const short dFL = 8;
+    const short dBR = 10;
+    const short dBL = 11;
+    const short Cathode = 7;
+    const short AnodeF = 13;
+    const short AnodeB = 15;
 
-};
+  };
 
-const double c = 299.792458; // mm/ns
-const double pi = M_PI;
-const double deg2rad = pi/180.;
+  const double c = 299.792458; // mm/ns
+  const double pi = M_PI;
+  const double deg2rad = pi/180.;
+
+}
 
 class SplitPoleHit{
 
@@ -105,7 +108,7 @@ public:
 
     double Q = target.Mass + beam.Mass - recoil.Mass - heavyRecoil.Mass;
 
-    double haha1 = sqrt(beam.Mass + beamKE + recoil.Mass)/(recoil.Mass + heavyRecoil.Mass) / cos(angleDegree * deg2rad);
+    double haha1 = sqrt(beam.Mass + beamKE + recoil.Mass)/(recoil.Mass + heavyRecoil.Mass) / cos(angleDegree * SPS::deg2rad);
     double haha2 = ( beamKE * ( heavyRecoil.Mass + beam.Mass)  + heavyRecoil.Mass * Q) / (recoil.Mass + heavyRecoil.Mass);
 
     double recoilKE = pow(haha1 + sqrt(haha1*haha1 + haha2), 2);
@@ -114,9 +117,9 @@ public:
     printf("proton enegry : %f \n", recoilKE);
 
     double recoilP = sqrt( recoilKE* ( recoilKE + 2*recoil.Mass));
-    double rho = recoilP/(target.Z * Bfield * c); // in m
+    double rho = recoilP/(target.Z * Bfield * SPS::c); // in m
     double haha = sqrt( recoil.Mass * beam.Mass * beamKE / recoilKE );
-    double k = haha * sin(angleDegree * deg2rad) / ( recoil.Mass + heavyRecoil.Mass - haha * cos(angleDegree * deg2rad));
+    double k = haha * sin(angleDegree * SPS::deg2rad) / ( recoil.Mass + heavyRecoil.Mass - haha * cos(angleDegree * SPS::deg2rad));
 
     const double SPS_DISPERSION = 1.96; // x-position/rho
     const double SPS_MAGNIFICATION = 0.39; // in x-position
@@ -159,9 +162,9 @@ public:
       if( x2 > x1 ) {
         theta = atan((x2-x1)/36.0);
       }else if(x2 < x1){
-        theta = pi + atan((x2-x1)/36.0);
+        theta = SPS::pi + atan((x2-x1)/36.0);
       }else{
-        theta = pi * 0.5;
+        theta = SPS::pi * 0.5;
       }
 
       double w1 = 0.5 - zOffset/4.28625;
@@ -440,15 +443,15 @@ inline void SplitPole::UpdateHistograms(){
 
     for( int k = 0; k < (int) event.size(); k++ ){
       //event[k].Print();
-      if( event[k].ch == ChMap::ScinR ) {hit.eSR = event[k].energy; hit.tSR = event[k].timestamp;}
-      if( event[k].ch == ChMap::ScinL ) {hit.eSL = event[k].energy; hit.tSL = event[k].timestamp;}
-      if( event[k].ch == ChMap::dFR )   {hit.eFR = event[k].energy; hit.tFR = event[k].timestamp;}
-      if( event[k].ch == ChMap::dFL )   {hit.eFL = event[k].energy; hit.tFL = event[k].timestamp;}
-      if( event[k].ch == ChMap::dBR )   {hit.eBL = event[k].energy; hit.tBL = event[k].timestamp;}
-      if( event[k].ch == ChMap::dBL )   {hit.eBL = event[k].energy; hit.tBL = event[k].timestamp;}
-      if( event[k].ch == ChMap::Cathode )   {hit.eCath = event[k].energy; hit.tCath = event[k].timestamp;}
-      if( event[k].ch == ChMap::AnodeF )   {hit.eAF = event[k].energy; hit.tAF = event[k].timestamp;}
-      if( event[k].ch == ChMap::AnodeB )   {hit.eAB = event[k].energy; hit.tAB = event[k].timestamp;}
+      if( event[k].ch == SPS::ChMap::ScinR ) {hit.eSR = event[k].energy; hit.tSR = event[k].timestamp;}
+      if( event[k].ch == SPS::ChMap::ScinL ) {hit.eSL = event[k].energy; hit.tSL = event[k].timestamp;}
+      if( event[k].ch == SPS::ChMap::dFR )   {hit.eFR = event[k].energy; hit.tFR = event[k].timestamp;}
+      if( event[k].ch == SPS::ChMap::dFL )   {hit.eFL = event[k].energy; hit.tFL = event[k].timestamp;}
+      if( event[k].ch == SPS::ChMap::dBR )   {hit.eBL = event[k].energy; hit.tBL = event[k].timestamp;}
+      if( event[k].ch == SPS::ChMap::dBL )   {hit.eBL = event[k].energy; hit.tBL = event[k].timestamp;}
+      if( event[k].ch == SPS::ChMap::Cathode )   {hit.eCath = event[k].energy; hit.tCath = event[k].timestamp;}
+      if( event[k].ch == SPS::ChMap::AnodeF )   {hit.eAF = event[k].energy; hit.tAF = event[k].timestamp;}
+      if( event[k].ch == SPS::ChMap::AnodeB )   {hit.eAB = event[k].energy; hit.tAB = event[k].timestamp;}
     }
 
     hit.CalData();

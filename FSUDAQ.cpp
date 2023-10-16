@@ -16,6 +16,9 @@
 
 #include "analyzers/SplitPoleAnalyzer.h"
 #include "analyzers/EncoreAnalyzer.h"
+#include "analyzers/RAISOR.h"
+
+std::vector<std::string> onlineAnalyzerList = {"Splie-Pole", "Encore", "RAISOR"};
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
 
@@ -66,8 +69,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     cbAnalyzer = new RComboBox(this);
     layout->addWidget(cbAnalyzer, 0, 2);
     cbAnalyzer->addItem("Choose Online Analyzer", -1);
-    cbAnalyzer->addItem("Split-Pole", 0);
-    cbAnalyzer->addItem("Encore", 1);
+    for( int i = 0; i < (int) onlineAnalyzerList.size() ; i++) cbAnalyzer->addItem(onlineAnalyzerList[i].c_str(), i);
     connect(cbAnalyzer, &RComboBox::currentIndexChanged, this, &MainWindow::OpenAnalyzer);
 
     bnCanvas = new QPushButton("Online 1D Histograms", this);
@@ -1497,6 +1499,7 @@ void MainWindow::OpenAnalyzer(){
     //onlineAnalyzer = new Analyzer(digi, nDigi);
     if( id == 0 ) onlineAnalyzer = new SplitPole(digi, nDigi);
     if( id == 1 ) onlineAnalyzer = new Encore(digi, nDigi);
+    if( id == 2 ) onlineAnalyzer = new RAISOR(digi, nDigi);
     if( id >=  0 ) onlineAnalyzer->show();
   }else{
 
@@ -1504,6 +1507,7 @@ void MainWindow::OpenAnalyzer(){
   
     if( id == 0 ) onlineAnalyzer = new SplitPole(digi, nDigi);
     if( id == 1 ) onlineAnalyzer = new Encore(digi, nDigi);
+    if( id == 2 ) onlineAnalyzer = new RAISOR(digi, nDigi);
 
     if( id >= 0 ){
       onlineAnalyzer->show();
