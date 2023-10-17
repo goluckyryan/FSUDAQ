@@ -78,7 +78,7 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
 
   ID = 0;
   cbScopeDigi->setCurrentIndex(0);
-  for( int i = 0; i < digi[0]->GetNumRegChannels(); i++) cbScopeCh->addItem("Ch-" + QString::number(i));
+  for( int i = 0; i < digi[0]->GetNumInputCh(); i++) cbScopeCh->addItem("Ch-" + QString::number(i));
   tick2ns = digi[ID]->GetTick2ns();
   factor = digi[ID]->IsDualTrace_PHA() ? 2 : 1;
 
@@ -95,7 +95,7 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
     enableSignalSlot = false;
     //---setup cbScopeCh
     cbScopeCh->clear();
-    for( int i = 0; i < digi[ID]->GetNumRegChannels(); i++) cbScopeCh->addItem("Ch-" + QString::number(i));
+    for( int i = 0; i < digi[ID]->GetNumInputCh(); i++) cbScopeCh->addItem("Ch-" + QString::number(i));
 
     //---Setup SettingGroup
     CleanUpSettingsGroupBox();

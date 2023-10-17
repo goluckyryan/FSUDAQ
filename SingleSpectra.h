@@ -43,7 +43,7 @@ private:
   Digitizer ** digi;
   unsigned short nDigi;
 
-  Histogram1D * hist[MaxNDigitizer][MaxRegChannel];
+  Histogram1D * hist[MaxNDigitizer][MaxNChannels];
 
   RComboBox * cbDivision;
 
@@ -54,8 +54,8 @@ private:
   QGridLayout * histLayout;
   int oldBd, oldCh;
 
-  int lastFilledIndex[MaxNDigitizer][MaxRegChannel];
-  int loopFilledIndex[MaxNDigitizer][MaxRegChannel];
+  int lastFilledIndex[MaxNDigitizer][MaxNChannels];
+  int loopFilledIndex[MaxNDigitizer][MaxNChannels];
 
   bool fillHistograms;
 

@@ -24,6 +24,7 @@ public:
 public slots:
   void UpdatePanelFromMemory();
   void ReadSettingsFromBoard();
+  void UpdateBoardAndChannelsStatus(); // will ReadRegister
 
   void SaveSetting(int opt);
   void LoadSetting();
@@ -64,7 +65,6 @@ private:
   void SyncComboBox(RComboBox *(&cb)[][MaxRegChannel+1]);
   void SyncCheckBox(QCheckBox *(&chk)[][MaxRegChannel+1]);
 
-  void UpdateBoardAndChannelsStatus(); // ReadRegister
 
   void SyncAllChannelsTab_PHA();
   void UpdateSettings_PHA();
