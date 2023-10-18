@@ -9,6 +9,7 @@
 #include <iostream> ///cout
 #include <sstream>
 #include <iomanip> // for setw
+#include <algorithm>
 #include <bitset>
 #include <vector>
 #include <sys/stat.h>
@@ -381,6 +382,8 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
 
   if( nByte == 0 ) return;
   nw = 0;
+
+  //printf("############################# agg\n");
   
   do{
     if( verbose >= 1 ) printf("Data::DecodeBuffer ######################################### Board Agg.\n");
@@ -443,8 +446,8 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
       // printf("%s | ch %d | %d %d \n", __func__, ch, LoopIndex[ch], DataIndex[ch]);
       IsNotRollOverFakeAgg = true;
     }else{
-      TriggerRate[ch] = 0;
-      NonPileUpRate[ch] = 0;
+      // TriggerRate[ch] = 0;
+      // NonPileUpRate[ch] = 0;
       continue;
     }
 
@@ -453,6 +456,8 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
       NonPileUpRate[ch] = 0;
       continue;
     }
+
+    //printf("Ch : %2d | Decoded Event : %d \n", ch, NumEventsDecoded[ch]);
     
     if( NumEventsDecoded[ch] > 4 ){
 
@@ -467,35 +472,82 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
       NonPileUpRate[ch] = (NumNonPileUpDecoded[ch])/sec;
 
     }else{ // look in to the data in the memory, not just this agg.
-
-      if( calIndexes[ch][0] == -1 ) calIndexes[ch][0] = 0;
-      if( calIndexes[ch][0] > -1 && calIndexes[ch][1] == -1 ) calIndexes[ch][1] = DataIndex[ch];
-
-      short nEvent = calIndexes[ch][1] - calIndexes[ch][0] ;
-      if( nEvent < 0 ) nEvent += MaxNData;
-      //printf("ch %2d ----- %d %d | %d \n", ch, calIndexes[ch][0], calIndexes[ch][1], nEvent);
       
-      if( calIndexes[ch][0] > -1 && calIndexes[ch][1] > -1 && nEvent > 10 ){
-          unsigned long long dTime = Timestamp[ch][calIndexes[ch][1]] - Timestamp[ch][calIndexes[ch][0]];
-          double sec = dTime * tick2ns / 1e9;
+      const short nEvent = 10;
+
+      if( TotNumNonPileUpEvents[ch] >=  nEvent ){
+
+        calIndexes[ch][1] = DataIndex[ch];
+        calIndexes[ch][0] = DataIndex[ch] - nEvent + 1;
+        if (calIndexes[ch][0] < 0 ) calIndexes[ch][0] += MaxNData;
+        
+        // std::vector<unsigned long long> tList ;
+        // for( int i = 0; i < nEvent ; i ++){
+        //   int j = (calIndexes[ch][0] + i) % MaxNData;
+        //   tList.push_back( Timestamp[ch][j]);
+        // }
+        // if( DPPType == DPPType::DPP_QDC_CODE){
+        //   //std::sort(tList.begin(), tList.end());
+        //   unsigned long long t0 = tList.front(); // earlier
+        //   unsigned long long t1 = tList.back(); // latest
+
+        //   for( int i = 0; i < (int) tList.size(); i++){
+        //     if( t0 < tList[i]) t0 = tList[i];
+        //     if( t1 > tList[i]) t1 = tList[i];
+        //   }
+        //   tList.front() = t0;
+        //   tList.back() = t1;
+        // }
+        //double sec = ( tList.back() - tList.front() ) * tick2ns / 1e9;
+
+
+        unsigned long long t0 = Timestamp[ch][(calIndexes[ch][0]) % MaxNData]; // earlier
+        unsigned long long t1 = Timestamp[ch][(calIndexes[ch][1]) % MaxNData];; // latest
+        double sec = ( t1 - t0 ) * tick2ns / 1e9;
+
+        TriggerRate[ch] = nEvent / sec;
+
+        short pileUpCount = 0;
+        for( int i = 0 ; i < nEvent; i++ ) {
+          int j = (calIndexes[ch][0] + i) % MaxNData;
+          if( PileUp[ch][j]  ) pileUpCount ++;
+        }
+        NonPileUpRate[ch] = (nEvent - pileUpCount)/sec;
+
+        //printf("%2d | %10llu  %10llu, %.0f = %f sec, rate = %f, nEvent %d pileUp %d \n", ch, tList.front() ,tList.back(), tick2ns, sec, nEvent / sec, nEvent, pileUpCount);
+      }
+
+      
+      // if( calIndexes[ch][0] == -1 ) calIndexes[ch][0] = 0;
+      // if( calIndexes[ch][0] > -1 && calIndexes[ch][1] == -1 ) calIndexes[ch][1] = DataIndex[ch];
+
+      // short nEvent = calIndexes[ch][1] - calIndexes[ch][0] ;
+      // if( nEvent < 0 ) nEvent += MaxNData;
+      // printf("ch %2d ----- %d %d | %d \n", ch, calIndexes[ch][0], calIndexes[ch][1], nEvent);
+      
+      // if( calIndexes[ch][0] > -1 && calIndexes[ch][1] > -1 && nEvent > 2 ){
+      //     unsigned long long dTime = Timestamp[ch][calIndexes[ch][1]] - Timestamp[ch][calIndexes[ch][0]];
+      //     double sec = dTime * tick2ns / 1e9;
         
 
-          TriggerRate[ch] = nEvent / sec;
+      //     TriggerRate[ch] = nEvent / sec;
 
-          short pileUpCount = 0;
-          for( int i = calIndexes[ch][0] ; i <= calIndexes[ch][0] + nEvent; i++ ) {
-            if( PileUp[ch][i % MaxNData]  ) pileUpCount ++;
-          }
-          //printf("%2d | %10llu  %10llu, %.0f = %f sec, rate = %f, nEvent %d pileUp %d \n", ch, Timestamp[ch][calIndexes[ch][0]], Timestamp[ch][calIndexes[ch][1]], tick2ns, sec, nEvent / sec, nEvent, pileUpCount);
+      //     short pileUpCount = 0;
+      //     for( int i = calIndexes[ch][0] ; i <= calIndexes[ch][0] + nEvent; i++ ) {
+      //       if( PileUp[ch][i % MaxNData]  ) pileUpCount ++;
+      //     }
+      //     printf("%2d | %10llu  %10llu, %.0f = %f sec, rate = %f, nEvent %d pileUp %d \n", ch, Timestamp[ch][calIndexes[ch][0]], Timestamp[ch][calIndexes[ch][1]], tick2ns, sec, nEvent / sec, nEvent, pileUpCount);
 
-          NonPileUpRate[ch] = (nEvent - pileUpCount)/sec;
+      //     NonPileUpRate[ch] = (nEvent - pileUpCount)/sec;
 
-          calIndexes[ch][0] = calIndexes[ch][1];
-          calIndexes[ch][1] = -1;
+      //     calIndexes[ch][0] = calIndexes[ch][1];
+      //     calIndexes[ch][1] = -1;
 
-      }else{
-        calIndexes[ch][1] = -1;
-      }
+      // }else{
+      //   calIndexes[ch][1] = -1;
+      // }
+    
+      
     }
 
   }
@@ -1031,12 +1083,12 @@ inline int Data::DecodeQDCGroupedChannelBlock(unsigned int ChannelMask, bool fas
     if( hasExtra ){
       nw = nw +1 ; word = ReadBuffer(nw, verbose);
       extra = word;
-      baseline = (word & 0xFFF);
-      extTimeStamp = (word >> 16);
+      extTimeStamp = (word & 0xFFF);
+      baseline = (word >> 16) / 16;
       if( verbose >= 2 ) printf("extra : 0x%lx, baseline : %d\n", extra, baseline);
     }
     
-    unsigned long long timeStamp = (extTimeStamp << 31) ;
+    unsigned long long timeStamp = (extTimeStamp << 32) ;
     timeStamp = timeStamp + timeStamp0;
     
     nw = nw +1 ; word = ReadBuffer(nw, verbose);

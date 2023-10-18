@@ -119,6 +119,10 @@ inline void FSUReader::ScanNumBlock(){
   blockID = 0;
   blockPos.push_back(0);
 
+  data->ClearData();
+  fseek(inFile, 0L, SEEK_SET);
+  filePos = 0;
+
   while( ReadNextBlock(true) == 0 ){
     blockPos.push_back(filePos);
     blockID ++;
