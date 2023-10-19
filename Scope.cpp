@@ -138,12 +138,20 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   layout->addWidget(bnClearBuffer, rowID, 4);
   connect(bnClearBuffer, &QPushButton::clicked, this, [=](){ digi[ID]->WriteRegister(DPP::SoftwareClear_W, 1);});
 
+  QLabel * lbRun = new QLabel("Run Status : ", this);
+  lbRun->setAlignment(Qt::AlignCenter | Qt::AlignRight);
+  layout->addWidget(lbRun, rowID, 5);
+
+  runStatus = new QPushButton("", this);
+  runStatus->setEnabled(false);
+  runStatus->setFixedSize(QSize(20,20));
+  layout->addWidget(runStatus, rowID, 6);
 
   //================ Trace settings
   rowID ++;
   {
     settingGroup = new QGroupBox("Trace Settings",this);
-    layout->addWidget(settingGroup, rowID, 0, 1, 6);
+    layout->addWidget(settingGroup, rowID, 0, 1, 7);
 
     settingLayout = new QGridLayout(settingGroup);
     settingLayout->setSpacing(0);
@@ -156,7 +164,7 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   //================ Plot view
   rowID ++;
   plotView = new RChartView(plot, this);
-  layout->addWidget(plotView, rowID, 0, 1, 6);
+  layout->addWidget(plotView, rowID, 0, 1, 7);
 
   
   //================ Key binding
@@ -166,7 +174,7 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   
   QLabel * lbinfo = new QLabel("Trace updates every " + QString::number(updateTraceThread->GetWaitTimeinSec()) + " sec.", this);
   lbinfo->setAlignment(Qt::AlignRight);
-  layout->addWidget(lbinfo, rowID, 5);
+  layout->addWidget(lbinfo, rowID, 6);
 
   rowID ++;
   //TODO =========== Trace step
@@ -193,7 +201,7 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   layout->addWidget(leTriggerRate, rowID, 3);
 
   QPushButton * bnClose = new QPushButton("Close", this);
-  layout->addWidget(bnClose, rowID, 5);
+  layout->addWidget(bnClose, rowID, 6);
   connect(bnClose, &QPushButton::clicked, this, &Scope::close);
 
   layout->setColumnStretch(0, 1);
@@ -362,8 +370,16 @@ void Scope::UpdateScope(){
   if( digi[ID]->GetInputChannelOnOff(ch) == false) return;
 
   //printf("### %d %d \n", ch, digi[ID]->GetData()->DataIndex[ch]);
-
+  
   digiMTX[ID].lock();
+
+  uint32_t acqStatus = digi[ID]->ReadRegister(DPP::AcquisitionStatus_R);
+  if( ( acqStatus >> 2 ) & 0x1 ){
+    runStatus->setStyleSheet("background-color : green;");
+  }else{
+    runStatus->setStyleSheet("");
+  }
+
   Data * data = digi[ID]->GetData();
 
   //leTriggerRate->setText(QString::number(data->TriggerRate[ch]) + " [" + QString::number(data->NumEventsDecoded[ch]) + "]");
@@ -549,7 +565,7 @@ void Scope::SetUpSpinBox(RSpinBox * &sb, QString str, int row, int col, const Re
     if( digi[ID]->GetDPPType() == DPPType::DPP_QDC_CODE ){
       int grp = ch/8; // convert ch to grp 
       digiMTX[ID].lock();
-      digi[ID]->WriteRegister(para, value, grp);
+        digi[ID]->WriteRegister(para, value, grp);
       digiMTX[ID].unlock();
     }else{
       digiMTX[ID].lock();
@@ -764,7 +780,8 @@ void Scope::SetUpPanel_QDC() {
   printf("==== %s \n", __func__);
 
   int rowID = 0;
-  SetUpSpinBox(sbReordLength,     "Record Length [ns] ", rowID, 0, DPP::QDC::RecordLength);
+
+  SetUpSpinBox(sbReordLength,     "Record Length [ns] ", rowID, 0, DPP::QDC::RecordLength_W);
   SetUpSpinBox(sbPreTrigger,        "Pre Trigger [ns] ", rowID, 2, DPP::QDC::PreTrigger);
   SetUpSpinBox(sbDCOffset,             "DC offset [%] ", rowID, 4, DPP::QDC::DCOffset);
   sbDCOffset->setDecimals(2);   
@@ -774,7 +791,7 @@ void Scope::SetUpPanel_QDC() {
   cbPolarity->addItem("Negative", 1);
   connect(cbPolarity, &RComboBox::currentIndexChanged, this, [=](){
     if( !enableSignalSlot ) return;
-    digi[ID]->SetBits(DPP::QDC::DPPAlgorithmControl, DPP::QDC::Bit_DPPAlgorithmControl::Polarity, cbPolarity->currentData().toInt(), cbScopeCh->currentIndex());
+    digi[ID]->SetBits(DPP::QDC::DPPAlgorithmControl, DPP::QDC::Bit_DPPAlgorithmControl::Polarity, cbPolarity->currentData().toInt(), cbScopeCh->currentIndex()/8);
   });
 
   rowID ++; //=============================================================
@@ -886,6 +903,10 @@ void Scope::EnableControl(bool enable){
     cbBaselineAvg->setEnabled(enable);
     cbPeakAvg->setEnabled(enable);
     sbPeakHoldOff->setEnabled(enable);
+
+  }else{
+
+    settingGroup->setEnabled(enable);
 
   }
 

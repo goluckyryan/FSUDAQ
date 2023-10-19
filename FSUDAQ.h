@@ -150,6 +150,7 @@ private:
   TimingThread * scalarThread;
   QLineEdit  *** leTrigger; // need to delete manually
   QLineEdit  *** leAccept; // need to delete manually
+  QPushButton * runStatus[MaxNDigitizer];
   QLabel * lbLastUpdateTime;
   QLabel * lbScalarACQStatus;
 

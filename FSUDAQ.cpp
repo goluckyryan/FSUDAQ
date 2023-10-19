@@ -243,7 +243,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
         }
         needManualComment = true;
         StopACQ();
-          });
+    });
 
     layout->addWidget(lbPrefix, rowID, 0);
     layout->addWidget(lePrefix, rowID, 1);
@@ -826,13 +826,13 @@ void MainWindow::SetupScalar(){
     lbScalarACQStatus = new QLabel("ACQ status", scalar);
   }
   
-  lbLastUpdateTime->setAlignment(Qt::AlignCenter);
+  lbLastUpdateTime->setAlignment(Qt::AlignRight);
   scalarLayout->removeWidget(lbLastUpdateTime);
-  scalarLayout->addWidget(lbLastUpdateTime, 0, 1, 1, 1 + nDigi);
+  scalarLayout->addWidget(lbLastUpdateTime, 0, 0, 1, 1 + nDigi);
 
   lbScalarACQStatus->setAlignment(Qt::AlignCenter);
   scalarLayout->removeWidget(lbScalarACQStatus);
-  scalarLayout->addWidget(lbScalarACQStatus, 1, 1, 1, 1 + nDigi);
+  scalarLayout->addWidget(lbScalarACQStatus, 0, 1 + nDigi);
 
   int rowID = 3;
   ///==== create the header row
@@ -861,9 +861,20 @@ void MainWindow::SetupScalar(){
     for( int ch = 0; ch < digi[iDigi]->GetNumInputCh(); ch++){
 
       if( ch == 0 ){
+          QWidget * hBox = new QWidget(scalar);
+          QHBoxLayout * hBoxLayout = new QHBoxLayout(hBox);
+          scalarLayout->addWidget(hBox, rowID, 2*iDigi+1, 1, 2);
+
           QLabel * lbDigi = new QLabel("Digi-" + QString::number(digi[iDigi]->GetSerialNumber()), scalar); 
-          lbDigi->setAlignment(Qt::AlignCenter);
-          scalarLayout->addWidget(lbDigi, rowID, 2*iDigi+1, 1, 2);
+          lbDigi->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+          hBoxLayout->addWidget(lbDigi);
+
+          runStatus[iDigi] = new QPushButton("", scalar);
+          runStatus[iDigi]->setEnabled(false);
+          runStatus[iDigi]->setFixedSize(QSize(20,20));
+          runStatus[iDigi]->setToolTip("ACQ RUN On/OFF");
+          runStatus[iDigi]->setToolTipDuration(-1);
+          hBoxLayout->addWidget(runStatus[iDigi]);
 
           rowID ++;
 
@@ -948,6 +959,13 @@ void MainWindow::UpdateScalar(){
   for( unsigned int iDigi = 0; iDigi < nDigi; iDigi++){
     digiMTX[iDigi].lock();
 
+    uint32_t acqStatus = digi[iDigi]->ReadRegister(DPP::AcquisitionStatus_R);
+    if( ( acqStatus >> 2 ) & 0x1 ){
+      runStatus[iDigi]->setStyleSheet("background-color : green;");
+    }else{
+      runStatus[iDigi]->setStyleSheet("");
+    }
+
     // printf("### %d ", iDigi);
     // digi[iDigi]->GetData()->PrintAllData(true, 10);
     if( chkSaveData->isChecked() ) totalFileSize += digi[iDigi]->GetData()->GetTotalFileSize();
@@ -976,6 +994,7 @@ void MainWindow::UpdateScalar(){
       influx->AddDataPoint("RunID value=" + std::to_string(runID));
       influx->AddDataPoint("FileSize value=" + std::to_string(totalFileSize));
     }
+    //influx->PrintDataPoints();
     influx->WriteData(dataBaseName.toStdString());
     influx->ClearDataPointsBuffer();
   }
@@ -1047,7 +1066,7 @@ if( chkSaveData->isChecked() ) SaveLastRunFile();
   {//^=== elog and database
     if( influx ){
       influx->AddDataPoint("RunID value=" + std::to_string(runID));
-      influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=1");
+      if( elogName != "" ) influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=1");
       influx->WriteData(dataBaseName.toStdString());
       influx->ClearDataPointsBuffer();
     }
@@ -1112,10 +1131,21 @@ void MainWindow::StopACQ(){
   bnOpenScope->setEnabled(true);
   cbAutoRun->setEnabled(true);
 
+  if( scalar ){
+    for( unsigned int iDigi = 0; iDigi < nDigi; iDigi ++){
+      uint32_t acqStatus = digi[iDigi]->ReadRegister(DPP::AcquisitionStatus_R);
+      if( ( acqStatus >> 2 ) & 0x1 ){
+        runStatus[iDigi]->setStyleSheet("background-color : green;");
+      }else{
+        runStatus[iDigi]->setStyleSheet("");
+      }
+    }
+  }
+
   if( digiSettings ) digiSettings->setEnabled(true);
 
   {//^=== elog and database
-    if( influx ){
+    if( influx && elogName != "" ) {
       influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=0");
       influx->WriteData(dataBaseName.toStdString());
       influx->ClearDataPointsBuffer();

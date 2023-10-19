@@ -101,6 +101,8 @@ private:
   QGroupBox * settingGroup;
   QGridLayout * settingLayout;
 
+  QPushButton * runStatus;
+
   /// common to PSD and PHA
   RSpinBox * sbReordLength;
   RSpinBox * sbPreTrigger;

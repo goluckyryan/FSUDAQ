@@ -144,7 +144,7 @@ void InfluxDB::Execute(){
     respond = curl_easy_perform(curl);
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &respondCode);
     //printf("==== respond %d (OK = %d)\n", respond, CURLE_OK);
-    if( respond != CURLE_OK) printf("############# InfluxDB::Execute fail\n");
+    if( respond != CURLE_OK) printf("############# InfluxDB::Execute fail | %ld\n", respondCode);
   } catch (std::exception& e){ // in case of unexpected error
     printf("%s\n", e.what());
     respond = CURLE_SEND_ERROR;
