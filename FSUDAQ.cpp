@@ -39,7 +39,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
   runRecord = nullptr;
   model = nullptr;
   influx = nullptr;
-
+  
   QWidget * mainLayoutWidget = new QWidget(this);
   setCentralWidget(mainLayoutWidget);
   QVBoxLayout * layoutMain = new QVBoxLayout(mainLayoutWidget);
@@ -234,16 +234,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     connect( bnStartACQ, &QPushButton::clicked, this, &MainWindow::AutoRun);
     bnStopACQ = new QPushButton("Stop ACQ", this);
     connect( bnStopACQ, &QPushButton::clicked, this, [=](){
-      if( runTimer->isActive() ){
-        runTimer->stop();
-        runTimer->disconnect(runTimerConnection);
-      }else{
-        breakAutoRepeat = true;
-        runTimer->disconnect(runTimerConnection);
-      }
-      needManualComment = true;
-      StopACQ();
-    });
+        if( runTimer->isActive() ){
+          runTimer->stop();
+          runTimer->disconnect(runTimerConnection);
+        }else{
+          breakAutoRepeat = true;
+          runTimer->disconnect(runTimerConnection);
+        }
+        needManualComment = true;
+        StopACQ();
+          });
 
     layout->addWidget(lbPrefix, rowID, 0);
     layout->addWidget(lePrefix, rowID, 1);
@@ -381,7 +381,7 @@ void MainWindow::OpenDataPath(){
 
   SaveProgramSettings();
 
-  //TODO Check us the dataPath empty, check is the lastRun.sh exist and load the last run.
+  LoadLastRunFile();
 
 }
 
@@ -695,7 +695,7 @@ void MainWindow::OpenDigitizers(){
 
   SetupScalar();
 
-}
+  }
 
 void MainWindow::CloseDigitizers(){
 
@@ -968,8 +968,6 @@ void MainWindow::UpdateScalar(){
       }
     }
 
-    //if( digiSettings && digiSettings->isVisible()) digiSettings->UpdateBoardAndChannelsStatus();
-
     digiMTX[iDigi].unlock();
   }
 
@@ -1017,7 +1015,7 @@ void MainWindow::StartACQ(){
 
     readDataThread[i]->start();
   }
-  if( chkSaveData->isChecked() ) SaveLastRunFile();
+if( chkSaveData->isChecked() ) SaveLastRunFile();
 
   // printf("------------ wait for 2 sec \n");
   // usleep(1000*1000);
@@ -1225,20 +1223,23 @@ void MainWindow::SetSyncMode(){
   QPushButton * bnNoSync = new QPushButton("No Sync");
   QPushButton * bnMethod1 = new QPushButton("Software TRG-OUT --> TRG-IN ");
   QPushButton * bnMethod2 = new QPushButton("Software TRG-OUT --> S-IN ");
-  QPushButton * bnMethod3 = new QPushButton("External TRG-OUT --> S-IN ");
+  QPushButton * bnMethod3 = new QPushButton("External --> 1st S-IN,\nTRG-OUT --> S-IN ");
+  QPushButton * bnMethod4 = new QPushButton("External All S-IN ");
 
   layout->addWidget(lbInfo1, 0);
   layout->addWidget( bnNoSync, 2);
   layout->addWidget(bnMethod1, 3);
   layout->addWidget(bnMethod2, 4);
   layout->addWidget(bnMethod3, 5);
+  layout->addWidget(bnMethod4, 6);
 
   bnNoSync->setFixedHeight(40);
   bnMethod1->setFixedHeight(40);
   bnMethod2->setFixedHeight(40);
   bnMethod3->setFixedHeight(40);
+  bnMethod4->setFixedHeight(40);
 
-  connect(bnNoSync, &QPushButton::clicked, [&](){
+  connect(bnNoSync, &QPushButton::clicked, [&](){ /// No Sync
     for(unsigned int i = 0; i < nDigi; i++){
       digi[i]->WriteRegister(DPP::AcquisitionControl, 0);
       digi[i]->WriteRegister(DPP::FrontPanelIOControl, 0);
@@ -1247,7 +1248,7 @@ void MainWindow::SetSyncMode(){
     dialog.accept();
   });
   
-  connect(bnMethod1, &QPushButton::clicked, [&](){
+  connect(bnMethod1, &QPushButton::clicked, [&](){ /// Software TRG-OUT --> TRG-IN
     digi[0]->WriteRegister(DPP::AcquisitionControl, 0);
     digi[0]->WriteRegister(DPP::FrontPanelIOControl, 0x10000); //RUN
     for(unsigned int i = 1; i < nDigi; i++){
@@ -1258,7 +1259,7 @@ void MainWindow::SetSyncMode(){
     dialog.accept();
   });
   
-  connect(bnMethod2, &QPushButton::clicked, [&](){
+  connect(bnMethod2, &QPushButton::clicked, [&](){ /// Software TRG-OUT --> S-IN
     digi[0]->WriteRegister(DPP::AcquisitionControl, 0);
     digi[0]->WriteRegister(DPP::FrontPanelIOControl, 0x10000); //RUN
     for(unsigned int i = 1; i < nDigi; i++){
@@ -1269,10 +1270,20 @@ void MainWindow::SetSyncMode(){
     dialog.accept();
   });  
 
-  connect(bnMethod3, &QPushButton::clicked, [&](){
+  connect(bnMethod3, &QPushButton::clicked, [&](){ ///External TRG-OUT --> S-IN
+    digi[0]->WriteRegister(DPP::AcquisitionControl, 0x01);
     for(unsigned int i = 0; i < nDigi; i++){
       digi[i]->WriteRegister(DPP::AcquisitionControl, 0x41);
       digi[i]->WriteRegister(DPP::FrontPanelIOControl, 0x30000); // S-IN
+    }
+    if( digiSettings && digiSettings->isVisible() ) digiSettings->UpdatePanelFromMemory();
+    dialog.accept();
+  });
+
+  connect(bnMethod4, &QPushButton::clicked, [&](){ /// External All S-IN
+    digi[0]->WriteRegister(DPP::AcquisitionControl, 0x01);
+    for(unsigned int i = 1; i < nDigi; i++){
+      digi[i]->WriteRegister(DPP::AcquisitionControl, 0x41);
     }
     if( digiSettings && digiSettings->isVisible() ) digiSettings->UpdatePanelFromMemory();
     dialog.accept();

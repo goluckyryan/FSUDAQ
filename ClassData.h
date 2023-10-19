@@ -503,6 +503,9 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
 
         unsigned long long t0 = Timestamp[ch][(calIndexes[ch][0]) % MaxNData]; // earlier
         unsigned long long t1 = Timestamp[ch][(calIndexes[ch][1]) % MaxNData];; // latest
+
+        if( t0 > t1 ) printf("data is not in time order");
+
         double sec = ( t1 - t0 ) * tick2ns / 1e9;
 
         TriggerRate[ch] = nEvent / sec;
@@ -516,37 +519,6 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
 
         //printf("%2d | %10llu  %10llu, %.0f = %f sec, rate = %f, nEvent %d pileUp %d \n", ch, tList.front() ,tList.back(), tick2ns, sec, nEvent / sec, nEvent, pileUpCount);
       }
-
-      
-      // if( calIndexes[ch][0] == -1 ) calIndexes[ch][0] = 0;
-      // if( calIndexes[ch][0] > -1 && calIndexes[ch][1] == -1 ) calIndexes[ch][1] = DataIndex[ch];
-
-      // short nEvent = calIndexes[ch][1] - calIndexes[ch][0] ;
-      // if( nEvent < 0 ) nEvent += MaxNData;
-      // printf("ch %2d ----- %d %d | %d \n", ch, calIndexes[ch][0], calIndexes[ch][1], nEvent);
-      
-      // if( calIndexes[ch][0] > -1 && calIndexes[ch][1] > -1 && nEvent > 2 ){
-      //     unsigned long long dTime = Timestamp[ch][calIndexes[ch][1]] - Timestamp[ch][calIndexes[ch][0]];
-      //     double sec = dTime * tick2ns / 1e9;
-        
-
-      //     TriggerRate[ch] = nEvent / sec;
-
-      //     short pileUpCount = 0;
-      //     for( int i = calIndexes[ch][0] ; i <= calIndexes[ch][0] + nEvent; i++ ) {
-      //       if( PileUp[ch][i % MaxNData]  ) pileUpCount ++;
-      //     }
-      //     printf("%2d | %10llu  %10llu, %.0f = %f sec, rate = %f, nEvent %d pileUp %d \n", ch, Timestamp[ch][calIndexes[ch][0]], Timestamp[ch][calIndexes[ch][1]], tick2ns, sec, nEvent / sec, nEvent, pileUpCount);
-
-      //     NonPileUpRate[ch] = (nEvent - pileUpCount)/sec;
-
-      //     calIndexes[ch][0] = calIndexes[ch][1];
-      //     calIndexes[ch][1] = -1;
-
-      // }else{
-      //   calIndexes[ch][1] = -1;
-      // }
-    
       
     }
 

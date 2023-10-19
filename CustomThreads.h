@@ -4,6 +4,7 @@
 #include <QThread>
 #include <QMutex>
 #include <QWaitCondition>
+#include <QMessageBox>
 
 #include "macro.h"
 #include "ClassDigitizer.h"
@@ -116,7 +117,7 @@ class TimingThread : public QThread {
   Q_OBJECT
 public:
   TimingThread(QObject * parent = 0 ) : QThread(parent){
-    waitTime = 20; // 10 x 100 milisec
+    waitTime = 20; // multiple of 100 mili sec
     stop = false;
   }
   void Stop() { this->stop = true;}

@@ -3051,15 +3051,12 @@ void DigiSettingsPanel::SetUpChannel_QDC(){
 }
 
 //&###########################################################
-void DigiSettingsPanel::UpdateBoardAndChannelsStatus(){
+void DigiSettingsPanel::UpdateACQStatus(uint32_t status){
 
-  //*========================================
-  uint32_t AcqStatus = digi[ID]->ReadRegister(DPP::AcquisitionStatus_R);
-  
-  leACQStatus[ID]->setText( "0x" + QString::number(AcqStatus, 16).toUpper());
+  leACQStatus[ID]->setText( "0x" + QString::number(status, 16).toUpper());
 
   for( int i = 0; i < 9; i++){
-    if( Digitizer::ExtractBits(AcqStatus, {1, ACQToolTip[i].second}) == 0 ){
+    if( Digitizer::ExtractBits(status, {1, ACQToolTip[i].second}) == 0 ){
       bnACQStatus[ID][i]->setStyleSheet("");
       bnACQStatus[ID][i]->setToolTip(ACQToolTip[i].first.first);
       if(ACQToolTip[i].second == 19 )  bnACQStatus[ID][i]->setStyleSheet("background-color: green;");
@@ -3070,26 +3067,14 @@ void DigiSettingsPanel::UpdateBoardAndChannelsStatus(){
     }
   }
 
-  //*========================================
-  uint32_t BdFailStatus = digi[ID]->ReadRegister(DPP::BoardFailureStatus_R);
-  leBdFailStatus[ID]->setText( "0x" + QString::number(BdFailStatus, 16).toUpper());
-  
-  for( int i = 0; i < 3; i++){
-    if( Digitizer::ExtractBits(BdFailStatus, {1, BdFailToolTip[i].second}) == 0 ){
-      bnBdFailStatus[ID][i]->setStyleSheet("background-color: green;");
-      bnBdFailStatus[ID][i]->setToolTip(BdFailToolTip[i].first.first);
-    }else{
-      bnBdFailStatus[ID][i]->setStyleSheet("background-color: red;");
-      bnBdFailStatus[ID][i]->setToolTip(BdFailToolTip[i].first.second);
-    }
-  }
+}
 
-  //*========================================
-  uint32_t ReadoutStatus = digi[ID]->ReadRegister(DPP::ReadoutStatus_R);
-  leReadOutStatus[ID]->setText( "0x" + QString::number(ReadoutStatus, 16).toUpper());
+void DigiSettingsPanel::UpdateReadOutStatus(uint32_t status){
+
+  leReadOutStatus[ID]->setText( "0x" + QString::number(status, 16).toUpper());
 
   for( int i = 0; i < 3; i++){
-    if( Digitizer::ExtractBits(ReadoutStatus, {1, ReadoutToolTip[i].second}) == 0 ){
+    if( Digitizer::ExtractBits(status, {1, ReadoutToolTip[i].second}) == 0 ){
       if( ReadoutToolTip[i].second != 2 ) {
         bnReadOutStatus[ID][i]->setStyleSheet("");
       }else{
@@ -3103,6 +3088,31 @@ void DigiSettingsPanel::UpdateBoardAndChannelsStatus(){
         bnReadOutStatus[ID][i]->setStyleSheet("background-color: red;");
       }
       bnReadOutStatus[ID][i]->setToolTip(ReadoutToolTip[i].first.second);
+    }
+  }
+}
+
+void DigiSettingsPanel::UpdateBoardAndChannelsStatus(){
+
+  //*========================================
+  uint32_t AcqStatus = digi[ID]->ReadRegister(DPP::AcquisitionStatus_R);
+  UpdateACQStatus(AcqStatus);
+
+  //*========================================
+  uint32_t ReadoutStatus = digi[ID]->ReadRegister(DPP::ReadoutStatus_R);
+  UpdateReadOutStatus(ReadoutStatus);
+
+  //*========================================
+  uint32_t BdFailStatus = digi[ID]->ReadRegister(DPP::BoardFailureStatus_R);
+  leBdFailStatus[ID]->setText( "0x" + QString::number(BdFailStatus, 16).toUpper());
+  
+  for( int i = 0; i < 3; i++){
+    if( Digitizer::ExtractBits(BdFailStatus, {1, BdFailToolTip[i].second}) == 0 ){
+      bnBdFailStatus[ID][i]->setStyleSheet("background-color: green;");
+      bnBdFailStatus[ID][i]->setToolTip(BdFailToolTip[i].first.first);
+    }else{
+      bnBdFailStatus[ID][i]->setStyleSheet("background-color: red;");
+      bnBdFailStatus[ID][i]->setToolTip(BdFailToolTip[i].first.second);
     }
   }
 

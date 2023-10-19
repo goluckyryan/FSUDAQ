@@ -160,7 +160,7 @@ private:
 
   //@----- ACQ
   ReadDataThread ** readDataThread;
-
+  
   //@----- Scope
   Scope * scope;
 

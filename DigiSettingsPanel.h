@@ -21,10 +21,13 @@ public:
   DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QString rawDataPath, QMainWindow * parent = nullptr);
   ~DigiSettingsPanel();
 
+  
 public slots:
   void UpdatePanelFromMemory();
   void ReadSettingsFromBoard();
-  void UpdateBoardAndChannelsStatus(); // will ReadRegister
+  void UpdateACQStatus(uint32_t status); 
+  void UpdateReadOutStatus(uint32_t status);
+  void UpdateBoardAndChannelsStatus(); // directly read from register
 
   void SaveSetting(int opt);
   void LoadSetting();

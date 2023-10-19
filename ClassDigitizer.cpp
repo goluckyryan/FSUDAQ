@@ -398,15 +398,16 @@ int Digitizer::ProgramBoard_QDC(){
   int ret = 0;
 
   WriteRegister(DPP::QDC::NumberEventsPerAggregate, 0x10, -1);
-  WriteRegister(DPP::QDC::RecordLength, 31, -1); // 248 sample = 3968 ns
+  WriteRegister(DPP::QDC::RecordLength_W, 16, -1); // 128 sample = 2048 ns
   WriteRegister(DPP::QDC::PreTrigger,  60, -1); // at 60 sample = 960 ns
 
   WriteRegister(DPP::QDC::GateWidth, 100/16, -1);
   WriteRegister(DPP::QDC::GateOffset, 0, -1);
   WriteRegister(DPP::QDC::FixedBaseline, 0, -1);
   
-  //WriteRegister(DPP::QDC::DPPAlgorithmControl, 0x300112); // with test pulse
-  WriteRegister(DPP::QDC::DPPAlgorithmControl, 0x300102); // No test pulse
+  //WriteRegister(DPP::QDC::DPPAlgorithmControl, 0x300112); // with test pulse, positive
+  //WriteRegister(DPP::QDC::DPPAlgorithmControl, 0x300102); // No test pulse, positive 
+  WriteRegister(DPP::QDC::DPPAlgorithmControl, 0x310102); // No test pulse, negative 
   
   WriteRegister(DPP::QDC::TriggerHoldOffWidth, 100/16, -1);
   WriteRegister(DPP::QDC::TRGOUTWidth, 100/16, -1);
@@ -770,9 +771,8 @@ void Digitizer::ReadAllSettingsFromBoard(bool force){
     }
 
   }
-  
 
-  printf("BoardID : 0x%X = DataFormat \n", GetSettingFromMemory(DPP::BoardID));
+  //printf("BoardID : 0x%X = DataFormat \n", GetSettingFromMemory(DPP::BoardID));
 
   isSettingFilledinMemeory = true;
 
