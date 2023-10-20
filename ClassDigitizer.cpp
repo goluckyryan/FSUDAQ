@@ -269,7 +269,8 @@ int Digitizer::ProgramBoard_PHA(){
   Reset();
 
   ret = CAEN_DGTZ_WriteRegister(handle, DPP::RecordLength_G + 0x7000, 62);  
-  ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardConfiguration, 0x0F8915);  /// has Extra2, dual trace, input and trap-baseline
+  //ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardConfiguration, 0x0F8915);  /// has Extra2, dual trace, input and trap-baseline
+  ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardConfiguration, 0x0E8915);  /// has Extra2, no trace
   ///ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardConfiguration, 0x0D8115);  /// diable Extra2
   
   //TODO change to write register
@@ -318,7 +319,7 @@ int Digitizer::ProgramBoard_PHA(){
   ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::InputDynamicRange) + 0x7000 , 0x0 );
   
   ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::NumberEventsPerAggregate_G) + 0x7000, 10);
-  ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::AggregateOrganization), 2);
+  ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::AggregateOrganization), 0);
   ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::MaxAggregatePerBlockTransfer), 100);
   ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::DPPAlgorithmControl) + 0x7000, 0xC30200f);
   
@@ -344,7 +345,8 @@ int Digitizer::ProgramBoard_PSD(){
   //ret = CAEN_DGTZ_Reset(handle);
   Reset();
 
-  ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardConfiguration, 0x0F0115);  /// has Extra2, dual trace, input and CFD
+  //ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardConfiguration, 0x0F0115);  /// has Extra2, dual trace, input and CFD
+  ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardConfiguration, 0x0E0115);  /// has Extra2, no trace
 
   ret = CAEN_DGTZ_SetAcquisitionMode(handle, CAEN_DGTZ_SW_CONTROLLED); /// software command
   ret |= CAEN_DGTZ_SetIOLevel(handle, CAEN_DGTZ_IOLevel_NIM);
