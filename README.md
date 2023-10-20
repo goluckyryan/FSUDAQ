@@ -105,10 +105,11 @@ Those file can be compiled using
 
 # Known Issues
 
-* DC offset issue. When porgram default settings, the DC offset is not the same for all channels.
-* for PHA firmware, when the trigger average changed, the Events per Agg need to be changed.
+* for PHA firmware, when the trigger rate changed, the Events per Agg need to be changed.
+* The Agg Organization, Event per Agg, Record Length are strongly correlated. Some settings are invalid and will cause the digitizer goes crazy.
 * Sometimes, the buffer is not in time order, and make the trigger/Accept rate to be nagative. This is nothing to do with the program but the digitizer settings. Recommand reporgram the digitizer.
 * for 1740 QDC, RecordLenght is board setting, but readout is indivuial group.
 
 # Known Bugs
 
+* There is no known bug. Please report if you find one.  
