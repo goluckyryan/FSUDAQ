@@ -1270,6 +1270,8 @@ void MainWindow::SetSyncMode(){
   bnMethod4->setFixedHeight(40);
 
   connect(bnNoSync, &QPushButton::clicked, [&](){ /// No Sync
+    LogMsg("Set No Sync across digitizers.");
+    LogMsg("Software start ACQ, internal clock.");
     for(unsigned int i = 0; i < nDigi; i++){
       digi[i]->WriteRegister(DPP::AcquisitionControl, 0);
       digi[i]->WriteRegister(DPP::FrontPanelIOControl, 0);
@@ -1279,6 +1281,9 @@ void MainWindow::SetSyncMode(){
   });
   
   connect(bnMethod1, &QPushButton::clicked, [&](){ /// Software TRG-OUT --> TRG-IN
+    LogMsg("Set Software TRG-OUT -> TRG-IN");
+    LogMsg("Set master saftware ACQ, internal clock.");
+    LogMsg("Set slaves TRG-IN, external clock");
     digi[0]->WriteRegister(DPP::AcquisitionControl, 0);
     digi[0]->WriteRegister(DPP::FrontPanelIOControl, 0x10000); //RUN
     for(unsigned int i = 1; i < nDigi; i++){
@@ -1290,6 +1295,9 @@ void MainWindow::SetSyncMode(){
   });
   
   connect(bnMethod2, &QPushButton::clicked, [&](){ /// Software TRG-OUT --> S-IN
+    LogMsg("Set Software TRG-OUT -> S-IN");
+    LogMsg("Set master saftware ACQ, internal clock.");
+    LogMsg("Set slaves S-IN, external clock");
     digi[0]->WriteRegister(DPP::AcquisitionControl, 0);
     digi[0]->WriteRegister(DPP::FrontPanelIOControl, 0x10000); //RUN
     for(unsigned int i = 1; i < nDigi; i++){
@@ -1301,6 +1309,9 @@ void MainWindow::SetSyncMode(){
   });  
 
   connect(bnMethod3, &QPushButton::clicked, [&](){ ///External TRG-OUT --> S-IN
+    LogMsg("Set master External -> S-IN, slave TRG-OUT -> S-IN");
+    LogMsg("Set master external S-IN, internal clock.");
+    LogMsg("Set slaves S-IN, external clock");
     digi[0]->WriteRegister(DPP::AcquisitionControl, 0x01);
     for(unsigned int i = 0; i < nDigi; i++){
       digi[i]->WriteRegister(DPP::AcquisitionControl, 0x41);
@@ -1311,6 +1322,8 @@ void MainWindow::SetSyncMode(){
   });
 
   connect(bnMethod4, &QPushButton::clicked, [&](){ /// External All S-IN
+    LogMsg("Set all External -> S-IN");
+    LogMsg("Set master internal clock, slaves external clock");
     digi[0]->WriteRegister(DPP::AcquisitionControl, 0x01);
     for(unsigned int i = 1; i < nDigi; i++){
       digi[i]->WriteRegister(DPP::AcquisitionControl, 0x41);

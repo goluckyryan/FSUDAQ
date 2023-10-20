@@ -59,6 +59,8 @@ public:
 
   void Print();
   void ListShell();
+
+  string GetMassTabelPath() const{ return dataSource;}
    
 private:
   void FindMassByAZ(int a, int z); // give mass, massError, BEA, Name, Symbol;

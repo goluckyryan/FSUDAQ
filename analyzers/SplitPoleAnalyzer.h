@@ -68,6 +68,9 @@ namespace SPS{
   const double pi = M_PI;
   const double deg2rad = pi/180.;
 
+  const double DISPERSION = 1.96; // x-position/rho
+  const double MAGNIFICATION = 0.39; // in x-position
+
 }
 
 class SplitPoleHit{
@@ -91,42 +94,77 @@ public:
   float x1, x2, theta;
   float xAvg;
 
-  void CalZoffset(QString targetStr, QString beamStr, QString recoilStr, double bfieldT, double angleDeg, double energyMeV){
+  double GetQ0() const {return Q0;}
+  double GetRho0() const {return rho0;}
+  double GetZoffset() const {return zOffset;}
 
+  void CalConstants(QString targetStr, QString beamStr, QString recoilStr, double energyMeV, double angleDeg){
     target.SetIsoByName(targetStr.toStdString());
     beam.SetIsoByName(beamStr.toStdString());
     recoil.SetIsoByName(recoilStr.toStdString());
-    // target.SetIso(12, 6);
-    // beam.SetIso(2,1);
-    // recoil.SetIso(1,1);
+    heavyRecoil.SetIso(target.A + beam.A - recoil.A, target.Z + beam.Z - recoil.Z);
 
-    Bfield = bfieldT; // Tesla
     angleDegree = angleDeg; // degree
     beamKE = energyMeV; // MeV
 
-    heavyRecoil.SetIso(target.A + beam.A - recoil.A, target.Z + beam.Z - recoil.Z);
+    Ei = target.Mass + beamKE + beam.Mass;
+    k1 = sqrt( 2*beam.Mass*beamKE + beamKE*beamKE);
+    cs = cos(angleDegree * SPS::deg2rad);
+    ma = recoil.Mass;
+    mb = heavyRecoil.Mass;
 
-    double Q = target.Mass + beam.Mass - recoil.Mass - heavyRecoil.Mass;
+    isConstantCal = true;
 
-    double haha1 = sqrt(beam.Mass + beamKE + recoil.Mass)/(recoil.Mass + heavyRecoil.Mass) / cos(angleDegree * SPS::deg2rad);
-    double haha2 = ( beamKE * ( heavyRecoil.Mass + beam.Mass)  + heavyRecoil.Mass * Q) / (recoil.Mass + heavyRecoil.Mass);
+  }
 
-    double recoilKE = pow(haha1 + sqrt(haha1*haha1 + haha2), 2);
+  double CalRecoilMomentum(double Ex){
 
-    printf("Q value : %f \n", Q);
-    printf("proton enegry : %f \n", recoilKE);
+    if( !isConstantCal ) return 0;
 
-    double recoilP = sqrt( recoilKE* ( recoilKE + 2*recoil.Mass));
-    double rho = recoilP/(target.Z * Bfield * SPS::c); // in m
-    double haha = sqrt( recoil.Mass * beam.Mass * beamKE / recoilKE );
-    double k = haha * sin(angleDegree * SPS::deg2rad) / ( recoil.Mass + heavyRecoil.Mass - haha * cos(angleDegree * SPS::deg2rad));
+    float p =  Ei*Ei - k1*k1;
+    float q = ma*ma - (mb + Ex)*(mb + Ex);
 
-    const double SPS_DISPERSION = 1.96; // x-position/rho
-    const double SPS_MAGNIFICATION = 0.39; // in x-position
+    float x = k1* ( p + q) * cs;
+    float y = pow( p, 2) + pow(q, 2)- 2 * Ei * Ei * (ma* ma + (mb + Ex)*(mb + Ex)) + 2 * k1 * k1 * (ma*ma * cos(2* angleDegree * SPS::deg2rad) + (mb + Ex)*(mb + Ex));
+    float z = 2 * ( Ei*Ei - k1*k1 * cs * cs) ;
 
-    zOffset = -1000.0 * rho * k * SPS_DISPERSION * SPS_MAGNIFICATION;
+    return (x + Ei * sqrt(y))/z;
 
-    printf("rho: %f m; z-offset: %f cm\n", rho, zOffset);
+  }
+
+  double Momentum2Ex(double ka){
+    return sqrt( Ei*Ei - k1*k1 + ma*ma + 2 * cs * k1 * ka + sqrt(ma*ma + ka*ka));
+  }
+
+  double Rho2Ex(double rhoInM){
+    double ka = rhoInM * (target.Z * Bfield * SPS::c);
+    return Momentum2Ex(ka);
+  }
+
+  void CalZoffset(double magFieldinT){
+
+    Bfield = magFieldinT;
+
+    if( !isConstantCal ) return;
+
+    double recoilP = CalRecoilMomentum(0);
+
+    Q0 = target.Mass + beam.Mass - recoil.Mass - heavyRecoil.Mass;
+
+    double recoilKE = sqrt(ma*ma + recoilP* recoilP) - ma;
+
+    printf("Q value : %f \n", Q0);
+    printf("recoil enegry for ground state: %f MeV = %f MeV/c\n", recoilKE, recoilP);
+
+    rho0 = recoilP/(target.Z * Bfield * SPS::c); // in m
+
+    double haha = sqrt( ma * beam.Mass * beamKE / recoilKE );
+    double k = haha * sin(angleDegree * SPS::deg2rad) / ( ma + mb - haha * cs);
+
+
+    zOffset = -1000.0 * rho0 * k * SPS::DISPERSION * SPS::MAGNIFICATION;
+
+    printf("rho: %f m; z-offset: %f cm\n", rho0, zOffset);
 
   }
 
@@ -146,6 +184,8 @@ public:
     x2 = NAN;
     theta = NAN;
     xAvg = NAN;
+
+    isConstantCal = false;
   }
 
   void CalData(){
@@ -186,6 +226,11 @@ private:
   double beamKE;
 
   double zOffset;
+  double Q0, rho0;
+
+  bool isConstantCal;
+
+  double Ei, k1, cs, ma, mb;
 
 };
 
@@ -216,8 +261,9 @@ public:
     sbAngle->setValue(20);
     sbEnergy->setValue(16);
 
-    hit.CalZoffset(leTarget->text(), leBeam->text(), leRecoil->text(), sbBfield->value(), sbAngle->value(), sbEnergy->value()); 
+    hit.CalConstants(leTarget->text(), leBeam->text(), leRecoil->text(),  sbEnergy->value(), sbAngle->value());
 
+    hit.CalZoffset(sbBfield->value()); 
 
     hit.Clear();
 
@@ -226,6 +272,7 @@ public:
   /// ~SplitPole(); // comment out = defalt destructor
 
   void SetUpCanvas();
+  void FillConstants();
 
 public slots:
   void UpdateHistograms();
@@ -254,7 +301,18 @@ private:
 
   QCheckBox * runAnalyzer;
 
+  QLineEdit * leMassTablePath;
+  QLineEdit * leQValue;
+  QLineEdit * leGSRho;
+  QLineEdit * leZoffset;
+
 };
+
+inline void SplitPole::FillConstants(){
+  leQValue->setText(QString::number(hit.GetQ0()));
+  leGSRho->setText(QString::number(hit.GetRho0()));
+  leZoffset->setText(QString::number(hit.GetZoffset()));
+}
 
 
 inline void SplitPole::SetUpCanvas(){
@@ -316,31 +374,72 @@ inline void SplitPole::SetUpCanvas(){
     boxLayout->setColumnStretch(3, 2);
 
     connect(leTarget, &QLineEdit::returnPressed, this, [=](){
-      hit.CalZoffset(leTarget->text(), leBeam->text(), leRecoil->text(), sbBfield->value(), sbAngle->value(), sbEnergy->value());  
+      hit.CalConstants(leTarget->text(), leBeam->text(), leRecoil->text(), sbAngle->value(), sbEnergy->value());
+      hit.CalZoffset(sbBfield->value());  
+      FillConstants();
     });
     
     connect(leBeam, &QLineEdit::returnPressed, this, [=](){
-      hit.CalZoffset(leTarget->text(), leBeam->text(), leRecoil->text(), sbBfield->value(), sbAngle->value(), sbEnergy->value());  
+      hit.CalConstants(leTarget->text(), leBeam->text(), leRecoil->text(), sbAngle->value(), sbEnergy->value());
+      hit.CalZoffset(sbBfield->value());  
+      FillConstants();
     });
 
     connect(leRecoil, &QLineEdit::returnPressed, this, [=](){
-      hit.CalZoffset(leTarget->text(), leBeam->text(), leRecoil->text(), sbBfield->value(), sbAngle->value(), sbEnergy->value());  
+      hit.CalConstants(leTarget->text(), leBeam->text(), leRecoil->text(), sbAngle->value(), sbEnergy->value());
+      hit.CalZoffset(sbBfield->value());  
+      FillConstants();
     });
 
     connect(sbBfield, &RSpinBox::returnPressed, this, [=](){
-      hit.CalZoffset(leTarget->text(), leBeam->text(), leRecoil->text(), sbBfield->value(), sbAngle->value(), sbEnergy->value());  
+      hit.CalConstants(leTarget->text(), leBeam->text(), leRecoil->text(), sbAngle->value(), sbEnergy->value());
+      hit.CalZoffset(sbBfield->value());  
+      FillConstants();
     });
 
     connect(sbAngle, &RSpinBox::returnPressed, this, [=](){
-      hit.CalZoffset(leTarget->text(), leBeam->text(), leRecoil->text(), sbBfield->value(), sbAngle->value(), sbEnergy->value());  
+      hit.CalConstants(leTarget->text(), leBeam->text(), leRecoil->text(), sbAngle->value(), sbEnergy->value());
+      hit.CalZoffset(sbBfield->value());  
+      FillConstants();
     });
 
     connect(sbEnergy, &RSpinBox::returnPressed, this, [=](){
-      hit.CalZoffset(leTarget->text(), leBeam->text(), leRecoil->text(), sbBfield->value(), sbAngle->value(), sbEnergy->value());  
+      hit.CalConstants(leTarget->text(), leBeam->text(), leRecoil->text(), sbAngle->value(), sbEnergy->value());
+      hit.CalZoffset(sbBfield->value());  
+      FillConstants();
     });
 
     runAnalyzer = new QCheckBox("Run Analyzer", this);
     boxLayout->addWidget(runAnalyzer, 4, 1);
+
+
+    QLabel * lbMassTablePath = new QLabel("Mass Table Path : ", box);
+    lbMassTablePath->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+    boxLayout->addWidget(lbMassTablePath, 5, 0);
+    leMassTablePath = new QLineEdit(QString::fromStdString(massData),box);
+    leMassTablePath->setEnabled(false);
+    boxLayout->addWidget(leMassTablePath, 5, 1, 1, 3);
+
+    QLabel * lbQValue = new QLabel("Q-Value [MeV] ", box);
+    lbQValue->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+    boxLayout->addWidget(lbQValue, 6, 0);
+    leQValue = new QLineEdit(box);
+    leQValue->setEnabled(false);
+    boxLayout->addWidget(leQValue, 6, 1);
+
+    QLabel * lbGDRho = new QLabel("G.S. Rho [mm] ", box);
+    lbGDRho->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+    boxLayout->addWidget(lbGDRho, 6, 2);
+    leGSRho = new QLineEdit(box);
+    leGSRho->setEnabled(false);
+    boxLayout->addWidget(leGSRho, 6, 3);
+
+    QLabel * lbZoffset = new QLabel("Z-offset [mm] ", box);
+    lbZoffset->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+    boxLayout->addWidget(lbZoffset, 7, 0);
+    leZoffset = new QLineEdit(box);
+    leZoffset->setEnabled(false);
+    boxLayout->addWidget(leZoffset, 7, 1);
 
   }
 
@@ -363,49 +462,6 @@ inline void SplitPole::SetUpCanvas(){
 
   layout->setColumnStretch(0, 1);
   layout->setColumnStretch(1, 1);
-
-  //===========fill fake data
-  // int min = 0;
-  // int max = 8;
-
-  // double meanX[9] = { 500,  500, 1000, 1000, 1000, 1500, 3000, 3000, 3000};
-  // double stdX[9] =  { 100,  100,  300,  300,  300,  100,  500,  500,  500};
-  // double meanY[9] = {1000, 1000, 3000, 3000, 1500, 2000,  500,  500,  500};
-  // double stdY[9] =  { 100,  100,  500,  500,  500,  200,  100,  100,  100};
-
-  // int mu[9] = {1, 2, 3, 4, 5, 6, 6, 5, 6};
-
-  // double ex[9] = {60, 60, 50, 45, 45, 45, 45, 42, 42};
-
-  // for( int i = 0; i < 2456; i++){
-  //   int index = QRandomGenerator::global()->bounded(min, max + 1);
-
-  //   double radX = generateGaussian(meanX[index], stdX[index]);
-  //   double radY = generateGaussian(meanY[index], stdY[index]);
-
-  //   double radEx = generateGaussian(ex[index], 0.1);
-
-  //   double rad = generateGaussian(55, 20);
-
-  //   printf("%5d | %2d %6f %6f %6f %6f\n", i, index, radX, radY, radEx, rad);
-
-  //   hPID->Fill(radX, radY);
-
-  //   if( i % 3 != 0 ){
-  //     h1-> Fill(radEx);
-  //   }else{
-  //     h1->Fill(rad);
-  //   }
-
-  //   hMulti->Fill(mu[index]);
-
-  //   if ( i% 3 != 0) h1g->Fill(radEx);
-  // }
-
-  // hPID->UpdatePlot();
-  // h1->UpdatePlot();
-  // hMulti->UpdatePlot();
-  // h1g->UpdatePlot();
 
 }
 

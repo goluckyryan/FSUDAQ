@@ -480,7 +480,7 @@ namespace DPP {
     const std::vector<std::pair<std::string, unsigned int>> ListLEMOLevel = {{"NIM I/O", 0},
                                                                               {"TTL I/O", 1}};
     const std::vector<std::pair<std::string, unsigned int>> ListTRGIMode = {{"Edge of TRG-IN", 0},
-                                                                            {"Whole duration of TR-IN", 1}};
+                                                                            {"Whole duration of TRG-IN", 1}};
     const std::vector<std::pair<std::string, unsigned int>> ListTRGIMezzanine = {{"Pocessed by Motherboard", 0},
                                                                                   {"Skip Motherboard", 1}};
 
