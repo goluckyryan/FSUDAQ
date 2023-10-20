@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <stdlib.h>  //atoi
 #include <algorithm>
+#include <cmath>
 using namespace std;
 
 const double mp = 938.2720813; // MeV/c^2
@@ -60,7 +61,8 @@ public:
   void Print();
   void ListShell();
 
-  string GetMassTabelPath() const{ return dataSource;}
+  void SetMassTablePath(string path) {dataSource = path;} 
+  string GetMassTablePath() const{ return dataSource;}
    
 private:
   void FindMassByAZ(int a, int z); // give mass, massError, BEA, Name, Symbol;
