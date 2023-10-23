@@ -37,6 +37,8 @@ public:
     event->accept();
   }
 
+  QVector<QPointF> TrapezoidFilter(QVector<QPointF> data, int baseLineEndS, int riseTimeS, int flatTopS, float decayTime_ns );
+
 public slots:
   void StartScope();
   void StopScope();

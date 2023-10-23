@@ -51,7 +51,9 @@ public:
 
     hit.CalZoffset(sbBfield->value()); 
 
-    hit.Clear();
+    FillConstants();
+
+    hit.ClearData();
 
   }
 
@@ -92,11 +94,14 @@ private:
   QLineEdit * leGSRho;
   QLineEdit * leZoffset;
 
+  RSpinBox * sbRhoOffset;
+  RSpinBox * sbRhoScale;
+
 };
 
 inline void SplitPole::FillConstants(){
   leQValue->setText(QString::number(hit.GetQ0()));
-  leGSRho->setText(QString::number(hit.GetRho0()));
+  leGSRho->setText(QString::number(hit.GetRho0()*1000));
   leZoffset->setText(QString::number(hit.GetZoffset()));
 }
 
@@ -211,34 +216,66 @@ inline void SplitPole::SetUpCanvas(){
     boxLayout->addWidget(runAnalyzer, 4, 1);
 
 
+    QFrame *separator = new QFrame(box);
+    separator->setFrameShape(QFrame::HLine);
+    separator->setFrameShadow(QFrame::Sunken);
+    boxLayout->addWidget(separator, 5, 0, 1, 4);
+
+
     QLabel * lbMassTablePath = new QLabel("Mass Table Path : ", box);
     lbMassTablePath->setAlignment(Qt::AlignRight | Qt::AlignCenter);
-    boxLayout->addWidget(lbMassTablePath, 5, 0);
+    boxLayout->addWidget(lbMassTablePath, 6, 0);
     leMassTablePath = new QLineEdit(QString::fromStdString(massData),box);
-    leMassTablePath->setEnabled(false);
-    boxLayout->addWidget(leMassTablePath, 5, 1, 1, 3);
+    leMassTablePath->setReadOnly(true);
+    boxLayout->addWidget(leMassTablePath, 6, 1, 1, 3);
 
     QLabel * lbQValue = new QLabel("Q-Value [MeV] ", box);
     lbQValue->setAlignment(Qt::AlignRight | Qt::AlignCenter);
-    boxLayout->addWidget(lbQValue, 6, 0);
+    boxLayout->addWidget(lbQValue, 7, 0);
     leQValue = new QLineEdit(box);
-    leQValue->setEnabled(false);
-    boxLayout->addWidget(leQValue, 6, 1);
+    leQValue->setReadOnly(true);
+    boxLayout->addWidget(leQValue, 7, 1);
 
     QLabel * lbGDRho = new QLabel("G.S. Rho [mm] ", box);
     lbGDRho->setAlignment(Qt::AlignRight | Qt::AlignCenter);
-    boxLayout->addWidget(lbGDRho, 6, 2);
+    boxLayout->addWidget(lbGDRho, 7, 2);
     leGSRho = new QLineEdit(box);
-    leGSRho->setEnabled(false);
-    boxLayout->addWidget(leGSRho, 6, 3);
+    leGSRho->setReadOnly(true);
+    boxLayout->addWidget(leGSRho, 7, 3);
 
     QLabel * lbZoffset = new QLabel("Z-offset [mm] ", box);
     lbZoffset->setAlignment(Qt::AlignRight | Qt::AlignCenter);
-    boxLayout->addWidget(lbZoffset, 7, 0);
+    boxLayout->addWidget(lbZoffset, 8, 0);
     leZoffset = new QLineEdit(box);
-    leZoffset->setEnabled(false);
-    boxLayout->addWidget(leZoffset, 7, 1);
+    leZoffset->setReadOnly(true);
+    boxLayout->addWidget(leZoffset, 8, 1);
 
+
+    QFrame *separator1 = new QFrame(box);
+    separator1->setFrameShape(QFrame::HLine);
+    separator1->setFrameShadow(QFrame::Sunken);
+    boxLayout->addWidget(separator1, 9, 0, 1, 4);
+
+
+    QLabel * lbRhoOffset = new QLabel("Rho-offset [mm] ", box);
+    lbRhoOffset->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+    boxLayout->addWidget(lbRhoOffset, 10, 0);
+    sbRhoOffset = new RSpinBox(box);
+    sbRhoOffset->setDecimals(2);
+    sbRhoOffset->setSingleStep(1);
+    sbRhoOffset->setValue(0);
+    boxLayout->addWidget(sbRhoOffset, 10, 1);
+
+    QLabel * lbRhoScale = new QLabel("Rho-Scaling ", box);
+    lbRhoScale->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+    boxLayout->addWidget(lbRhoScale, 10, 2);
+    sbRhoScale = new RSpinBox(box);
+    sbRhoScale->setDecimals(2);
+    sbRhoScale->setSingleStep(0.01);
+    sbRhoScale->setMinimum(0.5);
+    sbRhoScale->setMaximum(1.5);
+    sbRhoScale->setValue(1.0);
+    boxLayout->addWidget(sbRhoScale, 10, 3);
   }
 
   //============ histograms
@@ -255,7 +292,7 @@ inline void SplitPole::SetUpCanvas(){
   h1->AddDataList("Test", Qt::red); // add another histogram in h1, Max Data List is 10
   layout->addWidget(h1, 1, 1);
   
-  h1g = new Histogram1D("Spectrum (gated)", "x", 300, 30, 70, this);
+  h1g = new Histogram1D("Spectrum (PID gated)", "Ex", 300, -2, 10, this);
   layout->addWidget(h1g, 2, 1);
 
   layout->setColumnStretch(0, 1);
@@ -293,7 +330,7 @@ inline void SplitPole::UpdateHistograms(){
     //if( event.size() < 9 ) return;
     if( event.size() == 0 ) return;
 
-    hit.Clear();
+    hit.ClearData();
 
     for( int k = 0; k < (int) event.size(); k++ ){
       //event[k].Print();

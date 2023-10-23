@@ -61,7 +61,7 @@ class SplitPoleHit{
 
 public:
   SplitPoleHit(){
-    Clear();
+    ClearData();
   }
 
   unsigned int eSR; unsigned long long tSR;
@@ -163,7 +163,7 @@ public:
 
   }
 
-  void Clear(){
+  void ClearData(){
     eSR = 0;  tSR = 0;
     eSL = 0;  tSL = 0;
     eFR = 0;  tFR = 0;

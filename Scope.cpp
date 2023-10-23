@@ -6,6 +6,44 @@
 #include <QStandardItemModel>
 #include <QLabel>
 
+QVector<QPointF> Scope::TrapezoidFilter(QVector<QPointF> data, int baseLineEndS, int riseTimeS, int flatTopS, float decayTime_ns){
+  
+  QVector<QPointF>  trapezoid;
+  trapezoid.clear();
+  
+  ///find baseline;
+  double baseline = 0;
+  for( int i = 0; i < baseLineEndS; i++){
+    baseline += data[i].y();
+  }
+  baseline = baseline*1./baseLineEndS;
+  
+  int length = data.size();
+  
+  double pn = 0.;
+  double sn = 0.;
+  for( int i = 0; i < length ; i++){
+  
+    double dlk = data[i].y() - baseline;
+    if( i - riseTimeS >= 0            ) dlk -= data[i - riseTimeS].y()             - baseline;
+    if( i - flatTopS - riseTimeS >= 0  ) dlk -= data[i - flatTopS - riseTimeS].y()   - baseline;
+    if( i - flatTopS - 2*riseTimeS >= 0) dlk += data[i - flatTopS - 2*riseTimeS].y() - baseline;
+    
+    if( i == 0 ){
+        pn = dlk;
+        sn = pn + dlk*decayTime_ns;
+    }else{
+        pn = pn + dlk;
+        sn = sn + pn + dlk*decayTime_ns;
+    }    
+    
+    trapezoid.append(QPointF(data[i].x(), sn / decayTime_ns / riseTimeS));
+  
+  }
+  
+  return trapezoid;
+}
+
 
 Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataThread, QMainWindow * parent) : QMainWindow(parent){
 
@@ -28,6 +66,31 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
     for(int j = 0; j < 100; j ++) dataTrace[i]->append(40*j, QRandomGenerator::global()->bounded(8000) - 4000);
     plot->addSeries(dataTrace[i]);
   }
+
+  // testing software trapezoid filter
+  // FILE * fileIn = fopen("wave.txt", "r");
+  // if( fileIn != nullptr ){
+
+  //   char buf[500];
+  //   int v1, v2;
+
+  //   QVector<QPointF> points;
+  //   QVector<QPointF> points1;
+  //   while( fgets(buf, sizeof(buf), fileIn) != nullptr ){
+      
+  //     if (sscanf(buf, "%d, %d", &v1, &v2) == 2) {
+  //       points.append(QPointF(v1, v2 + 7000));
+  //     }
+  //   }
+
+  //   fclose(fileIn);
+
+  //   points1 = TrapezoidFilter(points, 400/16, 100, 200, 1000);
+
+  //   dataTrace[0]->replace(points);
+  //   dataTrace[1]->replace(points1);
+
+  // }
 
   dataTrace[0]->setPen(QPen(Qt::red, 2));
   dataTrace[1]->setPen(QPen(Qt::blue, 2));
@@ -955,7 +1018,7 @@ void Scope::UpdateSpinBox(RSpinBox * &sb, const Reg para){
 void Scope::UpdatePanelFromMomeory(){
 
   enableSignalSlot = false;
-  printf("==== %s \n", __func__);
+  printf("==== Scope::%s \n", __func__);
 
   int ch = cbScopeCh->currentIndex();
 

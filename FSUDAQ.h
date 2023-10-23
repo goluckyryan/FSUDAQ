@@ -28,10 +28,22 @@ public:
   ~MainWindow();
 
   void closeEvent(QCloseEvent * event){
-    if( scope ) scope->close();
-    if( digiSettings ) digiSettings->close();
-    if( canvas ) canvas->close();
-    if( onlineAnalyzer ) onlineAnalyzer->close();
+    if( scope ) {
+      delete scope;
+      scope = nullptr;
+    }
+    if( digiSettings ) {
+      delete digiSettings;
+      digiSettings = nullptr;
+    }
+    if( canvas ) {
+      delete canvas;
+      canvas = nullptr;
+    }
+    if( onlineAnalyzer ) {
+      delete onlineAnalyzer;
+      onlineAnalyzer = nullptr;
+    }
     event->accept();
   }
 
