@@ -102,7 +102,9 @@ private:
   unsigned int runID;
   int elogID;
 
-  QPushButton * bnOpenDigitizers;
+  RComboBox * cbOpenDigitizers;
+
+  //QPushButton * bnOpenDigitizers;
   QPushButton * bnCloseDigitizers;
   QPushButton * bnOpenScope;
   QPushButton * bnDigiSettings;

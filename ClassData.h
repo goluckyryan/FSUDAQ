@@ -504,7 +504,12 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
         unsigned long long t0 = Timestamp[ch][(calIndexes[ch][0]) % MaxNData]; // earlier
         unsigned long long t1 = Timestamp[ch][(calIndexes[ch][1]) % MaxNData];; // latest
 
-        if( t0 > t1 ) printf("data is not in time order");
+        if( t0 > t1 ) {
+          printf("digi-%d, ch-%d | data is not in time order\n", boardSN, ch);
+          unsigned long long tt = t1;
+          t1 = t0;
+          t0 = tt;
+        }
 
         double sec = ( t1 - t0 ) * tick2ns / 1e9;
 

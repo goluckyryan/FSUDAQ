@@ -61,5 +61,7 @@ private:
 
   QString rawDataPath;
 
+  bool isSignalSlotActive;
+
 };
 #endif

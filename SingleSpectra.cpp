@@ -13,6 +13,8 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
   this->nDigi = nDigi;
   this->rawDataPath = rawDataPath;
 
+  isSignalSlotActive = true;
+
   setWindowTitle("1-D Histograms");
   setGeometry(0, 0, 1000, 800);  
   //setWindowFlags( this->windowFlags() & ~Qt::WindowCloseButtonHint );
@@ -31,10 +33,28 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
     cbDigi = new RComboBox(this);
     for( unsigned int i = 0; i < nDigi; i++) cbDigi->addItem("Digi-" + QString::number( digi[i]->GetSerialNumber() ), i);
     ctrlLayout->addWidget(cbDigi, 0, 0, 1, 2);
-    connect( cbDigi, &RComboBox::currentIndexChanged, this, &SingleSpectra::ChangeHistView);
+    connect( cbDigi, &RComboBox::currentIndexChanged, this, [=](int index){
+      isSignalSlotActive = false;
+      cbCh->clear();
+      for( int i = 0; i < digi[index]->GetNumInputCh(); i++) cbCh->addItem("ch-" + QString::number( i ), i);
+
+      isSignalSlotActive = true;
+
+      if( oldCh >=  digi[index]->GetNumInputCh()) {
+        cbCh->setCurrentIndex(0);
+      }else{
+        if( oldCh >= 0 ){
+          cbCh->setCurrentIndex(oldCh);
+        }else{
+          cbCh->setCurrentIndex(0);
+        }
+      }
+      ChangeHistView();
+      
+    });
 
     cbCh   = new RComboBox(this);
-    for( int i = 0; i < MaxRegChannel; i++) cbCh->addItem("ch-" + QString::number( i ), i);
+    for( int i = 0; i < digi[0]->GetNumInputCh(); i++) cbCh->addItem("ch-" + QString::number( i ), i);
     ctrlLayout->addWidget(cbCh, 0, 2, 1, 2);
     connect( cbCh, &RComboBox::currentIndexChanged, this, &SingleSpectra::ChangeHistView);
 
@@ -42,7 +62,7 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
     ctrlLayout->addWidget(bnClearHist, 0, 4, 1, 2);
     connect(bnClearHist, &QPushButton::clicked, this, [=](){
       for( unsigned int i = 0; i < nDigi; i++){
-        for( int j = 0; j < MaxRegChannel; j++){
+        for( int j = 0; j < digi[i]->GetNumInputCh(); j++){
           if( hist[i][j] ) hist[i][j]->Clear();
           lastFilledIndex[i][j] = -1;
           loopFilledIndex[i][j] = 0;
@@ -115,6 +135,8 @@ void SingleSpectra::ClearInternalDataCount(){
 }
 
 void SingleSpectra::ChangeHistView(){
+
+  if( !isSignalSlotActive ) return;
 
   if( oldCh >= 0 ) {
     histLayout->removeWidget(hist[oldBd][oldCh]);

@@ -50,9 +50,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     layoutMain->addWidget(box);
     QGridLayout * layout = new QGridLayout(box);
 
-    bnOpenDigitizers = new QPushButton("Open Digitizers", this);
-    layout->addWidget(bnOpenDigitizers, 0, 0);
-    connect(bnOpenDigitizers, &QPushButton::clicked, this, &MainWindow::OpenDigitizers);
+    cbOpenDigitizers = new RComboBox(this);
+    cbOpenDigitizers->addItem("Open Digitizers ... ", 0);
+    cbOpenDigitizers->addItem("Open Digitizers w/o load Settings", 1);
+    cbOpenDigitizers->addItem("Open Digitizers + load Settings", 2);
+    layout->addWidget(cbOpenDigitizers, 0, 0);
+    connect(cbOpenDigitizers, &RComboBox::currentIndexChanged, this, &MainWindow::OpenDigitizers);
+
+    // bnOpenDigitizers = new QPushButton("Open Digitizers", this);
+    // layout->addWidget(bnOpenDigitizers, 0, 0);
+    // connect(bnOpenDigitizers, &QPushButton::clicked, this, &MainWindow::OpenDigitizers);
     
     bnCloseDigitizers = new QPushButton("Close Digitizers", this);
     layout->addWidget(bnCloseDigitizers, 1, 0);
@@ -594,6 +601,8 @@ void MainWindow::SaveLastRunFile(){
 //***************************************************************
 void MainWindow::OpenDigitizers(){
 
+  if( cbOpenDigitizers->currentIndex() == 0 ) return;
+
   //sereach for digitizers
   LogMsg("Searching digitizers via optical link or USB .....Please wait");
   logMsgHTMLMode = false;
@@ -620,11 +629,17 @@ void MainWindow::OpenDigitizers(){
     LogMsg(QString("Done seraching. No digitizer found."));
     return;
   }else{
-    LogMsg(QString("Done seraching. Found %1 digitizer(s). Opening digitizer(s)....").arg(nDigi));
+
+    if( cbOpenDigitizers->currentIndex() == 1 ) {
+      LogMsg(QString("Done seraching. Found %1 digitizer(s). Opening digitizer(s)....").arg(nDigi));
+    }else{
+      LogMsg(QString("Done seraching. Found %1 digitizer(s). Opening digitizer(s) and load settings....").arg(nDigi));
+    }
   }
   
   digi = new Digitizer * [nDigi];
   readDataThread = new ReadDataThread * [nDigi];
+
   for( unsigned int i = 0; i < nDigi; i++){
     digi[i] = new Digitizer(portList[i].first, portList[i].second);
     //digi[i]->Reset();
@@ -654,14 +669,14 @@ void MainWindow::OpenDigitizers(){
 
     }else{
       LogMsg("Found <b>" + fileName + "</b> for digitizer settings.");
-      
-      // if( digi[i]->LoadSettingBinaryToMemory(fileName.toStdString().c_str()) == 0 ){
-      //   LogMsg("Loaded settings file <b>" + fileName + "</b> for Digi-" + QString::number(digi[i]->GetSerialNumber()));
-      //   digi[i]->ProgramSettingsToBoard();
-        
-      // }else{
-      //   LogMsg("Fail to Loaded settings file " + fileName + " for Digi-" + QString::number(digi[i]->GetSerialNumber()));
-      // }
+      if( cbOpenDigitizers->currentIndex() == 2 ) {
+        if( digi[i]->LoadSettingBinaryToMemory(fileName.toStdString().c_str()) == 0 ){
+          LogMsg("Loaded settings file <b>" + fileName + "</b> for Digi-" + QString::number(digi[i]->GetSerialNumber()));
+          digi[i]->ProgramSettingsToBoard();
+        }else{
+          LogMsg("Fail to Loaded settings file " + fileName + " for Digi-" + QString::number(digi[i]->GetSerialNumber()));
+        }
+      }
     }    
     digi[i]->ReadAllSettingsFromBoard(true);
 
@@ -695,7 +710,9 @@ void MainWindow::OpenDigitizers(){
 
   SetupScalar();
 
-  }
+  cbOpenDigitizers->setCurrentIndex(0);
+
+}
 
 void MainWindow::CloseDigitizers(){
 
@@ -767,7 +784,10 @@ void MainWindow::CloseDigitizers(){
 
 void MainWindow::WaitForDigitizersOpen(bool onOff){
 
-  bnOpenDigitizers->setEnabled(onOff);
+  // bnOpenDigitizers->setEnabled(onOff);
+
+  cbOpenDigitizers->setEnabled(onOff);
+
   bnCloseDigitizers->setEnabled(!onOff);
   bnOpenScope->setEnabled(!onOff);
   bnDigiSettings->setEnabled(!onOff);
