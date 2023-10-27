@@ -943,8 +943,9 @@ unsigned int Digitizer::ReadSettingFromFile(Reg registerAddress, unsigned short 
 }
 
 void Digitizer::SaveSettingToFile(Reg registerAddress, unsigned int value, unsigned short ch){
+
   if ( !settingFileExist ) return ;
-  
+
   unsigned short index = registerAddress.Index(ch);
   setting[index] = value;
   
@@ -971,6 +972,10 @@ void Digitizer::SaveAllSettingsAsBin(std::string fileName){
   unsigned int inFileSize = ftell(binFile);
   printf("Created file : %s. file size : %d Byte\n", fileName.c_str(), inFileSize);
   fclose (binFile);
+
+  settingFileName = fileName;
+  settingFileExist = true;
+
 }
 
 void Digitizer::SaveAllSettingsAsText(std::string fileName){
