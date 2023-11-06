@@ -977,6 +977,8 @@ void MainWindow::UpdateScalar(){
   //printf("----------------------\n");
   uint64_t totalFileSize = 0;
   for( unsigned int iDigi = 0; iDigi < nDigi; iDigi++){
+    if( digi[iDigi]->IsBoardDisabled() ) continue;
+
     digiMTX[iDigi].lock();
 
     uint32_t acqStatus = digi[iDigi]->ReadRegister(DPP::AcquisitionStatus_R);
@@ -1039,6 +1041,7 @@ void MainWindow::StartACQ(){
 
   //assume master board is the 0-th board
   for( int i = (int) nDigi-1; i >= 0 ; i--){
+    if( digi[i]->IsBoardDisabled() ) continue;
     if( chkSaveData->isChecked() ) {
       if( digi[i]->GetData()->OpenSaveFile((rawDataPath + "/" + prefix + "_" + QString::number(runID).rightJustified(3, '0')).toStdString()) == false ) {
         LogMsg("Cannot open save file : " + QString::fromStdString(digi[i]->GetData()->GetOutFileName() ) + ". Probably read-only?");
@@ -1054,7 +1057,7 @@ void MainWindow::StartACQ(){
 
     readDataThread[i]->start();
   }
-if( chkSaveData->isChecked() ) SaveLastRunFile();
+  if( chkSaveData->isChecked() ) SaveLastRunFile();
 
   // printf("------------ wait for 2 sec \n");
   // usleep(1000*1000);
@@ -1117,6 +1120,7 @@ void MainWindow::StopACQ(){
   }
 
   for( unsigned int i = 0; i < nDigi; i++){
+    if( digi[i]->IsBoardDisabled() ) continue;
     readDataThread[i]->Stop();
     readDataThread[i]->quit();
     readDataThread[i]->wait();

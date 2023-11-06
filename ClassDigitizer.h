@@ -38,6 +38,7 @@ class Digitizer{
     CAEN_DGTZ_BoardInfo_t BoardInfo;
     
     //^----- adjustable parameters
+    bool                     softwareDisable;   /// not using the whole board
     uint32_t                 regChannelMask ;   /// the channel mask from NumInputCh
     uint32_t                 VMEBaseAddress; /// For direct USB or Optical-link connection, VMEBaseAddress must be 0    
     CAEN_DGTZ_ConnectionType LinkType;       /// USB or Optic
@@ -77,6 +78,9 @@ class Digitizer{
     bool IsDummy()         {return isDummy;}
     bool IsConnected()     {return isConnected;}
     
+    void DisableBoard()    {softwareDisable = true;}
+    bool IsBoardDisabled() const {return softwareDisable;}
+
     void         PrintBoard()      ;    
     int          ProgramBoard_PHA() ; /// program a default PHA board with dual trace
     int          ProgramBoard_PSD() ; 
