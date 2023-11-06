@@ -36,11 +36,12 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
     connect( cbDigi, &RComboBox::currentIndexChanged, this, [=](int index){
       isSignalSlotActive = false;
       cbCh->clear();
+      cbCh->addItem("All Ch", digi[index]->GetNumInputCh() );
       for( int i = 0; i < digi[index]->GetNumInputCh(); i++) cbCh->addItem("ch-" + QString::number( i ), i);
 
       isSignalSlotActive = true;
 
-      if( oldCh >=  digi[index]->GetNumInputCh()) {
+      if( oldCh >  digi[index]->GetNumInputCh()) {
         cbCh->setCurrentIndex(0);
       }else{
         if( oldCh >= 0 ){
@@ -54,6 +55,7 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
     });
 
     cbCh   = new RComboBox(this);
+    cbCh->addItem("All Ch", digi[0]->GetNumInputCh());
     for( int i = 0; i < digi[0]->GetNumInputCh(); i++) cbCh->addItem("ch-" + QString::number( i ), i);
     ctrlLayout->addWidget(cbCh, 0, 2, 1, 2);
     connect( cbCh, &RComboBox::currentIndexChanged, this, &SingleSpectra::ChangeHistView);
@@ -67,6 +69,7 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
           lastFilledIndex[i][j] = -1;
           loopFilledIndex[i][j] = 0;
         }
+        if( hist2D[i] ) hist2D[i]->Clear();
       }
     });
 
@@ -79,29 +82,40 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
   }
 
   {//^========================
+    for( unsigned int i = 0; i < nDigi; i++ ) {
+      hist2DVisibility[i] = false;
+      for( int j = 0; j < digi[i]->GetNumInputCh() ; j++ ) {
+        histVisibility[i][j] = false;
+      }
+    }
+
     histBox = new QGroupBox("Histgrams", this);
     layout->addWidget(histBox);
     histLayout = new QGridLayout(histBox);
     histBox->setLayout(histLayout);
 
-    double xMax = 5000;
-    double xMin = 0;
+    double eMax = 5000;
+    double eMin = 0;
     double nBin = 200;
 
     for( unsigned int i = 0; i < MaxNDigitizer; i++){
       if( i >= nDigi ) continue;
       for( int j = 0; j < digi[i]->GetNumInputCh(); j++){
         if( i < nDigi ) {
-          hist[i][j] = new Histogram1D("Digi-" + QString::number(digi[i]->GetSerialNumber()) +", Ch-" +  QString::number(j), "Raw Energy [ch]", nBin, xMin, xMax);
+          hist[i][j] = new Histogram1D("Digi-" + QString::number(digi[i]->GetSerialNumber()) +", Ch-" +  QString::number(j), "Raw Energy [ch]", nBin, eMin, eMax);
         }else{
           hist[i][j] = nullptr;
         }
       }
+      hist2D[i] = new Histogram2D("Digi-" + QString::number(digi[i]->GetSerialNumber()), "Channel", "Raw Energy [ch]", digi[i]->GetNumInputCh(), 0, digi[i]->GetNumInputCh(), nBin, eMin, eMax);
     }
 
     LoadSetting();
 
-    histLayout->addWidget(hist[0][0], 0, 0);
+    histLayout->addWidget(hist2D[0], 0, 0);
+    hist2DVisibility[0] = true;
+    oldBd = 0;
+    oldCh = digi[0]->GetNumInputCh();
   }
 
   layout->setStretch(0, 1);
@@ -109,8 +123,6 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
 
   ClearInternalDataCount();
 
-  oldBd = -1;
-  oldCh = -1;
 
 }
 
@@ -122,6 +134,7 @@ SingleSpectra::~SingleSpectra(){
     for( int ch = 0; ch < digi[i]->GetNumInputCh(); ch++){
       delete hist[i][ch];
     }
+    delete hist2D[i];
   }
 }
 
@@ -138,17 +151,45 @@ void SingleSpectra::ChangeHistView(){
 
   if( !isSignalSlotActive ) return;
 
-  if( oldCh >= 0 ) {
+  int bd = cbDigi->currentIndex();
+  int ch = cbCh->currentData().toInt();
+
+  // printf("bd : %d, ch : %d \n", bd, ch);
+
+  // Remove oldCh
+  if( oldCh >= 0 && oldCh < digi[oldBd]->GetNumInputCh()){
     histLayout->removeWidget(hist[oldBd][oldCh]);
     hist[oldBd][oldCh]->setParent(nullptr);
+    histVisibility[oldBd][oldCh] = false;
   }
-  int bd = cbDigi->currentIndex();
-  int ch = cbCh->currentIndex();
 
-  histLayout->addWidget(hist[bd][ch], 0, 0);
+  if( oldCh == digi[oldBd]->GetNumInputCh() ){
+    histLayout->removeWidget(hist2D[oldBd]);
+    hist2D[oldBd]->setParent(nullptr);
+    hist2DVisibility[oldBd] = false;
+  }
+
+  // Add ch
+  if( ch >=0 && ch < digi[bd]->GetNumInputCh()) {
+    histLayout->addWidget(hist[bd][ch], 0, 0);
+    histVisibility[bd][ch] = true;
+  }
+
+  if( ch == digi[bd]->GetNumInputCh() ){
+    histLayout->addWidget(hist2D[bd], 0, 0);
+    hist2DVisibility[bd] = true;
+  }
 
   oldBd = bd;
   oldCh = ch;
+
+  // for( unsigned int i = 0; i < nDigi; i++ ){
+  //   if( hist2DVisibility[i] ) printf(" hist2D-%d is visible\n", i); 
+  //   for( int j = 0; j < digi[i]->GetNumInputCh(); j++){
+  //     if( histVisibility[i][j] ) printf(" hist-%d-%d is visible\n", i, j); 
+  //   }
+  // }
+
 }
 
 void SingleSpectra::FillHistograms(){
@@ -176,8 +217,12 @@ void SingleSpectra::FillHistograms(){
           loopFilledIndex[i][ch] ++;
         }
         hist[i][ch]->Fill( digi[i]->GetData()->Energy[ch][lastFilledIndex[i][ch]]);
+
+        hist2D[i]->Fill(ch, digi[i]->GetData()->Energy[ch][lastFilledIndex[i][ch]]);
+
       }
-      hist[i][ch]->UpdatePlot();
+      if( histVisibility[i][ch]  ) hist[i][ch]->UpdatePlot();
+      if( hist2DVisibility[i] ) hist2D[i]->UpdatePlot();
     }
     digiMTX[i].unlock();
 

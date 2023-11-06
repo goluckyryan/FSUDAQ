@@ -16,6 +16,7 @@
 #include "CustomThreads.h"
 #include "CustomWidgets.h"
 #include "Histogram1D.h"
+#include "Histogram2D.h"
 
 
 //^====================================================
@@ -44,6 +45,10 @@ private:
   unsigned short nDigi;
 
   Histogram1D * hist[MaxNDigitizer][MaxNChannels];
+  Histogram2D * hist2D[MaxNDigitizer];
+
+  bool histVisibility[MaxNDigitizer][MaxNChannels];
+  bool hist2DVisibility[MaxNDigitizer];
 
   RComboBox * cbDivision;
 
