@@ -587,10 +587,13 @@ int Digitizer::ReadData(){
     ErrorMsg(__func__);
   }
 
+  acqStatus = ReadRegister(DPP::AcquisitionStatus_R);
+    
+
   return ret;
 }
 
-void Digitizer::PrintACQStatue(){
+void Digitizer::ReadAndPrintACQStatue(){
   if( !isConnected ) return;
   unsigned int status = ReadRegister(DPP::AcquisitionStatus_R);
   

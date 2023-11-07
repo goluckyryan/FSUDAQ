@@ -62,6 +62,8 @@ class Digitizer{
 
     uint32_t     returnData;
 
+    uint32_t acqStatus;
+
   public:
     Digitizer(); /// no digitizer open
     Digitizer(int boardID, int portID = 0, bool program = false, bool verbose = false); 
@@ -92,7 +94,8 @@ class Digitizer{
     int    ReadData();
     bool   IsRunning() const {return AcqRun;}
     Data * GetData()   const {return data;}
-    void   PrintACQStatue();
+    uint32_t GetACQStatus() const {return acqStatus;}
+    void   ReadAndPrintACQStatue();
 
     unsigned int CalByteForBuffer();
 

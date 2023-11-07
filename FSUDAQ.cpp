@@ -974,14 +974,13 @@ void MainWindow::UpdateScalar(){
 
   lbLastUpdateTime->setText("Last update: " + QDateTime::currentDateTime().toString("MM.dd hh:mm:ss"));
 
-  //printf("----------------------\n");
   uint64_t totalFileSize = 0;
   for( unsigned int iDigi = 0; iDigi < nDigi; iDigi++){
     if( digi[iDigi]->IsBoardDisabled() ) continue;
 
     digiMTX[iDigi].lock();
 
-    uint32_t acqStatus = digi[iDigi]->ReadRegister(DPP::AcquisitionStatus_R);
+    uint32_t acqStatus = digi[iDigi]->GetACQStatus();
     if( ( acqStatus >> 2 ) & 0x1 ){
       runStatus[iDigi]->setStyleSheet("background-color : green;");
     }else{
