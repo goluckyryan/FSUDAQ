@@ -446,8 +446,8 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
       // printf("%s | ch %d | %d %d \n", __func__, ch, LoopIndex[ch], DataIndex[ch]);
       IsNotRollOverFakeAgg = true;
     }else{
-      // TriggerRate[ch] = 0;
-      // NonPileUpRate[ch] = 0;
+      TriggerRate[ch] = 0;
+      NonPileUpRate[ch] = 0;
       continue;
     }
 
@@ -468,8 +468,8 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
       double sec =  dTime * tick2ns / 1e9;
 
       TriggerRate[ch] = (NumEventsDecoded[ch]-1)/sec;
-      //printf("%d %d| %d | %llu, %.3e | %.2f\n", indexStart, DataIndex[ch], NumEventsDecoded[ch], dTime, sec , TriggerRate[ch]);
-      NonPileUpRate[ch] = (NumNonPileUpDecoded[ch])/sec;
+      NonPileUpRate[ch] = (NumNonPileUpDecoded[ch]-1)/sec;
+      //printf("%d %d| %d %d | %llu, %.3e | %.2f, %.2f\n", indexStart, DataIndex[ch], NumEventsDecoded[ch], NumNonPileUpDecoded[ch], dTime, sec , TriggerRate[ch], NonPileUpRate[ch]);
 
     }else{ // look in to the data in the memory, not just this agg.
       
