@@ -4,8 +4,8 @@ This can be loaded to root and run the DataReader()
 
 ***********/
 
-#include "ClassData.h"
-#include "MultiBuilder.h"
+#include "../ClassData.h"
+#include "../MultiBuilder.h"
 
 #include "TROOT.h"
 #include "TFile.h"

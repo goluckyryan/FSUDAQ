@@ -14,11 +14,12 @@
 #include <QProcess>
 #include <QMessageBox>
 
+#include "analyzers/CoincidentAnalyzer.h"
 #include "analyzers/SplitPoleAnalyzer.h"
 #include "analyzers/EncoreAnalyzer.h"
 #include "analyzers/RAISOR.h"
 
-std::vector<std::string> onlineAnalyzerList = {"Splie-Pole", "Encore", "RAISOR"};
+std::vector<std::string> onlineAnalyzerList = {"Coincident","Splie-Pole", "Encore", "RAISOR"};
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
 
@@ -1577,17 +1578,19 @@ void MainWindow::OpenAnalyzer(){
 
   if( onlineAnalyzer == nullptr ) {
     //onlineAnalyzer = new Analyzer(digi, nDigi);
-    if( id == 0 ) onlineAnalyzer = new SplitPole(digi, nDigi);
-    if( id == 1 ) onlineAnalyzer = new Encore(digi, nDigi);
-    if( id == 2 ) onlineAnalyzer = new RAISOR(digi, nDigi);
+    if( id == 0 ) onlineAnalyzer = new CoincidentAnalyzer(digi, nDigi);
+    if( id == 1 ) onlineAnalyzer = new SplitPole(digi, nDigi);
+    if( id == 2 ) onlineAnalyzer = new Encore(digi, nDigi);
+    if( id == 3 ) onlineAnalyzer = new RAISOR(digi, nDigi);
     if( id >=  0 ) onlineAnalyzer->show();
   }else{
 
     delete onlineAnalyzer;
   
-    if( id == 0 ) onlineAnalyzer = new SplitPole(digi, nDigi);
-    if( id == 1 ) onlineAnalyzer = new Encore(digi, nDigi);
-    if( id == 2 ) onlineAnalyzer = new RAISOR(digi, nDigi);
+    if( id == 0 ) onlineAnalyzer = new CoincidentAnalyzer(digi, nDigi);
+    if( id == 1 ) onlineAnalyzer = new SplitPole(digi, nDigi);
+    if( id == 2 ) onlineAnalyzer = new Encore(digi, nDigi);
+    if( id == 3 ) onlineAnalyzer = new RAISOR(digi, nDigi);
 
     if( id >= 0 ){
       onlineAnalyzer->show();

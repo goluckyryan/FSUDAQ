@@ -179,9 +179,25 @@ public:
 
   //^===================================
 
+  void SetXTitle(QString xTitle) { xAxis->setLabel(xTitle); }
+  void SetYTitle(QString yTitle) { yAxis->setLabel(yTitle); }
   void Rebin(int xbin, double xmin, double xmax, int ybin, double ymin, double ymax);
 
-  void UpdatePlot(){ colorMap->rescaleDataRange(); replot(); }
+  void UpdatePlot(){ 
+    QCPColorGradient color;
+    color.clearColorStops();
+    color.setColorStopAt( 0.0, QColor("white" ));
+    color.setColorStopAt( 1.0/entry[1][1], QColor("purple" ));
+    color.setColorStopAt( 0.2, QColor("blue"));
+    color.setColorStopAt( 0.4, QColor("cyan"));
+    color.setColorStopAt( 0.6, QColor("green"));
+    color.setColorStopAt( 0.8, QColor("yellow"));
+    color.setColorStopAt( 1.0, QColor("red"));
+    colorMap->setGradient(color);
+  
+    colorMap->rescaleDataRange(); 
+    replot(); 
+  }
 
   void Clear(); // Clear Data and histrogram
 

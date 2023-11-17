@@ -72,14 +72,20 @@ int main(int argc, char **argv) {
     int snPos = inFileName[i].Index("_"); // first "_"
     //snPos = inFileName[i].Index("_", snPos + 1);
     int sn = atoi(&inFileName[i][snPos+5]);
-    TString typeStr = &inFileName[i][snPos+9];
+
+    int typePos = inFileName[i].Index("_", snPos+5);    
+    TString typeStr = &inFileName[i][typePos+1];
     typeStr.Resize(3);
+
+    printf("sn %d %s \n", sn, typeStr.Data());
 
     if( typeStr == "PHA" ) type[i] = DPPType::DPP_PHA_CODE;
     if( typeStr == "PSD" ) type[i] = DPPType::DPP_PSD_CODE;
+    if( typeStr == "QDC" ) type[i] = DPPType::DPP_QDC_CODE;
 
-    int order = atoi(&inFileName[i][snPos+13]);
-    ID[i] = sn + order * 1000;
+    int orderPos = inFileName[i].Index("_", typePos + 1);
+    int order = atoi(&inFileName[i][orderPos+1]);
+    ID[i] = sn + order * 100000;
 
     FILE * temp = fopen(inFileName[i].Data(), "rb");
     if( temp == NULL ) {
@@ -96,7 +102,7 @@ int main(int argc, char **argv) {
   }
   quickSort(&(ID[0]), &(type[0]), &(inFileName[0]), 0, nFile-1);
   for( int i = 0 ; i < nFile; i++){
-    printf("%d | %6d | %3d | %s | %u Bytes = %.2f MB\n", i, ID[i], type[i], inFileName[i].Data(), fileSize[i], fileSize[i]/1024./1024.);
+    printf("%d | %6d | %3d | %30s | %u Bytes = %.2f MB\n", i, ID[i], type[i], inFileName[i].Data(), fileSize[i], fileSize[i]/1024./1024.);
   }
   
   //*======================================= Sort files in to group 
@@ -104,11 +110,11 @@ int main(int argc, char **argv) {
   std::vector<int> typeList; // store the DPP type of the group
   std::vector<std::vector<TString>> fileList; // store the file list of the group
   for( int i = 0; i < nFile; i++){
-    if( ID[i] / 1000 == 0 ) {
+    if( ID[i] / 100000 == 0 ) {
       std::vector<TString> temp = {inFileName[i]};
       fileList.push_back(temp);
       typeList.push_back(type[i]);
-      snList.push_back(ID[i]%1000);
+      snList.push_back(ID[i]%100000);
     }else{
       for( int p = 0; p < (int) snList.size(); p++){
         if( (ID[i] % 1000) == snList[p] ) {

@@ -40,9 +40,10 @@ HEADERS += ClassData.h \
            qcustomplot.h \
            analyzers/Isotope.h \
            analyzers/Analyser.h \
+           analyzers/CoincidentAnalyzer.h \
            analyzers/SplitPoleAnalyzer.h \
-           analyzers/EncoreAnalyzer.h
-           analyzers/RAISOR.h
+           analyzers/EncoreAnalyzer.h \
+           analyzers/RAISOR.h 
 SOURCES += ClassDigitizer.cpp \
            DigiSettingsPanel.cpp \
            FSUDAQ.cpp \

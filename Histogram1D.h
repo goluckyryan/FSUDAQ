@@ -215,6 +215,8 @@ public:
     overFlow = 0;
     UpdatePlot();
   }
+  
+  void SetXTitle(QString xTitle) { xAxis->setLabel(xTitle); }
 
   void Rebin(int xbin, double xmin, double xmax){
     xMin = xmin;

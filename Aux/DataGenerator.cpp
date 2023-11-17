@@ -1,8 +1,8 @@
 #include <cstdio>
 #include <random>
 
-#include "macro.h"
-#include "ClassDigitizer.h"
+#include "../macro.h"
+#include "../ClassDigitizer.h"
 
 int main(){
 

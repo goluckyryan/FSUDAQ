@@ -8,8 +8,8 @@
 
 #include "CAENDigitizer.h"
 #include "CAENDigitizerType.h"
-#include "macro.h"
-#include "RegisterAddress.h"
+#include "../macro.h"
+#include "../RegisterAddress.h"
 
 using namespace std;
 

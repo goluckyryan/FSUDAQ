@@ -1,6 +1,6 @@
-#include "macro.h"
-#include "ClassData.h"
-#include "ClassDigitizer.h"
+#include "../macro.h"
+#include "../ClassData.h"
+#include "../ClassDigitizer.h"
 
 #include <TROOT.h>
 #include <TSystem.h>
