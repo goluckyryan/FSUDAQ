@@ -467,7 +467,13 @@ void Scope::UpdateScope(){
   Data * data = digi[ID]->GetData();
 
   //leTriggerRate->setText(QString::number(data->TriggerRate[ch]) + " [" + QString::number(data->NumEventsDecoded[ch]) + "]");
-  leTriggerRate->setText(QString::number(data->TriggerRate[ch]));
+  if( data->TriggerRate[ch] == 0){
+    leTriggerRate->setStyleSheet("font-weight : bold; color : red;");
+    leTriggerRate->setText("No Trigger");
+  }else{
+    leTriggerRate->setStyleSheet("");
+    leTriggerRate->setText(QString::number(data->TriggerRate[ch]));
+  }
 
   int index = data->DataIndex[ch];
   int traceLength = data->Waveform1[ch][index].size();
