@@ -151,7 +151,7 @@ inline void Data::AllocateMemory(uint32_t size){
   ClearBuffer();
   AllocatedSize = size;
   buffer = (char *) malloc( AllocatedSize); 
-  printf("Allocated %u byte for buffer = %u words\n", AllocatedSize, AllocatedSize / 4);
+  printf("Allocated %u byte ( %.2f MB) for buffer = %u words\n", AllocatedSize, AllocatedSize/1024./1024.,  AllocatedSize / 4);
 }
 
 inline void Data::Allocate80MBMemory(){

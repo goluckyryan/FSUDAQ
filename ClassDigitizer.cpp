@@ -461,7 +461,7 @@ int Digitizer::ProgramBoard_QDC(){
 void Digitizer::StartACQ(){
   if( softwareDisable ) return;
   if ( AcqRun ) return;
-  
+
   unsigned int bufferSize = 0;
   if( DPPType == V1730_DPP_PHA_CODE ){
     bufferSize = CalByteForBuffer();
@@ -469,10 +469,14 @@ void Digitizer::StartACQ(){
       printf("============= buffer size bigger than 160 MB (%u)\n", bufferSize );
       //return;
     }
+  }else if( DPPType == V1730_DPP_PSD_CODE) {
+    bufferSize = 200 * 1024 * 1024; //TODO allocate 200 MB for PSD
+  }else if( DPPType == V1740_DPP_QDC_CODE) {
+    bufferSize = 200 * 1024 * 1024; //TODO allocate 200 MB for QDC
+  }else{
+    printf("DPP type not supported. ACQ not start.\n");
+    return;
   }
-
-  if( DPPType == V1730_DPP_PSD_CODE) bufferSize = 100 * 1024 * 1024; //TODO allocate 160 MB for PSD
-  if( DPPType == V1740_DPP_QDC_CODE) bufferSize = 100 * 1024 * 1024; //TODO allocate 160 MB for QDC
 
   
   data->AllocateMemory(bufferSize);
