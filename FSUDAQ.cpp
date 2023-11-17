@@ -1089,7 +1089,7 @@ void MainWindow::StartACQ(){
   {//^=== elog and database
     if( influx ){
       influx->AddDataPoint("RunID value=" + std::to_string(runID));
-      if( elogName != "" ) influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=1");
+      if( !elogName.isEmpty() ) influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=1");
       influx->WriteData(dataBaseName.toStdString());
       influx->ClearDataPointsBuffer();
     }
@@ -1169,7 +1169,7 @@ void MainWindow::StopACQ(){
 
   {//^=== elog and database
     if( influx && elogName != "" ) {
-      influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=0");
+      if( !elogName.isEmpty() ) influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=0");
       influx->WriteData(dataBaseName.toStdString());
       influx->ClearDataPointsBuffer();
     }
@@ -1493,10 +1493,10 @@ void MainWindow::OpenScope(){
       if( scope  ) {
         if( onOff ) {
           lbScalarACQStatus->setText("<font style=\"color: green;\"><b>ACQ On</b></font>");
-          if( influx ) influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=1");
+          if( influx && !elogName.isEmpty()) influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=1");
         }else{
           lbScalarACQStatus->setText("<font style=\"color: red;\"><b>ACQ Off</b></font>");
-          if( influx ) influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=0");
+          if( influx && !elogName.isEmpty()) influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=0");
         }
         if( influx ){
           influx->WriteData(dataBaseName.toStdString());

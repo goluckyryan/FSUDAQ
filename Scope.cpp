@@ -363,29 +363,30 @@ void Scope::StartScope(){
   //TODO set other channel to be no trace;
   emit UpdateOtherPanels();
 
-  for( unsigned int iDigi = 0; iDigi < nDigi; iDigi ++){
+  for( int iDigi = (int)nDigi-1 ; iDigi >= 0; iDigi --){
 
     traceOn[iDigi] = digi[iDigi]->IsRecordTrace(); //remember setting
+    SendLogMsg("Digi-" + QString::number(digi[iDigi]->GetSerialNumber()) + " is starting ACQ." );
+    digi[iDigi]->WriteRegister(DPP::SoftwareClear_W, 1);
     digi[iDigi]->GetData()->ClearData();
     digi[iDigi]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, 1, -1);
+
+    readDataThread[iDigi]->SetScopeMode(true);
+    readDataThread[iDigi]->SetSaveData(false);
+
     digi[iDigi]->StartACQ();
 
 //    printf("----- readDataThread running ? %d.\n", readDataThread[iDigi]->isRunning());
-    if( readDataThread[iDigi]->isRunning() ){
-      readDataThread[iDigi]->quit();
-      readDataThread[iDigi]->wait();
-    }
-    readDataThread[iDigi]->SetScopeMode(true);
-    readDataThread[iDigi]->SetSaveData(false);
+    // if( readDataThread[iDigi]->isRunning() ){
+    //   readDataThread[iDigi]->quit();
+    //   readDataThread[iDigi]->wait();
+    // }
     readDataThread[iDigi]->start();
 //    printf("----- readDataThread running ? %d.\n", readDataThread[iDigi]->isRunning());
   }
 
-  printf("=========================== 1\n");
-
   updateTraceThread->start();
   updateScalarThread->start();
-  printf("=========================== 2\n");
 
   bnScopeStart->setEnabled(false);
   bnScopeStart->setStyleSheet("");
@@ -393,7 +394,6 @@ void Scope::StartScope(){
   bnScopeStop->setStyleSheet("background-color: red;");
 
   EnableControl(false);
-  printf("=========================== 3\n");
 
   TellACQOnOff(true);
 

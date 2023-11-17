@@ -117,18 +117,22 @@ void InfluxDB::CreateDatabase(std::string databaseName){
 }
 
 void InfluxDB::AddDataPoint(std::string fullString){
+  // printf(" InfluxDB::%s |%s| \n", __func__, fullString.c_str());
   dataPoints += fullString + "\n";
 }
 
 void InfluxDB::ClearDataPointsBuffer(){
+  // printf(" InfluxDB::%s \n", __func__);
   dataPoints = "";
 }
 
 void InfluxDB::PrintDataPoints(){
+  // printf(" InfluxDB::%s \n", __func__);
   printf("%s\n", dataPoints.c_str());
 }
 
 void InfluxDB::WriteData(std::string databaseName){  
+  // printf(" InfluxDB::%s \n", __func__);
   if( dataPoints.length() == 0 ) return;
   //printf("|%s|\n", (databaseIP + "write?db=" + databaseName).c_str());
   curl_easy_setopt(curl, CURLOPT_URL, (databaseIP + "write?db=" + databaseName).c_str());
@@ -140,6 +144,7 @@ void InfluxDB::WriteData(std::string databaseName){
 
 
 void InfluxDB::Execute(){
+  // printf(" InfluxDB::%s \n", __func__);
   try{
     respond = curl_easy_perform(curl);
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &respondCode);
@@ -152,6 +157,7 @@ void InfluxDB::Execute(){
 }
 
 size_t InfluxDB::WriteCallBack(char *contents, size_t size, size_t nmemb, void *userp){
+  // printf(" InfluxDB::%s \n", __func__);
   ((std::string*)userp)->append((char*)contents, size * nmemb);
   return size * nmemb;
 }
