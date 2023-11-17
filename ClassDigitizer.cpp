@@ -928,8 +928,9 @@ int Digitizer::LoadSettingBinaryToMemory(std::string fileName){
       if( dummy != 0 ) printf("reach the end of file (read %ld).\n", dummy);
       
       uint32_t boardInfo = GetSettingFromMemory(DPP::BoardInfo_R);
-      if( (boardInfo & 0xFF) == 0x0E ) tick2ns = 4.0;
-      if( (boardInfo & 0xFF) == 0x0B ) tick2ns = 2.0;
+      if( (boardInfo & 0xFF) == 0x0E ) tick2ns = 4.0;  // 725
+      if( (boardInfo & 0xFF) == 0x0B ) tick2ns = 2.0;  // 730
+      if( (boardInfo & 0xFF) == 0x04 ) tick2ns = 16.0; // 740
 
       ///Should seperate file<->memory, memory<->board
       ///ProgramSettingsToBoard(); /// do nothing if not connected.

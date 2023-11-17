@@ -32,7 +32,7 @@ public:
   ~Scope();
 
   void closeEvent(QCloseEvent * event){
-    StopScope();
+    if(isACQStarted) StopScope();
     emit CloseWindow();
     event->accept();
   }
@@ -84,6 +84,7 @@ private:
 
   ReadDataThread ** readDataThread;   
   TimingThread * updateTraceThread;
+  TimingThread * updateScalarThread;
 
   bool enableSignalSlot;
 

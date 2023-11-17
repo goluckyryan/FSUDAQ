@@ -719,16 +719,16 @@ void MainWindow::CloseDigitizers(){
 
   LogMsg("MainWindow::Closing Digitizer(s)....");
 
-  scalarThread->Stop();
-  scalarThread->quit();
-  scalarThread->exit();
-  CleanUpScalar();
-
   if( scope ) {
     scope->close();
     delete scope;
     scope = nullptr;
   }
+
+  scalarThread->Stop();
+  scalarThread->quit();
+  scalarThread->exit();
+  CleanUpScalar();
 
   if( histThread){
     histThread->Stop();
@@ -1016,7 +1016,7 @@ void MainWindow::UpdateScalar(){
       influx->AddDataPoint("RunID value=" + std::to_string(runID));
       influx->AddDataPoint("FileSize value=" + std::to_string(totalFileSize));
     }
-    //influx->PrintDataPoints();
+    //nflux->PrintDataPoints();
     influx->WriteData(dataBaseName.toStdString());
     influx->ClearDataPointsBuffer();
   }
@@ -1145,7 +1145,6 @@ void MainWindow::StopACQ(){
     histThread->wait();
     canvas->ClearInternalDataCount();
   }
-  
   lbScalarACQStatus->setText("<font style=\"color: red;\"><b>ACQ Off</b></font>");
 
   bnStartACQ->setEnabled(true);

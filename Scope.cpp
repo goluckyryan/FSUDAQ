@@ -118,6 +118,12 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   updateTraceThread->SetWaitTimeinSec(ScopeUpdateMiliSec / 1000.);
   connect(updateTraceThread, &TimingThread::timeUp, this, &Scope::UpdateScope);
 
+  updateScalarThread = new TimingThread();
+  updateScalarThread->SetWaitTimeinSec(2);
+  connect(updateScalarThread, &TimingThread::timeUp, this, [=](){
+    emit UpdateScaler();
+  });
+
   NullThePointers();
 
   //*================================== UI
@@ -305,6 +311,12 @@ Scope::~Scope(){
   updateTraceThread->quit();
   updateTraceThread->wait();
   delete updateTraceThread;
+
+  updateScalarThread->Stop();
+  updateScalarThread->quit();
+  updateScalarThread->wait();
+  delete updateScalarThread;
+
   for( int i = 0; i < MaxNumberOfTrace; i++) delete dataTrace[i];
   delete plot;
 }
@@ -358,7 +370,7 @@ void Scope::StartScope(){
     digi[iDigi]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, 1, -1);
     digi[iDigi]->StartACQ();
 
-    printf("----- readDataThread running ? %d.\n", readDataThread[iDigi]->isRunning());
+//    printf("----- readDataThread running ? %d.\n", readDataThread[iDigi]->isRunning());
     if( readDataThread[iDigi]->isRunning() ){
       readDataThread[iDigi]->quit();
       readDataThread[iDigi]->wait();
@@ -366,10 +378,14 @@ void Scope::StartScope(){
     readDataThread[iDigi]->SetScopeMode(true);
     readDataThread[iDigi]->SetSaveData(false);
     readDataThread[iDigi]->start();
-    printf("----- readDataThread running ? %d.\n", readDataThread[iDigi]->isRunning());
+//    printf("----- readDataThread running ? %d.\n", readDataThread[iDigi]->isRunning());
   }
 
+  printf("=========================== 1\n");
+
   updateTraceThread->start();
+  updateScalarThread->start();
+  printf("=========================== 2\n");
 
   bnScopeStart->setEnabled(false);
   bnScopeStart->setStyleSheet("");
@@ -377,6 +393,7 @@ void Scope::StartScope(){
   bnScopeStop->setStyleSheet("background-color: red;");
 
   EnableControl(false);
+  printf("=========================== 3\n");
 
   TellACQOnOff(true);
 
@@ -391,6 +408,10 @@ void Scope::StopScope(){
   updateTraceThread->Stop();
   updateTraceThread->quit();
   updateTraceThread->exit();
+
+  updateScalarThread->Stop();
+  updateScalarThread->quit();
+  updateScalarThread->exit();
 
   for( unsigned int iDigi = 0; iDigi < nDigi; iDigi ++){
 
@@ -501,17 +522,15 @@ void Scope::UpdateScope(){
   }
   digiMTX[ID].unlock();
 
-  if( data->TriggerRate[ch] == 0 ){
-      dataTrace[0]->clear();
-      dataTrace[1]->clear();
-      dataTrace[2]->clear();
-      dataTrace[3]->clear();
-      dataTrace[4]->clear();
-  }
+  // if( data->TriggerRate[ch] == 0 ){
+  //     dataTrace[0]->clear();
+  //     dataTrace[1]->clear();
+  //     dataTrace[2]->clear();
+  //     dataTrace[3]->clear();
+  //     dataTrace[4]->clear();
+  // }
 
   plot->axes(Qt::Horizontal).first()->setRange(0, tick2ns * traceLength * factor);
-
-  emit UpdateScaler();
 
 }
 
