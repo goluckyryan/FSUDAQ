@@ -67,7 +67,7 @@ private:
 
   Histogram1D * hMulti;
 
-  QCheckBox * runAnalyzer;
+  QCheckBox * chkRunAnalyzer;
 
 };
 
@@ -76,8 +76,8 @@ inline void Encore::SetUpCanvas(){
 
   setGeometry(0, 0, 1600, 1600);  
 
-  runAnalyzer = new QCheckBox("Run Analyzer", this);
-  layout->addWidget(runAnalyzer, 0, 0);
+  chkRunAnalyzer = new QCheckBox("Run Analyzer", this);
+  layout->addWidget(chkRunAnalyzer, 0, 0);
 
   hLeft  = new Histogram2D("Left", "Ch", "Energy", 17, 0, 16, 200, 0, 20000, this);
   layout->addWidget(hLeft, 1, 0);
@@ -93,7 +93,7 @@ inline void Encore::SetUpCanvas(){
 inline void Encore::UpdateHistograms(){
 
   if( this->isVisible() == false ) return;
-  if( runAnalyzer->isChecked() == false ) return;
+  if( chkRunAnalyzer->isChecked() == false ) return;
 
   BuildEvents(); // call the event builder to build events
 

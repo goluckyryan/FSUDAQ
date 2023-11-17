@@ -802,6 +802,8 @@ void Digitizer::ProgramSettingsToBoard(){
   
   printf("========== %s \n", __func__);
 
+  const short pauseMilliSec = 10;
+
   Reg haha;
   
   if( DPPType == DPPType::DPP_PHA_CODE || DPPType == DPPType::DPP_PSD_CODE ){
@@ -811,7 +813,7 @@ void Digitizer::ProgramSettingsToBoard(){
       if( RegisterBoardList_PHAPSD[p].GetRWType() == RW::ReadWrite) {
         haha = RegisterBoardList_PHAPSD[p];
         WriteRegister(haha, GetSettingFromMemory(haha), -1, false); 
-        usleep(1 * 1000);
+        usleep(pauseMilliSec * 1000);
       }
     }
     /// Channels Setting
@@ -821,7 +823,7 @@ void Digitizer::ProgramSettingsToBoard(){
           if( RegisterChannelList_PHA[p].GetRWType() == RW::ReadWrite ){
             haha = RegisterChannelList_PHA[p];
             WriteRegister(haha, GetSettingFromMemory(haha, ch), ch, false); 
-            usleep(1 * 1000);
+            usleep(pauseMilliSec * 1000);
           }
         }
       }
@@ -830,7 +832,7 @@ void Digitizer::ProgramSettingsToBoard(){
           if( RegisterChannelList_PSD[p].GetRWType() == RW::ReadWrite){
             haha = RegisterChannelList_PSD[p];
             WriteRegister(haha, GetSettingFromMemory(haha, ch), ch, false); 
-            usleep(1 * 1000);
+            usleep(pauseMilliSec * 1000);
           }
         }
       }
@@ -842,7 +844,7 @@ void Digitizer::ProgramSettingsToBoard(){
       if( RegisterBoardList_QDC[p].GetRWType() == RW::ReadWrite) {
         haha = RegisterBoardList_QDC[p];
         WriteRegister(haha, GetSettingFromMemory(haha), -1, false); 
-        usleep(1 * 1000);
+        usleep(pauseMilliSec * 1000);
       }
     }
     /// Channels Setting
@@ -851,7 +853,7 @@ void Digitizer::ProgramSettingsToBoard(){
         if( RegisterChannelList_QDC[p].GetRWType() == RW::ReadWrite ){
           haha = RegisterChannelList_QDC[p];
           WriteRegister(haha, GetSettingFromMemory(haha, ch), ch, false); 
-          usleep(1 * 1000);
+          usleep(pauseMilliSec * 1000);
         }
       }
     }

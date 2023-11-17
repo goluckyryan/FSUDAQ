@@ -87,7 +87,7 @@ private:
   RSpinBox * sbEnergy;
   RSpinBox * sbAngle;
 
-  QCheckBox * runAnalyzer;
+  QCheckBox * chkRunAnalyzer;
 
   QLineEdit * leMassTablePath;
   QLineEdit * leQValue;
@@ -212,8 +212,8 @@ inline void SplitPole::SetUpCanvas(){
       FillConstants();
     });
 
-    runAnalyzer = new QCheckBox("Run Analyzer", this);
-    boxLayout->addWidget(runAnalyzer, 4, 1);
+    chkRunAnalyzer = new QCheckBox("Run Analyzer", this);
+    boxLayout->addWidget(chkRunAnalyzer, 4, 1);
 
 
     QFrame *separator = new QFrame(box);
@@ -303,7 +303,7 @@ inline void SplitPole::SetUpCanvas(){
 inline void SplitPole::UpdateHistograms(){
 
   if( this->isVisible() == false ) return;
-  if( runAnalyzer->isChecked() == false ) return;
+  if( chkRunAnalyzer->isChecked() == false ) return;
 
   BuildEvents(); // call the event builder to build events
 

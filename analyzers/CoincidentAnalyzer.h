@@ -46,10 +46,10 @@ private:
   Histogram1D * h1g;
   Histogram1D * hMulti;
 
-  QCheckBox * runAnalyzer;
+  QCheckBox * chkRunAnalyzer;
   RSpinBox * sbUpdateTime;
 
-  QCheckBox * backWardBuilding;
+  QCheckBox * chkBackWardBuilding;
   RSpinBox * sbBackwardCount;
 
   RSpinBox * sbBuildWindow;
@@ -78,8 +78,8 @@ inline void CoincidentAnalyzer::SetUpCanvas(){
     boxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     box->setLayout(boxLayout);
 
-    runAnalyzer = new QCheckBox("Run Analyzer", this);
-    boxLayout->addWidget(runAnalyzer, 0, 0);
+    chkRunAnalyzer = new QCheckBox("Run Analyzer", this);
+    boxLayout->addWidget(chkRunAnalyzer, 0, 0);
 
     QLabel * lbUpdateTime = new QLabel("Update Period [s]", this);
     lbUpdateTime->setAlignment(Qt::AlignRight | Qt::AlignCenter);
@@ -90,8 +90,10 @@ inline void CoincidentAnalyzer::SetUpCanvas(){
     sbUpdateTime->setValue(1);
     boxLayout->addWidget(sbUpdateTime, 0, 2);
 
-    backWardBuilding = new QCheckBox("Use Backward builder", this);
-    boxLayout->addWidget(backWardBuilding, 1, 0);
+    connect(sbUpdateTime, &RSpinBox::valueChanged, this, [=](double sec){ SetUpdateTimeInSec(sec); });
+
+    chkBackWardBuilding = new QCheckBox("Use Backward builder", this);
+    boxLayout->addWidget(chkBackWardBuilding, 1, 0);
 
     QLabel * lbBKWindow = new QLabel("No. Backward Event", this);
     lbBKWindow->setAlignment(Qt::AlignRight | Qt::AlignCenter);
@@ -102,8 +104,17 @@ inline void CoincidentAnalyzer::SetUpCanvas(){
     sbBackwardCount->setValue(100);
     boxLayout->addWidget(sbBackwardCount, 1, 2);
 
-    backWardBuilding->setChecked(false);
+    chkBackWardBuilding->setChecked(false);
     sbBackwardCount->setEnabled(false);
+
+    connect(chkBackWardBuilding, &QCheckBox::stateChanged, this, [=](int status){
+      SetBackwardBuild(status, sbBackwardCount->value());
+      sbBackwardCount->setEnabled(status);
+    });
+
+    connect(sbBackwardCount, &RSpinBox::valueChanged, this, [=](double value){
+      SetBackwardBuild(true, value);
+    });
 
     QLabel * lbBuildWindow = new QLabel("Event Window [tick]", this);
     lbBuildWindow->setAlignment(Qt::AlignRight | Qt::AlignCenter);
@@ -112,6 +123,10 @@ inline void CoincidentAnalyzer::SetUpCanvas(){
     sbBuildWindow->setMinimum(1);
     sbBuildWindow->setMaximum(9999999999);
     boxLayout->addWidget(sbBuildWindow, 2, 2);
+
+    connect(sbBuildWindow, &RSpinBox::valueChanged, this, [=](double value){
+      evtbder->SetTimeWindow((int)value);
+    });
 
     QFrame *separator = new QFrame(box);
     separator->setFrameShape(QFrame::HLine);
@@ -172,6 +187,7 @@ inline void CoincidentAnalyzer::SetUpCanvas(){
     for( int i = 0; i < digi[0]->GetNumInputCh(); i++) aCh->addItem("Ch-" + QString::number(i));
     boxLayout->addWidget(aCh, 7, 3);
 
+
   }
 
   //============ histograms
@@ -199,7 +215,7 @@ inline void CoincidentAnalyzer::SetUpCanvas(){
 inline void CoincidentAnalyzer::UpdateHistograms(){
 
   if( this->isVisible() == false ) return;
-  if( runAnalyzer->isChecked() == false ) return;
+  if( chkRunAnalyzer->isChecked() == false ) return;
 
   BuildEvents(); // call the event builder to build events
 
