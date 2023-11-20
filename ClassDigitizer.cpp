@@ -937,9 +937,9 @@ int Digitizer::LoadSettingBinaryToMemory(std::string fileName){
       if( dummy != 0 ) printf("reach the end of file (read %ld).\n", dummy);
       
       uint32_t boardInfo = GetSettingFromMemory(DPP::BoardInfo_R);
-      if( (boardInfo & 0xFF) == 0x0E ) tick2ns = 4.0;  // 725
-      if( (boardInfo & 0xFF) == 0x0B ) tick2ns = 2.0;  // 730
-      if( (boardInfo & 0xFF) == 0x04 ) tick2ns = 16.0; // 740
+      if( (boardInfo & 0xFF) == 0x0E ) {tick2ns = 4.0;  NumRegChannel = 16;}// 725
+      if( (boardInfo & 0xFF) == 0x0B ) {tick2ns = 2.0;  NumRegChannel = 16;}// 730
+      if( (boardInfo & 0xFF) == 0x04 ) {tick2ns = 16.0; NumRegChannel =  8;}// 740
 
       ///Should seperate file<->memory, memory<->board
       ///ProgramSettingsToBoard(); /// do nothing if not connected.
@@ -1006,7 +1006,7 @@ void Digitizer::SaveAllSettingsAsBin(std::string fileName){
 }
 
 void Digitizer::SaveAllSettingsAsText(std::string fileName){
-  if( !isSettingFilledinMemeory ) return;
+  if( !isSettingFilledinMemeory && isConnected) return;
   
   FILE * txtFile = fopen(fileName.c_str(), "w+");  
   if( txtFile == NULL ) {
@@ -1060,6 +1060,10 @@ void Digitizer::SaveAllSettingsAsText(std::string fileName){
                                                           setting[i]);
     }
   }
+
+  printf("Saved setting as text to %s.\n", fileName.c_str());
+  fclose(txtFile);
+
 }
 
 std::string Digitizer::GetDPPString(int DPPType){
