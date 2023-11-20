@@ -587,12 +587,15 @@ int Digitizer::ReadData(){
   //uint32_t EventSize = ReadRegister(DPP::EventSize); // Is it as same as data->nByte?
   // if( data->nByte > 0 ) printf("Read Buffer size %d byte \n", data->nByte);
   
-  if (ret || data->nByte == 0) {
+  if (ret != CAEN_DGTZ_Success || data->nByte == 0) {
     ErrorMsg(__func__);
+    if( ret == CAEN_DGTZ_OutOfMemory) {
+      printf("Abort ReadData.\n");
+      return ret;
+    }
   }
 
-  acqStatus = ReadRegister(DPP::AcquisitionStatus_R);
-    
+  ReadACQStatus();
 
   return ret;
 }

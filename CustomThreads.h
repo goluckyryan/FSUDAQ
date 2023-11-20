@@ -78,7 +78,14 @@ public:
         printf("ReadDataThread::%s------------ ret : %d \n", __func__, ret);
         digiMTX[ID].lock();
         digi->StopACQ();
+        if( ret == CAEN_DGTZ_OutOfMemory ){
+          digi->WriteRegister(DPP::SoftwareClear_W, 1);
+          digi->GetData()->ClearData();
+        }
+        digi->ReadACQStatus();
         digiMTX[ID].unlock();
+        emit sendMsg("Digi-" + QString::number(digi->GetSerialNumber()) + " ACQ off.");
+        stop = true;
         break;
       }
 

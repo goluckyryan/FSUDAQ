@@ -96,6 +96,7 @@ class Digitizer{
     Data * GetData()   const {return data;}
     uint32_t GetACQStatus() const {return acqStatus;}
     void   ReadAndPrintACQStatue();
+    void   ReadACQStatus() { acqStatus = ReadRegister(DPP::AcquisitionStatus_R); }
 
     unsigned int CalByteForBuffer();
 

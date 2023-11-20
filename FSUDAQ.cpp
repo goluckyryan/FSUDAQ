@@ -982,6 +982,7 @@ void MainWindow::UpdateScalar(){
     digiMTX[iDigi].lock();
 
     uint32_t acqStatus = digi[iDigi]->GetACQStatus();
+    //printf("Digi-%d : acq on/off ? : %d \n", digi[iDigi]->GetSerialNumber(), (acqStatus >> 2) & 0x1 );
     if( ( acqStatus >> 2 ) & 0x1 ){
       runStatus[iDigi]->setStyleSheet("background-color : green;");
     }else{
