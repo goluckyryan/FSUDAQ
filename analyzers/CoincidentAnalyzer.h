@@ -103,7 +103,12 @@ inline void CoincidentAnalyzer::SetUpCanvas(){
       sbUpdateTime->setValue(1);
       boxLayout->addWidget(sbUpdateTime, 0, 2);
 
-      connect(sbUpdateTime, &RSpinBox::valueChanged, this, [=](double sec){ SetUpdateTimeInSec(sec); });
+      connect(sbUpdateTime, &RSpinBox::valueChanged, this, [=](){ sbUpdateTime->setStyleSheet("color : blue"); });
+
+      connect(sbUpdateTime, &RSpinBox::returnPressed, this, [=](){ 
+        sbUpdateTime->setStyleSheet("");
+        SetUpdateTimeInSec(sbUpdateTime->value()); 
+      });
 
       chkBackWardBuilding = new QCheckBox("Use Backward builder", this);
       boxLayout->addWidget(chkBackWardBuilding, 1, 0);
@@ -123,10 +128,16 @@ inline void CoincidentAnalyzer::SetUpCanvas(){
       connect(chkBackWardBuilding, &QCheckBox::stateChanged, this, [=](int status){
         SetBackwardBuild(status, sbBackwardCount->value());
         sbBackwardCount->setEnabled(status);
+        SetBackwardBuild(true, sbBackwardCount->value());
       });
 
-      connect(sbBackwardCount, &RSpinBox::valueChanged, this, [=](double value){
-        SetBackwardBuild(true, value);
+      connect(sbBackwardCount, &RSpinBox::valueChanged, this, [=](){
+        sbBackwardCount->setStyleSheet("color : blue;");
+      });
+
+      connect(sbBackwardCount, &RSpinBox::returnPressed, this, [=](){ 
+        sbBackwardCount->setStyleSheet("");
+        SetBackwardBuild(true, sbBackwardCount->value());
       });
 
       QLabel * lbBuildWindow = new QLabel("Event Window [tick]", this);
@@ -137,8 +148,13 @@ inline void CoincidentAnalyzer::SetUpCanvas(){
       sbBuildWindow->setMaximum(9999999999);
       boxLayout->addWidget(sbBuildWindow, 2, 2);
 
-      connect(sbBuildWindow, &RSpinBox::valueChanged, this, [=](double value){
-        evtbder->SetTimeWindow((int)value);
+      connect(sbBuildWindow, &RSpinBox::valueChanged, this, [=](){
+        sbBuildWindow->setStyleSheet("color : blue;");
+      });
+
+      connect(sbBuildWindow, &RSpinBox::returnPressed, this, [=](){
+        sbBuildWindow->setStyleSheet("");
+        evtbder->SetTimeWindow((int)sbBuildWindow->value());
       });
     }
 
