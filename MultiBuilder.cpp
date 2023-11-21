@@ -58,6 +58,18 @@ void MultiBuilder::PrintStat(){
 
 }
 
+void MultiBuilder::PrintAllEvent(){
+
+  printf("Total number of evet built : %ld\n", totalEventBuilt);
+  for( int i = 0; i < totalEventBuilt; i++){
+    printf("%5d ------- size: %ld\n", i, events[i].size());
+    for( int j = 0; j < (int)events[i].size(); j++){
+      events[i][j].Print();
+    }
+  }
+
+}
+
 void MultiBuilder::FindEarlistTimeAndCh(bool verbose){
 
   earlistTime = -1;

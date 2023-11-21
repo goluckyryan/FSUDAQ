@@ -56,6 +56,7 @@ public:
 
   void ClearEvents();
   void PrintStat();
+  void PrintAllEvent();
 
   long eventIndex;
   long eventBuilt; // reset once call BuildEvents()

@@ -29,9 +29,9 @@ MultiBuilder.o : ../MultiBuilder.cpp ../MultiBuilder.h
 ClassDigitizer.o : ../ClassDigitizer.cpp ../ClassDigitizer.h ../RegisterAddress.h ../macro.h ../ClassData.h
 		$(CC) $(COPTS) -c ../ClassDigitizer.cpp
 
-test	:	test.cpp ../ClassDigitizer.o
+test	:	test.cpp ../ClassDigitizer.o ../MultiBuilder.o
 		@echo "--------- making test"
-		$(CC) $(COPTS) -o test test.cpp ../ClassDigitizer.o  $(CAENLIBS)  $(ROOTLIBS)
+		$(CC) $(COPTS) -o test test.cpp ../ClassDigitizer.o ../MultiBuilder.o $(CAENLIBS)  $(ROOTLIBS)
 
 test_indep : test_indep.cpp ../RegisterAddress.h ../macro.h
 		@echo "--------- making test_indep"
