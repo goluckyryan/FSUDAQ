@@ -72,7 +72,9 @@ class Data{
     void ClearData();
     void ClearTriggerRate();
     void ClearBuffer();
-    
+
+    unsigned short GetNChannel() const {return numInputCh;}
+
     void CopyBuffer( const char * buffer, const unsigned int size); 
         
     void DecodeBuffer(bool fastDecode, int verbose = 0); /// fastDecode will not save waveform
