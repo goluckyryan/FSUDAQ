@@ -739,6 +739,12 @@ void MainWindow::CloseDigitizers(){
     histThread = nullptr;
   }
 
+  if( onlineAnalyzer ){
+    onlineAnalyzer->close();
+    delete onlineAnalyzer;
+    onlineAnalyzer = nullptr;
+  }
+
 
   if( canvas ){
     canvas->close();

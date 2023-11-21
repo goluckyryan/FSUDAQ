@@ -255,7 +255,7 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
 
 void MultiBuilder::BuildEventsBackWard(int maxNumEvent, bool verbose){
 
-  //skip trace, and only build for 100 events max
+  //skip trace, and only build for maxNumEvent events max
 
   // remember the end of DataIndex, prevent over build
   for( int k = 0; k < nData; k++){
