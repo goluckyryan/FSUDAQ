@@ -27,6 +27,9 @@ public:
       }
     }
 
+    isChannelMap = false;
+    tickStep = 1; // only used when isChannelMap = true
+
     axisRect()->setupFullAxesBox(true);
     xAxis->setLabel(xLabel);
     yAxis->setLabel(yLabel);
@@ -183,6 +186,8 @@ public:
   void SetYTitle(QString yTitle) { yAxis->setLabel(yTitle); }
   void Rebin(int xbin, double xmin, double xmax, int ybin, double ymin, double ymax);
 
+  void SetChannelMap(bool onOff, int tickStep = 1) { isChannelMap = onOff; this->tickStep = tickStep;}
+
   void UpdatePlot(){ 
     QCPColorGradient color;
     color.clearColorStops();
@@ -196,6 +201,7 @@ public:
     colorMap->setGradient(color);
   
     colorMap->rescaleDataRange(); 
+
     replot(); 
   }
 
@@ -211,9 +217,19 @@ public:
   QList<QString> GetCutNameList() const { return cutNameList;}
   void PrintCutEntry() const;
 
+  double GetXNBin() const {return xBin;}
+  double GetXMin()  const {return xMin;}
+  double GetXMax()  const {return xMax;}
+  double GetYNBin() const {return yBin;}
+  double GetYMin()  const {return yMin;}
+  double GetYMax()  const {return yMax;}
+
 private:
   double xMin, xMax, yMin, yMax;
   int xBin, yBin;
+
+  bool isChannelMap; 
+  int tickStep;
 
   QCPColorMap * colorMap;
   QCPColorScale *colorScale;
@@ -281,12 +297,18 @@ inline  void Histogram2D::Rebin(int xbin, double xmin, double xmax, int ybin, do
   xMax = xmax;
   yMin = ymin;
   yMax = ymax;
-  xBin = xbin;
-  yBin = ybin;
+  xBin = xbin + 2;
+  yBin = ybin + 2;
 
   colorMap->data()->clear();
   colorMap->data()->setSize(xBin, yBin);
   colorMap->data()->setRange(QCPRange(xMin, xMax), QCPRange(yMin, yMax));
+
+  if( isChannelMap ){
+    QCPAxis * xAxis = colorMap->keyAxis();
+    xAxis->ticker()->setTickCount(xbin/tickStep);
+    xAxis->ticker()->setTickOrigin(0);
+  }
 
   for( int i = 0; i < 3; i ++){
     for( int j = 0; j < 3; j ++){

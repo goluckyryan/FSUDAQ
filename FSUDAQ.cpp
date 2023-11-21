@@ -979,9 +979,7 @@ void MainWindow::UpdateScalar(){
   for( unsigned int iDigi = 0; iDigi < nDigi; iDigi++){
     if( digi[iDigi]->IsBoardDisabled() ) continue;
 
-    digiMTX[iDigi].lock();
-
-    uint32_t acqStatus = digi[iDigi]->GetACQStatus();
+    uint32_t acqStatus = digi[iDigi]->GetACQStatusFromMemory();
     //printf("Digi-%d : acq on/off ? : %d \n", digi[iDigi]->GetSerialNumber(), (acqStatus >> 2) & 0x1 );
     if( ( acqStatus >> 2 ) & 0x1 ){
       runStatus[iDigi]->setStyleSheet("background-color : green;");
@@ -989,6 +987,7 @@ void MainWindow::UpdateScalar(){
       runStatus[iDigi]->setStyleSheet("");
     }
 
+    digiMTX[iDigi].lock();
     // printf("### %d ", iDigi);
     // digi[iDigi]->GetData()->PrintAllData(true, 10);
     if( chkSaveData->isChecked() ) totalFileSize += digi[iDigi]->GetData()->GetTotalFileSize();
@@ -1612,6 +1611,18 @@ void MainWindow::UpdateAllPanels(int panelID){
 
   if( panelID == 1 ){ // from scope
     if( digiSettings && digiSettings->isVisible() ) digiSettings->UpdatePanelFromMemory();
+    if( scalar ) {
+      for( unsigned int iDigi = 0; iDigi < nDigi; iDigi++){
+        if( digi[iDigi]->IsBoardDisabled() ) continue;
+
+        uint32_t acqStatus = digi[iDigi]->GetACQStatusFromMemory(); 
+        if( ( acqStatus >> 2 ) & 0x1 ){
+          runStatus[iDigi]->setStyleSheet("background-color : green;");
+        }else{
+          runStatus[iDigi]->setStyleSheet("");
+        }
+      }
+    }
   }
 
   if( panelID == 2 ){

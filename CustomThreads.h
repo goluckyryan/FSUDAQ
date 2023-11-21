@@ -130,6 +130,7 @@ public:
   void Stop() { this->stop = true;}
   void SetWaitTimeinSec(float sec) {waitTime = sec * 10 ;}
   float GetWaitTimeinSec() const {return waitTime/10.;}
+  void DoOnce() {emit timeUp();};
   void run(){
     unsigned int count  = 0;
     stop = false;

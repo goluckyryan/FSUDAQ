@@ -94,7 +94,7 @@ class Digitizer{
     int    ReadData();
     bool   IsRunning() const {return AcqRun;}
     Data * GetData()   const {return data;}
-    uint32_t GetACQStatus() const {return acqStatus;}
+    uint32_t GetACQStatusFromMemory() const {return acqStatus;}
     void   ReadAndPrintACQStatue();
     void   ReadACQStatus() { acqStatus = ReadRegister(DPP::AcquisitionStatus_R); }
 

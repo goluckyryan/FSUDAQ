@@ -422,6 +422,7 @@ void Scope::StopScope(){
     }
     digiMTX[iDigi].lock();
     digi[iDigi]->StopACQ();
+    digi[iDigi]->ReadACQStatus();
     //digi[iDigi]->GetData()->PrintAllData();
     digiMTX[iDigi].unlock();
 

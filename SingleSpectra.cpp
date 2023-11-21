@@ -108,6 +108,8 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
         }
       }
       hist2D[i] = new Histogram2D("Digi-" + QString::number(digi[i]->GetSerialNumber()), "Channel", "Raw Energy [ch]", digi[i]->GetNumInputCh(), 0, digi[i]->GetNumInputCh(), nBin, eMin, eMax);
+      hist2D[i]->SetChannelMap(true, digi[i]->GetNumInputCh() < 20  ? 1 : 4);
+      hist2D[i]->Rebin(digi[i]->GetNumInputCh(), -0.5, digi[i]->GetNumInputCh()+0.5, nBin, eMin, eMax);
     }
 
     LoadSetting();
@@ -244,6 +246,15 @@ void SingleSpectra::SaveSetting(){
       QString d = QString::number(hist[i][ch]->GetXMax()).rightJustified(6, ' ');
       file.write( QString("%1 %2 %3 %4\n").arg(a).arg(b).arg(c).arg(d).toStdString().c_str() );
     }
+
+    QString a = QString::number(digi[i]->GetNumInputCh()).rightJustified(2, ' ');
+    QString b = QString::number(hist2D[i]->GetXNBin()).rightJustified(6, ' ');
+    QString c = QString::number(hist2D[i]->GetXMin()).rightJustified(6, ' ');
+    QString d = QString::number(hist2D[i]->GetXMax()).rightJustified(6, ' ');
+    QString e = QString::number(hist2D[i]->GetYNBin()).rightJustified(6, ' ');
+    QString f = QString::number(hist2D[i]->GetYMin()).rightJustified(6, ' ');
+    QString g = QString::number(hist2D[i]->GetYMax()).rightJustified(6, ' ');
+    file.write( QString("%1 %2 %3 %4 %5 %6 %7\n").arg(a).arg(b).arg(c).arg(d).arg(e).arg(f).arg(g).toStdString().c_str() );
   }
 
   file.write("//========== End of file\n");
@@ -291,8 +302,15 @@ void SingleSpectra::LoadSetting(){
         for( int i = 0; i < list.count(); i++){   
           data.push_back(list[i].toInt());
         }
+        
+        if( 0 <= data[0] && data[0] < digi[digiID]->GetNumInputCh() ){
+          hist[digiID][data[0]]->Rebin(data[1], data[2], data[3]);
+        }
 
-        hist[digiID][data[0]]->Rebin(data[1], data[2], data[3]);
+        if( data[0] == digi[digiID]->GetNumInputCh() && data.size() == 7 ){
+          hist2D[digiID]->Rebin(data[1], data[2], data[3], data[4], data[5], data[6]);
+        }
+
       }
 
       line = in.readLine();
