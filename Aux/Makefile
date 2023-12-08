@@ -6,7 +6,7 @@
 CC	=	g++
 
 #COPTS	=	-fPIC -DLINUX -O2 -std=c++17 -lpthread
-COPTS	=	-fPIC -DLINUX -g -O2 -Wall -std=c++17 -lpthread
+COPTS	=	-fPIC -DLINUX -g -O0 -Wall -std=c++17 -lpthread
 
 CAENLIBS	=	-lCAENDigitizer
 

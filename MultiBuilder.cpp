@@ -281,7 +281,7 @@ void MultiBuilder::BuildEventsBackWard(int maxNumEvent, bool verbose){
 
   // remember the end of DataIndex, prevent over build
   for( int k = 0; k < nData; k++){
-    for( int i = 0; i < data[i]->GetNChannel(); i++){
+    for( int i = 0; i < data[k]->GetNChannel(); i++){
       nextIndex[k][i] = data[k]->DataIndex[i];
       loopIndex[k][i] = data[k]->LoopIndex[i];
     }
@@ -363,7 +363,7 @@ void MultiBuilder::BuildEventsBackWard(int maxNumEvent, bool verbose){
 
     }
 
-  }while(nExhaushedCh < nData * MaxNChannels && eventBuilt <= maxNumEvent);
+  }while(nExhaushedCh < nData * MaxNChannels && eventBuilt < maxNumEvent);
 
   // // remember the end of DataIndex, prevent over build
   // for( int k = 0; k < nData; k++){

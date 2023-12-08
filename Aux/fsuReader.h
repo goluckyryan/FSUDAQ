@@ -1,4 +1,4 @@
-#include "ClassData.h"
+#include "../ClassData.h"
 
 class FSUReader{
 

@@ -75,7 +75,8 @@ int main(int argc, char* argv[]){
     
     data->PrintAllData(true);
 
-    builder->BuildEvents(false, true, true);
+    //builder->BuildEvents(false, true, true);
+    builder->BuildEventsBackWard(20, true);
 
     builder->PrintStat();
     // int index = data->NumEventsDecoded[0];
@@ -86,7 +87,7 @@ int main(int argc, char* argv[]){
 
   //data->CloseSaveFile();
   builder->BuildEvents(true, true, true);
-  
+
   data->PrintAllData();
 
   builder->PrintAllEvent(); // TODO
