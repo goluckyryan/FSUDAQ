@@ -217,9 +217,10 @@ int main(int argc, char **argv) {
     bool breakFlag = false;
     do{
 
-      // Get 1 agg. from each file.
+      // Get many agg. from each file.
       for ( int i = 0; i < nGroup; i++){
         if( inFile[i] == nullptr ) continue;
+
         size_t dummy = fread(word, 4, 1, inFile[i]);
         if( dummy != 1) {
           //printf("fread error, should read 4 bytes, but read %ld x 4 byte, file pos: %ld byte (%s)\n", dummy, ftell(inFile[i]), fileList[i][inFileIndex[i]].Data());
@@ -268,7 +269,7 @@ int main(int argc, char **argv) {
       //check if Data Index near MaxNData. if near by 50%, break
       //printf("-----------------------------------\n");
       for( int i = 0; i < nGroup; i++){
-        for( int ch = 0; ch < MaxRegChannel; ch ++){
+        for( int ch = 0; ch < data[i]->GetNChannel(); ch ++){
           if( data[i]->LoopIndex[ch]*MaxNData + data[i]->DataIndex[ch] - lastLoopIndex[i][ch]*MaxNData - lastDataIndex[i][ch] > MaxNData * 0.5 ) {
             breakFlag = true;
             //printf("digi:%d | ch: %d DataIndex: %d (%d) \n", data[i]->boardSN, ch, data[i]->DataIndex[ch], lastDataIndex[i][ch]);
