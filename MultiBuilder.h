@@ -45,8 +45,14 @@ public:
   MultiBuilder(Data * singleData, int type, int sn);
   ~MultiBuilder();
 
-  void SetTimeWindow(int ticks) {timeWindow = ticks;}
-  int GetTimeWindow() const{return timeWindow;}
+  void SetTimeWindow(unsigned short ticks) {timeWindow = ticks;}
+  unsigned short GetTimeWindow() const{return timeWindow;}
+
+  void SetLeftOverTime(unsigned long long ticks) {leftOverTime = ticks;}
+  unsigned long long GetLeftOverTime() const{return leftOverTime;}
+
+  void SetBreakTime(unsigned long long ticks) {breakTime = ticks;}
+  unsigned long long GetBreakTime() const{return breakTime;}
 
   unsigned int GetNumOfDigitizer() const {return nData;}
   std::vector<int> GetDigiIDList() const {return idList;}
@@ -71,6 +77,8 @@ private:
   Data ** data; // assume all data has MaxNChannel (16) 
 
   unsigned short timeWindow;
+  unsigned long long leftOverTime;
+  unsigned long long breakTime; // timestamp for breaking the event builder
   int loopIndex[MaxNDigitizer][MaxNChannels];
   int nextIndex[MaxNDigitizer][MaxNChannels];
 

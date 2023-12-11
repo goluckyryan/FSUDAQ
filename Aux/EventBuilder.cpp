@@ -9,6 +9,7 @@
 #include "TTree.h"
 
 #define MAX_MULTI  100
+#define BUFFERFILL 0.5 // only 0.5 * MAXNData will be filled in memeory each time
 
 template<typename T> void swap(T * a, T *b );
 int partition(int arr[], int kaka[], TString file[], int start, int end);
@@ -214,7 +215,7 @@ int main(int argc, char **argv) {
   do{
 
     /// fill the data class with some agg;
-    bool breakFlag = false;
+    bool fillFlag = true;
     do{
 
       // Get many agg. from each file.
@@ -239,7 +240,7 @@ int main(int argc, char **argv) {
           }
 
         }else{
-          fseek(inFile[i], -4, SEEK_CUR); // rool back
+          fseek(inFile[i], -4, SEEK_CUR); // roll back
 
           short header = ((word[0] >> 28 ) & 0xF);
           if( header != 0xA ) break;
@@ -270,19 +271,33 @@ int main(int argc, char **argv) {
       //printf("-----------------------------------\n");
       for( int i = 0; i < nGroup; i++){
         for( int ch = 0; ch < data[i]->GetNChannel(); ch ++){
-          if( data[i]->LoopIndex[ch]*MaxNData + data[i]->DataIndex[ch] - lastLoopIndex[i][ch]*MaxNData - lastDataIndex[i][ch] > MaxNData * 0.5 ) {
-            breakFlag = true;
-            //printf("digi:%d | ch: %d DataIndex: %d (%d) \n", data[i]->boardSN, ch, data[i]->DataIndex[ch], lastDataIndex[i][ch]);
+
+          int iData = data[i]->DataIndex[ch];
+          int iLoop = data[i]->LoopIndex[ch];
+
+          if( (iLoop*MaxNData + iData) - (lastLoopIndex[i][ch]*MaxNData + lastDataIndex[i][ch]) > MaxNData * BUFFERFILL ) {
+            fillFlag = false;
           }
-          lastDataIndex[i][ch] = data[i]->DataIndex[ch];
-          lastLoopIndex[i][ch] = data[i]->LoopIndex[ch];
+
+          //unsigned long long t1 = data[i]->Timestamp[ch][iData];
+          //printf("digi:%d | ch: %2d DataIndex: %5d (%d) [%5d(%d)] | %llu\n", data[i]->boardSN, ch, iData, iLoop, lastDataIndex[i][ch], lastLoopIndex[i][ch], t1);
+
         }
-        //printf("%3d | agg : %d | %s\n", snList[i], aggCount[i], breakFlag ? "Break" : "cont." );
+        //printf("%3d | agg : %d | %u | %s\n", snList[i], aggCount[i], data[i]->aggTime, fillFlag ? "cont. fill" : "break." );
+        //data[i]->PrintStat();
       }
 
-    }while(breakFlag);
+    }while(fillFlag);
+
+    for( int i = 0; i < nGroup; i++){
+      for( int ch = 0; ch < data[i]->GetNChannel(); ch ++){
+        lastDataIndex[i][ch] = data[i]->DataIndex[ch];
+        lastLoopIndex[i][ch] = data[i]->LoopIndex[ch];
+      }
+    }
 
     mb->BuildEvents(0, 0, debug);
+    //mb->PrintStat();
 
     ///----------- save to tree;
     long startIndex = mb->eventIndex - mb->eventBuilt + 1;
@@ -329,6 +344,7 @@ int main(int argc, char **argv) {
     printf("------------------- build the last data\n");
 
     mb->BuildEvents(1, 0, debug);
+    //mb->PrintStat();
 
     ///----------- save to tree;
     long startIndex = mb->eventIndex - mb->eventBuilt + 1;

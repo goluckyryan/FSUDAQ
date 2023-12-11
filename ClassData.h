@@ -42,6 +42,8 @@ class Data{
     unsigned short NumEventsDecoded     [MaxNChannels]; /// reset at every decode
     unsigned short NumNonPileUpDecoded  [MaxNChannels]; /// reset at every decode
 
+    unsigned int   aggTime; /// update every decode
+
     /// store data for event building and deduce the trigger rate.
     //it is a circular memory
     bool IsNotRollOverFakeAgg;
@@ -415,8 +417,8 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
       if( verbose >= 1 ) printf("Board Agg Counter : %u \n", bdAggCounter & 0x7FFFFF);
       
       nw = nw + 1; 
-      unsigned int bdAggTimeTag = ReadBuffer(nw, verbose);
-      if( verbose >= 2 ) printf("Agg Time Tag : %u \n", bdAggTimeTag);
+      aggTime = ReadBuffer(nw, verbose);
+      if( verbose >= 1 ) printf("Agg Time Tag : %u \n", aggTime);
       
       for( int chMask = 0; chMask < 8 ; chMask ++ ){ // the max numnber of Coupled/RegChannel is 8 for PHA, PSD, QDC
         if( ((ChannelMask >> chMask) & 0x1 ) == 0 ) continue;
@@ -583,35 +585,37 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
             case 7: printf("Reserved\n"); break;
           }
         }
-        printf("...... Analog Probe 1 : ");
-        switch (analogProbe1 ){
-          case 0 : printf("Input \n"); break;
-          case 1 : printf("RC-CR (1st derivative) \n"); break;
-          case 2 : printf("RC-CR2 (2st derivative) \n"); break;
-          case 3 : printf("trapazoid \n"); break;
-        }
-        printf("...... Analog Probe 2 : ");
-        switch (analogProbe2 ){
-          case 0 : printf("Input \n"); break;
-          case 1 : printf("Theshold \n"); break;
-          case 2 : printf("trapezoid - baseline \n"); break;
-          case 3 : printf("baseline \n"); break;
-        }
-        printf("...... Digital Probe : ");
-        switch (digitalProbe ){
-          case  0 : printf("Peaking \n"); break;
-          case  1 : printf("Armed (trigger) \n"); break;
-          case  2 : printf("Peak Run \n"); break;
-          case  3 : printf("Pile up \n"); break;
-          case  4 : printf("Peaking \n"); break;
-          case  5 : printf("Trigger Validation Window \n"); break;
-          case  6 : printf("Baseline for energy calculation \n"); break;
-          case  7 : printf("Trigger holdoff \n"); break;
-          case  8 : printf("Trigger Validation \n"); break;
-          case  9 : printf("ACQ Busy \n"); break;
-          case 10 : printf("Trigger window \n"); break;
-          case 11 : printf("Ext. Trigger \n"); break;
-          case 12 : printf("Busy = memory is full \n"); break;
+        if( hasWaveForm ){
+          printf("...... Analog Probe 1 : ");
+          switch (analogProbe1 ){
+            case 0 : printf("Input \n"); break;
+            case 1 : printf("RC-CR (1st derivative) \n"); break;
+            case 2 : printf("RC-CR2 (2st derivative) \n"); break;
+            case 3 : printf("trapazoid \n"); break;
+          }
+          printf("...... Analog Probe 2 : ");
+          switch (analogProbe2 ){
+            case 0 : printf("Input \n"); break;
+            case 1 : printf("Theshold \n"); break;
+            case 2 : printf("trapezoid - baseline \n"); break;
+            case 3 : printf("baseline \n"); break;
+          }
+          printf("...... Digital Probe : ");
+          switch (digitalProbe ){
+            case  0 : printf("Peaking \n"); break;
+            case  1 : printf("Armed (trigger) \n"); break;
+            case  2 : printf("Peak Run \n"); break;
+            case  3 : printf("Pile up \n"); break;
+            case  4 : printf("Peaking \n"); break;
+            case  5 : printf("Trigger Validation Window \n"); break;
+            case  6 : printf("Baseline for energy calculation \n"); break;
+            case  7 : printf("Trigger holdoff \n"); break;
+            case  8 : printf("Trigger Validation \n"); break;
+            case  9 : printf("ACQ Busy \n"); break;
+            case 10 : printf("Trigger window \n"); break;
+            case 11 : printf("Ext. Trigger \n"); break;
+            case 12 : printf("Busy = memory is full \n"); break;
+          }
         }
       }
     }
@@ -805,7 +809,7 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
     if( hasExtra ){
       printf(".... extra : ");
       switch(extraOption){
-        case 0: printf("[0:15] trapwzoid baseline * 4 [16:31] Extended timestamp (16-bit)\n"); break;
+        case 0: printf("[0:15] baseline * 4 [16:31] Extended timestamp (16-bit)\n"); break;
         case 1: printf("[0:11] reserved [12] lost trigger counted [13] 1024 trigger counted [14] Over-range\n");
                 printf("[15] trigger lost [16:31] Extended timestamp (16-bit)\n"); break;
         case 2: printf("[0:9] Fine time stamp [10:15] flag [10:15] Reserved [16:31] Extended timestamp (16-bit)\n"); break;
@@ -816,41 +820,46 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
         case 7: printf("debug, must be 0x12345678\n"); break;
       }
     }
-    printf(".... digital Probe 1 : ");
-    switch(digitalProbe1){
-      case 0 : printf("Long gate \n"); break;
-      case 1 : printf("Over threshold \n"); break;
-      case 2 : printf("Shaped TRG \n"); break;
-      case 3 : printf("TRG Val. Acceptance \n"); break;
-      case 4 : printf("Pile-Up \n"); break;
-      case 5 : printf("Coincidence \n"); break;
-      case 6 : printf("Reserved \n"); break;
-      case 7 : printf("Trigger \n"); break;
-    }
-    printf(".... digital Probe 2 : ");
-    switch(digitalProbe2){
-      case 0 : printf("Short gate \n"); break;
-      case 1 : printf("Over threshold \n"); break;
-      case 2 : printf("TRG Validation \n"); break;
-      case 3 : printf("TRG HoldOff \n"); break;
-      case 4 : printf("Pile-Up \n"); break;
-      case 5 : printf("Coincidence \n"); break;
-      case 6 : printf("Reserved \n"); break;
-      case 7 : printf("Trigger \n"); break;
-    }
-    printf(".... analog Probe (dual trace : %d): ", hasDualTrace);
-    if( hasDualTrace ) {
-      switch(analogProbe){
-        case 0 : printf("Input and baseline \n"); break;
-        case 1 : printf("CFD and baseline \n"); break;
-        case 2 : printf("Input and CFD \n"); break;
+    if( hasWaveForm ){
+      printf(".... digital Probe 1 : ");
+      switch(digitalProbe1){
+        case 0 : printf("Long gate \n"); break;
+        case 1 : printf("Over threshold \n"); break;
+        case 2 : printf("Shaped TRG \n"); break;
+        case 3 : printf("TRG Val. Acceptance \n"); break;
+        case 4 : printf("Pile-Up \n"); break;
+        case 5 : printf("Coincidence \n"); break;
+        case 6 : printf("Reserved \n"); break;
+        case 7 : printf("Trigger \n"); break;
       }
-    }else{
-      switch(analogProbe){
-        case 0 : printf("Input \n"); break;
-        case 1 : printf("CFD \n"); break;
+      printf(".... digital Probe 2 : ");
+      switch(digitalProbe2){
+        case 0 : printf("Short gate \n"); break;
+        case 1 : printf("Over threshold \n"); break;
+        case 2 : printf("TRG Validation \n"); break;
+        case 3 : printf("TRG HoldOff \n"); break;
+        case 4 : printf("Pile-Up \n"); break;
+        case 5 : printf("Coincidence \n"); break;
+        case 6 : printf("Reserved \n"); break;
+        case 7 : printf("Trigger \n"); break;
+      }
+      printf(".... analog Probe (dual trace : %d): ", hasDualTrace);
+      if( hasDualTrace ) {
+        switch(analogProbe){
+          case 0 : printf("Input and baseline \n"); break;
+          case 1 : printf("CFD and baseline \n"); break;
+          case 2 : printf("Input and CFD \n"); break;
+        }
+      }else{
+        switch(analogProbe){
+          case 0 : printf("Input \n"); break;
+          case 1 : printf("CFD \n"); break;
+        }
       }
     }
+
+    if( !hasExtra && !hasWaveForm) printf("\n");
+    
   }
   
   nEvents = (aggSize -2) / (nSample/2 + 2 + hasExtra );
@@ -912,6 +921,7 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
 
     if( hasExtra ){
       nw = nw +1 ; word = ReadBuffer(nw, verbose);
+      if( verbose > 2 ) printf("extra \n");
       extra = word;
       extTimeStamp = 0;
       if( extraOption == 0 || extraOption == 2 ) extTimeStamp = (extra >> 16);
@@ -960,10 +970,13 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
 
     //if( DataIndex[channel] >= MaxNData ) ClearData();
      
-    if( verbose >= 2 ) printf("extra : 0x%08x, Qshort : %d, Qlong : %d \n", extra, Qshort, Qlong);
-    
-    if( verbose >= 1 ) printf("ch : %2d, Qshort : %d, Qlong : %d, timestamp : %llu\n", 
+    //if( verbose >= 2 ) printf("extra : 0x%08x, Qshort : %d, Qlong : %d \n", extra, Qshort, Qlong);
+    if( verbose == 1 ) printf("ch : %2d, Qshort : %6d, Qlong : %6d, timestamp : %llu\n", 
                                 channel, Qshort, Qlong, timeStamp);
+    if( verbose >= 2 ) printf("Qshort : %6d, Qlong : %6d, timestamp : %llu\n", 
+                               Qshort, Qlong, timeStamp);
+
+    
     
     
   }
@@ -998,12 +1011,14 @@ inline int Data::DecodeQDCGroupedChannelBlock(unsigned int ChannelMask, bool fas
 
   if( verbose >= 2 ) {
     printf("Charge : %d, Time: %d, Wave : %d, Extra: %d\n", hasEnergy, hasTimeStamp, hasWaveForm, hasExtra);
-    printf(".... analog Probe (%d): ", analogProbe);
+    if( hasWaveForm ){
+      printf(".... analog Probe (%d): ", analogProbe);
       switch(analogProbe){
         case 0 : printf("Input\n"); break;
         case 1 : printf("Smoothed Input\n"); break;
         case 2 : printf("Baseline\n"); break;
       }
+    }
   }
 
   nEvents = (aggSize -2) / (nSample/2 + 2 + hasExtra );

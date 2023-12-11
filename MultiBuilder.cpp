@@ -8,6 +8,8 @@ MultiBuilder::MultiBuilder(Data ** multiData, std::vector<int> type, std::vector
   snList = sn;
   for( int i = 0; i < (int) type.size(); i++) idList.push_back(i);
   timeWindow = 100;
+  leftOverTime = 100;
+  breakTime = -1;
   ClearEvents();
 }
 
@@ -18,6 +20,8 @@ MultiBuilder::MultiBuilder(Data * singleData, int type, int sn): nData(1){
   snList.push_back(sn);
   idList.push_back(0);  
   timeWindow = 100;
+  leftOverTime = 100;
+  breakTime = -1;
   ClearEvents();
 }
 
@@ -253,7 +257,7 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
       for( int i = 0; i <(int) events[eventIndex].size(); i++){
         int chxxx = events[eventIndex][i].ch;
         int bd = events[eventIndex][i].bd;
-        printf("%02d, %02d | %d |  %5d %llu \n", bd, chxxx, nextIndex[bd][chxxx], events[eventIndex][i].energy, events[eventIndex][i].timestamp); 
+        printf("%02d, %02d | %5d |  %5d %llu \n", bd, chxxx, nextIndex[bd][chxxx], events[eventIndex][i].energy, events[eventIndex][i].timestamp); 
       }
 
       if( nExhaushedCh == nData * MaxNChannels ) {
@@ -261,16 +265,20 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
         break;
       } 
       printf("----- next bd : %d, ch : %d, next earlist Time : %llu.\n", earlistDigi, earlistCh, earlistTime);
-
+      printf("leftOver %llu, breakTime %llu \n", leftOverTime, breakTime);
     }
 
-    if( !isFinal && latestTime - earlistTime <= timeWindow ) {
-      if( verbose ) {
-        printf("######################### left over data for next build, latesTime : %llu.\n", latestTime); 
+    if( !isFinal ){
+      if( latestTime - earlistTime <= leftOverTime){
+        if( verbose ) printf("######################### left over data for next build, latesTime : %llu. | leftOverTime : %llu\n", latestTime, leftOverTime);   
+        break;
       } 
-      break;
+      
+      if( earlistTime > breakTime  )  {
+        if( verbose ) printf("######################### left over data for next build, earlistTime : %llu. | breakTime : %llu\n", earlistTime, breakTime);   
+        break;
+      }
     }
-
   }while(nExhaushedCh < nData * MaxNChannels);
 
 }
