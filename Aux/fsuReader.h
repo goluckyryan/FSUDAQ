@@ -24,6 +24,10 @@ class FSUReader{
     unsigned long totNumBlock;
     unsigned int  blockID;
 
+    // for dual block 
+    int DPPType;
+    int chMask;
+
     std::vector<unsigned int> blockPos;
 
     unsigned int word[1]; /// 4 byte
@@ -53,6 +57,23 @@ inline FSUReader::FSUReader(std::string fileName, unsigned short numCh){
   blockID = 0;
   blockPos.clear();
 
+  //Get DPPType from file name;
+  DPPType = -1;
+  if( fileName.find("PHA") != std::string::npos ) DPPType = DPPType::DPP_PHA_CODE;
+  if( fileName.find("PSD") != std::string::npos ) DPPType = DPPType::DPP_PSD_CODE;
+  if( fileName.find("QDC") != std::string::npos ) DPPType = DPPType::DPP_QDC_CODE;
+
+  //check is the file is *.fsu or *.fsu.X
+  size_t found = fileName.find_last_of('.');
+  std::string ext = fileName.substr(found + 1);
+
+  if( ext.find("fsu") != std::string::npos ) {
+    printf("It is an raw data *.fsu format\n");
+  }else{
+    chMask = atoi(ext.c_str());
+    printf("It is a splitted dual block data *.fsu.X format, dual channel mask : %d \n", chMask);
+  }
+
   //ScanNumBlock();
 
 }
@@ -68,29 +89,44 @@ inline int FSUReader::ReadNextBlock(bool fast, int verbose){
   if( filePos >= inFileSize) return -1;
   
   dummy = fread(word, 4, 1, inFile);
+  fseek(inFile, -4, SEEK_CUR);
+
   if( dummy != 1) {
     printf("fread error, should read 4 bytes, but read %ld x 4 byte, file pos: %ld byte\n", dummy, ftell(inFile));
     return -10;
   }
-  
-  fseek(inFile, -4, SEEK_CUR);
   short header = ((word[0] >> 28 ) & 0xF);
-  if( header != 0xA ) {
+
+  if( header == 0xA ) { ///normal header
+ 
+    unsigned int aggSize = (word[0] & 0x0FFFFFFF) * 4; ///byte    
+    buffer = new char[aggSize];
+    dummy = fread(buffer, aggSize, 1, inFile);
+    filePos = ftell(inFile);
+    if( dummy != 1) {
+      printf("fread error, should read %d bytes, but read %ld x %d byte, file pos: %ld byte \n", aggSize, dummy, aggSize, ftell(inFile));
+      return -30;
+    }
+
+    data->DecodeBuffer(buffer, aggSize, fast, verbose); // data will own the buffer
+    data->ClearBuffer(); // this will clear the buffer.
+
+  }else if( (header & 0xF ) == 0x8 ) { /// dual channel header
+
+    unsigned int dualSize = (word[0] & 0x7FFFFFFF) * 4; ///byte    
+    buffer = new char[dualSize];
+    dummy = fread(buffer, dualSize, 1, inFile);
+    filePos = ftell(inFile);
+
+    data->buffer = buffer;
+    data->DecodeDualBlock(buffer, dualSize, DPPType, chMask, false, verbose);
+    data->ClearBuffer();
+    
+
+  }else{
     printf("incorrect header.\n trminate.");
     return -20;
   }
-
-  unsigned int aggSize = (word[0] & 0x0FFFFFFF) * 4; ///byte    
-  buffer = new char[aggSize];
-  dummy = fread(buffer, aggSize, 1, inFile);
-  filePos = ftell(inFile);
-  if( dummy != 1) {
-    printf("fread error, should read %d bytes, but read %ld x %d byte, file pos: %ld byte \n", aggSize, dummy, aggSize, ftell(inFile));
-    return -30;
-  }
-
-  data->DecodeBuffer(buffer, aggSize, fast, verbose); // data will own the buffer
-  data->ClearBuffer(); // this will clear the buffer.
 
   return 0;
 
@@ -109,7 +145,7 @@ inline int FSUReader::ReadBlock(unsigned int ID, int verbose){
   fseek(inFile, blockPos[ID], SEEK_CUR);
   filePos = blockPos[ID];
   blockID = ID;
-  return ReadNextBlock(verbose);
+  return ReadNextBlock(false, verbose);
 
 }
 

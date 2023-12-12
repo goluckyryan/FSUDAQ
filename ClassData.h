@@ -82,8 +82,9 @@ class Data{
     void DecodeBuffer(bool fastDecode, int verbose = 0); /// fastDecode will not save waveform
     void DecodeBuffer(char * &buffer, unsigned int size, bool fastDecode, int verbose = 0); // for outside data
   
-    void PrintStat(bool skipEmpty = true) const;
+    void DecodeDualBlock(char * &buffer, unsigned int size, int DPPType, int chMask, bool fastDecode, int verbose = 0); // for outside data
 
+    void PrintStat(bool skipEmpty = true) const;
     void PrintAllData(bool tableMode = true, unsigned int maxRowDisplay = 0) const;
 
     //^================= Saving data
@@ -94,7 +95,7 @@ class Data{
     unsigned int GetFileSize() const {return outFileSize;}
     uint64_t GetTotalFileSize() const {return FinishedOutFilesSize + outFileSize;}
     void ZeroTotalFileSize() { FinishedOutFilesSize = 0; }
-  
+
   protected:
   
     const unsigned short numInputCh;
@@ -122,7 +123,6 @@ class Data{
     int DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDecode, int verbose);
     int DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDecode, int verbose);
     int DecodeQDCGroupedChannelBlock(unsigned int ChannelMask, bool fastDecode, int verbose);
-
 };
 
 //==========================================
@@ -424,6 +424,8 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
         if( ((ChannelMask >> chMask) & 0x1 ) == 0 ) continue;
         if( verbose >= 2 ) printf("==================== Dual/Group Channel Block, ch Mask : 0x%X, nw : %d\n", chMask *2, nw);
 
+        nw = nw + 1; 
+        
         if( DPPType == DPPType::DPP_PHA_CODE ) {
           if ( DecodePHADualChannelBlock(chMask, fastDecode, verbose) < 0 ) break;
         }
@@ -531,11 +533,29 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
 }
 
 //*=================================================
+inline void Data::DecodeDualBlock(char * &buffer, unsigned int size, int DPPType, int chMask, bool fastDecode, int verbose){
+  this->buffer = buffer;
+  this->nByte = size;
+
+  nw = 0;
+
+  if( DPPType == DPPType::DPP_PHA_CODE ) {
+    DecodePHADualChannelBlock(chMask, fastDecode, verbose) ; 
+  }
+  if( DPPType == DPPType::DPP_PSD_CODE ) {
+    DecodePSDDualChannelBlock(chMask, fastDecode, verbose) ;
+  }
+  if( DPPType == DPPType::DPP_QDC_CODE ) {
+    DecodeQDCGroupedChannelBlock(chMask, fastDecode, verbose) ;
+  }
+
+}
+
 inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDecode, int verbose){
   
   //printf("======= %s\n", __func__);
 
-  nw = nw + 1; 
+  //nw = nw + 1; 
   unsigned int word = ReadBuffer(nw, verbose);
 
   bool hasFormatInfo = ((word >> 31) & 0x1);
@@ -777,7 +797,7 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
   
   //printf("======= %s\n", __func__);
 
-  nw = nw + 1; 
+  //nw = nw + 1; 
   unsigned int word = ReadBuffer(nw, verbose);
   
   if( (word >> 31) != 1 ) return 0;
@@ -986,7 +1006,7 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
 //*=================================================
 inline int Data::DecodeQDCGroupedChannelBlock(unsigned int ChannelMask, bool fastDecode, int verbose){
 
-  nw = nw + 1; 
+  //nw = nw + 1; 
   unsigned int word = ReadBuffer(nw, verbose);
   
   if( (word >> 31) != 1 ) return 0;

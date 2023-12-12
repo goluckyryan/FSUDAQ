@@ -7,6 +7,7 @@ test_indep
 programSettings.txt
 EventKenshikushi
 EventBuilder
+EventBuilder_sortTime
 DataGenerator
 DataReaderScript
 DataReader
@@ -14,6 +15,7 @@ pid.dat
 DAQLock.dat
 DumpFSU2ROOT
 SettingsExplorer
+AggSeparator
 
 data
 

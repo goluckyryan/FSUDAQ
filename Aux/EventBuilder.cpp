@@ -9,7 +9,7 @@
 #include "TTree.h"
 
 #define MAX_MULTI  100
-#define BUFFERFILL 0.5 // only 0.5 * MAXNData will be filled in memeory each time
+#define BUFFERFILL 0.1 // only 0.5 * MAXNData will be filled in memeory each time
 
 template<typename T> void swap(T * a, T *b );
 int partition(int arr[], int kaka[], TString file[], int start, int end);
@@ -279,12 +279,16 @@ int main(int argc, char **argv) {
             fillFlag = false;
           }
 
-          //unsigned long long t1 = data[i]->Timestamp[ch][iData];
-          //printf("digi:%d | ch: %2d DataIndex: %5d (%d) [%5d(%d)] | %llu\n", data[i]->boardSN, ch, iData, iLoop, lastDataIndex[i][ch], lastLoopIndex[i][ch], t1);
+          if( debug ){
+            unsigned long long t1 = data[i]->Timestamp[ch][iData];
+            printf("digi:%d | ch: %2d DataIndex: %5d (%d) [%5d(%d)] | %llu\n", data[i]->boardSN, ch, iData, iLoop, lastDataIndex[i][ch], lastLoopIndex[i][ch], t1);
+          }
 
         }
-        //printf("%3d | agg : %d | %u | %s\n", snList[i], aggCount[i], data[i]->aggTime, fillFlag ? "cont. fill" : "break." );
-        //data[i]->PrintStat();
+        if( debug ){
+          printf("%3d | agg : %d | %u | %s\n", snList[i], aggCount[i], data[i]->aggTime, fillFlag ? "cont. fill" : "break." );
+          //data[i]->PrintStat();
+        }
       }
 
     }while(fillFlag);
@@ -297,7 +301,7 @@ int main(int argc, char **argv) {
     }
 
     mb->BuildEvents(0, 0, debug);
-    //mb->PrintStat();
+    if( debug ) mb->PrintStat();
 
     ///----------- save to tree;
     long startIndex = mb->eventIndex - mb->eventBuilt + 1;
@@ -350,7 +354,7 @@ int main(int argc, char **argv) {
     long startIndex = mb->eventIndex - mb->eventBuilt + 1;
     //printf("startIndex : %ld -> %ld, %ld, %ld, %ld\n", startIndex, startIndex < 0 ? startIndex + MaxNEvent : startIndex, mb->eventIndex, mb->eventBuilt, mb->totalEventBuilt);
     if( startIndex < 0 ) startIndex += MaxNEvent;
-    for( long p = startIndex; p <= startIndex + mb->eventBuilt; p++){
+    for( long p = startIndex; p < startIndex + mb->eventBuilt; p++){
       int k =  p % MaxNEvent;
       multi = mb->events[k].size();
       if( multi > MAX_MULTI) {

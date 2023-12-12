@@ -45,7 +45,7 @@ public:
   MultiBuilder(Data * singleData, int type, int sn);
   ~MultiBuilder();
 
-  void SetTimeWindow(unsigned short ticks) {timeWindow = ticks;}
+  void SetTimeWindow(unsigned short ticks) {timeWindow = ticks; leftOverTime = ticks;}
   unsigned short GetTimeWindow() const{return timeWindow;}
 
   void SetLeftOverTime(unsigned long long ticks) {leftOverTime = ticks;}
@@ -85,15 +85,16 @@ private:
   int nExhaushedCh;
   bool chExhaused[MaxNDigitizer][MaxNChannels];
 
-  void FindEarlistTimeAndCh(bool verbose = false); // search thtough the nextIndex
+  void FindEarlistTimeAndCh(bool verbose = false); // search through the nextIndex
   unsigned long long earlistTime;
   int earlistDigi;
   int earlistCh;
-  void FindLatestTimeAndCh(bool verbose = false); // search thtough the nextIndex
+  void FindLatestTimeAndCh(bool verbose = false); // search through the nextIndex
   unsigned long long latestTime;
   int latestDigi;
   int latestCh;
 
+  void FindEarlistTimeAmongLastData(bool verbose = false);
   void FindLatestTimeOfData(bool verbose = false);
 
   int lastBackWardIndex[MaxNDigitizer][MaxNChannels];

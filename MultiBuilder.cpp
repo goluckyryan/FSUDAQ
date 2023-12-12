@@ -156,6 +156,24 @@ void MultiBuilder::FindLatestTimeAndCh(bool verbose){
 
 }
 
+void MultiBuilder::FindEarlistTimeAmongLastData(bool verbose){
+  latestTime = -1;
+  latestCh = -1;
+  latestDigi = -1;
+  for( int i = 0; i < nData; i++){
+    for( unsigned ch = 0; ch < data[i]->GetNChannel(); ch++ ){
+      int index = data[i]->DataIndex[ch];
+      if( index == -1 ) continue;
+      if( data[i]->Timestamp[ch][index] < latestTime ) {
+        latestTime = data[i]->Timestamp[ch][index];
+        latestCh = ch;
+        latestDigi = i;
+      }
+    }
+  }
+  if( verbose )  printf("%s | bd : %d, ch : %d, %lld \n", __func__, latestDigi, latestCh, latestTime);
+}
+  
 void MultiBuilder::FindLatestTimeOfData(bool verbose){
   latestTime = 0;
   latestCh = -1;
@@ -176,7 +194,8 @@ void MultiBuilder::FindLatestTimeOfData(bool verbose){
 
 void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
 
-  FindLatestTimeOfData(verbose);
+  FindEarlistTimeAmongLastData(verbose);
+  //FindLatestTimeOfData(verbose);
 
   FindEarlistTimeAndCh(verbose);
   if( earlistCh == -1 || nExhaushedCh == nData * MaxNChannels) return; /// no data

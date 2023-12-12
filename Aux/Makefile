@@ -14,7 +14,7 @@ ROOTLIBS = `root-config --cflags --glibs`
 
 OBJS = ClassDigitizer.o MultiBuilder.o
 
-ALL = test test_indep DataGenerator EventBuilder DataReader DumpFSU2ROOT SettingsExplorer
+ALL = test test_indep DataGenerator EventBuilder DataReader DumpFSU2ROOT SettingsExplorer 
 
 #########################################################################
 
