@@ -474,6 +474,7 @@ void Scope::UpdateScope(){
   }else{
     leTriggerRate->setStyleSheet("");
     leTriggerRate->setText(QString::number(data->TriggerRate[ch]));
+    data->ClearTriggerRate();
   }
 
   int index = data->DataIndex[ch];
