@@ -10,6 +10,7 @@
 #include <QCoreApplication>
 #include <QDialog>
 #include <QFileDialog>
+#include <QInputDialog>
 #include <QScrollArea>
 #include <QProcess>
 #include <QMessageBox>
@@ -134,51 +135,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     leElogName->setReadOnly(true);
     layout->addWidget(leElogName, rowID, 4);
 
-    connect(bnLock, &QPushButton::clicked, this, [=](){
-      if( leInfluxIP->isReadOnly() ){
-        bnLock->setText("Lock and Set");
-
-        leInfluxIP->setReadOnly(false);
-        leDatabaseName->setReadOnly(false);
-        leElogIP->setReadOnly(false);
-        leElogName->setReadOnly(false);
-
-        leInfluxIP->setEnabled(true);
-        leDatabaseName->setEnabled(true);
-        leElogIP->setEnabled(true);
-        leElogName->setEnabled(true);
-
-        leInfluxIP->setStyleSheet("color : blue;");
-        leDatabaseName->setStyleSheet("color : blue;");
-        leElogIP->setStyleSheet("color : blue;");
-        leElogName->setStyleSheet("color : blue;");
-
-      }else{
-        bnLock->setText("Unlock");
-
-        leInfluxIP->setReadOnly(true);
-        leDatabaseName->setReadOnly(true);
-        leElogIP->setReadOnly(true);
-        leElogName->setReadOnly(true);
-
-        leInfluxIP->setStyleSheet("");
-        leDatabaseName->setStyleSheet("");
-        leElogIP->setStyleSheet("");
-        leElogName->setStyleSheet("");
-
-        influxIP = leInfluxIP->text();
-        dataBaseName = leDatabaseName->text();
-        elogIP = leElogIP->text();
-        elogName = leElogName->text();
-
-        SaveProgramSettings();
-
-        SetUpInflux();
-
-        if( elogName != "" ) CheckElog();
-      }
-
-    });
+    connect(bnLock, &QPushButton::clicked, this, &MainWindow::SetAndLockInfluxElog);
 
   }
 
@@ -1368,6 +1325,94 @@ void MainWindow::SetSyncMode(){
 
 }
 
+void MainWindow::SetAndLockInfluxElog(){
+  if( leInfluxIP->isReadOnly() ){
+    bnLock->setText("Lock and Set");
+
+    leInfluxIP->setReadOnly(false);
+    leDatabaseName->setReadOnly(false);
+    leElogIP->setReadOnly(false);
+    leElogName->setReadOnly(false);
+
+    leInfluxIP->setEnabled(true);
+    leDatabaseName->setEnabled(true);
+    leElogIP->setEnabled(true);
+    leElogName->setEnabled(true);
+
+    leInfluxIP->setStyleSheet("color : blue;");
+    leDatabaseName->setStyleSheet("color : blue;");
+    leElogIP->setStyleSheet("color : blue;");
+    leElogName->setStyleSheet("color : blue;");
+
+  }else{
+    bnLock->setText("Unlock");
+
+    leInfluxIP->setReadOnly(true);
+    leDatabaseName->setReadOnly(true);
+    leElogIP->setReadOnly(true);
+    leElogName->setReadOnly(true);
+
+    leInfluxIP->setStyleSheet("");
+    leDatabaseName->setStyleSheet("");
+    leElogIP->setStyleSheet("");
+    leElogName->setStyleSheet("");
+
+    influxIP = leInfluxIP->text();
+    dataBaseName = leDatabaseName->text();
+    elogIP = leElogIP->text();
+    elogName = leElogName->text();
+
+    if( !elogIP.isEmpty() && !elogName.isEmpty() ){
+      QDialog dialog;
+      dialog.setWindowTitle("ELog Login info.");
+
+      QVBoxLayout layout(&dialog);
+      QFormLayout formLayout;
+
+      QLineEdit usernameLineEdit;
+      QLineEdit passwordLineEdit;
+      passwordLineEdit.setEchoMode(QLineEdit::Password);
+
+      formLayout.addRow("Username:", &usernameLineEdit);
+      formLayout.addRow("Password:", &passwordLineEdit);
+
+      usernameLineEdit.setText(elogUser);
+      passwordLineEdit.setText(elogPWD);
+
+      layout.addLayout(&formLayout);
+
+      // Buttons for OK and Cancel
+      QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+      layout.addWidget(&buttonBox);
+
+      QObject::connect(&buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+      QObject::connect(&buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+      // Show the dialog and get the result
+      if (dialog.exec() == QDialog::Accepted) {
+          QString username = usernameLineEdit.text();
+          QString password = passwordLineEdit.text();
+
+          // Check if username and password are not empty
+          if (!username.isEmpty() && !password.isEmpty()) {
+              elogUser = username;
+              elogPWD = password;
+
+          } else {
+              qDebug() << "Please enter both username and password.";
+          }
+      }
+
+    }
+
+    SaveProgramSettings();
+
+    SetUpInflux();
+    CheckElog();    
+
+  }
+}
+
 bool MainWindow::CommentDialog(bool isStartRun){
 
   if( isStartRun ) runID ++;
@@ -1729,6 +1774,8 @@ void MainWindow::CheckElog(){
     AppendElog("test append elog.");
   }else{
     LogMsg("<font style=\"color : red;\">Elog missing inputs. skip.</font>");
+    leElogIP->setEnabled(false);
+    leElogName->setEnabled(false);
     return;
   }
 

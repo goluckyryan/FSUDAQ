@@ -90,6 +90,7 @@ private slots:
 
   void SetSyncMode();
 
+  void SetAndLockInfluxElog();
 
 private:
 
