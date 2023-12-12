@@ -41,7 +41,8 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
 
       isSignalSlotActive = true;
 
-      if( oldCh >  digi[index]->GetNumInputCh()) {
+      //printf("oldCh = %d \n", oldCh);
+      if( oldCh >=  digi[index]->GetNumInputCh()) {
         cbCh->setCurrentIndex(0);
       }else{
         if( oldCh >= 0 ){
@@ -156,7 +157,7 @@ void SingleSpectra::ChangeHistView(){
   int bd = cbDigi->currentIndex();
   int ch = cbCh->currentData().toInt();
 
-  // printf("bd : %d, ch : %d \n", bd, ch);
+  //printf("bd : %d, ch : %d \n", bd, ch);
 
   // Remove oldCh
   if( oldCh >= 0 && oldCh < digi[oldBd]->GetNumInputCh()){
@@ -175,11 +176,14 @@ void SingleSpectra::ChangeHistView(){
   if( ch >=0 && ch < digi[bd]->GetNumInputCh()) {
     histLayout->addWidget(hist[bd][ch], 0, 0);
     histVisibility[bd][ch] = true;
+
+    hist[bd][ch]->UpdatePlot();
   }
 
   if( ch == digi[bd]->GetNumInputCh() ){
     histLayout->addWidget(hist2D[bd], 0, 0);
     hist2DVisibility[bd] = true;
+    hist2D[bd]->UpdatePlot();
   }
 
   oldBd = bd;
