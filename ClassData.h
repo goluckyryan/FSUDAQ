@@ -84,7 +84,7 @@ class Data{
   
     void DecodeDualBlock(char * &buffer, unsigned int size, int DPPType, int chMask, bool fastDecode, int verbose = 0); // for outside data
 
-    void PrintStat(bool skipEmpty = true) const;
+    void PrintStat(bool skipEmpty = true);
     void PrintAllData(bool tableMode = true, unsigned int maxRowDisplay = 0) const;
 
     //^================= Saving data
@@ -293,7 +293,7 @@ inline void Data::CloseSaveFile(){
 
 //^#######################################################
 //^####################################################### Print
-inline void Data::PrintStat(bool skipEmpty) const{
+inline void Data::PrintStat(bool skipEmpty) {
 
   printf("============================= Print Stat. Digi-%d\n", boardSN);
   if( !IsNotRollOverFakeAgg ) {
@@ -307,6 +307,9 @@ inline void Data::PrintStat(bool skipEmpty) const{
     printf("%2d | %6d | %9.2f | %9.2f | %6lu | %6d(%2d)\n", ch, NumEventsDecoded[ch], TriggerRate[ch], NonPileUpRate[ch], TotNumNonPileUpEvents[ch], DataIndex[ch], LoopIndex[ch]);
   }
   printf("---+--------+-----------+-----------+----------\n");
+
+  ClearTriggerRate();
+
 }
 
 inline void Data::PrintAllData(bool tableMode, unsigned int maxRowDisplay) const{
@@ -379,10 +382,10 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
     return;
   } 
 
-  for( int ch = 0; ch < MaxNChannels; ch ++) {
-    NumEventsDecoded[ch] = 0;
-    NumNonPileUpDecoded[ch] = 0;
-  }
+  //for( int ch = 0; ch < MaxNChannels; ch ++) {
+  //  NumEventsDecoded[ch] = 0;
+  //  NumNonPileUpDecoded[ch] = 0;
+  //}
 
   if( nByte == 0 ) return;
   nw = 0;
@@ -523,7 +526,7 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
         }
         NonPileUpRate[ch] = (nEvent - pileUpCount)/sec;
 
-        //printf("%2d | %10llu  %10llu, %.0f = %f sec, rate = %f, nEvent %d pileUp %d \n", ch, tList.front() ,tList.back(), tick2ns, sec, nEvent / sec, nEvent, pileUpCount);
+        //printf("%2d | %10llu  %10llu, %.0f = %f sec, rate = %f, nEvent %d pileUp %d \n", ch, t1, t0, tick2ns, sec, nEvent / sec, nEvent, pileUpCount);
       }
       
     }
