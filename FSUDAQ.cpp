@@ -965,11 +965,9 @@ void MainWindow::UpdateScalar(){
         leTrigger[iDigi][i]->setText(a);
         leAccept[iDigi][i]->setText(b);
 
-
         if( influx && a != "inf" ){
           influx->AddDataPoint("Rate,Bd="+std::to_string(digi[iDigi]->GetSerialNumber()) + ",Ch=" + QString::number(i).rightJustified(2, '0').toStdString() + " value=" +  a.toStdString());
         }
-
 
       }
     }

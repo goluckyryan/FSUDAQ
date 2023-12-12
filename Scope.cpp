@@ -436,6 +436,8 @@ void Scope::StopScope(){
   bnScopeStop->setEnabled(false);
   bnScopeStop->setStyleSheet("");
 
+  runStatus->setStyleSheet("");
+
   EnableControl(true);
 
   TellACQOnOff(false);
@@ -474,7 +476,6 @@ void Scope::UpdateScope(){
   }else{
     leTriggerRate->setStyleSheet("");
     leTriggerRate->setText(QString::number(data->TriggerRate[ch]));
-    data->ClearTriggerRate();
   }
 
   int index = data->DataIndex[ch];
@@ -483,7 +484,7 @@ void Scope::UpdateScope(){
 
   if( traceLength > MaxDisplayTraceDataLength) traceLength = MaxDisplayTraceDataLength;
 
-  // printf("--- %s| %d, %d, %d | %d | %d, %d\n", __func__, ch, data->LoopIndex[ch], index, traceLength, factor, tick2ns );
+  //printf("--- %s| %d, %d, %d | %d | %d, %d\n", __func__, ch, data->LoopIndex[ch], index, traceLength, factor, tick2ns );
   if( data->TriggerRate[ch] > 0 ){
 
     QVector<QPointF> points[5];
@@ -528,6 +529,7 @@ void Scope::UpdateScope(){
       dataTrace[4]->replace(points[4]);
     }
   }
+  data->ClearTriggerRate();
   digiMTX[ID].unlock();
 
   // if( data->TriggerRate[ch] == 0 ){
