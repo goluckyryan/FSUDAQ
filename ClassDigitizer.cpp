@@ -843,6 +843,14 @@ void Digitizer::ProgramSettingsToBoard(){
     //    usleep(pauseMilliSec * 1000);
     //  }
     //}
+
+    haha = DPP::BoardConfiguration; WriteRegister(haha, GetSettingFromMemory(haha), -1, false);
+    haha = DPP::AcquisitionControl; WriteRegister(haha, GetSettingFromMemory(haha), -1, false);
+    haha = DPP::GlobalTriggerMask; WriteRegister(haha, GetSettingFromMemory(haha), -1, false);
+    haha = DPP::FrontPanelIOControl; WriteRegister(haha, GetSettingFromMemory(haha), -1, false);
+    haha = DPP::FrontPanelTRGOUTEnableMask; WriteRegister(haha, GetSettingFromMemory(haha), -1, false);
+    haha = DPP::RegChannelEnableMask; WriteRegister(haha, GetSettingFromMemory(haha), -1, false);
+    
     /// Channels Setting
     for( int ch = 0; ch < NumInputCh; ch ++){
       if( DPPType == V1730_DPP_PHA_CODE ){
@@ -865,6 +873,7 @@ void Digitizer::ProgramSettingsToBoard(){
       }
     }
 
+
   }else{
     /// board setting
     //for( int p = 0; p < (int) RegisterBoardList_QDC.size(); p++){
@@ -874,6 +883,14 @@ void Digitizer::ProgramSettingsToBoard(){
     //    usleep(pauseMilliSec * 1000);
     //  }
     //}
+
+    haha = DPP::BoardConfiguration; WriteRegister(haha, GetSettingFromMemory(haha), -1, false);
+    haha = DPP::AcquisitionControl; WriteRegister(haha, GetSettingFromMemory(haha), -1, false);
+    haha = DPP::GlobalTriggerMask; WriteRegister(haha, GetSettingFromMemory(haha), -1, false);
+    haha = DPP::FrontPanelIOControl; WriteRegister(haha, GetSettingFromMemory(haha), -1, false);
+    haha = DPP::FrontPanelTRGOUTEnableMask; WriteRegister(haha, GetSettingFromMemory(haha), -1, false);
+    haha = DPP::QDC::GroupEnableMask; WriteRegister(haha, GetSettingFromMemory(haha), -1, false);
+
     /// Channels Setting
     for( int ch = 0; ch < GetNumRegChannels(); ch ++){
       for( int p = 0; p < (int) RegisterChannelList_QDC.size(); p++){
@@ -885,7 +902,12 @@ void Digitizer::ProgramSettingsToBoard(){
       }
     }
 
-  } 
+  }
+
+  //set agg
+  ret = CAEN_DGTZ_SetNumEventsPerAggregate(handle, 10);
+  ret |= CAEN_DGTZ_SetDPPEventAggregation(handle, 0, 0); // Auto set
+
 }
 
 void Digitizer::SetSettingToMemory(Reg registerAddress,  unsigned int value, unsigned short ch ){
