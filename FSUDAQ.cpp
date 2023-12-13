@@ -950,6 +950,8 @@ void MainWindow::UpdateScalar(){
       runStatus[iDigi]->setStyleSheet("");
     }
 
+    if(digiSettings && digiSettings->isVisible() && digiSettings->GetTabID() == iDigi) digiSettings->UpdateACQStatus(acqStatus);
+
     digiMTX[iDigi].lock();
     // printf("### %d ", iDigi);
     // digi[iDigi]->GetData()->PrintAllData(true, 10);

@@ -829,7 +829,7 @@ void Digitizer::ProgramSettingsToBoard(){
   
   printf("========== %s \n", __func__);
 
-  const short pauseMilliSec = 50;
+  const short pauseMilliSec = 20;
 
   Reg haha;
   

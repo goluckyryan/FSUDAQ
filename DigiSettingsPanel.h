@@ -21,6 +21,7 @@ public:
   DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QString rawDataPath, QMainWindow * parent = nullptr);
   ~DigiSettingsPanel();
 
+  unsigned short GetTabID() const {return ID;}
   
 public slots:
   void UpdatePanelFromMemory();
