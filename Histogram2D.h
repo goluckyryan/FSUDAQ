@@ -50,7 +50,7 @@ public:
     QCPColorGradient color;
     color.clearColorStops();
     color.setColorStopAt( 0.0, QColor("white" ));
-    color.setColorStopAt( 0.0001, QColor("purple" ));
+    color.setColorStopAt( 0.000001, QColor("purple" ));
     color.setColorStopAt( 0.2, QColor("blue"));
     color.setColorStopAt( 0.4, QColor("cyan"));
     color.setColorStopAt( 0.6, QColor("green"));

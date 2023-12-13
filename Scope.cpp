@@ -529,7 +529,7 @@ void Scope::UpdateScope(){
       dataTrace[4]->replace(points[4]);
     }
   }
-  data->ClearTriggerRate();
+  //data->ClearTriggerRate();
   digiMTX[ID].unlock();
 
   // if( data->TriggerRate[ch] == 0 ){

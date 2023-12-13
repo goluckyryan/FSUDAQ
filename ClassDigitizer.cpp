@@ -92,7 +92,17 @@ int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose
     LinkType = CAEN_DGTZ_OpticalLink ; 
     ret = (int) CAEN_DGTZ_OpenDigitizer(LinkType, portID, boardID, VMEBaseAddress, &handle);
   }
+  if (ret != 0){ ///---------- try A4818
+    LinkType = CAEN_DGTZ_USB_A4818 ;
+    ret = (int) CAEN_DGTZ_OpenDigitizer(LinkType, portID, boardID, VMEBaseAddress, &handle);
+  }
   ErrorMsg("=== Open Digitizer port " +std::to_string(portID) + " board " + std::to_string(boardID));
+
+  if( ret == 0 ){
+    if( LinkType == CAEN_DGTZ_USB ) printf("Open digitizer via USB, board : %d\n", boardID);
+    if( LinkType == CAEN_DGTZ_OpticalLink ) printf("Open digitizer via Optical Link, port : %d, board : %d\n", portID, boardID);
+    if( LinkType == CAEN_DGTZ_USB_A4818 ) printf("Open digitizer via A4818, port : %d, board : %d\n", portID, boardID);
+  }
   
   if (ret != 0) {
     if( verbose) printf("Can't open digitizer\n");
@@ -325,10 +335,13 @@ int Digitizer::ProgramBoard_PHA(){
   ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PreTrigger) + 0x7000 , 32 );
   ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::InputDynamicRange) + 0x7000 , 0x0 );
   
-  ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::NumberEventsPerAggregate_G) + 0x7000, 10);
-  ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::AggregateOrganization), 0);
-  ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::MaxAggregatePerBlockTransfer), 100);
-  ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::DPPAlgorithmControl) + 0x7000, 0xC30200f);
+  //ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::NumberEventsPerAggregate_G) + 0x7000, 10);
+  //ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::AggregateOrganization), 0);
+  //ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::MaxAggregatePerBlockTransfer), 100);
+  ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::DPPAlgorithmControl) + 0x7000, 0x030200f);
+  
+  ret |= CAEN_DGTZ_SetNumEventsPerAggregate(handle, 10);
+  ret |= CAEN_DGTZ_SetDPPEventAggregation(handle, 0, 0); // Auto set
   
   if( ret != 0 ) { printf("!!!!!!!! set channels error.\n");}
 
@@ -391,7 +404,10 @@ int Digitizer::ProgramBoard_PSD(){
   /// change address 0xEF08 (5 bits), this will reflected in the 2nd word of the Board Agg. header.
   ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardID, (DPPType & 0xF));
   //WriteRegister(DPP::BoardID, (DPPType & 0xF));
-  
+
+  ret |= CAEN_DGTZ_SetNumEventsPerAggregate(handle, 10);
+  ret |= CAEN_DGTZ_SetDPPEventAggregation(handle, 0, 0); // Auto set
+
   isSettingFilledinMemeory = false; /// unlock the ReadAllSettingsFromBoard();
 
   usleep(1000*300);
@@ -408,7 +424,7 @@ int Digitizer::ProgramBoard_QDC(){
 
   int ret = 0;
 
-  WriteRegister(DPP::QDC::NumberEventsPerAggregate, 0x10, -1);
+  //WriteRegister(DPP::QDC::NumberEventsPerAggregate, 0x10, -1);
   WriteRegister(DPP::QDC::RecordLength_W, 16, -1); // 128 sample = 2048 ns
   WriteRegister(DPP::QDC::PreTrigger,  60, -1); // at 60 sample = 960 ns
 
@@ -437,8 +453,8 @@ int Digitizer::ProgramBoard_QDC(){
   WriteRegister(DPP::QDC::TriggerThreshold_sub7, 100, -1);
 
   WriteRegister(DPP::BoardConfiguration, 0xC0110);
-  WriteRegister(DPP::AggregateOrganization, 0x0);
-  WriteRegister(DPP::MaxAggregatePerBlockTransfer, 100);
+  //WriteRegister(DPP::AggregateOrganization, 0x0);
+  //WriteRegister(DPP::MaxAggregatePerBlockTransfer, 100);
   WriteRegister(DPP::AcquisitionControl, 0x0);
   WriteRegister(DPP::GlobalTriggerMask, 0x0);
   WriteRegister(DPP::FrontPanelTRGOUTEnableMask, 0x0);
@@ -448,6 +464,9 @@ int Digitizer::ProgramBoard_QDC(){
   /// change address 0xEF08 (5 bits), this will reflected in the 2nd word of the Board Agg. header.
   ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardID, (DPPType & 0xF));
   //WriteRegister(DPP::BoardID, (DPPType & 0xF));
+
+  ret |= CAEN_DGTZ_SetNumEventsPerAggregate(handle, 10);
+  ret |= CAEN_DGTZ_SetDPPEventAggregation(handle, 0, 0); // Auto set
 
   isSettingFilledinMemeory = false; /// unlock the ReadAllSettingsFromBoard();
 
@@ -461,6 +480,8 @@ int Digitizer::ProgramBoard_QDC(){
 void Digitizer::StartACQ(){
   if( softwareDisable ) return;
   if ( AcqRun ) return;
+
+  ret |= CAEN_DGTZ_SetDPPEventAggregation(handle, 0, 0); // Auto set
 
   unsigned int bufferSize = 0;
   if( DPPType == V1730_DPP_PHA_CODE ){
@@ -478,7 +499,6 @@ void Digitizer::StartACQ(){
     return;
   }
 
-  
   data->AllocateMemory(bufferSize);
   ret = CAEN_DGTZ_SWStartAcquisition(handle);
   
@@ -809,20 +829,20 @@ void Digitizer::ProgramSettingsToBoard(){
   
   printf("========== %s \n", __func__);
 
-  const short pauseMilliSec = 10;
+  const short pauseMilliSec = 50;
 
   Reg haha;
   
   if( DPPType == DPPType::DPP_PHA_CODE || DPPType == DPPType::DPP_PSD_CODE ){
   
     /// board setting
-    for( int p = 0; p < (int) RegisterBoardList_PHAPSD.size(); p++){
-      if( RegisterBoardList_PHAPSD[p].GetRWType() == RW::ReadWrite) {
-        haha = RegisterBoardList_PHAPSD[p];
-        WriteRegister(haha, GetSettingFromMemory(haha), -1, false); 
-        usleep(pauseMilliSec * 1000);
-      }
-    }
+    //for( int p = 0; p < (int) RegisterBoardList_PHAPSD.size(); p++){
+    //  if( RegisterBoardList_PHAPSD[p].GetRWType() == RW::ReadWrite) {
+    //    haha = RegisterBoardList_PHAPSD[p];
+    //    WriteRegister(haha, GetSettingFromMemory(haha), -1, false); 
+    //    usleep(pauseMilliSec * 1000);
+    //  }
+    //}
     /// Channels Setting
     for( int ch = 0; ch < NumInputCh; ch ++){
       if( DPPType == V1730_DPP_PHA_CODE ){
@@ -847,13 +867,13 @@ void Digitizer::ProgramSettingsToBoard(){
 
   }else{
     /// board setting
-    for( int p = 0; p < (int) RegisterBoardList_QDC.size(); p++){
-      if( RegisterBoardList_QDC[p].GetRWType() == RW::ReadWrite) {
-        haha = RegisterBoardList_QDC[p];
-        WriteRegister(haha, GetSettingFromMemory(haha), -1, false); 
-        usleep(pauseMilliSec * 1000);
-      }
-    }
+    //for( int p = 0; p < (int) RegisterBoardList_QDC.size(); p++){
+    //  if( RegisterBoardList_QDC[p].GetRWType() == RW::ReadWrite) {
+    //    haha = RegisterBoardList_QDC[p];
+    //    WriteRegister(haha, GetSettingFromMemory(haha), -1, false); 
+    //    usleep(pauseMilliSec * 1000);
+    //  }
+    //}
     /// Channels Setting
     for( int ch = 0; ch < GetNumRegChannels(); ch ++){
       for( int p = 0; p < (int) RegisterChannelList_QDC.size(); p++){
