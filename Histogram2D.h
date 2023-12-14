@@ -29,6 +29,7 @@ public:
 
     isChannelMap = false;
     tickStep = 1; // only used when isChannelMap = true
+    isLogZ = false;
 
     axisRect()->setupFullAxesBox(true);
     xAxis->setLabel(xLabel);
@@ -230,6 +231,7 @@ private:
 
   bool isChannelMap; 
   int tickStep;
+  bool isLogZ;
 
   QCPColorMap * colorMap;
   QCPColorScale *colorScale;
@@ -398,6 +400,7 @@ inline void Histogram2D::rightMouseClickMenu(QMouseEvent * event){
   menu->setAttribute(Qt::WA_DeleteOnClose);
 
   QAction * a1 = menu->addAction("UnZoom");
+  QAction * a6 = menu->addAction("Set/UnSet Log-Z");
   QAction * a2 = menu->addAction("Clear hist.");
   QAction * a3 = menu->addAction("Toggle Stat.");
   QAction * a4 = menu->addAction("Rebin (clear histogram)");
@@ -456,6 +459,17 @@ inline void Histogram2D::rightMouseClickMenu(QMouseEvent * event){
     usingMenu = false;
     numCut ++;
     return;
+  }
+
+  if( selectedAction == a6){
+    if( !isLogZ ){
+      colorMap->setDataScaleType(QCPAxis::stLogarithmic);
+      isLogZ = true;
+    }else{
+      colorMap->setDataScaleType(QCPAxis::stLinear);
+      isLogZ = false;
+    }
+    replot();
   }
 
   if( selectedAction && numCut > 0 && selectedAction->text().contains("Delete ") ){
