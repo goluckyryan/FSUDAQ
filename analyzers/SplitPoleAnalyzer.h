@@ -167,7 +167,7 @@ inline void SplitPole::SetUpCanvas(){
     connect(leTarget, &QLineEdit::returnPressed, this, [=](){
       hit.CalConstants(leTarget->text().toStdString(), 
                        leBeam->text().toStdString(), 
-                       leRecoil->text().toStdString(), sbAngle->value(), sbEnergy->value());
+                       leRecoil->text().toStdString(), sbEnergy->value(), sbAngle->value() );
       hit.CalZoffset(sbBfield->value());  
       FillConstants();
     });
@@ -175,7 +175,7 @@ inline void SplitPole::SetUpCanvas(){
     connect(leBeam, &QLineEdit::returnPressed, this, [=](){
       hit.CalConstants(leTarget->text().toStdString(), 
                        leBeam->text().toStdString(), 
-                       leRecoil->text().toStdString(), sbAngle->value(), sbEnergy->value());
+                       leRecoil->text().toStdString(), sbEnergy->value(), sbAngle->value());
       hit.CalZoffset(sbBfield->value());  
       FillConstants();
     });
@@ -183,7 +183,7 @@ inline void SplitPole::SetUpCanvas(){
     connect(leRecoil, &QLineEdit::returnPressed, this, [=](){
       hit.CalConstants(leTarget->text().toStdString(), 
                        leBeam->text().toStdString(), 
-                       leRecoil->text().toStdString(), sbAngle->value(), sbEnergy->value());
+                       leRecoil->text().toStdString(), sbEnergy->value(), sbAngle->value());
       hit.CalZoffset(sbBfield->value());  
       FillConstants();
     });
@@ -191,7 +191,7 @@ inline void SplitPole::SetUpCanvas(){
     connect(sbBfield, &RSpinBox::returnPressed, this, [=](){
       hit.CalConstants(leTarget->text().toStdString(), 
                        leBeam->text().toStdString(), 
-                       leRecoil->text().toStdString(), sbAngle->value(), sbEnergy->value());
+                       leRecoil->text().toStdString(), sbEnergy->value(), sbAngle->value());
       hit.CalZoffset(sbBfield->value());  
       FillConstants();
     });
@@ -199,7 +199,7 @@ inline void SplitPole::SetUpCanvas(){
     connect(sbAngle, &RSpinBox::returnPressed, this, [=](){
       hit.CalConstants(leTarget->text().toStdString(), 
                        leBeam->text().toStdString(), 
-                       leRecoil->text().toStdString(), sbAngle->value(), sbEnergy->value());
+                       leRecoil->text().toStdString(), sbEnergy->value(), sbAngle->value());
       hit.CalZoffset(sbBfield->value());  
       FillConstants();
     });
@@ -207,7 +207,7 @@ inline void SplitPole::SetUpCanvas(){
     connect(sbEnergy, &RSpinBox::returnPressed, this, [=](){
       hit.CalConstants(leTarget->text().toStdString(), 
                        leBeam->text().toStdString(), 
-                       leRecoil->text().toStdString(), sbAngle->value(), sbEnergy->value());
+                       leRecoil->text().toStdString(), sbEnergy->value(), sbAngle->value());
       hit.CalZoffset(sbBfield->value());  
       FillConstants();
     });
@@ -276,6 +276,25 @@ inline void SplitPole::SetUpCanvas(){
     sbRhoScale->setMaximum(1.5);
     sbRhoScale->setValue(1.0);
     boxLayout->addWidget(sbRhoScale, 10, 3);
+
+
+    QFrame *separator2 = new QFrame(box);
+    separator2->setFrameShape(QFrame::HLine);
+    separator2->setFrameShadow(QFrame::Sunken);
+    boxLayout->addWidget(separator2, 11, 0, 1, 4);
+
+    QString chMapStr = "ScinR = " + QString::number(SPS::ChMap::ScinR);
+    chMapStr += ", ScinL = " +      QString::number(SPS::ChMap::ScinL);
+    chMapStr += ", dFR = " +        QString::number(SPS::ChMap::dFR);
+    chMapStr += ", dFL = " +        QString::number(SPS::ChMap::dFL);
+    chMapStr += ", dBR = " +        QString::number(SPS::ChMap::dBR);
+    chMapStr += ", dBL = " +        QString::number(SPS::ChMap::dBL);
+    chMapStr += ", Cathode = " +    QString::number(SPS::ChMap::Cathode);
+    chMapStr += ", AnodeF = " +     QString::number(SPS::ChMap::AnodeF);
+    chMapStr += ", AnodeB = " +     QString::number(SPS::ChMap::AnodeB);
+    QLabel * chMapLabel = new QLabel(chMapStr, box);
+    boxLayout->addWidget(chMapLabel, 12, 0, 1, 4);
+
   }
 
   //============ histograms
@@ -289,7 +308,7 @@ inline void SplitPole::SetUpCanvas(){
 
   h1 = new Histogram1D("Spectrum", "x", 300, 30, 70, this);
   h1->SetColor(Qt::darkGreen);
-  h1->AddDataList("Test", Qt::red); // add another histogram in h1, Max Data List is 10
+  //h1->AddDataList("Test", Qt::red); // add another histogram in h1, Max Data List is 10
   layout->addWidget(h1, 1, 1);
   
   h1g = new Histogram1D("Spectrum (PID gated)", "Ex", 300, -2, 10, this);
@@ -347,20 +366,28 @@ inline void SplitPole::UpdateHistograms(){
 
     hit.CalData();
 
-    hPID->Fill(hit.eSL, hit.eSR); // x, y
+    double pidX = hit.eSL;
+    unsigned long long tPidX = hit.tSL;
+    double pidY = hit.eAF;
 
-    h1->Fill(hit.eSL);
-    h1->Fill(hit.eSR, 1);
-    
+    hPID->Fill(pidX, pidY); // x, y
+
+    h1->Fill(hit.xAvg);
+    //h1->Fill(hit.eSR, 1);
+
     //check events inside any Graphical cut and extract the rate, using tSR only
     for(int p = 0; p < cutList.count(); p++ ){ 
       if( cutList[p].isEmpty() ) continue;
-      if( cutList[p].containsPoint(QPointF(hit.eSL, hit.eSR), Qt::OddEvenFill) ){
-        if( hit.tSR < tMin[p] ) tMin[p] = hit.tSR;
-        if( hit.tSR > tMax[p] ) tMax[p] = hit.tSR;
+      if( cutList[p].containsPoint(QPointF(pidX, pidY), Qt::OddEvenFill) ){
+        if( tPidX < tMin[p] ) tMin[p] = tPidX;
+        if( tPidX > tMax[p] ) tMax[p] = tPidX;
         count[p] ++;
         //printf(".... %d \n", count[p]);
-        if( p == 0 ) h1g->Fill(hit.eSR);
+        if( p == 0 ) {
+          double xAvg = hit.xAvg * 10;
+          double xAvgC = xAvg * sbRhoScale->value() + sbRhoOffset->value();
+          h1g->Fill(hit.Rho2Ex(xAvgC/1000.));
+        }
       }
     }
   }

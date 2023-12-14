@@ -106,18 +106,29 @@ public:
 
     isConstantCal = true;
 
+    printf("============================================\n");
+    printf("  Beam Mass : %20.4f MeV/c2\n", beam.Mass);
+    printf("    beam KE : %20.4f MeV\n", beamKE);
+    printf("Target Mass : %20.4f MeV/c2\n", target.Mass);
+    printf("Recoil Mass : %20.4f MeV/c2\n", recoil.Mass);
+    printf("H. Rec Mass : %20.4f MeV/c2\n", heavyRecoil.Mass);
+
+    printf("      angle : %20.4f deg\n", angleDegree);
+    printf("         k1 : %20.4f MeV/c\n", k1);
+    printf("         Ei : %20.4f MeV\n", Ei);
+
   }
 
   double CalRecoilMomentum(double Ex){
 
     if( !isConstantCal ) return 0;
 
-    float p =  Ei*Ei - k1*k1;
-    float q = ma*ma - (mb + Ex)*(mb + Ex);
+    double p =  Ei*Ei - k1*k1;
+    double q = ma*ma - (mb + Ex)*(mb + Ex);
 
-    float x = k1* ( p + q) * cs;
-    float y = pow( p, 2) + pow(q, 2)- 2 * Ei * Ei * (ma* ma + (mb + Ex)*(mb + Ex)) + 2 * k1 * k1 * (ma*ma * cos(2* angleDegree * SPS::deg2rad) + (mb + Ex)*(mb + Ex));
-    float z = 2 * ( Ei*Ei - k1*k1 * cs * cs) ;
+    double x = k1* ( p + q) * cs;
+    double y = pow( p, 2) + pow(q, 2)- 2 * Ei * Ei * (ma* ma + (mb + Ex)*(mb + Ex)) + 2 * k1 * k1 * (ma*ma * cos(2* angleDegree * SPS::deg2rad) + (mb + Ex)*(mb + Ex));
+    double z = 2 * ( Ei*Ei - k1*k1 * cs * cs) ;
 
     return (x + Ei * sqrt(y))/z;
 
