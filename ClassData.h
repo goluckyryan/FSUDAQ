@@ -303,7 +303,8 @@ inline void Data::PrintStat(bool skipEmpty) {
   printf("%2s | %6s | %9s | %9s | %6s | %6s(%4s)\n", "ch", "# Evt.", "Rate [Hz]", "Accept", "Tot. Evt.", "index", "loop");
   printf("---+--------+-----------+-----------+----------\n");
   for(int ch = 0; ch < numInputCh; ch++){
-    if( skipEmpty && TriggerRate[ch] == 0 ) continue;
+    //if( skipEmpty && TriggerRate[ch] == 0 ) continue;
+    if( skipEmpty && DataIndex[ch] < 0 ) continue;
     printf("%2d | %6d | %9.2f | %9.2f | %6lu | %6d(%2d)\n", ch, NumEventsDecoded[ch], TriggerRate[ch], NonPileUpRate[ch], TotNumNonPileUpEvents[ch], DataIndex[ch], LoopIndex[ch]);
   }
   printf("---+--------+-----------+-----------+----------\n");
@@ -783,8 +784,8 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
 
     //if( DataIndex[channel] > MaxNData ) ClearData(); // if any channel has more data then MaxNData, clear all stored data
 
-    if( verbose >= 1 ) printf("evt %4d | ch : %2d, PileUp : %d , energy : %5d, rollOver: %d,  timestamp : %10llu, triggerAt : %d, nSample : %d, %f sec\n", 
-                                DataIndex[channel], channel, pileUp, energy, rollOver, timeStamp, triggerAtSample, nSample , timeStamp * 4. / 1e9);
+    if( verbose >= 1 ) printf("evt %4d(%2d) | ch : %2d, PileUp : %d , energy : %5d, rollOver: %d,  timestamp : %10llu, triggerAt : %d, nSample : %d, %f sec\n", 
+                                DataIndex[channel], LoopIndex[channel], channel, pileUp, energy, rollOver, timeStamp, triggerAtSample, nSample , timeStamp * 4. / 1e9);
     
   }
   

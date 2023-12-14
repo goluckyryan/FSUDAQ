@@ -14,6 +14,8 @@ class FSUReader{
 
     Data * GetData() const{return data;}
 
+    int GetDPPType() const{return DPPType;}
+
   private:
 
     FILE * inFile;
@@ -109,6 +111,7 @@ inline int FSUReader::ReadNextBlock(bool fast, int verbose){
     }
 
     data->DecodeBuffer(buffer, aggSize, fast, verbose); // data will own the buffer
+    data->ClearTriggerRate();
     data->ClearBuffer(); // this will clear the buffer.
 
   }else if( (header & 0xF ) == 0x8 ) { /// dual channel header
@@ -120,6 +123,7 @@ inline int FSUReader::ReadNextBlock(bool fast, int verbose){
 
     data->buffer = buffer;
     data->DecodeDualBlock(buffer, dualSize, DPPType, chMask, false, verbose);
+    data->ClearTriggerRate();
     data->ClearBuffer();
     
 
