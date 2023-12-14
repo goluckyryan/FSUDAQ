@@ -12,6 +12,8 @@ class Histogram1D : public QCustomPlot{
 public:
   Histogram1D(QString title, QString xLabel, int xbin, double xmin, double xmax, QWidget * parent = nullptr) : QCustomPlot(parent){
 
+    isLogY = false;
+
     for( int i = 0; i < 3; i ++) txt[i] = nullptr;
     nData = 1;
     Rebin(xbin, xmin, xmax);
@@ -82,6 +84,7 @@ public:
         QMenu menu(this);
 
         QAction * a1 = menu.addAction("UnZoom");
+        QAction * a5 = menu.addAction("Set/UnSet Log-y");
         QAction * a2 = menu.addAction("Clear hist.");
         QAction * a3 = menu.addAction("Toggle Stat.");
         QAction * a4 = menu.addAction("Rebin (clear histogram)");
@@ -169,6 +172,17 @@ public:
             UpdatePlot();
           }
 
+        }
+        if( selectedAction == a5 ){
+
+          if( !isLogY ){
+            this->yAxis->setScaleType(QCPAxis::stLogarithmic);
+            isLogY = true;
+          }else{
+            this->yAxis->setScaleType(QCPAxis::stLinear);
+            isLogY = false;
+          }
+          this->replot();
         }
       }
     });
@@ -293,6 +307,8 @@ private:
   int totalEntry;
   int underFlow;
   int overFlow;
+
+  bool isLogY;
 
   unsigned short nData;
   QVector<double> xList;
