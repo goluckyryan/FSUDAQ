@@ -56,6 +56,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     cbOpenDigitizers->addItem("Open Digitizers ... ", 0);
     cbOpenDigitizers->addItem("Open Digitizers w/o load Settings", 1);
     cbOpenDigitizers->addItem("Open Digitizers + load Settings", 2);
+    //cbOpenDigitizers->addItem("Open Digitizers via USB", 3);
+    cbOpenDigitizers->addItem("Open Digitizers via A4818", 4);
     layout->addWidget(cbOpenDigitizers, 0, 0);
     connect(cbOpenDigitizers, &RComboBox::currentIndexChanged, this, &MainWindow::OpenDigitizers);
 
@@ -561,13 +563,36 @@ void MainWindow::OpenDigitizers(){
 
   if( cbOpenDigitizers->currentIndex() == 0 ) return;
 
-  //sereach for digitizers
-  LogMsg("Searching digitizers via optical link or USB .....Please wait");
+  // placeholder for USB
+  // if( cbOpenDigitizers->currentData().toInt() == 3 ) {
+  //   return;
+  // }
+
+  QString a4818PID = "26006";
+  if( cbOpenDigitizers->currentData().toInt() == 4 ) {
+
+    bool ok;
+    a4818PID = QInputDialog::getText(nullptr, "A4818 PID", "Can be found on the A4818:", QLineEdit::Normal, "", &ok);
+
+    if ( !ok || a4818PID.isEmpty()) {
+      LogMsg("User cancel or fail to connect A4818 without PID");
+      cbOpenDigitizers->setCurrentIndex(0);
+      return;
+    }
+
+  }
+
+  if( cbOpenDigitizers->currentData().toInt() == 4 ) {
+    LogMsg("Searching digitizers via A4818 .....Please wait");
+  }else{
+    LogMsg("Searching digitizers via optical link or USB .....Please wait");
+  }
   logMsgHTMLMode = false;
   nDigi = 0;
   std::vector<std::pair<int, int>> portList; //boardID, portID
   for(int port = 0; port < MaxNPorts; port++){
-    for( int board = 0; board < MaxNBoards; board ++){ /// max number of iasy chain
+    if( cbOpenDigitizers->currentData().toInt() == 4 ) port = a4818PID.toInt();
+    for( int board = 0; board < MaxNBoards; board ++){ /// max number of diasy chain
       Digitizer dig;
       dig.OpenDigitizer(board, port);
       if( dig.IsConnected() ){
@@ -584,10 +609,10 @@ void MainWindow::OpenDigitizers(){
   logMsgHTMLMode = true;
 
   if( nDigi == 0 ) {
-    LogMsg(QString("Done seraching. No digitizer found."));
+    LogMsg(QString("Done seraching. No digitizer found from port 0 to ") +  QString::number(MaxNPorts) + " and board 0 to " + QString::number(MaxNBoards) + ".");
+    cbOpenDigitizers->setCurrentIndex(0);
     return;
   }else{
-
     if( cbOpenDigitizers->currentIndex() == 1 ) {
       LogMsg(QString("Done seraching. Found %1 digitizer(s). Opening digitizer(s)....").arg(nDigi));
     }else{
@@ -1388,6 +1413,8 @@ void MainWindow::SetAndLockInfluxElog(){
 
       QObject::connect(&buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
       QObject::connect(&buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+      dialog.resize(400, dialog.sizeHint().height()); // Set the width to 400 pixels
 
       // Show the dialog and get the result
       if (dialog.exec() == QDialog::Accepted) {
