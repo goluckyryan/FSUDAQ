@@ -27,12 +27,12 @@ int getch(void);
 //^======================================
 int main(int argc, char* argv[]){
 
-  Digitizer * digi = new Digitizer(0, 0, false, true);
+  Digitizer * digi = new Digitizer(0, 26006, false, true);
   digi->Reset();
 
-  digi->ProgramBoard_PHA();
+  //digi->ProgramBoard_PHA();
 
-  digi->WriteRegister(DPP::SoftwareClear_W, 1);
+  //digi->WriteRegister(DPP::SoftwareClear_W, 1);
 
   // digi->WriteRegister(DPP::QDC::RecordLength, 31, -1); // T = N * 8 * 16
   // digi->WriteRegister(DPP::QDC::PreTrigger, 60, -1);
@@ -52,6 +52,7 @@ int main(int argc, char* argv[]){
 
   // digi->SetBits(DPP::QDC::DPPAlgorithmControl, DPP::QDC::Bit_DPPAlgorithmControl::Polarity, 0, -1);
 
+  /*
   digi->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::EnableExtra2, 1, -1);
   digi->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, 0, -1);  
 
@@ -91,6 +92,7 @@ int main(int argc, char* argv[]){
   data->PrintAllData();
 
   builder->PrintAllEvent(); // TODO
+  */
 
   digi->CloseDigitizer();
   delete digi;

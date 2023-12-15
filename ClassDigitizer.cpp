@@ -86,17 +86,19 @@ int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose
   if( verbose) printf("============= Opening Digitizer at Board %d, Port %d \n", boardID, portID);
   
   ///-------- try USB first
-  LinkType = CAEN_DGTZ_USB;     /// Link Type
-  ret = (int) CAEN_DGTZ_OpenDigitizer(LinkType, boardID, 0, VMEBaseAddress, &handle);
-  if (ret != 0){ ///---------- try Optical link
-    LinkType = CAEN_DGTZ_OpticalLink ; 
+  if( portID < 4){
+    LinkType = CAEN_DGTZ_USB;     /// Link Type
+    ret = (int) CAEN_DGTZ_OpenDigitizer(LinkType, boardID, 0, VMEBaseAddress, &handle);
+    if (ret != 0){ ///---------- try Optical link
+      LinkType = CAEN_DGTZ_OpticalLink ; 
+      ret = (int) CAEN_DGTZ_OpenDigitizer(LinkType, portID, boardID, VMEBaseAddress, &handle);
+    }
+    ErrorMsg("=== Open Digitizer port " +std::to_string(portID) + " board " + std::to_string(boardID));
+  }else{
+    LinkType = CAEN_DGTZ_USB_A4818 ; // portID = A4818 PID
     ret = (int) CAEN_DGTZ_OpenDigitizer(LinkType, portID, boardID, VMEBaseAddress, &handle);
+    ErrorMsg("=== Open Digitizer port " +std::to_string(portID) + " board " + std::to_string(boardID) + " using A4818.");
   }
-  if (ret != 0){ ///---------- try A4818
-    LinkType = CAEN_DGTZ_USB_A4818 ;
-    ret = (int) CAEN_DGTZ_OpenDigitizer(LinkType, portID, boardID, VMEBaseAddress, &handle);
-  }
-  ErrorMsg("=== Open Digitizer port " +std::to_string(portID) + " board " + std::to_string(boardID));
 
   if( ret == 0 ){
     if( LinkType == CAEN_DGTZ_USB ) printf("Open digitizer via USB, board : %d\n", boardID);

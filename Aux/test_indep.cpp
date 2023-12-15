@@ -175,7 +175,8 @@ int main(int argc, char* argv[]){
   int handle;
   
   printf("======== open board\n");
-  int ret = CAEN_DGTZ_OpenDigitizer(CAEN_DGTZ_OpticalLink, 1, 0, 0, &handle);
+  //int ret = CAEN_DGTZ_OpenDigitizer(CAEN_DGTZ_OpticalLink, 1, 0, 0, &handle);
+  int ret = CAEN_DGTZ_OpenDigitizer(CAEN_DGTZ_USB_A4818, 26006, 0, 0, &handle);
   
   CAEN_DGTZ_BoardInfo_t BoardInfo;
   ret = (int) CAEN_DGTZ_GetInfo(handle, &BoardInfo);
@@ -188,11 +189,12 @@ int main(int argc, char* argv[]){
   }
   unsigned int ADCbits = BoardInfo.ADC_NBits;
   
-  if( ret != 0 ) { printf("==== open digitizer\n"); return 0;}
+  if( ret != 0 ) { printf("==== open digitizer fail.\n"); return 0;}
   
   ///======= reset 
   ret = CAEN_DGTZ_Reset(handle);
 
+  /*
   printf("======== program board\n");
 
   ///ret |= CAEN_DGTZ_SetDPPAcquisitionMode(handle, CAEN_DGTZ_DPP_ACQ_MODE_List, CAEN_DGTZ_DPP_SAVE_PARAM_EnergyAndTime);
@@ -213,12 +215,13 @@ int main(int argc, char* argv[]){
   /// Set the I/O level (CAEN_DGTZ_IOLevel_NIM or CAEN_DGTZ_IOLevel_TTL)
   ret |= CAEN_DGTZ_SetIOLevel(handle, CAEN_DGTZ_IOLevel_NIM);
 
-  /** Set the digitizer's behaviour when an external trigger arrives:
-  CAEN_DGTZ_TRGMODE_DISABLED: do nothing
-  CAEN_DGTZ_TRGMODE_EXTOUT_ONLY: generate the Trigger Output signal
-  CAEN_DGTZ_TRGMODE_ACQ_ONLY = generate acquisition trigger
-  CAEN_DGTZ_TRGMODE_ACQ_AND_EXTOUT = generate both Trigger Output and acquisition trigger
-  see CAENDigitizer user manual, chapter "Trigger configuration" for details */
+  // Set the digitizer's behaviour when an external trigger arrives:
+  // CAEN_DGTZ_TRGMODE_DISABLED: do nothing
+  // CAEN_DGTZ_TRGMODE_EXTOUT_ONLY: generate the Trigger Output signal
+  // CAEN_DGTZ_TRGMODE_ACQ_ONLY = generate acquisition trigger
+  // CAEN_DGTZ_TRGMODE_ACQ_AND_EXTOUT = generate both Trigger Output and acquisition trigger
+  // see CAENDigitizer user manual, chapter "Trigger configuration" for details
+  
   ret |= CAEN_DGTZ_SetExtTriggerInputMode(handle, CAEN_DGTZ_TRGMODE_ACQ_ONLY);
   if( ret != 0 ) { printf("==== CAEN_DGTZ_SetExtTriggerInputMode.\n"); return 0;}
 
@@ -232,8 +235,8 @@ int main(int argc, char* argv[]){
   //if( ret != 0 ) { printf("==== CAEN_DGTZ_SetDPPEventAggregation. %d\n", ret); return 0;}
   
   
-  /** Set the mode used to syncronize the acquisition between different boards.
-  In this example the sync is disabled */
+  // Set the mode used to syncronize the acquisition between different boards.
+  // In this example the sync is disabled
   ret = CAEN_DGTZ_SetRunSynchronizationMode(handle, CAEN_DGTZ_RUN_SYNC_Disabled);
   if( ret != 0 ) { printf("==== set board error.\n"); return 0;}
   
@@ -464,14 +467,14 @@ int main(int argc, char* argv[]){
     }
     nw++;
   }while(true);
-
+  */
   
   printf("=========== close Digitizer \n");
   CAEN_DGTZ_SWStopAcquisition(handle);
   CAEN_DGTZ_CloseDigitizer(handle);
-  CAEN_DGTZ_FreeReadoutBuffer(&buffer);
-  CAEN_DGTZ_FreeDPPEvents(handle, reinterpret_cast<void**>(&Events));
-  CAEN_DGTZ_FreeDPPWaveforms(handle, Waveform);
+  //CAEN_DGTZ_FreeReadoutBuffer(&buffer);
+  //CAEN_DGTZ_FreeDPPEvents(handle, reinterpret_cast<void**>(&Events));
+  //CAEN_DGTZ_FreeDPPWaveforms(handle, Waveform);
       
   return 0;
 }
