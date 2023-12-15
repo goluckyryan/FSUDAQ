@@ -1397,7 +1397,7 @@ void MainWindow::SetAndLockInfluxElog(){
 
       QLineEdit usernameLineEdit;
       QLineEdit passwordLineEdit;
-      passwordLineEdit.setEchoMode(QLineEdit::Password);
+      //passwordLineEdit.setEchoMode(QLineEdit::Password);
 
       formLayout.addRow("Username:", &usernameLineEdit);
       formLayout.addRow("Password:", &passwordLineEdit);
