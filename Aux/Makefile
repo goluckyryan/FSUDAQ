@@ -45,7 +45,7 @@ DataReader : DataReaderScript.cpp ../ClassData.h MultiBuilder.o
 		@echo "--------- making DataReader"
 		$(CC) $(COPTS) -o DataReader DataReaderScript.cpp ../ClassData.h MultiBuilder.o
 
-EventBuilder : EventBuilder.cpp ../ClassData.h MultiBuilder.o
+EventBuilder : EventBuilder.cpp ../ClassData.h MultiBuilder.o fsuReader.h
 		@echo "--------- making EventBuilder"
 		$(CC) $(COPTS) -o EventBuilder EventBuilder.cpp MultiBuilder.o $(ROOTLIBS) 
 

@@ -3,10 +3,10 @@
 class FSUReader{
 
   public:
-    FSUReader(std::string fileName, unsigned short numCh);
+    FSUReader(std::string fileName, unsigned short numCh, bool verbose = true);
     ~FSUReader();
 
-    void ScanNumBlock();
+    void ScanNumBlock(bool verbose = true);
     int  ReadNextBlock(bool fast = false, int verbose = 0);
     int  ReadBlock(unsigned int ID, int verbose = 0);
 
@@ -15,6 +15,8 @@ class FSUReader{
     Data * GetData() const{return data;}
 
     int GetDPPType() const{return DPPType;}
+
+    unsigned long GetFileByteSize() const {return inFileSize;}
 
   private:
 
@@ -38,7 +40,7 @@ class FSUReader{
 
 };
 
-inline FSUReader::FSUReader(std::string fileName, unsigned short numCh){
+inline FSUReader::FSUReader(std::string fileName, unsigned short numCh, bool verbose){
 
   inFile = fopen(fileName.c_str(), "r");
 
@@ -49,7 +51,7 @@ inline FSUReader::FSUReader(std::string fileName, unsigned short numCh){
 
   fseek(inFile, 0L, SEEK_END);
   inFileSize = ftell(inFile);
-  printf("%s | file size : %ld Byte = %.2f MB\n", fileName.c_str() , inFileSize, inFileSize/1024./1024.);
+  if(verbose) printf("%s | file size : %ld Byte = %.2f MB\n", fileName.c_str() , inFileSize, inFileSize/1024./1024.);
   fseek(inFile, 0L, SEEK_SET);
   filePos = 0;
 
@@ -70,10 +72,10 @@ inline FSUReader::FSUReader(std::string fileName, unsigned short numCh){
   std::string ext = fileName.substr(found + 1);
 
   if( ext.find("fsu") != std::string::npos ) {
-    printf("It is an raw data *.fsu format\n");
+    if(verbose) printf("It is an raw data *.fsu format\n");
   }else{
     chMask = atoi(ext.c_str());
-    printf("It is a splitted dual block data *.fsu.X format, dual channel mask : %d \n", chMask);
+    if(verbose) printf("It is a splitted dual block data *.fsu.X format, dual channel mask : %d \n", chMask);
   }
 
   //ScanNumBlock();
@@ -153,7 +155,7 @@ inline int FSUReader::ReadBlock(unsigned int ID, int verbose){
 
 }
 
-inline void FSUReader::ScanNumBlock(){
+inline void FSUReader::ScanNumBlock(bool verbose){
   if( feof(inFile) ) return;
 
   blockID = 0;
@@ -166,11 +168,11 @@ inline void FSUReader::ScanNumBlock(){
   while( ReadNextBlock(true) == 0 ){
     blockPos.push_back(filePos);
     blockID ++;
-    printf("%u, %.2f%% %u/%lu\n\033[A\r", blockID, filePos*100./inFileSize, filePos, inFileSize);
+    if(verbose) printf("%u, %.2f%% %u/%lu\n\033[A\r", blockID, filePos*100./inFileSize, filePos, inFileSize);
   }
 
   totNumBlock = blockID;
-  printf("\nScan complete: number of data Block : %lu\n", totNumBlock);
+  if(verbose) printf("\nScan complete: number of data Block : %lu\n", totNumBlock);
   
   rewind(inFile);
   blockID = 0;  
