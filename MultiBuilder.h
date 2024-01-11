@@ -48,6 +48,9 @@ public:
   void SetTimeWindow(unsigned short ticks) {timeWindow = ticks; leftOverTime = ticks;}
   unsigned short GetTimeWindow() const{return timeWindow;}
 
+  void SetTimeJump(unsigned long long TimeJumpInNanoSec) {timeJump = TimeJumpInNanoSec;}
+  unsigned long long GetTimeJump() const {return timeJump;}
+
   void SetLeftOverTime(unsigned long long ticks) {leftOverTime = ticks;}
   unsigned long long GetLeftOverTime() const{return leftOverTime;}
 
@@ -80,6 +83,10 @@ private:
   unsigned short timeWindow;
   unsigned long long leftOverTime;
   unsigned long long breakTime; // timestamp for breaking the event builder
+
+  unsigned long long timeJump; //time diff for a time jump, default is 1e8 ns
+  unsigned long long lastEventTime; // timestamp for detect time jump 
+
   int loopIndex[MaxNDigitizer][MaxNChannels];
   int nextIndex[MaxNDigitizer][MaxNChannels];
 

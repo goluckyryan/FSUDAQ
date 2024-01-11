@@ -10,6 +10,8 @@ MultiBuilder::MultiBuilder(Data ** multiData, std::vector<int> type, std::vector
   timeWindow = 100;
   leftOverTime = 100;
   breakTime = -1;
+  timeJump = 1e8;
+  lastEventTime = 0;
   ClearEvents();
 
   // for( int i = 0; i < nData; i++){
@@ -27,6 +29,9 @@ MultiBuilder::MultiBuilder(Data * singleData, int type, int sn): nData(1){
   timeWindow = 100;
   leftOverTime = 100;
   breakTime = -1;
+  timeJump = 1e8;
+  lastEventTime = 0;
+
   ClearEvents();
 }
 
@@ -199,10 +204,9 @@ void MultiBuilder::FindLatestTimeOfData(bool verbose){
 
 void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
 
-  FindEarlistTimeAmongLastData(verbose);
-  //FindLatestTimeOfData(verbose);
+  FindEarlistTimeAmongLastData(verbose); // give lastest Time, Ch, and Digi
 
-  FindEarlistTimeAndCh(verbose);
+  FindEarlistTimeAndCh(verbose); //Give the earliest time, ch, digi
   if( earlistCh == -1 || nExhaushedCh == nData * MaxNChannels) return; /// no data
 
   eventBuilt = 0;
@@ -240,7 +244,8 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
         do {
 
           unsigned long long time = data[bd]->Timestamp[ch][nextIndex[bd][ch]];
-          // printf("Check timestamp : %llu | earlistTime : %llu | timeWindow : %u \n", time, earlistTime, timeWindow);
+          //printf("%6ld, sn: %5d, ch: %2d, timestamp : %16llu | earlistTime : %16llu | timeWindow : %u \n", eventIndex, data[bd]->boardSN, ch, time, earlistTime, timeWindow);
+
           if( time >= earlistTime && (time - earlistTime <=  timeWindow) ){
             em.sn = snList[bd];
             em.bd = bd;
@@ -268,14 +273,25 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
       if( timeWindow <= 0 ) break;
     }
 
-    if( timeWindow > 0 ) {
+    if( events[eventIndex].size() > 1) {
       std::sort(events[eventIndex].begin(), events[eventIndex].end(), [](const Hit& a, const Hit& b) {
         return a.timestamp < b.timestamp;
       });
     }
+
+    lastEventTime = events[eventIndex].back().timestamp;
     
     ///Find the next earlist 
     FindEarlistTimeAndCh(false);
+
+    // //if there is a time jump, say, bigger than TimeJump. break
+    if( earlistTime - lastEventTime > timeJump ) {
+      printf("%6lu, %16llu\n", eventIndex, earlistTime);
+      printf("%5s - %16llu \n", "", lastEventTime);
+      printf("%5s > %16llu \n", "", timeJump);
+      printf("!!!!!!!! Time Jump detected stop event building. stop event buinding and get more data.\n"); 
+      return;
+    }
 
     if( verbose ){
       printf(">>>>>>>>>>>>>>>>> Event ID : %ld, total built: %ld, multiplicity : %ld\n", eventIndex, totalEventBuilt, events[eventIndex].size());

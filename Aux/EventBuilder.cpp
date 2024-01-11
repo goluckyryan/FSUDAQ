@@ -10,7 +10,7 @@
 #include "TTree.h"
 
 #define MAX_MULTI  100
-#define BUFFERFILL 0.1 // only 0.5 * MAXNData will be filled in memeory each time
+#define TIMEJUMP 1e8 // 0.1 sec or 10 Hz, any signal less than 10 Hz should increase the value.
 
 template<typename T> void swap(T * a, T *b );
 int partition(int arr[], int kaka[], TString file[], unsigned int fileSize[], unsigned int numBlock[], int t2ns[], int start, int end);
@@ -25,11 +25,16 @@ int main(int argc, char **argv) {
   printf("=========================================\n");  
   if (argc <= 3)    {
     printf("Incorrect number of arguments:\n");
-    printf("%s [timeWindow] [traceOn/Off] [verbose] [inFile1]  [inFile2] .... \n", argv[0]);
-    printf("    timeWindow : number of tick, 1 tick. default = 100 \n");   
+    printf("%s [timeWindow] [Buffer] [traceOn/Off] [verbose] [inFile1]  [inFile2] .... \n", argv[0]);
+    printf("    timeWindow : in ns \n");   
+    printf("        Buffer : Fraction of %d, recommand 0.4 \n", MaxNData);   
     printf("   traceOn/Off : is traces stored \n");   
     printf("       verbose : > 0 for debug  \n");   
     printf("    Output file name is contructed from inFile1 \n");   
+    printf("\n");
+    printf("  * there is a TIMEJUMP = 1e8 ns in EventBuilder.cpp.\n");
+    printf("       This control the time diff for a time jumping.\n");
+    printf("       Any signal with trigger rate < 1/TIMEJUMP should increase the value.\n");
     return 1;
   }
 
@@ -42,12 +47,13 @@ int main(int argc, char **argv) {
   
   ///============= read input
   unsigned int  timeWindow = atoi(argv[1]);
-  bool traceOn = atoi(argv[2]);
-  unsigned int debug = atoi(argv[3]);
-  int nFile = argc - 4;
+  float bufferSize = atof(argv[2]);
+  bool traceOn = atoi(argv[3]);
+  unsigned int debug = atoi(argv[4]);
+  int nFile = argc - 5;
   TString inFileName[nFile];
   for( int i = 0 ; i < nFile ; i++){
-    inFileName[i] = argv[i+4];
+    inFileName[i] = argv[i+5];
   }
   
   /// Form outFileName;
@@ -63,8 +69,9 @@ int main(int argc, char **argv) {
   for( int i = 0; i < nFile; i++) printf("%2d | %s \n", i, inFileName[i].Data());
   printf("=====================================\n");  
   printf(" Time Window = %u \n", timeWindow);
-
+  printf(" Buffer size = %.0f event/channel\n", MaxNData * bufferSize);
   printf("===================================== input files:\n");  
+  printf("Scanning files.....\n");
 
   ///============= sorting file by the serial number & order
   int ID[nFile]; /// serial+ order*1000;
@@ -192,13 +199,14 @@ int main(int argc, char **argv) {
   printf("================= Building events....\n");
   MultiBuilder * mb = new MultiBuilder(data, typeList, snList);
   mb->SetTimeWindow(timeWindow);
+  mb->SetTimeJump(TIMEJUMP);
 
   ///------------------ read data
   char * buffer = nullptr;
   unsigned int word[1]; // 4 byte = 32 bit
 
   int lastDataIndex[nGroup][MAX_MULTI]; // keep track of the DataIndex
-  int lastLoopIndex[nGroup][MAX_MULTI]; // keep track of the DataIndex
+  int lastLoopIndex[nGroup][MAX_MULTI]; // keep track of the LoopIndex
   int aggCount[nGroup];
 
   for( int i = 0; i < nGroup; i++){
@@ -276,6 +284,12 @@ int main(int argc, char **argv) {
       //check if Data Index near MaxNData. if near by 50%, break
       //printf("-----------------------------------\n");
       for( int i = 0; i < nGroup; i++){
+
+        if( debug ){
+          printf("-------------------------> %3d | agg : %d | %u \n", snList[i], aggCount[i], data[i]->aggTime);
+          //data[i]->PrintStat();
+        }
+
         for( int ch = 0; ch < data[i]->GetNChannel(); ch ++){
 
           int iData = data[i]->DataIndex[ch];
@@ -283,20 +297,16 @@ int main(int argc, char **argv) {
 
           if( iData < 0 ) continue;
 
-          if( (iLoop*MaxNData + iData) - (lastLoopIndex[i][ch]*MaxNData + lastDataIndex[i][ch]) > MaxNData * BUFFERFILL ) {
-            if( debug ) printf("############# BREAK!!!! Group: %d, ch : %d | last : %d(%d), Present : %d(%d) | BufferSize : %.0f \n", i, ch, lastDataIndex[i][ch], lastLoopIndex[i][ch], iData, iLoop, MaxNData * BUFFERFILL);
+          if( (iLoop*MaxNData + iData) - (lastLoopIndex[i][ch]*MaxNData + lastDataIndex[i][ch]) > MaxNData * bufferSize ) {
+            if( debug ) printf("############# BREAK!!!! Group: %d, ch : %d | last : %d(%d), Present : %d(%d) | BufferSize : %.0f \n", i, ch, lastDataIndex[i][ch], lastLoopIndex[i][ch], iData, iLoop, MaxNData * bufferSize);
             fillFlag = false;
           }
 
           if( debug ){
             unsigned long long t1 = data[i]->Timestamp[ch][iData];
-            printf("digi:%d | ch: %2d DataIndex: %5d (%d) [%5d(%d)] | %llu\n", data[i]->boardSN, ch, iData, iLoop, lastDataIndex[i][ch], lastLoopIndex[i][ch], t1);
+            printf("digi:%5d | ch: %2d DataIndex: %5d (%d) [%5d(%d)] | %16llu\n", data[i]->boardSN, ch, iData, iLoop, lastDataIndex[i][ch], lastLoopIndex[i][ch], t1);
           }
 
-        }
-        if( debug ){
-          printf("-------------------------> %3d | agg : %d | %u \n", snList[i], aggCount[i], data[i]->aggTime);
-          //data[i]->PrintStat();
         }
       }
 
