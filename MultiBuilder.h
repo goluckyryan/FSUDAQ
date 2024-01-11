@@ -73,6 +73,7 @@ private:
   std::vector<int> typeList;
   std::vector<int> snList;
   std::vector<int> idList;
+  std::vector<int> tick2ns;
   const unsigned short nData;
   Data ** data; // assume all data has MaxNChannel (16) 
 

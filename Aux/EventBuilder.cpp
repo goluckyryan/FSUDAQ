@@ -13,8 +13,8 @@
 #define BUFFERFILL 0.1 // only 0.5 * MAXNData will be filled in memeory each time
 
 template<typename T> void swap(T * a, T *b );
-int partition(int arr[], int kaka[], TString file[], unsigned int fileSize[], unsigned int numBlock[], int start, int end);
-void quickSort(int arr[], int kaka[], TString file[], unsigned int fileSize[], unsigned int numBlock[], int start, int end);
+int partition(int arr[], int kaka[], TString file[], unsigned int fileSize[], unsigned int numBlock[], int t2ns[], int start, int end);
+void quickSort(int arr[], int kaka[], TString file[], unsigned int fileSize[], unsigned int numBlock[], int t2ns[], int start, int end);
 
 //^#############################################################
 //^#############################################################
@@ -71,62 +71,47 @@ int main(int argc, char **argv) {
   int type[nFile];
   unsigned int fileSize[nFile];
   unsigned int numBlock[nFile];
+  int tick2ns[nFile];
+  // file name format is expName_runID_SN_DPP_tick2ns_order.fsu
   for( int i = 0; i < nFile; i++){
-    int snPos = inFileName[i].Index("_"); // first "_"
-    //snPos = inFileName[i].Index("_", snPos + 1);
-    int sn = atoi(&inFileName[i][snPos+5]);
-
-    int typePos = inFileName[i].Index("_", snPos+5);    
-    TString typeStr = &inFileName[i][typePos+1];
-    typeStr.Resize(3);
-
-    //printf("sn %d %s \n", sn, typeStr.Data());
-
-    if( typeStr == "PHA" ) type[i] = DPPType::DPP_PHA_CODE;
-    if( typeStr == "PSD" ) type[i] = DPPType::DPP_PSD_CODE;
-    if( typeStr == "QDC" ) type[i] = DPPType::DPP_QDC_CODE;
-
-    int orderPos = inFileName[i].Index("_", typePos + 1);
-    int order = atoi(&inFileName[i][orderPos+1]);
-    ID[i] = sn + order * 100000;
-
-    FILE * temp = fopen(inFileName[i].Data(), "rb");
-    if( temp == NULL ) {
-      fileSize[i] = 0;
-    }else{
-      fseek(temp, 0, SEEK_END);
-      fileSize[i] = ftell(temp);
-    }
-    fclose(temp);
-
-    FSUReader * reader = new FSUReader(inFileName[i].Data(), typeStr == "QDC" ? 64 : 16, false);
+  
+    FSUReader * reader = new FSUReader(inFileName[i].Data(), false);
     reader->ScanNumBlock(false);
     numBlock[i] = reader->GetTotNumBlock();
     fileSize[i] = reader->GetFileByteSize();
-    delete reader;
-    
-    //printf("sn:%d, type:%d (%s), order:%d \n", sn, type[i], typeStr.Data(), order);
+    tick2ns[i] = reader->GetTick2ns();
+    type[i] = reader->GetDPPType();
 
+    int sn = reader->GetSN();
+    int order = reader->GetFileOrder();
+
+    ID[i] = sn + order * 100000;
+
+    delete reader;
+  
   }
-  quickSort(&(ID[0]), &(type[0]), &(inFileName[0]), &(fileSize[0]), &(numBlock[0]), 0, nFile-1);
+  quickSort(&(ID[0]), &(type[0]), &(inFileName[0]), &(fileSize[0]), &(numBlock[0]), &(tick2ns[0]), 0, nFile-1);
   unsigned int totBlock = 0;
   for( int i = 0 ; i < nFile; i++){
-    printf("%d | %6d | %3d | %30s | %6u | %u Bytes = %.2f MB\n", i, ID[i], type[i], inFileName[i].Data(), numBlock[i], fileSize[i], fileSize[i]/1024./1024.);
+    printf("%d | %6d | %3d | %30s | %2d | %6u | %u Bytes = %.2f MB\n", i, 
+                ID[i], type[i], inFileName[i].Data(), tick2ns[i], numBlock[i], fileSize[i], fileSize[i]/1024./1024.);
     totBlock += numBlock[i];
   }
 
   printf("----- total number of block : %u.\n", totBlock);
   
-  //*======================================= Sort files in to group 
+  //*======================================= Sort files into groups 
   std::vector<int> snList; // store the serial number of the group
   std::vector<int> typeList; // store the DPP type of the group
   std::vector<std::vector<TString>> fileList; // store the file list of the group
+  std::vector<int> t2nsList;
   for( int i = 0; i < nFile; i++){
     if( ID[i] / 100000 == 0 ) {
       std::vector<TString> temp = {inFileName[i]};
       fileList.push_back(temp);
       typeList.push_back(type[i]);
       snList.push_back(ID[i]%100000);
+      t2nsList.push_back(tick2ns[i]);
     }else{
       for( int p = 0; p < (int) snList.size(); p++){
         if( (ID[i] % 1000) == snList[p] ) {
@@ -160,6 +145,7 @@ int main(int argc, char **argv) {
       if( typeList[i] == DPPType::DPP_QDC_CODE ) data[i] = new Data(64);
       data[i]->DPPType = typeList[i];
       data[i]->boardSN = snList[i];
+      data[i]->tick2ns = t2nsList[i];
     }else{
       inFileIndex[i] = -1;
       data[i] = nullptr;
@@ -239,16 +225,24 @@ int main(int argc, char **argv) {
           // go to next file in same digitizer
           if( feof(inFile[i])){
             fclose(inFile[i]);
-            inFile[i] = fopen(fileList[i][inFileIndex[i]+1], "r");
-            if( inFile[i] ){
+            if( inFileIndex[i] + 1 < (int) fileList[i].size() ){
+              inFile[i] = fopen(fileList[i][inFileIndex[i]+1], "r");
               inFileIndex[i]++;
               printf("---- go to next file for digi-%d\n", snList[i]);
             }else{
+              inFile[i] = nullptr;
               inFileIndex[i] = -1;
               printf("---- no more file for digi-%d.\n", snList[i]);
-              fillFlag = false;
               continue;
             }
+            // if( inFile[i] ){
+            //   inFileIndex[i]++;
+            //   printf("---- go to next file for digi-%d\n", snList[i]);
+            // }else{
+            //   inFileIndex[i] = -1;
+            //   printf("---- no more file for digi-%d.\n", snList[i]);
+            //   continue;
+            // }
           }
 
         }else{
@@ -290,6 +284,7 @@ int main(int argc, char **argv) {
           if( iData < 0 ) continue;
 
           if( (iLoop*MaxNData + iData) - (lastLoopIndex[i][ch]*MaxNData + lastDataIndex[i][ch]) > MaxNData * BUFFERFILL ) {
+            if( debug ) printf("############# BREAK!!!! Group: %d, ch : %d | last : %d(%d), Present : %d(%d) | BufferSize : %.0f \n", i, ch, lastDataIndex[i][ch], lastLoopIndex[i][ch], iData, iLoop, MaxNData * BUFFERFILL);
             fillFlag = false;
           }
 
@@ -300,7 +295,7 @@ int main(int argc, char **argv) {
 
         }
         if( debug ){
-          printf(" %3d | agg : %d | %u | %s\n", snList[i], aggCount[i], data[i]->aggTime, fillFlag ? "cont. fill" : "break." );
+          printf("-------------------------> %3d | agg : %d | %u \n", snList[i], aggCount[i], data[i]->aggTime);
           //data[i]->PrintStat();
         }
       }
@@ -312,6 +307,7 @@ int main(int argc, char **argv) {
         lastDataIndex[i][ch] = data[i]->DataIndex[ch];
         lastLoopIndex[i][ch] = data[i]->LoopIndex[ch];
       }
+      //data[i]->PrintAllData();
     }
 
     mb->BuildEvents(0, !traceOn, debug);
@@ -420,7 +416,7 @@ template<typename T> void swap(T * a, T *b ){
   *a = temp;
 }
 
-int partition(int arr[], int kaka[], TString file[], unsigned int fileSize[], unsigned int numBlock[], int start, int end){
+int partition(int arr[], int kaka[], TString file[], unsigned int fileSize[], unsigned int numBlock[], int tick2ns[], int start, int end){
     int pivot = arr[start];
     int count = 0;
     for (int i = start + 1; i <= end; i++) {
@@ -433,6 +429,7 @@ int partition(int arr[], int kaka[], TString file[], unsigned int fileSize[], un
     swap(&kaka[pivotIndex], &kaka[start]);
     swap(&fileSize[pivotIndex], &fileSize[start]);
     swap(&numBlock[pivotIndex], &numBlock[start]);
+    swap(&tick2ns[pivotIndex], &tick2ns[start]);
     
     /// Sorting left and right parts of the pivot element
     int i = start, j = end;
@@ -447,18 +444,19 @@ int partition(int arr[], int kaka[], TString file[], unsigned int fileSize[], un
           swap(&kaka[ip], &kaka[jm]);
           swap(&fileSize[ip], &fileSize[jm]);
           swap(&numBlock[ip], &numBlock[jm]);
+          swap(&tick2ns[ip], &tick2ns[jm]);
         }
     }
     return pivotIndex;
 }
  
-void quickSort(int arr[], int kaka[], TString file[], unsigned int fileSize[], unsigned int numBlock[], int start, int end){
+void quickSort(int arr[], int kaka[], TString file[], unsigned int fileSize[], unsigned int numBlock[], int tick2ns[], int start, int end){
     /// base case
     if (start >= end) return;
     /// partitioning the array
-    int p = partition(arr, kaka, file, fileSize, numBlock, start, end); 
+    int p = partition(arr, kaka, file, fileSize, numBlock, tick2ns, start, end); 
     /// Sorting the left part
-    quickSort(arr, kaka, file, fileSize, numBlock, start, p - 1);
+    quickSort(arr, kaka, file, fileSize, numBlock, tick2ns, start, p - 1);
     /// Sorting the right part
-    quickSort(arr, kaka, file, fileSize, numBlock, p + 1, end);
+    quickSort(arr, kaka, file, fileSize, numBlock, tick2ns, p + 1, end);
 }

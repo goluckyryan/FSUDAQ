@@ -11,6 +11,11 @@ MultiBuilder::MultiBuilder(Data ** multiData, std::vector<int> type, std::vector
   leftOverTime = 100;
   breakTime = -1;
   ClearEvents();
+
+  // for( int i = 0; i < nData; i++){
+  //   printf("sn: %d, numCh : %d \n", snList[i], data[i]->GetNChannel());
+  // }
+
 }
 
 MultiBuilder::MultiBuilder(Data * singleData, int type, int sn): nData(1){
@@ -220,10 +225,11 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
       // printf("##### %d/%d | ", k, nData);
       // data[k]->PrintAllData(true, 10);
 
-      const int numCh = data[k]->GetNChannel();
+      const int numCh = data[bd]->GetNChannel();
 
       for( int i = 0; i < numCh; i++){
         int ch = (i + earlistCh ) % numCh;
+        // printf("ch : %d | exhaused ? %s \n", ch, chExhaused[bd][ch] ? "Yes" : "No");
         if( chExhaused[bd][ch] ) continue;
         if( loopIndex[bd][ch] * MaxNData + nextIndex[bd][ch] > data[bd]->LoopIndex[ch] * MaxNData +  data[bd]->DataIndex[ch]) {
           nExhaushedCh ++;
@@ -234,7 +240,7 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
         do {
 
           unsigned long long time = data[bd]->Timestamp[ch][nextIndex[bd][ch]];
-
+          // printf("Check timestamp : %llu | earlistTime : %llu | timeWindow : %u \n", time, earlistTime, timeWindow);
           if( time >= earlistTime && (time - earlistTime <=  timeWindow) ){
             em.sn = snList[bd];
             em.bd = bd;
@@ -269,7 +275,7 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
     }
     
     ///Find the next earlist 
-    FindEarlistTimeAndCh(verbose);
+    FindEarlistTimeAndCh(false);
 
     if( verbose ){
       printf(">>>>>>>>>>>>>>>>> Event ID : %ld, total built: %ld, multiplicity : %ld\n", eventIndex, totalEventBuilt, events[eventIndex].size());

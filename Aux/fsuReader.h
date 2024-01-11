@@ -3,7 +3,7 @@
 class FSUReader{
 
   public:
-    FSUReader(std::string fileName, unsigned short numCh, bool verbose = true);
+    FSUReader(std::string fileName,  bool verbose = true);
     ~FSUReader();
 
     void ScanNumBlock(bool verbose = true);
@@ -14,8 +14,11 @@ class FSUReader{
 
     Data * GetData() const{return data;}
 
-    int GetDPPType() const{return DPPType;}
-
+    int GetDPPType()   const{return DPPType;}
+    int GetSN()        const{return sn;}
+    int GetTick2ns()   const{return tick2ns;}
+    int GetNumCh()     const{return numCh;}
+    int GetFileOrder() const{return order;}  
     unsigned long GetFileByteSize() const {return inFileSize;}
 
   private:
@@ -29,8 +32,12 @@ class FSUReader{
     unsigned int  blockID;
 
     // for dual block 
+    int sn;
     int DPPType;
+    int tick2ns;
+    int order;
     int chMask;
+    int numCh;
 
     std::vector<unsigned int> blockPos;
 
@@ -40,7 +47,7 @@ class FSUReader{
 
 };
 
-inline FSUReader::FSUReader(std::string fileName, unsigned short numCh, bool verbose){
+inline FSUReader::FSUReader(std::string fileName, bool verbose){
 
   inFile = fopen(fileName.c_str(), "r");
 
@@ -55,17 +62,10 @@ inline FSUReader::FSUReader(std::string fileName, unsigned short numCh, bool ver
   fseek(inFile, 0L, SEEK_SET);
   filePos = 0;
 
-  data = new Data(numCh);
-
   totNumBlock = 0;
   blockID = 0;
   blockPos.clear();
 
-  //Get DPPType from file name;
-  DPPType = -1;
-  if( fileName.find("PHA") != std::string::npos ) DPPType = DPPType::DPP_PHA_CODE;
-  if( fileName.find("PSD") != std::string::npos ) DPPType = DPPType::DPP_PSD_CODE;
-  if( fileName.find("QDC") != std::string::npos ) DPPType = DPPType::DPP_QDC_CODE;
 
   //check is the file is *.fsu or *.fsu.X
   size_t found = fileName.find_last_of('.');
@@ -78,6 +78,29 @@ inline FSUReader::FSUReader(std::string fileName, unsigned short numCh, bool ver
     if(verbose) printf("It is a splitted dual block data *.fsu.X format, dual channel mask : %d \n", chMask);
   }
 
+  std::string fileNameNoExt = fileName.substr(0, found);
+
+  // Split the string by underscores
+  std::istringstream iss(fileNameNoExt);
+  std::vector<std::string> tokens;
+  std::string token;
+
+  while (std::getline(iss, token, '_')) { tokens.push_back(token); }
+  sn = atoi(tokens[2].c_str());
+  tick2ns = atoi(tokens[4].c_str());
+  order = atoi(tokens[5].c_str());
+
+  DPPType = -1;
+  if( fileName.find("PHA") != std::string::npos ) DPPType = DPPType::DPP_PHA_CODE;
+  if( fileName.find("PSD") != std::string::npos ) DPPType = DPPType::DPP_PSD_CODE;
+  if( fileName.find("QDC") != std::string::npos ) DPPType = DPPType::DPP_QDC_CODE;
+
+  numCh = DPPType == DPPType::DPP_QDC_CODE ? 64 : 16;
+
+  data = new Data(numCh);
+  data->tick2ns = tick2ns;
+  data->boardSN = sn;
+  data->DPPType = DPPType;
   //ScanNumBlock();
 
 }

@@ -29,9 +29,9 @@ class Data{
   public:
     char *buffer;                     /// readout buffer
     int DPPType;
-    std::string DPPTypeStr;
+    std::string DPPTypeStr; /// only for saving fiel name
     unsigned short boardSN;
-    float tick2ns;  /// only use in TriggerRate calculation
+    float tick2ns;  /// use in convert the timestamp to ns, and use in TriggerRate calculation
     
     unsigned int nByte;               /// number of byte from read buffer
     uint32_t AllocatedSize;
@@ -230,6 +230,7 @@ inline bool Data::OpenSaveFile(std::string fileNamePrefix){
   oss << outFilePrefix << "_"
       << std::setfill('0') << std::setw(3) << boardSN << "_"
       << DPPTypeStr << "_"
+      << std::fixed << std::setprecision(0) << tick2ns << "_"
       << std::setfill('0') << std::setw(3) << outFileIndex << ".fsu";
   std::string saveFileName = oss.str();
 
@@ -271,6 +272,7 @@ inline void Data::SaveData(){
     oss << outFilePrefix << "_"
         << std::setfill('0') << std::setw(3) << boardSN << "_"
         << DPPTypeStr << "_"
+        << std::fixed << std::setprecision(0) << tick2ns << "_"
         << std::setfill('0') << std::setw(3) << outFileIndex << ".fsu";
     std::string saveFileName = oss.str();
 
@@ -350,7 +352,7 @@ inline void Data::PrintAllData(bool tableMode, unsigned int maxRowDisplay) const
       if( DataIndex[ch] < 0  ) continue;
       printf("------------ ch : %d, DataIndex : %d, loop : %d\n", ch, DataIndex[ch], LoopIndex[ch]);
       for( int ev = 0; ev <= (LoopIndex[ch] > 0 ? MaxNData : DataIndex[ch]) ; ev++){
-        if( DPPType == DPPType::DPP_PHA_CODE ) printf("%4d, %5u, %15llu, %5u \n", ev, Energy[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
+        if( DPPType == DPPType::DPP_PHA_CODE || DPPType == DPPType::DPP_QDC_CODE ) printf("%4d, %5u, %15llu, %5u \n", ev, Energy[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
         if( DPPType == DPPType::DPP_PSD_CODE ) printf("%4d, %5u, %5u, %15llu, %5u \n", ev, Energy[ch][ev], Energy2[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
         if( maxRowDisplay > 0 && (unsigned int) ev > maxRowDisplay ) break;
       }
@@ -761,7 +763,7 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
       }
 
       Energy[channel][DataIndex[channel]] = energy;
-      Timestamp[channel][DataIndex[channel]] = timeStamp;
+      Timestamp[channel][DataIndex[channel]] = timeStamp * tick2ns;
       if(extra2Option == 2 ) fineTime[channel][DataIndex[channel]] = (extra2 & 0x03FF );
       PileUp[channel][DataIndex[channel]] = pileUp;
       NumEventsDecoded[channel] ++; 
@@ -964,7 +966,7 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
 
       Energy2[channel][DataIndex[channel]] = Qshort;
       Energy[channel][DataIndex[channel]] = Qlong;
-      Timestamp[channel][DataIndex[channel]] = timeStamp;
+      Timestamp[channel][DataIndex[channel]] = timeStamp * tick2ns;
       if( extraOption == 2 ) fineTime[channel][DataIndex[channel]] = extra & 0x3FF;
 
       NumEventsDecoded[channel] ++; 
@@ -1119,7 +1121,7 @@ inline int Data::DecodeQDCGroupedChannelBlock(unsigned int ChannelMask, bool fas
     }
 
     Energy[channel][DataIndex[channel]] = energy;
-    Timestamp[channel][DataIndex[channel]] = timeStamp;
+    Timestamp[channel][DataIndex[channel]] = timeStamp * tick2ns;
 
     NumEventsDecoded[channel] ++; 
     if( !pileup && !OverRange){
