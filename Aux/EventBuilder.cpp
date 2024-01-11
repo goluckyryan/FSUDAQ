@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
   printf(" Number of Files : %d \n", nFile);
   for( int i = 0; i < nFile; i++) printf("%2d | %s \n", i, inFileName[i].Data());
   printf("=====================================\n");  
-  printf(" Time Window = %u \n", timeWindow);
+  printf(" Time Window = %u ns = %.1f us\n", timeWindow, timeWindow/1000.);
   printf(" Buffer size = %.0f event/channel\n", MaxNData * bufferSize);
   printf("===================================== input files:\n");  
   printf("Scanning files.....\n");

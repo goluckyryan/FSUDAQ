@@ -286,10 +286,12 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
 
     // //if there is a time jump, say, bigger than TimeJump. break
     if( earlistTime - lastEventTime > timeJump ) {
-      printf("%6lu, %16llu\n", eventIndex, earlistTime);
-      printf("%5s - %16llu \n", "", lastEventTime);
-      printf("%5s > %16llu \n", "", timeJump);
-      printf("!!!!!!!! Time Jump detected stop event building. stop event buinding and get more data.\n"); 
+      if( verbose ){
+        printf("%6lu, %16llu\n", eventIndex, earlistTime);
+        printf("%5s - %16llu \n", "", lastEventTime);
+        printf("%5s > %16llu \n", "", timeJump);
+        printf("!!!!!!!! Time Jump detected stop event building. stop event buinding and get more data.\n"); 
+      }
       return;
     }
 
