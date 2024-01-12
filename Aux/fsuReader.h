@@ -7,7 +7,7 @@ class FSUReader{
     ~FSUReader();
 
     void ScanNumBlock(bool verbose = true);
-    int  ReadNextBlock(bool fast = false, int verbose = 0);
+    int  ReadNextBlock(bool fast = false, int verbose = 0, bool saveData = false);
     int  ReadBlock(unsigned int ID, int verbose = 0);
 
     unsigned long GetTotNumBlock() const{ return totNumBlock;}
@@ -20,6 +20,16 @@ class FSUReader{
     int GetNumCh()     const{return numCh;}
     int GetFileOrder() const{return order;}  
     unsigned long GetFileByteSize() const {return inFileSize;}
+
+    std::vector<unsigned int> GetBlockTimestamp() const {return blockTimeStamp;}
+
+    std::vector<unsigned long long> GetTimestamp(int id) const {return timestamp[id];}
+    std::vector<unsigned short>     GetEnergy(int id)    const {return energy[id];}
+    std::vector<unsigned short>     GetEnergy2(int id)   const {return energy2[id];}
+    std::vector<unsigned short>     GetChannel(int id)   const {return channel[id];}
+    std::vector<unsigned short>     GeFineTime(int id)   const {return fineTime[id];}
+
+    unsigned long GetHitCount() const{ return numHit;}
 
   private:
 
@@ -40,6 +50,21 @@ class FSUReader{
     int numCh;
 
     std::vector<unsigned int> blockPos;
+    std::vector<unsigned int > blockTimeStamp;
+
+    unsigned long numHit;
+
+    std::vector<std::vector<unsigned short>> channel;
+    std::vector<std::vector<unsigned short>> energy;
+    std::vector<std::vector<unsigned short>> energy2;
+    std::vector<std::vector<unsigned long long>> timestamp;
+    std::vector<std::vector<unsigned short>> fineTime;
+
+    std::vector<unsigned short> tempChannel;
+    std::vector<unsigned short> tempEnergy;
+    std::vector<unsigned short> tempEnergy2;
+    std::vector<unsigned long long> tempTimestamp;
+    std::vector<unsigned short> tempFineTime;
 
     unsigned int word[1]; /// 4 byte
     size_t dummy;
@@ -65,6 +90,12 @@ inline FSUReader::FSUReader(std::string fileName, bool verbose){
   totNumBlock = 0;
   blockID = 0;
   blockPos.clear();
+  blockTimeStamp.clear();
+
+  numHit = 0;
+  channel.clear();
+  timestamp.clear();
+  energy.clear();
 
 
   //check is the file is *.fsu or *.fsu.X
@@ -78,7 +109,13 @@ inline FSUReader::FSUReader(std::string fileName, bool verbose){
     if(verbose) printf("It is a splitted dual block data *.fsu.X format, dual channel mask : %d \n", chMask);
   }
 
-  std::string fileNameNoExt = fileName.substr(0, found);
+  std::string fileNameNoExt;
+  size_t found2 = fileName.find_last_of('/');
+  if( found == std::string::npos ){
+    fileNameNoExt = fileName.substr(0, found);
+  }else{
+    fileNameNoExt = fileName.substr(found2+1, found);
+  }
 
   // Split the string by underscores
   std::istringstream iss(fileNameNoExt);
@@ -110,7 +147,7 @@ inline FSUReader::~FSUReader(){
 
 }
 
-inline int FSUReader::ReadNextBlock(bool fast, int verbose){
+inline int FSUReader::ReadNextBlock(bool fast, int verbose,bool saveData){
   if( inFile == NULL ) return -1;
   if( feof(inFile) ) return -1;
   if( filePos >= inFileSize) return -1;
@@ -135,7 +172,41 @@ inline int FSUReader::ReadNextBlock(bool fast, int verbose){
       return -30;
     }
 
+
     data->DecodeBuffer(buffer, aggSize, fast, verbose); // data will own the buffer
+
+    if( saveData ){
+      tempTimestamp.clear();
+      tempEnergy.clear();
+      tempEnergy2.clear();
+      tempChannel.clear();
+      tempFineTime.clear();
+
+      for( int ch = 0; ch < data->GetNChannel(); ch++){
+        if( data->NumEventsDecoded[ch] == 0 ) continue;
+
+        int start = data->DataIndex[ch] - data->NumEventsDecoded[ch] + 1;
+        int stop  = data->DataIndex[ch];
+
+        for( int i = start; i <= stop; i++ ){
+          i = i % MaxNData;
+          tempChannel.push_back(ch);
+          tempEnergy.push_back(data->Energy[ch][i]);
+          tempTimestamp.push_back(data->Timestamp[ch][i]);
+          tempEnergy2.push_back(data->Energy2[ch][i]);
+          tempFineTime.push_back(data->fineTime[ch][i]);
+          
+          numHit ++;
+        }
+      }
+
+      timestamp.push_back(tempTimestamp);
+      energy.push_back(tempEnergy);
+      energy2.push_back(tempEnergy2);
+      channel.push_back(tempChannel);
+      fineTime.push_back(tempFineTime);
+    }
+
     data->ClearTriggerRate();
     data->ClearBuffer(); // this will clear the buffer.
 
@@ -174,7 +245,7 @@ inline int FSUReader::ReadBlock(unsigned int ID, int verbose){
   fseek(inFile, blockPos[ID], SEEK_CUR);
   filePos = blockPos[ID];
   blockID = ID;
-  return ReadNextBlock(false, verbose);
+  return ReadNextBlock(false, verbose, false);
 
 }
 
@@ -188,15 +259,26 @@ inline void FSUReader::ScanNumBlock(bool verbose){
   fseek(inFile, 0L, SEEK_SET);
   filePos = 0;
 
-  while( ReadNextBlock(true) == 0 ){
+  while( ReadNextBlock(true, false, true) == 0 ){
     blockPos.push_back(filePos);
+    blockTimeStamp.push_back(data->aggTime);
     blockID ++;
     if(verbose) printf("%u, %.2f%% %u/%lu\n\033[A\r", blockID, filePos*100./inFileSize, filePos, inFileSize);
   }
 
   totNumBlock = blockID;
-  if(verbose) printf("\nScan complete: number of data Block : %lu\n", totNumBlock);
-  
+  if(verbose) {
+    printf("\nScan complete: number of data Block : %lu\n", totNumBlock);
+    printf(  "                      number of hit : %lu\n", numHit);
+
+    size_t sizeT = sizeof(std::vector<unsigned long long>) * timestamp.size();
+    for (size_t i = 0; i < timestamp.size(); ++i) {
+        sizeT += sizeof(std::vector<unsigned long long>) + sizeof(unsigned long long) * timestamp[i].size();
+    }
+
+    printf("size of timestamp : %lu byte = %.2f kByte, = %.2f MByte\n", sizeT, sizeT/1024., sizeT/1024./1024.);
+
+  } 
   rewind(inFile);
   blockID = 0;  
   filePos = 0;

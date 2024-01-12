@@ -31,7 +31,7 @@ class Data{
     int DPPType;
     std::string DPPTypeStr; /// only for saving fiel name
     unsigned short boardSN;
-    float tick2ns;  /// use in convert the timestamp to ns, and use in TriggerRate calculation
+    int tick2ns;  /// use in convert the timestamp to ns, and use in TriggerRate calculation
     
     unsigned int nByte;               /// number of byte from read buffer
     uint32_t AllocatedSize;
@@ -86,6 +86,7 @@ class Data{
 
     void PrintStat(bool skipEmpty = true);
     void PrintAllData(bool tableMode = true, unsigned int maxRowDisplay = 0) const;
+    void PrintChData(unsigned short ch, unsigned int maxRowDisplay = 0) const;
 
     //^================= Saving data
     bool OpenSaveFile(std::string fileNamePrefix); // return false when fail
@@ -358,6 +359,18 @@ inline void Data::PrintAllData(bool tableMode, unsigned int maxRowDisplay) const
       }
     }
   }
+}
+
+inline void Data::PrintChData(unsigned short ch, unsigned int maxRowDisplay) const{
+
+  if( DataIndex[ch] < 0  ) printf("no data in ch-%d\n", ch);
+  printf("------------ ch : %d, DataIndex : %d, loop : %d\n", ch, DataIndex[ch], LoopIndex[ch]);
+  for( int ev = 0; ev <= (LoopIndex[ch] > 0 ? MaxNData : DataIndex[ch]) ; ev++){
+    if( DPPType == DPPType::DPP_PHA_CODE || DPPType == DPPType::DPP_QDC_CODE ) printf("%4d, %5u, %15llu, %5u \n", ev, Energy[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
+    if( DPPType == DPPType::DPP_PSD_CODE ) printf("%4d, %5u, %5u, %15llu, %5u \n", ev, Energy[ch][ev], Energy2[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
+    if( maxRowDisplay > 0 && (unsigned int) ev > maxRowDisplay ) break;
+  }
+
 }
 
 //^#######################################################
@@ -786,8 +799,8 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
 
     //if( DataIndex[channel] > MaxNData ) ClearData(); // if any channel has more data then MaxNData, clear all stored data
 
-    if( verbose >= 1 ) printf("evt %4d(%2d) | ch : %2d, PileUp : %d , energy : %5d, rollOver: %d,  timestamp : %10llu, triggerAt : %d, nSample : %d, %f sec\n", 
-                                DataIndex[channel], LoopIndex[channel], channel, pileUp, energy, rollOver, timeStamp, triggerAtSample, nSample , timeStamp * 4. / 1e9);
+    if( verbose >= 1 ) printf("evt %4d(%2d) | ch : %2d, PileUp : %d , energy : %5d, rollOver: %d,  timestamp : %16llu (%10llu), triggerAt : %d, nSample : %d, %f sec\n", 
+                                DataIndex[channel], LoopIndex[channel], channel, pileUp, energy, rollOver, timeStamp * tick2ns, timeStamp, triggerAtSample, nSample , timeStamp * 4. / 1e9);
     
   }
   
@@ -993,9 +1006,9 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
      
     //if( verbose >= 2 ) printf("extra : 0x%08x, Qshort : %d, Qlong : %d \n", extra, Qshort, Qlong);
     if( verbose == 1 ) printf("ch : %2d, Qshort : %6d, Qlong : %6d, timestamp : %llu\n", 
-                                channel, Qshort, Qlong, timeStamp);
+                                channel, Qshort, Qlong, timeStamp * tick2ns);
     if( verbose >= 2 ) printf("Qshort : %6d, Qlong : %6d, timestamp : %llu\n", 
-                               Qshort, Qlong, timeStamp);
+                               Qshort, Qlong, timeStamp * tick2ns);
 
     
     
@@ -1137,8 +1150,8 @@ inline int Data::DecodeQDCGroupedChannelBlock(unsigned int ChannelMask, bool fas
       DigiWaveform4[channel][DataIndex[channel]] = tempDigiWaveform4;
     }
 
-    if( verbose == 1 ) printf("ch : %2d, energy : %d, timestamp : %llu\n",  channel, energy, timeStamp);
-    if( verbose > 1 ) printf("ch : %2d, energy : %d, timestamp : %llu, pileUp : %d, OverRange : %d\n",  channel, energy, timeStamp, pileup, OverRange);
+    if( verbose == 1 ) printf("ch : %2d, energy : %d, timestamp : %llu\n",  channel, energy, timeStamp * tick2ns);
+    if( verbose > 1 ) printf("ch : %2d, energy : %d, timestamp : %llu, pileUp : %d, OverRange : %d\n",  channel, energy, timeStamp * tick2ns, pileup, OverRange);
 
     if( verbose == 1) printf("Decoded : %d, total : %ld \n", NumEventsDecoded[channel], TotNumNonPileUpEvents[channel]);
   }
