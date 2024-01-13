@@ -7,6 +7,7 @@ test_indep
 programSettings.txt
 EventKenshikushi
 EventBuilder
+EventBuilderNoTrace
 EventBuilder_sortTime
 DataGenerator
 DataReaderScript

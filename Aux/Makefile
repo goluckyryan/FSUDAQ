@@ -14,7 +14,7 @@ ROOTLIBS = `root-config --cflags --glibs`
 
 OBJS = ClassDigitizer.o MultiBuilder.o
 
-ALL = test test_indep DataGenerator EventBuilder DataReader DumpFSU2ROOT SettingsExplorer 
+ALL = test test_indep DataGenerator EventBuilder EventBuilderNoTrace DataReader DumpFSU2ROOT SettingsExplorer 
 
 #########################################################################
 
@@ -23,7 +23,7 @@ all	:	$(ALL)
 clean	:
 		/bin/rm -f $(OBJS) $(ALL)
 
-MultiBuilder.o : ../MultiBuilder.cpp ../MultiBuilder.h
+MultiBuilder.o : ../MultiBuilder.cpp ../MultiBuilder.h ../Hit.h
 		$(CC) $(COPTS) -c ../MultiBuilder.cpp
 
 ClassDigitizer.o : ../ClassDigitizer.cpp ../ClassDigitizer.h ../RegisterAddress.h ../macro.h ../ClassData.h
@@ -48,6 +48,10 @@ DataReader : DataReaderScript.cpp ../ClassData.h MultiBuilder.o
 EventBuilder : EventBuilder.cpp ../ClassData.h MultiBuilder.o fsuReader.h
 		@echo "--------- making EventBuilder"
 		$(CC) $(COPTS) -o EventBuilder EventBuilder.cpp MultiBuilder.o $(ROOTLIBS) 
+
+EventBuilderNoTrace : EventBuilderNoTrace.cpp ../ClassData.h fsuReader.h ../Hit.h
+		@echo "--------- making EventBuilderNoTrace"
+		$(CC) $(COPTS) -o EventBuilderNoTrace EventBuilderNoTrace.cpp  $(ROOTLIBS) 
 
 DumpFSU2ROOT : DumpFSU2ROOT.cpp ../ClassData.h MultiBuilder.o
 		@echo "--------- making DumpFSU2ROOT"
