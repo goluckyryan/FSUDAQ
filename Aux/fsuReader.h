@@ -30,9 +30,8 @@ class FSUReader{
     std::vector<unsigned int> GetBlockTimestamp() const {return blockTimeStamp;}
 
     Hit GetHit(int id) const {return hit[id];}
-    std::vector<Hit> GetHitVector() const {return hit;}
-
     unsigned long GetHitCount() const{ return hit.size();}
+    std::vector<Hit> GetHitVector() const {return hit;}
 
   private:
 
@@ -153,6 +152,8 @@ inline void FSUReader::OpenFile(std::string fileName, bool verbose){
 inline FSUReader::~FSUReader(){
   delete data;
 
+  fclose(inFile);
+
 }
 
 inline int FSUReader::ReadNextBlock(bool fast, int verbose,bool saveData){
@@ -199,8 +200,8 @@ inline int FSUReader::ReadNextBlock(bool fast, int verbose,bool saveData){
           temp.sn = sn;
           temp.ch = ch;
           temp.energy = data->Energy[ch][i];
-          temp.timestamp = data->Timestamp[ch][i];
           temp.energy2 = data->Energy2[ch][i];
+          temp.timestamp = data->Timestamp[ch][i];
           temp.fineTime = data->fineTime[ch][i];
 
           hit.push_back(temp);
@@ -283,10 +284,9 @@ inline void FSUReader::ScanNumBlock(bool verbose){
   filePos = 0;
 
   if(verbose)  printf("\nQuick Sort hit array according to time...");
-
   std::sort(hit.begin(), hit.end(), [](const Hit& a, const Hit& b) {
     return a.timestamp < b.timestamp;
   });
-
   if(verbose) printf(".......done.\n");
+
 }

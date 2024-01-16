@@ -29,7 +29,12 @@ public:
   }
 
   void Print(){
-    printf("(%5d, %2d) %6d %10llu, %6d, %5ld\n", sn, ch, energy, timestamp, fineTime, trace.size());
+    printf("(%5d, %2d) %6d %16llu, %6d, %5ld\n", sn, ch, energy, timestamp, fineTime, trace.size());
+  }
+
+   // Define operator< for sorting
+  bool operator<(const Hit& other) const {
+    return timestamp < other.timestamp;
   }
 
 };
