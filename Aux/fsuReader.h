@@ -117,11 +117,12 @@ inline void FSUReader::OpenFile(std::string fileName, bool verbose){
   }
 
   std::string fileNameNoExt;
+  found = fileName.find_last_of(".fsu");
   size_t found2 = fileName.find_last_of('/');
-  if( found == std::string::npos ){
-    fileNameNoExt = fileName.substr(0, found);
+  if( found2 == std::string::npos ){
+    fileNameNoExt = fileName.substr(0, found-4);
   }else{
-    fileNameNoExt = fileName.substr(found2+1, found);
+    fileNameNoExt = fileName.substr(found2+1, found-4);
   }
 
   // Split the string by underscores
@@ -186,34 +187,6 @@ inline int FSUReader::ReadNextBlock(bool fast, int verbose,bool saveData){
 
     data->DecodeBuffer(buffer, aggSize, fast, verbose); // data will own the buffer
 
-    if( saveData ){
-
-      for( int ch = 0; ch < data->GetNChannel(); ch++){
-        if( data->NumEventsDecoded[ch] == 0 ) continue;
-
-        int start = data->DataIndex[ch] - data->NumEventsDecoded[ch] + 1;
-        int stop  = data->DataIndex[ch];
-
-        for( int i = start; i <= stop; i++ ){
-          i = i % MaxNData;
-         
-          temp.sn = sn;
-          temp.ch = ch;
-          temp.energy = data->Energy[ch][i];
-          temp.energy2 = data->Energy2[ch][i];
-          temp.timestamp = data->Timestamp[ch][i];
-          temp.fineTime = data->fineTime[ch][i];
-
-          hit.push_back(temp);
-
-          numHit ++;
-        }
-      }
-    }
-
-    data->ClearTriggerRate();
-    data->ClearBuffer(); // this will clear the buffer.
-
   }else if( (header & 0xF ) == 0x8 ) { /// dual channel header
 
     unsigned int dualSize = (word[0] & 0x7FFFFFFF) * 4; ///byte    
@@ -222,15 +195,41 @@ inline int FSUReader::ReadNextBlock(bool fast, int verbose,bool saveData){
     filePos = ftell(inFile);
 
     data->buffer = buffer;
-    data->DecodeDualBlock(buffer, dualSize, DPPType, chMask, false, verbose);
-    data->ClearTriggerRate();
-    data->ClearBuffer();
-    
+    data->DecodeDualBlock(buffer, dualSize, DPPType, chMask, false, verbose);    
 
   }else{
     printf("incorrect header.\n trminate.");
     return -20;
   }
+
+
+  if( saveData ){
+
+    for( int ch = 0; ch < data->GetNChannel(); ch++){
+      if( data->NumEventsDecoded[ch] == 0 ) continue;
+
+      int start = data->DataIndex[ch] - data->NumEventsDecoded[ch] + 1;
+      int stop  = data->DataIndex[ch];
+
+      for( int i = start; i <= stop; i++ ){
+        i = i % MaxNData;
+        
+        temp.sn = sn;
+        temp.ch = ch;
+        temp.energy = data->Energy[ch][i];
+        temp.energy2 = data->Energy2[ch][i];
+        temp.timestamp = data->Timestamp[ch][i];
+        temp.fineTime = data->fineTime[ch][i];
+
+        hit.push_back(temp);
+
+        numHit ++;
+      }
+    }
+  }
+
+  data->ClearTriggerRate();
+  data->ClearBuffer(); // this will clear the buffer.
 
   return 0;
 

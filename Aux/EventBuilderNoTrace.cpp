@@ -9,7 +9,6 @@
 #include "TTree.h"
 
 #define MAX_MULTI  100
-#define TIMEJUMP 1e8 // 0.1 sec or 10 Hz, any signal less than 10 Hz should increase the value.
 
 #define ORDERSHIFT 100000
 
