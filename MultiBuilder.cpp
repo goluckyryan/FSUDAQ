@@ -66,7 +66,7 @@ void MultiBuilder::PrintStat(){
   printf("Total number of evet built : %ld\n", totalEventBuilt);
   for( int i = 0; i < nData ; i++){
     for( int ch = 0; ch < data[i]->GetNChannel() ; ch++){
-      printf("%d %3d %2d | %7d (%d)\n", i, snList[i], ch, nextIndex[i][ch], loopIndex[i][ch]);
+      if( nextIndex[i][ch] >= 0 ) printf("%d %3d %2d | %7d (%d)\n", i, snList[i], ch, nextIndex[i][ch], loopIndex[i][ch]);
     }
   }
 
@@ -308,7 +308,7 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
         break;
       } 
       printf("----- next bd : %d, ch : %d, next earlist Time : %llu.\n", earlistDigi, earlistCh, earlistTime);
-      printf("leftOver %llu, breakTime %llu \n", leftOverTime, breakTime);
+      //printf("leftOver %llu, breakTime %llu \n", leftOverTime, breakTime);
     }
 
     if( !isFinal ){

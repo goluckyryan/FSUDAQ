@@ -10,12 +10,14 @@ class FSUReader{
     ~FSUReader();
 
     void OpenFile(std::string fileName,  bool verbose = true);
+    bool isOpen() const{return inFile == nullptr ? false : true;}
 
-    void ScanNumBlock(bool verbose = true);
-    int  ReadNextBlock(bool fast = false, int verbose = 0, bool saveData = false);
+    void ScanNumBlock(bool verbose = true, uShort saveData = 0);
+    int  ReadNextBlock(bool fast = false, int verbose = 0, uShort saveData = 0); // saveData = 0 (no save), 1 (no trace), 2 (with trace);
     int  ReadBlock(unsigned int ID, int verbose = 0);
 
     unsigned long GetTotNumBlock() const{ return totNumBlock;}
+    std::vector<unsigned int> GetBlockTimestamp() const {return blockTimeStamp;}
 
     Data * GetData() const{return data;}
 
@@ -25,12 +27,12 @@ class FSUReader{
     int GetTick2ns()   const{return tick2ns;}
     int GetNumCh()     const{return numCh;}
     int GetFileOrder() const{return order;}  
+    int GetChMask()    const{return chMask;}
     unsigned long GetFileByteSize() const {return inFileSize;}
 
-    std::vector<unsigned int> GetBlockTimestamp() const {return blockTimeStamp;}
-
+    void ClearHitListandCount() { hit.clear(); numHit = 0;}
     Hit GetHit(int id) const {return hit[id];}
-    unsigned long GetHitCount() const{ return hit.size();}
+    unsigned long GetHitCount() const{ return numHit;}
     std::vector<Hit> GetHitVector() const {return hit;}
 
   private:
@@ -44,7 +46,8 @@ class FSUReader{
     unsigned long totNumBlock;
     unsigned int  blockID;
 
-    // for dual block 
+    bool isDualBlock;
+
     int sn;
     int DPPType;
     int tick2ns;
@@ -65,6 +68,13 @@ class FSUReader{
 
 };
 
+inline FSUReader::~FSUReader(){
+  delete data;
+
+  fclose(inFile);
+
+}
+
 inline FSUReader::FSUReader(){
   inFile = nullptr;
   data = nullptr;
@@ -84,7 +94,7 @@ inline void FSUReader::OpenFile(std::string fileName, bool verbose){
   inFile = fopen(fileName.c_str(), "r");
 
   if( inFile == NULL ){
-    printf("Cannot open file : %s \n", fileName.c_str());
+    printf("FSUReader::Cannot open file : %s \n", fileName.c_str());
     this->fileName = "";
     return;
   }
@@ -111,8 +121,11 @@ inline void FSUReader::OpenFile(std::string fileName, bool verbose){
 
   if( ext.find("fsu") != std::string::npos ) {
     if(verbose) printf("It is an raw data *.fsu format\n");
+    isDualBlock = false;
+    chMask = -1;
   }else{
     chMask = atoi(ext.c_str());
+    isDualBlock = true;
     if(verbose) printf("It is a splitted dual block data *.fsu.X format, dual channel mask : %d \n", chMask);
   }
 
@@ -146,18 +159,10 @@ inline void FSUReader::OpenFile(std::string fileName, bool verbose){
   data->tick2ns = tick2ns;
   data->boardSN = sn;
   data->DPPType = DPPType;
-  //ScanNumBlock();
 
 }
 
-inline FSUReader::~FSUReader(){
-  delete data;
-
-  fclose(inFile);
-
-}
-
-inline int FSUReader::ReadNextBlock(bool fast, int verbose,bool saveData){
+inline int FSUReader::ReadNextBlock(bool fast, int verbose, uShort saveData){
   if( inFile == NULL ) return -1;
   if( feof(inFile) ) return -1;
   if( filePos >= inFileSize) return -1;
@@ -202,12 +207,12 @@ inline int FSUReader::ReadNextBlock(bool fast, int verbose,bool saveData){
     return -20;
   }
 
+  for( int ch = 0; ch < data->GetNChannel(); ch++){
+    if( data->NumEventsDecoded[ch] == 0 ) continue;
 
-  if( saveData ){
+    numHit += data->NumEventsDecoded[ch];
 
-    for( int ch = 0; ch < data->GetNChannel(); ch++){
-      if( data->NumEventsDecoded[ch] == 0 ) continue;
-
+    if( saveData ){
       int start = data->DataIndex[ch] - data->NumEventsDecoded[ch] + 1;
       int stop  = data->DataIndex[ch];
 
@@ -220,10 +225,10 @@ inline int FSUReader::ReadNextBlock(bool fast, int verbose,bool saveData){
         temp.energy2 = data->Energy2[ch][i];
         temp.timestamp = data->Timestamp[ch][i];
         temp.fineTime = data->fineTime[ch][i];
+        if( saveData > 1 ) temp.trace = data->Waveform1[ch][i];
 
         hit.push_back(temp);
 
-        numHit ++;
       }
     }
   }
@@ -252,7 +257,7 @@ inline int FSUReader::ReadBlock(unsigned int ID, int verbose){
 
 }
 
-inline void FSUReader::ScanNumBlock(bool verbose){
+inline void FSUReader::ScanNumBlock(bool verbose, uShort saveData){
   if( feof(inFile) ) return;
 
   blockID = 0;
@@ -262,7 +267,7 @@ inline void FSUReader::ScanNumBlock(bool verbose){
   fseek(inFile, 0L, SEEK_SET);
   filePos = 0;
 
-  while( ReadNextBlock(true, false, true) == 0 ){
+  while( ReadNextBlock(true, false, saveData) == 0 ){
     blockPos.push_back(filePos);
     blockTimeStamp.push_back(data->aggTime);
     blockID ++;
@@ -274,18 +279,21 @@ inline void FSUReader::ScanNumBlock(bool verbose){
     printf("\nScan complete: number of data Block : %lu\n", totNumBlock);
     printf(  "                      number of hit : %lu\n", numHit);
 
-    size_t sizeT = sizeof(hit[0]) * hit.size();
-    printf("size of hit array : %lu byte = %.2f kByte, = %.2f MByte\n", sizeT, sizeT/1024., sizeT/1024./1024.);
-
+    if( saveData ){
+      size_t sizeT = sizeof(hit[0]) * hit.size();
+      printf("size of hit array : %lu byte = %.2f kByte, = %.2f MByte\n", sizeT, sizeT/1024., sizeT/1024./1024.);
+    }
   } 
   rewind(inFile);
   blockID = 0;  
   filePos = 0;
 
-  if(verbose)  printf("\nQuick Sort hit array according to time...");
-  std::sort(hit.begin(), hit.end(), [](const Hit& a, const Hit& b) {
-    return a.timestamp < b.timestamp;
-  });
-  if(verbose) printf(".......done.\n");
+  if(saveData) {
+    if( verbose) printf("\nQuick Sort hit array according to time...");
+    std::sort(hit.begin(), hit.end(), [](const Hit& a, const Hit& b) {
+      return a.timestamp < b.timestamp;
+    });
+    if( verbose) printf(".......done.\n");
+  }
 
 }

@@ -31,4 +31,9 @@ inline unsigned int get_time(){
   return time_us;
 }
 
+typedef unsigned short uShort;
+typedef unsigned int uInt;
+typedef unsigned long  uLong;
+typedef unsigned long long ullong;
+
 #endif

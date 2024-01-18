@@ -38,11 +38,12 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-/// File format must be YYY...Y_runXXX_AAA_BBB_CCC.fsu
+  /// File format must be YYY...Y_runXXX_AAA_BBB_TT_CCC.fsu
   /// YYY...Y  = prefix
   /// XXX = runID, 3 digits
   /// AAA = board Serial Number, 3 digits
   /// BBB = DPPtype, 3 digits
+  ///  TT = tick2ns, any digits
   /// CCC = over size index, 3 digits
   
   ///============= read input
@@ -166,7 +167,6 @@ int main(int argc, char **argv) {
   unsigned long long                evID = -1;
   unsigned short                   multi = 0;
   unsigned short           sn[MAX_MULTI] = {0}; /// board SN
-  unsigned short           bd[MAX_MULTI] = {0}; /// boardID
   unsigned short           ch[MAX_MULTI] = {0}; /// chID
   unsigned short            e[MAX_MULTI] = {0}; /// 15 bit
   unsigned short           e2[MAX_MULTI] = {0}; /// 15 bit
@@ -176,7 +176,6 @@ int main(int argc, char **argv) {
   tree->Branch("evID",           &evID, "event_ID/l"); 
   tree->Branch("multi",         &multi, "multi/s"); 
   tree->Branch("sn",                sn, "sn[multi]/s");
-  tree->Branch("bd",                bd, "bd[multi]/s");
   tree->Branch("ch",                ch, "ch[multi]/s");
   tree->Branch("e",                  e, "e[multi]/s");
   tree->Branch("e2",                e2, "e2[multi]/s");
@@ -336,7 +335,6 @@ int main(int argc, char **argv) {
       }
       evID ++;
       for( int j = 0; j < multi; j ++){
-        bd[j]  = mb->events[k][j].bd;
         sn[j]  = mb->events[k][j].sn;
         ch[j]  = mb->events[k][j].ch;
         e[j]   = mb->events[k][j].energy;
@@ -383,7 +381,6 @@ int main(int argc, char **argv) {
       }
       evID ++;
       for( int j = 0; j < multi; j ++){
-        bd[j]  = mb->events[k][j].bd;
         sn[j]  = mb->events[k][j].sn;
         ch[j]  = mb->events[k][j].ch;
         e[j]   = mb->events[k][j].energy;
