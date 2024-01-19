@@ -54,7 +54,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
 
     cbOpenDigitizers = new RComboBox(this);
     cbOpenDigitizers->addItem("Open Digitizers ... ", 0);
-    // cbOpenDigitizers->addItem("Open Digitizers w/o load Settings", 1);
+    cbOpenDigitizers->addItem("Open Digitizers via Optical", 1);
     // cbOpenDigitizers->addItem("Open Digitizers (default program)", 2);
     // cbOpenDigitizers->addItem("Open Digitizers + load Settings", 3);
     //cbOpenDigitizers->addItem("Open Digitizers via USB", 3);
