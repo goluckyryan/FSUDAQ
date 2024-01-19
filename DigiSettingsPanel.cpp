@@ -4023,34 +4023,25 @@ void DigiSettingsPanel::SaveSetting(int opt){
 
   QString filePath = QFileDialog::getSaveFileName(this, 
                                                   "Save Settings File", 
-                                                  rawDataPath, 
+                                                  QDir::toNativeSeparators(rawDataPath + "/" + defaultFileName), 
                                                   opt == 0 ? "Binary (*.bin)" : "Text file (*.txt)");
 
   if (!filePath.isEmpty()) {
-
-    QFileDialog dialog;
-    dialog.selectFile(defaultFileName);
-
-    if( dialog.exec() == QDialog::Accepted){
-
-      filePath = dialog.selectedFiles().first();
       
-      QFileInfo  fileInfo(filePath);
-      QString ext = fileInfo.suffix();
-      if( opt == 0 ){
-        if( ext.isEmpty() ) filePath += ".bin";
-        digi[ID]->SaveAllSettingsAsBin(filePath.toStdString().c_str());
-        leSaveFilePath[ID]->setText(filePath);
-      }
-      if( opt == 1 ){
-        if( ext.isEmpty() ) filePath += ".txt";
-        digi[ID]->SaveAllSettingsAsText(filePath.toStdString().c_str());
-        leSaveFilePath[ID]->setText(filePath + " | not loadable!!");
-      }
-
-      SendLogMsg("Saved setting file <b>" +  filePath + "</b>.");
-
+    QFileInfo  fileInfo(filePath);
+    QString ext = fileInfo.suffix();
+    if( opt == 0 ){
+      if( ext.isEmpty() ) filePath += ".bin";
+      digi[ID]->SaveAllSettingsAsBin(filePath.toStdString().c_str());
+      leSaveFilePath[ID]->setText(filePath);
     }
+    if( opt == 1 ){
+      if( ext.isEmpty() ) filePath += ".txt";
+      digi[ID]->SaveAllSettingsAsText(filePath.toStdString().c_str());
+      leSaveFilePath[ID]->setText(filePath + " | not loadable!!");
+    }
+
+    SendLogMsg("Saved setting file <b>" +  filePath + "</b>.");
 
   }
 
