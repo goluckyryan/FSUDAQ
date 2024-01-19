@@ -54,20 +54,22 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
 
     cbOpenDigitizers = new RComboBox(this);
     cbOpenDigitizers->addItem("Open Digitizers ... ", 0);
-    cbOpenDigitizers->addItem("Open Digitizers w/o load Settings", 1);
-    cbOpenDigitizers->addItem("Open Digitizers (default program)", 2);
-    cbOpenDigitizers->addItem("Open Digitizers + load Settings", 3);
+    // cbOpenDigitizers->addItem("Open Digitizers w/o load Settings", 1);
+    // cbOpenDigitizers->addItem("Open Digitizers (default program)", 2);
+    // cbOpenDigitizers->addItem("Open Digitizers + load Settings", 3);
     //cbOpenDigitizers->addItem("Open Digitizers via USB", 3);
     cbOpenDigitizers->addItem("Open Digitizers via A4818", 4);
     layout->addWidget(cbOpenDigitizers, 0, 0);
     connect(cbOpenDigitizers, &RComboBox::currentIndexChanged, this, &MainWindow::OpenDigitizers);
-
-    // bnOpenDigitizers = new QPushButton("Open Digitizers", this);
-    // layout->addWidget(bnOpenDigitizers, 0, 0);
-    // connect(bnOpenDigitizers, &QPushButton::clicked, this, &MainWindow::OpenDigitizers);
     
+    cbOpenMethod = new RComboBox(this);
+    cbOpenMethod->addItem("w/o settings", 0);
+    cbOpenMethod->addItem("default Program", 1);
+    cbOpenMethod->addItem("w/ settings", 1);
+    layout->addWidget(cbOpenMethod, 1, 0);
+
     bnCloseDigitizers = new QPushButton("Close Digitizers", this);
-    layout->addWidget(bnCloseDigitizers, 1, 0);
+    layout->addWidget(bnCloseDigitizers, 2, 0);
     connect(bnCloseDigitizers, &QPushButton::clicked, this, &MainWindow::CloseDigitizers);
 
     bnDigiSettings = new QPushButton("Digitizers Settings", this);
@@ -89,7 +91,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     connect(bnCanvas, &QPushButton::clicked, this, &MainWindow::OpenCanvas);
 
     bnSync = new QPushButton("Sync Boards", this);
-    layout->addWidget(bnSync);
+    layout->addWidget(bnSync,  2, 1);
     connect(bnSync, &QPushButton::clicked, this, &MainWindow::SetSyncMode);
 
   }
@@ -580,7 +582,6 @@ void MainWindow::OpenDigitizers(){
       cbOpenDigitizers->setCurrentIndex(0);
       return;
     }
-
   }
 
   if( cbOpenDigitizers->currentData().toInt() == 4 ) {
@@ -588,6 +589,7 @@ void MainWindow::OpenDigitizers(){
   }else{
     LogMsg("Searching digitizers via optical link or USB .....Please wait");
   }
+
   logMsgHTMLMode = false;
   nDigi = 0;
   std::vector<std::pair<int, int>> portList; //boardID, portID
@@ -614,10 +616,9 @@ void MainWindow::OpenDigitizers(){
     cbOpenDigitizers->setCurrentIndex(0);
     return;
   }else{
-    if( cbOpenDigitizers->currentIndex() == 1 ) LogMsg(QString("Done seraching. Found %1 digitizer(s). Opening digitizer(s)....").arg(nDigi));
-    if( cbOpenDigitizers->currentIndex() == 2 ) LogMsg(QString("Done seraching. Found %1 digitizer(s). Opening digitizer(s) and program default....").arg(nDigi));
-    if( cbOpenDigitizers->currentIndex() == 3 ) LogMsg(QString("Done seraching. Found %1 digitizer(s). Opening digitizer(s) and load settings....").arg(nDigi));
-    
+    if( cbOpenMethod->currentData().toInt() == 0 ) LogMsg(QString("Done seraching. Found %1 digitizer(s). Opening digitizer(s)....").arg(nDigi));
+    if( cbOpenMethod->currentData().toInt() == 1 ) LogMsg(QString("Done seraching. Found %1 digitizer(s). Opening digitizer(s) and program default....").arg(nDigi));
+    if( cbOpenMethod->currentData().toInt() == 2 ) LogMsg(QString("Done seraching. Found %1 digitizer(s). Opening digitizer(s) and load settings....").arg(nDigi));    
   }
   
   digi = new Digitizer * [nDigi];
@@ -627,12 +628,12 @@ void MainWindow::OpenDigitizers(){
     digi[i] = new Digitizer(portList[i].first, portList[i].second);
     //digi[i]->Reset();
 
-    if( cbOpenDigitizers->currentIndex() == 2 ) {
+    if( cbOpenMethod->currentData().toInt() == 1 ) {
       digi[i]->ProgramBoard();
     }
 
     ///============== load settings 
-    if( cbOpenDigitizers->currentIndex() == 3 ){
+    if( cbOpenMethod->currentData().toInt() == 2 ){
       QString fileName = rawDataPath + "/Digi-" + QString::number(digi[i]->GetSerialNumber()) + "_" + QString::fromStdString(digi[i]->GetData()->DPPTypeStr) + ".bin";
       QFile file(fileName);
       if( !file.open(QIODevice::Text | QIODevice::ReadOnly) ) {
@@ -777,6 +778,7 @@ void MainWindow::WaitForDigitizersOpen(bool onOff){
   // bnOpenDigitizers->setEnabled(onOff);
 
   cbOpenDigitizers->setEnabled(onOff);
+  cbOpenMethod->setEnabled(onOff);
 
   bnCloseDigitizers->setEnabled(!onOff);
   bnOpenScope->setEnabled(!onOff);

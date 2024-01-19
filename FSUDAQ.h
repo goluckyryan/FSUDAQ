@@ -104,6 +104,7 @@ private:
   int elogID;
 
   RComboBox * cbOpenDigitizers;
+  RComboBox * cbOpenMethod;
 
   //QPushButton * bnOpenDigitizers;
   QPushButton * bnCloseDigitizers;

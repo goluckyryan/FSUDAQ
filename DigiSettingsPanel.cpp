@@ -221,11 +221,15 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
       // connect(bnSaveSettingsToText, &QPushButton::clicked, this, [=](){ SaveSetting(1);});
 
       //checkBox, to coupled or decouple the setting file.
-      chkCoupledSettingFile = new QCheckBox("Update Bin", this);
+      chkCoupledSettingFile = new QCheckBox("Update Setting", this);
       buttonLayout->addWidget(chkCoupledSettingFile, rowID, 3);
       chkCoupledSettingFile->setCheckState(Qt::CheckState::Unchecked);
-      connect(chkCoupledSettingFile, &QCheckBox::stateChanged, this, [=](){
-        digi[ID]->SetSettingFileCoupled(chkCoupledSettingFile->isChecked());
+      connect(chkCoupledSettingFile, &QCheckBox::stateChanged, this, [=](int state){
+        digi[ID]->SetSettingFileUpdate(state);
+        if( state && digi[ID]->IsSettingFileExist() ) {
+          std::string filePath = digi[ID]->GetSettingFileName();
+          digi[ID]->SaveAllSettingsAsBin(filePath);
+        }
       });
     }
 
@@ -4032,12 +4036,12 @@ void DigiSettingsPanel::SaveSetting(int opt){
     QString ext = fileInfo.suffix();
     if( opt == 0 ){
       if( ext.isEmpty() ) filePath += ".bin";
-      digi[ID]->SaveAllSettingsAsBin(filePath.toStdString().c_str());
+      digi[ID]->SaveAllSettingsAsBin(filePath.toStdString());
       leSaveFilePath[ID]->setText(filePath);
     }
     if( opt == 1 ){
       if( ext.isEmpty() ) filePath += ".txt";
-      digi[ID]->SaveAllSettingsAsText(filePath.toStdString().c_str());
+      digi[ID]->SaveAllSettingsAsText(filePath.toStdString());
       leSaveFilePath[ID]->setText(filePath + " | not loadable!!");
     }
 

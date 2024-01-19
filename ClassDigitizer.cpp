@@ -39,7 +39,7 @@ void Digitizer::Initalization(){
   isSettingFilledinMemeory = false;
   settingFileName = "";
   isSettingFileExist = false;
-  isSettingFileCoupled = false;
+  isSettingFileUpdate = false;
   settingFile = NULL;
   
   ret = -1;
@@ -1020,9 +1020,9 @@ unsigned int Digitizer::ReadSettingFromFile(Reg registerAddress, unsigned short 
 void Digitizer::SaveSettingToFile(Reg registerAddress, unsigned int value, unsigned short ch){
 
   if ( !isSettingFileExist ) return ;
-  if ( !isSettingFileCoupled ) return;
+  if ( !isSettingFileUpdate ) return;
 
-  printf("Write setting file : %s. %s, ch:%u, 0x%8X\n", settingFileName.c_str(), registerAddress.GetNameChar(), ch, value);
+  // printf("Write setting file : %s. %s, ch:%u, 0x%8X\n", settingFileName.c_str(), registerAddress.GetNameChar(), ch, value);
 
   unsigned short index = registerAddress.Index(ch);
   setting[index] = value;
