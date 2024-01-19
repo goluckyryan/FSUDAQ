@@ -278,6 +278,12 @@ void Digitizer::SetRegChannelOnOff(unsigned short ch, bool onOff){
   SetRegChannelMask(regChannelMask);
 }
 
+void Digitizer::ProgramBoard(){
+  if( DPPType == DPPType::DPP_PHA_CODE ) ProgramBoard_PHA();
+  if( DPPType == DPPType::DPP_PSD_CODE ) ProgramBoard_PSD();
+  if( DPPType == DPPType::DPP_QDC_CODE ) ProgramBoard_QDC();
+}
+
 int Digitizer::ProgramBoard_PHA(){
   if( softwareDisable ) return 0;
 
@@ -342,10 +348,9 @@ int Digitizer::ProgramBoard_PHA(){
   //ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::MaxAggregatePerBlockTransfer), 100);
   ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::DPPAlgorithmControl) + 0x7000, 0x030200f);
   
-  ret |= CAEN_DGTZ_SetNumEventsPerAggregate(handle, 10);
-  ret |= CAEN_DGTZ_SetDPPEventAggregation(handle, 0, 0); // Auto set
-  
   if( ret != 0 ) { printf("!!!!!!!! set channels error.\n");}
+
+  AutoSetDPPEventAggregation();
 
   /// change address 0xEF08 (5 bits), this will reflected in the 2nd word of the Board Agg. header.
   ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardID, (DPPType & 0xF));
@@ -407,8 +412,7 @@ int Digitizer::ProgramBoard_PSD(){
   ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardID, (DPPType & 0xF));
   //WriteRegister(DPP::BoardID, (DPPType & 0xF));
 
-  ret |= CAEN_DGTZ_SetNumEventsPerAggregate(handle, 10);
-  ret |= CAEN_DGTZ_SetDPPEventAggregation(handle, 0, 0); // Auto set
+  AutoSetDPPEventAggregation();
 
   isSettingFilledinMemeory = false; /// unlock the ReadAllSettingsFromBoard();
 
@@ -454,7 +458,7 @@ int Digitizer::ProgramBoard_QDC(){
   WriteRegister(DPP::QDC::TriggerThreshold_sub6, 100, -1);
   WriteRegister(DPP::QDC::TriggerThreshold_sub7, 100, -1);
 
-  WriteRegister(DPP::BoardConfiguration, 0xC0110);
+  WriteRegister(DPP::BoardConfiguration, 0xE0110);
   //WriteRegister(DPP::AggregateOrganization, 0x0);
   //WriteRegister(DPP::MaxAggregatePerBlockTransfer, 100);
   WriteRegister(DPP::AcquisitionControl, 0x0);
@@ -467,8 +471,7 @@ int Digitizer::ProgramBoard_QDC(){
   ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardID, (DPPType & 0xF));
   //WriteRegister(DPP::BoardID, (DPPType & 0xF));
 
-  ret |= CAEN_DGTZ_SetNumEventsPerAggregate(handle, 10);
-  ret |= CAEN_DGTZ_SetDPPEventAggregation(handle, 0, 0); // Auto set
+  AutoSetDPPEventAggregation();
 
   isSettingFilledinMemeory = false; /// unlock the ReadAllSettingsFromBoard();
 

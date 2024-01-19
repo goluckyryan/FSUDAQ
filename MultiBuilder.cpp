@@ -6,13 +6,17 @@ MultiBuilder::MultiBuilder(Data ** multiData, std::vector<int> type, std::vector
   data = multiData;
   typeList = type;
   snList = sn;
-  for( int i = 0; i < (int) type.size(); i++) idList.push_back(i);
+  for( uShort i = 0; i < nData; i++) {
+    idList.push_back(i);
+    dataSize.push_back(data[i]->GetDataSize());
+  }
   timeWindow = 100;
   leftOverTime = 100;
   breakTime = -1;
   timeJump = 1e8;
   lastEventTime = 0;
   ClearEvents();
+
 
   // for( int i = 0; i < nData; i++){
   //   printf("sn: %d, numCh : %d \n", snList[i], data[i]->GetNChannel());
@@ -107,7 +111,7 @@ void MultiBuilder::FindEarlistTimeAndCh(bool verbose){
 
       if( data[i]->Timestamp[ch][data[i]->DataIndex[ch]] == 0 || 
           data[i]->DataIndex[ch] == -1 || 
-          loopIndex[i][ch] * MaxNData + nextIndex[i][ch] > data[i]->LoopIndex[ch] * MaxNData +  data[i]->DataIndex[ch]) {
+          loopIndex[i][ch] * dataSize[i] > data[i]->LoopIndex[ch] * dataSize[i] +  data[i]->DataIndex[ch]) {
         nExhaushedCh ++;
         chExhaused[i][ch] = true;
         continue;
@@ -172,6 +176,7 @@ void MultiBuilder::FindEarlistTimeAmongLastData(bool verbose){
   latestDigi = -1;
   for( int i = 0; i < nData; i++){
     for( unsigned ch = 0; ch < data[i]->GetNChannel(); ch++ ){
+      if( chExhaused[i][ch] ) continue;
       int index = data[i]->DataIndex[ch];
       if( index == -1 ) continue;
       if( data[i]->Timestamp[ch][index] < latestTime ) {
@@ -235,7 +240,7 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
         int ch = (i + earlistCh ) % numCh;
         // printf("ch : %d | exhaused ? %s \n", ch, chExhaused[bd][ch] ? "Yes" : "No");
         if( chExhaused[bd][ch] ) continue;
-        if( loopIndex[bd][ch] * MaxNData + nextIndex[bd][ch] > data[bd]->LoopIndex[ch] * MaxNData +  data[bd]->DataIndex[ch]) {
+        if( loopIndex[bd][ch] * dataSize[bd] + nextIndex[bd][ch] > data[bd]->LoopIndex[ch] * dataSize[bd] +  data[bd]->DataIndex[ch]) {
           nExhaushedCh ++;
           chExhaused[bd][ch] = true;
           continue;
@@ -259,7 +264,7 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
 
             events[eventIndex].push_back(em);
             nextIndex[bd][ch]++;
-            if( nextIndex[bd][ch] >= MaxNData) {
+            if( nextIndex[bd][ch] >= dataSize[bd]) {
               loopIndex[bd][ch] ++;
               nextIndex[bd][ch] = 0;
             }
@@ -380,7 +385,7 @@ void MultiBuilder::BuildEventsBackWard(int maxNumEvent, bool verbose){
 
             events[eventIndex].push_back(em);
             nextIndex[bd][ch]--;
-            if( nextIndex[bd][ch] < 0 && data[bd]->LoopIndex[ch] > 0 ) nextIndex[bd][ch] = MaxNData - 1;
+            if( nextIndex[bd][ch] < 0 && data[bd]->LoopIndex[ch] > 0 ) nextIndex[bd][ch] = dataSize[bd] - 1;
             
           }else{
             break;

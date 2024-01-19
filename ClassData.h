@@ -16,7 +16,8 @@
 
 #include "macro.h"
 
-#define MaxNData 10000 /// store 10k events per channels
+//#define MaxNData 10000 /// store 10k events per channels
+#define DefaultDataSize 10000
 
 enum DPPType{ 
   DPP_PHA_CODE = 0x8B,
@@ -51,26 +52,42 @@ class Data{
     int       LoopIndex[MaxNChannels];     /// number of loop in the circular memory
     int       DataIndex[MaxNChannels];
 
-    unsigned long long Timestamp[MaxNChannels][MaxNData]; /// 47 bit
-    unsigned short     fineTime [MaxNChannels][MaxNData];  /// 10 bits, in unit of tick2ns / 1000 = ps
-    unsigned short     Energy   [MaxNChannels][MaxNData];   /// 15 bit
-    unsigned short     Energy2  [MaxNChannels][MaxNData];  /// 15 bit, in PSD, Energy = Qshort, Energy2 = Qlong
-    bool               PileUp   [MaxNChannels][MaxNData];   /// pile up flag
+    //unsigned long long Timestamp[MaxNChannels][MaxNData]; /// 47 bit
+    // unsigned short     fineTime [MaxNChannels][MaxNData];  /// 10 bits, in unit of tick2ns / 1000 = ps
+    // unsigned short     Energy   [MaxNChannels][MaxNData];   /// 15 bit
+    // unsigned short     Energy2  [MaxNChannels][MaxNData];  /// 15 bit, in PSD, Energy = Qshort, Energy2 = Qlong
+    // bool               PileUp   [MaxNChannels][MaxNData];   /// pile up flag
     
-    std::vector<short> Waveform1    [MaxNChannels][MaxNData]; // used at least 14 MB
-    std::vector<short> Waveform2    [MaxNChannels][MaxNData];
-    std::vector<bool>  DigiWaveform1[MaxNChannels][MaxNData];
-    std::vector<bool>  DigiWaveform2[MaxNChannels][MaxNData];
-    std::vector<bool>  DigiWaveform3[MaxNChannels][MaxNData];
-    std::vector<bool>  DigiWaveform4[MaxNChannels][MaxNData];
+    // std::vector<short> Waveform1    [MaxNChannels][MaxNData]; // used at least 14 MB
+    // std::vector<short> Waveform2    [MaxNChannels][MaxNData];
+    // std::vector<bool>  DigiWaveform1[MaxNChannels][MaxNData];
+    // std::vector<bool>  DigiWaveform2[MaxNChannels][MaxNData];
+    // std::vector<bool>  DigiWaveform3[MaxNChannels][MaxNData];
+    // std::vector<bool>  DigiWaveform4[MaxNChannels][MaxNData];
+
+    uShort GetDataSize() const {return dataSize;}
+    ullong ** Timestamp; /// 47 bit
+    uShort ** fineTime;  /// 10 bits, in unit of tick2ns / 1000 = ps
+    uShort ** Energy ;   /// 15 bit
+    uShort ** Energy2 ;  /// 15 bit, in PSD, Energy = Qshort, Energy2 = Qlong
+    bool   ** PileUp ;   /// pile up flag
+
+    std::vector<short> ** Waveform1    ; // used at least 14 MB
+    std::vector<short> ** Waveform2    ;
+    std::vector<bool>  ** DigiWaveform1;
+    std::vector<bool>  ** DigiWaveform2;
+    std::vector<bool>  ** DigiWaveform3;
+    std::vector<bool>  ** DigiWaveform4;
 
   public:
-    Data(unsigned short numCh);
+    Data(unsigned short numCh, uShort dataSize = DefaultDataSize);
     ~Data();
   
     void Allocate80MBMemory();
     void AllocateMemory(uint32_t size);
     
+    void AllocateDataSize(uShort dataSize);
+    void ClearDataPointer();
     void ClearData();
     void ClearTriggerRate();
     void ClearBuffer();
@@ -102,6 +119,8 @@ class Data{
     const unsigned short numInputCh;
     unsigned int nw;
 
+    uShort dataSize;
+
     ///for temperary
     std::vector<short> tempWaveform1; 
     std::vector<short> tempWaveform2; 
@@ -128,13 +147,16 @@ class Data{
 
 //==========================================
 
-inline Data::Data(unsigned short numCh): numInputCh(numCh){
+inline Data::Data(unsigned short numCh, uShort dataSize): numInputCh(numCh){
   tick2ns = 2.0;
   boardSN = 0;
   DPPType = DPPType::DPP_PHA_CODE;
   DPPTypeStr = "";
   IsNotRollOverFakeAgg = false;
   buffer = NULL;
+
+  AllocateDataSize(dataSize);  
+
   for ( int i = 0; i < MaxNChannels; i++) TotNumNonPileUpEvents[i] = 0;
   ClearData();
   ClearTriggerRate();
@@ -146,10 +168,85 @@ inline Data::Data(unsigned short numCh): numInputCh(numCh){
   outFile = nullptr;
   outFileSize = 0; // should be max at 2 GB
   FinishedOutFilesSize = 0; // sum of files size.
+
 }
 
 inline Data::~Data(){
   if( buffer != NULL ) delete buffer;
+
+  ClearDataPointer();
+}
+
+inline void Data::AllocateDataSize(uShort dataSize){
+
+  printf("Data::%s, size: %u\n", __func__, dataSize);
+
+  this->dataSize = dataSize;
+
+  Timestamp = new ullong * [numInputCh];
+  fineTime = new uShort * [numInputCh]; 
+  Energy = new uShort * [numInputCh];
+  Energy2 = new uShort * [numInputCh];
+  PileUp = new bool * [numInputCh];
+
+  Waveform1 = new std::vector<short> * [numInputCh];    
+  Waveform2 = new std::vector<short> * [numInputCh];    
+  DigiWaveform1 = new std::vector<bool> * [numInputCh];
+  DigiWaveform2 = new std::vector<bool> * [numInputCh];
+  DigiWaveform3 = new std::vector<bool> * [numInputCh];
+  DigiWaveform4 = new std::vector<bool> * [numInputCh];
+
+  for(int ch = 0; ch < numInputCh;  ch++){
+    Timestamp[ch] = new ullong[dataSize];
+    fineTime[ch] = new uShort[dataSize];
+    Energy[ch] = new uShort[dataSize];
+    Energy2[ch] = new uShort[dataSize];
+    PileUp[ch] = new bool[dataSize];
+
+    Waveform1[ch] = new std::vector<short> [dataSize];    
+    Waveform2[ch] = new std::vector<short> [dataSize];    
+    DigiWaveform1[ch] = new std::vector<bool> [dataSize];
+    DigiWaveform2[ch] = new std::vector<bool> [dataSize];
+    DigiWaveform3[ch] = new std::vector<bool> [dataSize];
+    DigiWaveform4[ch] = new std::vector<bool> [dataSize];
+  }
+
+}
+
+inline void Data::ClearDataPointer(){
+
+  printf("Data::%s\n", __func__);
+
+  for(int ch = 0; ch < numInputCh;  ch++){
+    delete [] Timestamp[ch] ;
+    delete [] fineTime[ch];
+    delete [] Energy[ch];
+    delete [] Energy2[ch];
+    delete [] PileUp[ch];
+
+    delete [] Waveform1[ch];    
+    delete [] Waveform2[ch];    
+    delete [] DigiWaveform1[ch];
+    delete [] DigiWaveform2[ch];
+    delete [] DigiWaveform3[ch];
+    delete [] DigiWaveform4[ch];
+  }
+
+  delete [] Timestamp;
+  delete [] fineTime;
+  delete [] Energy;
+  delete [] Energy2;
+  delete [] PileUp;
+
+  delete [] Waveform1;    
+  delete [] Waveform2;    
+  delete [] DigiWaveform1;
+  delete [] DigiWaveform2;
+  delete [] DigiWaveform3;
+  delete [] DigiWaveform4;
+
+  dataSize = 0;
+
 }
 
 inline void Data::AllocateMemory(uint32_t size){
@@ -179,7 +276,7 @@ inline void Data::ClearData(){
   for( int ch = 0 ; ch < MaxNChannels; ch++){
     LoopIndex[ch] = 0;
     DataIndex[ch] = -1;
-    for( int j = 0; j < MaxNData; j++){
+    for( int j = 0; j < dataSize; j++){
       Timestamp[ch][j] = 0;
       fineTime[ch][j] = 0;
       Energy[ch][j] = 0;
@@ -326,12 +423,12 @@ inline void Data::PrintAllData(bool tableMode, unsigned int maxRowDisplay) const
     printf("%4s|", "");
     for( int ch = 0; ch < numInputCh; ch++){
       if( LoopIndex[ch] > 0 ) {
-        MaxEntry = MaxNData-1;
+        MaxEntry = dataSize-1;
       }else{
         if( DataIndex[ch] > MaxEntry ) MaxEntry = DataIndex[ch];
       }
       if( DataIndex[ch] < 0 ) continue;
-      printf(" %5s-%02d,%2d,%-6d |", "ch", ch, LoopIndex[ch], DataIndex[ch]);
+      printf("    %5s-%02d,%2d,%-6d   |", "ch", ch, LoopIndex[ch], DataIndex[ch]);
     }
     printf("\n");
     
@@ -340,7 +437,7 @@ inline void Data::PrintAllData(bool tableMode, unsigned int maxRowDisplay) const
       printf("%4d|", entry ); 
       for( int ch = 0; ch < numInputCh; ch++){
         if( DataIndex[ch] < 0 ) continue;
-        printf(" %5d,%12lld |", Energy[ch][entry], Timestamp[ch][entry]);
+        printf(" %5d,%17lld |", Energy[ch][entry], Timestamp[ch][entry]);
       }
       printf("\n");
       entry ++;
@@ -352,9 +449,9 @@ inline void Data::PrintAllData(bool tableMode, unsigned int maxRowDisplay) const
     for( int ch = 0; ch < numInputCh ; ch++){
       if( DataIndex[ch] < 0  ) continue;
       printf("------------ ch : %d, DataIndex : %d, loop : %d\n", ch, DataIndex[ch], LoopIndex[ch]);
-      for( int ev = 0; ev <= (LoopIndex[ch] > 0 ? MaxNData : DataIndex[ch]) ; ev++){
-        if( DPPType == DPPType::DPP_PHA_CODE || DPPType == DPPType::DPP_QDC_CODE ) printf("%4d, %5u, %15llu, %5u \n", ev, Energy[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
-        if( DPPType == DPPType::DPP_PSD_CODE ) printf("%4d, %5u, %5u, %15llu, %5u \n", ev, Energy[ch][ev], Energy2[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
+      for( int ev = 0; ev <= (LoopIndex[ch] > 0 ? dataSize : DataIndex[ch]) ; ev++){
+        if( DPPType == DPPType::DPP_PHA_CODE || DPPType == DPPType::DPP_QDC_CODE ) printf("%4d, %5u, %18llu, %5u \n", ev, Energy[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
+        if( DPPType == DPPType::DPP_PSD_CODE ) printf("%4d, %5u, %5u, %18llu, %5u \n", ev, Energy[ch][ev], Energy2[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
         if( maxRowDisplay > 0 && (unsigned int) ev > maxRowDisplay ) break;
       }
     }
@@ -365,7 +462,7 @@ inline void Data::PrintChData(unsigned short ch, unsigned int maxRowDisplay) con
 
   if( DataIndex[ch] < 0  ) printf("no data in ch-%d\n", ch);
   printf("------------ ch : %d, DataIndex : %d, loop : %d\n", ch, DataIndex[ch], LoopIndex[ch]);
-  for( int ev = 0; ev <= (LoopIndex[ch] > 0 ? MaxNData : DataIndex[ch]) ; ev++){
+  for( int ev = 0; ev <= (LoopIndex[ch] > 0 ? dataSize : DataIndex[ch]) ; ev++){
     if( DPPType == DPPType::DPP_PHA_CODE || DPPType == DPPType::DPP_QDC_CODE ) printf("%4d, %5u, %15llu, %5u \n", ev, Energy[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
     if( DPPType == DPPType::DPP_PSD_CODE ) printf("%4d, %5u, %5u, %15llu, %5u \n", ev, Energy[ch][ev], Energy2[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
     if( maxRowDisplay > 0 && (unsigned int) ev > maxRowDisplay ) break;
@@ -482,7 +579,7 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
     if( NumEventsDecoded[ch] > 4 ){
 
       int indexStart = DataIndex[ch] - NumEventsDecoded[ch] + 1;
-      if( indexStart < 0  ) indexStart += MaxNData;
+      if( indexStart < 0  ) indexStart += dataSize;
 
       unsigned long long dTime = Timestamp[ch][DataIndex[ch]] - Timestamp[ch][indexStart]; 
       double sec =  dTime * tick2ns / 1e9;
@@ -499,11 +596,11 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
 
         calIndexes[ch][1] = DataIndex[ch];
         calIndexes[ch][0] = DataIndex[ch] - nEvent + 1;
-        if (calIndexes[ch][0] < 0 ) calIndexes[ch][0] += MaxNData;
+        if (calIndexes[ch][0] < 0 ) calIndexes[ch][0] += dataSize;
         
         // std::vector<unsigned long long> tList ;
         // for( int i = 0; i < nEvent ; i ++){
-        //   int j = (calIndexes[ch][0] + i) % MaxNData;
+        //   int j = (calIndexes[ch][0] + i) % dataSize;
         //   tList.push_back( Timestamp[ch][j]);
         // }
         // if( DPPType == DPPType::DPP_QDC_CODE){
@@ -521,8 +618,8 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
         //double sec = ( tList.back() - tList.front() ) * tick2ns / 1e9;
 
 
-        unsigned long long t0 = Timestamp[ch][(calIndexes[ch][0]) % MaxNData]; // earlier
-        unsigned long long t1 = Timestamp[ch][(calIndexes[ch][1]) % MaxNData];; // latest
+        unsigned long long t0 = Timestamp[ch][(calIndexes[ch][0]) % dataSize]; // earlier
+        unsigned long long t1 = Timestamp[ch][(calIndexes[ch][1]) % dataSize];; // latest
 
         if( t0 > t1 ) {
           printf("digi-%d, ch-%d | data is not in time order\n", boardSN, ch);
@@ -537,7 +634,7 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
 
         short pileUpCount = 0;
         for( int i = 0 ; i < nEvent; i++ ) {
-          int j = (calIndexes[ch][0] + i) % MaxNData;
+          int j = (calIndexes[ch][0] + i) % dataSize;
           if( PileUp[ch][j]  ) pileUpCount ++;
         }
         NonPileUpRate[ch] = (nEvent - pileUpCount)/sec;
@@ -770,7 +867,7 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
 
     if( rollOver == 0 ) { // non-time roll over fake event
       DataIndex[channel] ++; 
-      if( DataIndex[channel] >= MaxNData ) {
+      if( DataIndex[channel] >= dataSize ) {
         LoopIndex[channel] ++;
         DataIndex[channel] = 0;
       }
@@ -797,7 +894,7 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
       }  
     }
 
-    //if( DataIndex[channel] > MaxNData ) ClearData(); // if any channel has more data then MaxNData, clear all stored data
+    //if( DataIndex[channel] > dataSize ) ClearData(); // if any channel has more data then dataSize, clear all stored data
 
     if( verbose >= 1 ) printf("evt %4d(%2d) | ch : %2d, PileUp : %d , energy : %5d, rollOver: %d,  timestamp : %16llu (%10llu), triggerAt : %d, nSample : %d, %f sec\n", 
                                 DataIndex[channel], LoopIndex[channel], channel, pileUp, energy, rollOver, timeStamp * tick2ns, timeStamp, triggerAtSample, nSample , timeStamp * 4. / 1e9);
@@ -972,7 +1069,7 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
     
     if( isEnergyCorrect == 0 ) {
       DataIndex[channel] ++; 
-      if( DataIndex[channel] >= MaxNData ) {
+      if( DataIndex[channel] >= dataSize ) {
         LoopIndex[channel] ++;
         DataIndex[channel] = 0;
       }
@@ -1002,7 +1099,7 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
 
     }
 
-    //if( DataIndex[channel] >= MaxNData ) ClearData();
+    //if( DataIndex[channel] >= dataSize ) ClearData();
      
     //if( verbose >= 2 ) printf("extra : 0x%08x, Qshort : %d, Qlong : %d \n", extra, Qshort, Qlong);
     if( verbose == 1 ) printf("ch : %2d, Qshort : %6d, Qlong : %6d, timestamp : %llu\n", 
@@ -1128,7 +1225,7 @@ inline int Data::DecodeQDCGroupedChannelBlock(unsigned int ChannelMask, bool fas
     unsigned short channel = ChannelMask*8 + subCh;
     
     DataIndex[channel] ++; 
-    if( DataIndex[channel] >= MaxNData ) {
+    if( DataIndex[channel] >= dataSize ) {
       LoopIndex[channel] ++;
       DataIndex[channel] = 0;
     }

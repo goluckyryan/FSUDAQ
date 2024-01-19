@@ -208,8 +208,8 @@ void SingleSpectra::FillHistograms(){
       int lastIndex = digi[i]->GetData()->DataIndex[ch];
       int loopIndex = digi[i]->GetData()->LoopIndex[ch];
 
-      int temp1 = lastIndex + loopIndex*MaxNData;
-      int temp2 = lastFilledIndex[i][ch] + loopFilledIndex[i][ch]*MaxNData;
+      int temp1 = lastIndex + loopIndex * digi[i]->GetData()->GetDataSize();
+      int temp2 = lastFilledIndex[i][ch] + loopFilledIndex[i][ch] * digi[i]->GetData()->GetDataSize();
 
       // printf("%d |%d   %d \n", ch, temp2, temp1);
       if( lastIndex < 0 ) continue;
@@ -218,7 +218,7 @@ void SingleSpectra::FillHistograms(){
       
       for( int j = 0 ; j <= temp1 - temp2; j ++){
         lastFilledIndex[i][ch] ++;
-        if( lastFilledIndex[i][ch] > MaxNData ) {
+        if( lastFilledIndex[i][ch] > digi[i]->GetData()->GetDataSize() ) {
           lastFilledIndex[i][ch] = 0;
           loopFilledIndex[i][ch] ++;
         }

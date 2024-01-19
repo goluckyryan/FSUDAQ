@@ -184,15 +184,11 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
       bnProgramPreDefined = new QPushButton("Program Default", this);
       buttonLayout->addWidget(bnProgramPreDefined, rowID, 1);
       connect(bnProgramPreDefined, &QPushButton::clicked, this, [=](){         
-        if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) digi[ID]->ProgramBoard_PHA();
-        if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) digi[ID]->ProgramBoard_PSD();
-        if( digi[ID]->GetDPPType() == V1740_DPP_QDC_CODE ) digi[ID]->ProgramBoard_QDC();
-
+        digi[ID]->ProgramBoard();
         usleep(1000*500); // wait for 0.2 sec
 
         UpdatePanelFromMemory();
         emit UpdateOtherPanels();
-
       }); 
 
       bnClearBuffer = new QPushButton("Clear Buffer/FIFO/Data", this);

@@ -55,7 +55,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     cbOpenDigitizers = new RComboBox(this);
     cbOpenDigitizers->addItem("Open Digitizers ... ", 0);
     cbOpenDigitizers->addItem("Open Digitizers w/o load Settings", 1);
-    cbOpenDigitizers->addItem("Open Digitizers + load Settings", 2);
+    cbOpenDigitizers->addItem("Open Digitizers (default program)", 2);
+    cbOpenDigitizers->addItem("Open Digitizers + load Settings", 3);
     //cbOpenDigitizers->addItem("Open Digitizers via USB", 3);
     cbOpenDigitizers->addItem("Open Digitizers via A4818", 4);
     layout->addWidget(cbOpenDigitizers, 0, 0);
@@ -613,11 +614,10 @@ void MainWindow::OpenDigitizers(){
     cbOpenDigitizers->setCurrentIndex(0);
     return;
   }else{
-    if( cbOpenDigitizers->currentIndex() == 1 ) {
-      LogMsg(QString("Done seraching. Found %1 digitizer(s). Opening digitizer(s)....").arg(nDigi));
-    }else{
-      LogMsg(QString("Done seraching. Found %1 digitizer(s). Opening digitizer(s) and load settings....").arg(nDigi));
-    }
+    if( cbOpenDigitizers->currentIndex() == 1 ) LogMsg(QString("Done seraching. Found %1 digitizer(s). Opening digitizer(s)....").arg(nDigi));
+    if( cbOpenDigitizers->currentIndex() == 2 ) LogMsg(QString("Done seraching. Found %1 digitizer(s). Opening digitizer(s) and program default....").arg(nDigi));
+    if( cbOpenDigitizers->currentIndex() == 3 ) LogMsg(QString("Done seraching. Found %1 digitizer(s). Opening digitizer(s) and load settings....").arg(nDigi));
+    
   }
   
   digi = new Digitizer * [nDigi];
@@ -627,32 +627,33 @@ void MainWindow::OpenDigitizers(){
     digi[i] = new Digitizer(portList[i].first, portList[i].second);
     //digi[i]->Reset();
 
+    if( cbOpenDigitizers->currentIndex() == 2 ) {
+      digi[i]->ProgramBoard();
+    }
+
     ///============== load settings 
-    QString fileName = rawDataPath + "/Digi-" + QString::number(digi[i]->GetSerialNumber()) + "_" + QString::fromStdString(digi[i]->GetData()->DPPTypeStr) + ".bin";
-    QFile file(fileName);
-    if( !file.open(QIODevice::Text | QIODevice::ReadOnly) ) {
+    if( cbOpenDigitizers->currentIndex() == 3 ){
+      QString fileName = rawDataPath + "/Digi-" + QString::number(digi[i]->GetSerialNumber()) + "_" + QString::fromStdString(digi[i]->GetData()->DPPTypeStr) + ".bin";
+      QFile file(fileName);
+      if( !file.open(QIODevice::Text | QIODevice::ReadOnly) ) {
 
-      if( digi[i]->GetDPPType() == V1730_DPP_PHA_CODE ) {
-        //digi[i]->ProgramBoard_PHA();
-        //LogMsg("<b>" + fileName + "</b> not found. Program predefined PHA settings.");
-        LogMsg("<b>" + fileName + "</b> not found.");
-      }
-
-      if( digi[i]->GetDPPType() == V1730_DPP_PSD_CODE ){
-        //digi[i]->ProgramBoard_PSD();
-        //LogMsg("<b>" + fileName + "</b> not found. Program predefined PSD settings.");
-        LogMsg("<b>" + fileName + "</b> not found.");
-      }
-
-      if( digi[i]->GetDPPType() == V1740_DPP_QDC_CODE ){
-        //digi[i]->ProgramBoard_QDC();
-        //LogMsg("<b>" + fileName + "</b> not found. Program predefined PSD settings.");
-        LogMsg("<b>" + fileName + "</b> not found.");
-      }
-
-    }else{
-      LogMsg("Found <b>" + fileName + "</b> for digitizer settings.");
-      if( cbOpenDigitizers->currentIndex() == 2 ) {
+        if( digi[i]->GetDPPType() == V1730_DPP_PHA_CODE ) {
+          //digi[i]->ProgramBoard_PHA();
+          //LogMsg("<b>" + fileName + "</b> not found. Program predefined PHA settings.");
+          LogMsg("<b>" + fileName + "</b> not found.");
+        }
+        if( digi[i]->GetDPPType() == V1730_DPP_PSD_CODE ){
+          //digi[i]->ProgramBoard_PSD();
+          //LogMsg("<b>" + fileName + "</b> not found. Program predefined PSD settings.");
+          LogMsg("<b>" + fileName + "</b> not found.");
+        }
+        if( digi[i]->GetDPPType() == V1740_DPP_QDC_CODE ){
+          //digi[i]->ProgramBoard_QDC();
+          //LogMsg("<b>" + fileName + "</b> not found. Program predefined PSD settings.");
+          LogMsg("<b>" + fileName + "</b> not found.");
+        }
+      }else{
+        LogMsg("Found <b>" + fileName + "</b> for digitizer settings.");
         if( digi[i]->LoadSettingBinaryToMemory(fileName.toStdString().c_str()) == 0 ){
           LogMsg("Loaded settings file <b>" + fileName + "</b> for Digi-" + QString::number(digi[i]->GetSerialNumber()));
           digi[i]->ProgramSettingsToBoard();

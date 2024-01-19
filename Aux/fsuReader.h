@@ -6,10 +6,10 @@ class FSUReader{
 
   public:
     FSUReader();
-    FSUReader(std::string fileName,  bool verbose = true);
+    FSUReader(std::string fileName, uShort dataSize = 100, bool verbose = true);
     ~FSUReader();
 
-    void OpenFile(std::string fileName,  bool verbose = true);
+    void OpenFile(std::string fileName, uShort dataSize, bool verbose = true);
     bool isOpen() const{return inFile == nullptr ? false : true;}
 
     void ScanNumBlock(bool verbose = true, uShort saveData = 0);
@@ -30,10 +30,14 @@ class FSUReader{
     int GetChMask()    const{return chMask;}
     unsigned long GetFileByteSize() const {return inFileSize;}
 
-    void ClearHitListandCount() { hit.clear(); numHit = 0;}
+    void ClearHitList() { hit.clear();}
     Hit GetHit(int id) const {return hit[id];}
-    unsigned long GetHitCount() const{ return numHit;}
+    ulong GetHitListLength() const {return hit.size();}
+ 
+    void ClearHitCount() {numHit = 0;}
+    ulong GetHitCount() const{ return numHit;}
     std::vector<Hit> GetHitVector() const {return hit;}
+    void SortHit();
 
   private:
 
@@ -85,11 +89,11 @@ inline FSUReader::FSUReader(){
 
 }
 
-inline FSUReader::FSUReader(std::string fileName, bool verbose){
-  OpenFile(fileName, verbose);
+inline FSUReader::FSUReader(std::string fileName, uShort dataSize, bool verbose){
+  OpenFile(fileName, dataSize, verbose);
 }
 
-inline void FSUReader::OpenFile(std::string fileName, bool verbose){
+inline void FSUReader::OpenFile(std::string fileName, uShort dataSize, bool verbose){
 
   inFile = fopen(fileName.c_str(), "r");
 
@@ -155,7 +159,7 @@ inline void FSUReader::OpenFile(std::string fileName, bool verbose){
 
   numCh = DPPType == DPPType::DPP_QDC_CODE ? 64 : 16;
 
-  data = new Data(numCh);
+  data = new Data(numCh, dataSize);
   data->tick2ns = tick2ns;
   data->boardSN = sn;
   data->DPPType = DPPType;
@@ -217,7 +221,7 @@ inline int FSUReader::ReadNextBlock(bool fast, int verbose, uShort saveData){
       int stop  = data->DataIndex[ch];
 
       for( int i = start; i <= stop; i++ ){
-        i = i % MaxNData;
+        i = i % data->GetDataSize();
         
         temp.sn = sn;
         temp.ch = ch;
@@ -257,6 +261,12 @@ inline int FSUReader::ReadBlock(unsigned int ID, int verbose){
 
 }
 
+inline void FSUReader::SortHit(){
+  std::sort(hit.begin(), hit.end(), [](const Hit& a, const Hit& b) {
+    return a.timestamp < b.timestamp;
+  });
+}
+
 inline void FSUReader::ScanNumBlock(bool verbose, uShort saveData){
   if( feof(inFile) ) return;
 
@@ -290,9 +300,7 @@ inline void FSUReader::ScanNumBlock(bool verbose, uShort saveData){
 
   if(saveData) {
     if( verbose) printf("\nQuick Sort hit array according to time...");
-    std::sort(hit.begin(), hit.end(), [](const Hit& a, const Hit& b) {
-      return a.timestamp < b.timestamp;
-    });
+    SortHit();
     if( verbose) printf(".......done.\n");
   }
 

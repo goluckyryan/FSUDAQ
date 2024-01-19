@@ -49,6 +49,8 @@ private:
   const unsigned short nData;
   Data ** data; // assume all data has MaxNChannel (16) 
 
+  std::vector<uShort> dataSize;
+
   unsigned short timeWindow;
   unsigned long long leftOverTime;
   unsigned long long breakTime; // timestamp for breaking the event builder

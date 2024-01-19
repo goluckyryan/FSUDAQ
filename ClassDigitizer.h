@@ -64,6 +64,10 @@ class Digitizer{
 
     uint32_t acqStatus;
 
+    int ProgramBoard_PHA() ; /// program a default PHA board with dual trace
+    int ProgramBoard_PSD() ; 
+    int ProgramBoard_QDC() ;
+
   public:
     Digitizer(); /// no digitizer open
     Digitizer(int boardID, int portID = 0, bool program = false, bool verbose = false); 
@@ -83,10 +87,14 @@ class Digitizer{
     void DisableBoard()    {softwareDisable = true;}
     bool IsBoardDisabled() const {return softwareDisable;}
 
-    void         PrintBoard()      ;    
-    int          ProgramBoard_PHA() ; /// program a default PHA board with dual trace
-    int          ProgramBoard_PSD() ; 
-    int          ProgramBoard_QDC() ;
+    void PrintBoard();    
+    void ProgramBoard();
+    void AutoSetDPPEventAggregation(){ 
+      ret  = CAEN_DGTZ_SetDPPAcquisitionMode(handle, CAEN_DGTZ_DPP_ACQ_MODE_List, CAEN_DGTZ_DPP_SAVE_PARAM_EnergyAndTime);
+      ret |= CAEN_DGTZ_SetNumEventsPerAggregate(handle, 10);
+      ret |= CAEN_DGTZ_SetDPPEventAggregation(handle, 0, 0); // AutoSet
+      if( ret != 0 ) { printf("!!!!!!!! set %s error.\n", __func__);}
+    } 
     
     //^================ ACQ control
     void   StopACQ();
