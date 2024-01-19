@@ -4019,24 +4019,38 @@ void DigiSettingsPanel::SaveSetting(int opt){
   QDir dir(rawDataPath);
   if( !dir.exists() ) dir.mkpath(".");
 
-  QString filePath = QFileDialog::getSaveFileName(this, "Save Settings File", rawDataPath, opt == 0 ? "Binary (*.bin)" : "Text file (*.txt)");
+  QString defaultFileName = "Digi-" +  QString::number(digi[ID]->GetSerialNumber()) + "_" + QString::fromStdString(digi[ID]->GetData()->DPPTypeStr) + ".bin";
+
+  QString filePath = QFileDialog::getSaveFileName(this, 
+                                                  "Save Settings File", 
+                                                  rawDataPath, 
+                                                  opt == 0 ? "Binary (*.bin)" : "Text file (*.txt)");
 
   if (!filePath.isEmpty()) {
 
-    QFileInfo  fileInfo(filePath);
-    QString ext = fileInfo.suffix();
-    if( opt == 0 ){
-      if( ext == "") filePath += ".bin";
-      digi[ID]->SaveAllSettingsAsBin(filePath.toStdString().c_str());
-      leSaveFilePath[ID]->setText(filePath);
-    }
-    if( opt == 1 ){
-      if( ext == "") filePath += ".txt";
-      digi[ID]->SaveAllSettingsAsText(filePath.toStdString().c_str());
-      leSaveFilePath[ID]->setText(filePath + " | not loadable!!");
-    }
+    QFileDialog dialog;
+    dialog.selectFile(defaultFileName);
 
-    SendLogMsg("Saved setting file <b>" +  filePath + "</b>.");
+    if( dialog.exec() == QDialog::Accepted){
+
+      filePath = dialog.selectedFiles().first();
+      
+      QFileInfo  fileInfo(filePath);
+      QString ext = fileInfo.suffix();
+      if( opt == 0 ){
+        if( ext.isEmpty() ) filePath += ".bin";
+        digi[ID]->SaveAllSettingsAsBin(filePath.toStdString().c_str());
+        leSaveFilePath[ID]->setText(filePath);
+      }
+      if( opt == 1 ){
+        if( ext.isEmpty() ) filePath += ".txt";
+        digi[ID]->SaveAllSettingsAsText(filePath.toStdString().c_str());
+        leSaveFilePath[ID]->setText(filePath + " | not loadable!!");
+      }
+
+      SendLogMsg("Saved setting file <b>" +  filePath + "</b>.");
+
+    }
 
   }
 

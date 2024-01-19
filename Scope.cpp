@@ -639,10 +639,11 @@ void Scope::SetUpSpinBox(RSpinBox * &sb, QString str, int row, int col, const Re
 
     uint32_t value = sb->value() / tick2ns / abs(para.GetPartialStep());
 
-    if( para == DPP::RecordLength_G){
-      int factor = digi[ID]->IsDualTrace_PHA() ? 2 : 1;
-      value = value * factor;
-    }
+    //todo NEED TO CHECK
+    // if( para == DPP::RecordLength_G){
+    //   int factor = digi[ID]->IsDualTrace_PHA() ? 2 : 1;
+    //   value = value * factor;
+    // }
 
     if( para == DPP::ChannelDCOffset || para == DPP::QDC::DCOffset){
       value = uint16_t((1.0 - sb->value()/100.) * 0xFFFF);

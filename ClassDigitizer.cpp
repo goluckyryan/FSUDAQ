@@ -1022,6 +1022,8 @@ void Digitizer::SaveSettingToFile(Reg registerAddress, unsigned int value, unsig
   if ( !isSettingFileExist ) return ;
   if ( !isSettingFileCoupled ) return;
 
+  printf("Write setting file : %s. %s, ch:%u, 0x%8X\n", settingFileName.c_str(), registerAddress.GetNameChar(), ch, value);
+
   unsigned short index = registerAddress.Index(ch);
   setting[index] = value;
   

@@ -183,7 +183,7 @@ inline void Data::AllocateDataSize(uShort dataSize){
     printf("dataSize cannot < 1, set dataSize = 1.\n");
     dataSize = 1;
   }
-  printf("Data::%s, size: %u\n", __func__, dataSize);
+  //printf("Data::%s, size: %u\n", __func__, dataSize);
 
   this->dataSize = dataSize;
 
@@ -218,8 +218,6 @@ inline void Data::AllocateDataSize(uShort dataSize){
 }
 
 inline void Data::ClearDataPointer(){
-
-  printf("Data::%s\n", __func__);
 
   for(int ch = 0; ch < numInputCh;  ch++){
     delete [] Timestamp[ch] ;
