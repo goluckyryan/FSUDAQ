@@ -107,7 +107,8 @@ private:
   QPushButton * bnClearBuffer;
   
   QPushButton * bnSendSoftwareTriggerSignal;
-  QPushButton * bnSendSoftwareClockSyncSignal;
+  QPushButton * bhAutoSetEventPulling;
+  //QPushButton * bnSendSoftwareClockSyncSignal;
   QPushButton * bnSaveSettings;
   QPushButton * bnLoadSettings;
   //QPushButton * bnSaveSettingsToText;

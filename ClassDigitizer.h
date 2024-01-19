@@ -91,7 +91,7 @@ class Digitizer{
     void PrintBoard();    
     void ProgramBoard();
     void AutoSetDPPEventAggregation(){ 
-      ret  = CAEN_DGTZ_SetDPPAcquisitionMode(handle, CAEN_DGTZ_DPP_ACQ_MODE_List, CAEN_DGTZ_DPP_SAVE_PARAM_EnergyAndTime);
+      //ret  = CAEN_DGTZ_SetDPPAcquisitionMode(handle, CAEN_DGTZ_DPP_ACQ_MODE_List, CAEN_DGTZ_DPP_SAVE_PARAM_EnergyAndTime);
       ret |= CAEN_DGTZ_SetNumEventsPerAggregate(handle, 10);
       ret |= CAEN_DGTZ_SetDPPEventAggregation(handle, 0, 0); // AutoSet
       if( ret != 0 ) { printf("!!!!!!!! set %s error.\n", __func__);}

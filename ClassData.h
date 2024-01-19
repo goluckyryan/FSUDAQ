@@ -52,19 +52,6 @@ class Data{
     int       LoopIndex[MaxNChannels];     /// number of loop in the circular memory
     int       DataIndex[MaxNChannels];
 
-    //unsigned long long Timestamp[MaxNChannels][MaxNData]; /// 47 bit
-    // unsigned short     fineTime [MaxNChannels][MaxNData];  /// 10 bits, in unit of tick2ns / 1000 = ps
-    // unsigned short     Energy   [MaxNChannels][MaxNData];   /// 15 bit
-    // unsigned short     Energy2  [MaxNChannels][MaxNData];  /// 15 bit, in PSD, Energy = Qshort, Energy2 = Qlong
-    // bool               PileUp   [MaxNChannels][MaxNData];   /// pile up flag
-    
-    // std::vector<short> Waveform1    [MaxNChannels][MaxNData]; // used at least 14 MB
-    // std::vector<short> Waveform2    [MaxNChannels][MaxNData];
-    // std::vector<bool>  DigiWaveform1[MaxNChannels][MaxNData];
-    // std::vector<bool>  DigiWaveform2[MaxNChannels][MaxNData];
-    // std::vector<bool>  DigiWaveform3[MaxNChannels][MaxNData];
-    // std::vector<bool>  DigiWaveform4[MaxNChannels][MaxNData];
-
     uShort GetDataSize() const {return dataSize;}
     ullong ** Timestamp; /// 47 bit
     uShort ** fineTime;  /// 10 bits, in unit of tick2ns / 1000 = ps

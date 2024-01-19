@@ -208,13 +208,14 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
       buttonLayout->addWidget(bnSendSoftwareTriggerSignal, rowID, 0);
       connect(bnSendSoftwareTriggerSignal, &QPushButton::clicked, this, [=](){ digi[ID]->WriteRegister(DPP::SoftwareTrigger_W, 1); UpdateBoardAndChannelsStatus();});
 
-      bnSendSoftwareClockSyncSignal = new QPushButton("Send SW Clock-Sync Signal", this);
-      buttonLayout->addWidget(bnSendSoftwareClockSyncSignal, rowID, 1);
-      connect(bnSendSoftwareClockSyncSignal, &QPushButton::clicked, this, [=](){ digi[ID]->WriteRegister(DPP::SoftwareClockSync_W, 1); UpdateBoardAndChannelsStatus();});
+      bhAutoSetEventPulling = new QPushButton("Autoset Reading Conf.", this);
+      buttonLayout->addWidget(bhAutoSetEventPulling, rowID, 1);
+      connect(bhAutoSetEventPulling, &QPushButton::clicked, this, [=](){ digi[ID]->AutoSetDPPEventAggregation(); UpdateBoardAndChannelsStatus();});
 
-      bnSaveSettings = new QPushButton("Save Settings (bin)", this);
-      buttonLayout->addWidget(bnSaveSettings, rowID, 2);
-      connect(bnSaveSettings, &QPushButton::clicked, this, [=](){ SaveSetting(0);});
+      // bnSendSoftwareClockSyncSignal = new QPushButton("Send SW Clock-Sync Signal", this);
+      // buttonLayout->addWidget(bnSendSoftwareClockSyncSignal, rowID, 1);
+      // connect(bnSendSoftwareClockSyncSignal, &QPushButton::clicked, this, [=](){ digi[ID]->WriteRegister(DPP::SoftwareClockSync_W, 1); UpdateBoardAndChannelsStatus();});
+
 
       // bnSaveSettingsToText = new QPushButton("Save Settings (txt)", this);
       // buttonLayout->addWidget(bnSaveSettingsToText, rowID, 3);
@@ -222,7 +223,7 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
 
       //checkBox, to coupled or decouple the setting file.
       chkCoupledSettingFile = new QCheckBox("Update Setting", this);
-      buttonLayout->addWidget(chkCoupledSettingFile, rowID, 3);
+      buttonLayout->addWidget(chkCoupledSettingFile, rowID, 2);
       chkCoupledSettingFile->setCheckState(Qt::CheckState::Unchecked);
       connect(chkCoupledSettingFile, &QCheckBox::stateChanged, this, [=](int state){
         digi[ID]->SetSettingFileUpdate(state);
@@ -231,6 +232,10 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
           digi[ID]->SaveAllSettingsAsBin(filePath);
         }
       });
+
+      bnSaveSettings = new QPushButton("Save Settings", this);
+      buttonLayout->addWidget(bnSaveSettings, rowID, 3);
+      connect(bnSaveSettings, &QPushButton::clicked, this, [=](){ SaveSetting(0);});
     }
 
     {//^======================= Board Settings
