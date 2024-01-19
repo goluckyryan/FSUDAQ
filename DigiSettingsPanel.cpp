@@ -216,9 +216,17 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
       buttonLayout->addWidget(bnSaveSettings, rowID, 2);
       connect(bnSaveSettings, &QPushButton::clicked, this, [=](){ SaveSetting(0);});
 
-      bnSaveSettingsToText = new QPushButton("Save Settings (txt)", this);
-      buttonLayout->addWidget(bnSaveSettingsToText, rowID, 3);
-      connect(bnSaveSettingsToText, &QPushButton::clicked, this, [=](){ SaveSetting(1);});
+      // bnSaveSettingsToText = new QPushButton("Save Settings (txt)", this);
+      // buttonLayout->addWidget(bnSaveSettingsToText, rowID, 3);
+      // connect(bnSaveSettingsToText, &QPushButton::clicked, this, [=](){ SaveSetting(1);});
+
+      //checkBox, to coupled or decouple the setting file.
+      chkCoupledSettingFile = new QCheckBox("Update Bin", this);
+      buttonLayout->addWidget(chkCoupledSettingFile, rowID, 3);
+      chkCoupledSettingFile->setCheckState(Qt::CheckState::Unchecked);
+      connect(chkCoupledSettingFile, &QCheckBox::stateChanged, this, [=](){
+        digi[ID]->SetSettingFileCoupled(chkCoupledSettingFile->isChecked());
+      });
     }
 
     {//^======================= Board Settings
@@ -4020,7 +4028,7 @@ void DigiSettingsPanel::SaveSetting(int opt){
     if( opt == 0 ){
       if( ext == "") filePath += ".bin";
       digi[ID]->SaveAllSettingsAsBin(filePath.toStdString().c_str());
-      leSaveFilePath[ID]->setText(filePath + " | dynamic update");
+      leSaveFilePath[ID]->setText(filePath);
     }
     if( opt == 1 ){
       if( ext == "") filePath += ".txt";

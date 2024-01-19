@@ -53,7 +53,8 @@ class Digitizer{
     //^-------- setting 
     std::string  settingFileName;          /// 
     FILE *       settingFile;              /// 
-    bool         settingFileExist;         /// 
+    bool         isSettingFileExist;         /// 
+    bool         isSettingFileCoupled;
     bool         isSettingFilledinMemeory; /// false for disabled ReadAllSettingFromBoard()   
     unsigned int setting[SETTINGSIZE];     /// Setting, 4bytes x 2048 = 8192 bytes
     
@@ -147,8 +148,10 @@ class Digitizer{
     /// simply read settings from memory
     void           SetSettingToMemory        (Reg registerAddress, unsigned int value, unsigned short ch = 0);
     unsigned int   GetSettingFromMemory      (Reg registerAddress, unsigned short ch = 0);
-    void           PrintSettingFromMemory    ();
-    unsigned int * GetSettings()              {return setting;};    
+    unsigned int * GetSettings()             {return setting;}    
+    void           PrintSettingFromMemory();
+    void           SetSettingFileCoupled(bool onOff) {isSettingFileCoupled = onOff;}     
+    bool           IsSettingFileCoupled() const {return isSettingFileCoupled;}     
 
     /// memory <--> file
     void         SaveAllSettingsAsText       (std::string fileName);

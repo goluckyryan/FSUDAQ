@@ -38,7 +38,8 @@ void Digitizer::Initalization(){
   
   isSettingFilledinMemeory = false;
   settingFileName = "";
-  settingFileExist = false;
+  isSettingFileExist = false;
+  isSettingFileCoupled = false;
   settingFile = NULL;
   
   ret = -1;
@@ -255,8 +256,8 @@ void Digitizer::SetRegChannelMask(uint32_t mask){
   if( !isConnected ) return;
   regChannelMask = mask;
   ret |= CAEN_DGTZ_SetChannelEnableMask(handle, regChannelMask);
-  SaveSettingToFile(DPP::RegChannelEnableMask, mask);
   SetSettingToMemory(DPP::RegChannelEnableMask, mask);
+  SaveSettingToFile(DPP::RegChannelEnableMask, mask);
   ErrorMsg(__func__);
 }
 
@@ -941,11 +942,11 @@ void Digitizer::SetSettingBinaryPath(std::string fileName){
     SaveAllSettingsAsBin(fileName);
     
     this->settingFileName = fileName;
-    settingFileExist = true;
+    isSettingFileExist = true;
   
   }else{
     this->settingFileName = fileName;
-    settingFileExist = true;
+    isSettingFileExist = true;
     fclose(settingFile);
     printf("setting file already exist. do nothing. Should program the digitizer\n");
   }
@@ -958,11 +959,11 @@ int Digitizer::LoadSettingBinaryToMemory(std::string fileName){
   
   if( settingFile == NULL ) {
     printf(" %s does not exist or cannot load.\n", fileName.c_str());
-    settingFileExist = false;
+    isSettingFileExist = false;
     return -1;
     
   }else{
-    settingFileExist = true;
+    isSettingFileExist = true;
     settingFileName = fileName;
     fclose (settingFile);
     
@@ -997,7 +998,7 @@ int Digitizer::LoadSettingBinaryToMemory(std::string fileName){
 }
     
 unsigned int Digitizer::ReadSettingFromFile(Reg registerAddress, unsigned short ch){
-  if ( !settingFileExist ) return -1;
+  if ( !isSettingFileExist ) return -1;
   
   unsigned short index = registerAddress.Index(ch);
   
@@ -1018,7 +1019,8 @@ unsigned int Digitizer::ReadSettingFromFile(Reg registerAddress, unsigned short 
 
 void Digitizer::SaveSettingToFile(Reg registerAddress, unsigned int value, unsigned short ch){
 
-  if ( !settingFileExist ) return ;
+  if ( !isSettingFileExist ) return ;
+  if ( !isSettingFileCoupled ) return;
 
   unsigned short index = registerAddress.Index(ch);
   setting[index] = value;
@@ -1048,7 +1050,7 @@ void Digitizer::SaveAllSettingsAsBin(std::string fileName){
   fclose (binFile);
 
   settingFileName = fileName;
-  settingFileExist = true;
+  isSettingFileExist = true;
 
 }
 

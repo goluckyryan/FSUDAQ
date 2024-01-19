@@ -110,7 +110,8 @@ private:
   QPushButton * bnSendSoftwareClockSyncSignal;
   QPushButton * bnSaveSettings;
   QPushButton * bnLoadSettings;
-  QPushButton * bnSaveSettingsToText;
+  //QPushButton * bnSaveSettingsToText;
+  QCheckBox   * chkCoupledSettingFile;
 
   /// ============================= Board Configure
   QGridLayout * bdCfgLayout[MaxNDigitizer];
