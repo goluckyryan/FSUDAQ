@@ -1,19 +1,20 @@
 #include "../ClassData.h"
 #include "../Hit.h"
 #include <algorithm>
+#include <filesystem>
 
 class FSUReader{
 
   public:
     FSUReader();
-    FSUReader(std::string fileName, uShort dataSize = 100, bool verbose = true);
+    FSUReader(std::string fileName, uShort dataSize = 100, int verbose = 1);
     ~FSUReader();
 
-    void OpenFile(std::string fileName, uShort dataSize, bool verbose = true);
+    void OpenFile(std::string fileName, uShort dataSize, int verbose = 1);
     bool isOpen() const{return inFile == nullptr ? false : true;}
 
-    void ScanNumBlock(bool verbose = true, uShort saveData = 0);
-    int  ReadNextBlock(bool fast = false, int verbose = 0, uShort saveData = 0); // saveData = 0 (no save), 1 (no trace), 2 (with trace);
+    void ScanNumBlock(int verbose = 1, uShort saveData = 0);
+    int  ReadNextBlock(bool skipTrace= false, int verbose = 0, uShort saveData = 0); // saveData = 0 (no save), 1 (no trace), 2 (with trace);
     int  ReadBlock(unsigned int ID, int verbose = 0);
 
     unsigned long GetTotNumBlock() const{ return totNumBlock;}
@@ -37,7 +38,9 @@ class FSUReader{
     void ClearHitCount() {numHit = 0;}
     ulong GetHitCount() const{ return numHit;}
     std::vector<Hit> GetHitVector() const {return hit;}
-    void SortHit();
+    void SortHit(int verbose = false);
+
+    std::string SaveHit2NewFile(std::string saveFolder = "./");
 
   private:
 
@@ -57,7 +60,7 @@ class FSUReader{
     int tick2ns;
     int order;
     int chMask;
-    int numCh;
+    uShort numCh;
 
     std::vector<unsigned int> blockPos;
     std::vector<unsigned int > blockTimeStamp;
@@ -89,11 +92,11 @@ inline FSUReader::FSUReader(){
 
 }
 
-inline FSUReader::FSUReader(std::string fileName, uShort dataSize, bool verbose){
+inline FSUReader::FSUReader(std::string fileName, uShort dataSize, int verbose){
   OpenFile(fileName, dataSize, verbose);
 }
 
-inline void FSUReader::OpenFile(std::string fileName, uShort dataSize, bool verbose){
+inline void FSUReader::OpenFile(std::string fileName, uShort dataSize, int verbose){
 
   inFile = fopen(fileName.c_str(), "r");
 
@@ -157,7 +160,7 @@ inline void FSUReader::OpenFile(std::string fileName, uShort dataSize, bool verb
   if( fileName.find("PSD") != std::string::npos ) DPPType = DPPType::DPP_PSD_CODE;
   if( fileName.find("QDC") != std::string::npos ) DPPType = DPPType::DPP_QDC_CODE;
 
-  numCh = DPPType == DPPType::DPP_QDC_CODE ? 64 : 16;
+  numCh = (DPPType == DPPType::DPP_QDC_CODE ? 64 : 16);
 
   data = new Data(numCh, dataSize);
   data->tick2ns = tick2ns;
@@ -166,7 +169,7 @@ inline void FSUReader::OpenFile(std::string fileName, uShort dataSize, bool verb
 
 }
 
-inline int FSUReader::ReadNextBlock(bool fast, int verbose, uShort saveData){
+inline int FSUReader::ReadNextBlock(bool skipTrace, int verbose, uShort saveData){
   if( inFile == NULL ) return -1;
   if( feof(inFile) ) return -1;
   if( filePos >= inFileSize) return -1;
@@ -193,8 +196,7 @@ inline int FSUReader::ReadNextBlock(bool fast, int verbose, uShort saveData){
       return -30;
     }
 
-
-    data->DecodeBuffer(buffer, aggSize, fast, verbose); // data will own the buffer
+    data->DecodeBuffer(buffer, aggSize, skipTrace, verbose); // data will own the buffer
 
   }else if( (header & 0xF ) == 0x8 ) { /// dual channel header
 
@@ -204,7 +206,7 @@ inline int FSUReader::ReadNextBlock(bool fast, int verbose, uShort saveData){
     filePos = ftell(inFile);
 
     data->buffer = buffer;
-    data->DecodeDualBlock(buffer, dualSize, DPPType, chMask, false, verbose);    
+    data->DecodeDualBlock(buffer, dualSize, DPPType, chMask, skipTrace, verbose);    
 
   }else{
     printf("incorrect header.\n trminate.");
@@ -229,7 +231,13 @@ inline int FSUReader::ReadNextBlock(bool fast, int verbose, uShort saveData){
         temp.energy2 = data->Energy2[ch][i];
         temp.timestamp = data->Timestamp[ch][i];
         temp.fineTime = data->fineTime[ch][i];
-        if( saveData > 1 ) temp.trace = data->Waveform1[ch][i];
+        if( saveData > 1 ) {
+          temp.traceLength = data->Waveform1[ch][i].size();
+          temp.trace = data->Waveform1[ch][i];
+        }else{
+          temp.traceLength = 0;
+          if( temp.trace.size() > 0 ) temp.trace.clear();
+        }
 
         hit.push_back(temp);
 
@@ -261,13 +269,15 @@ inline int FSUReader::ReadBlock(unsigned int ID, int verbose){
 
 }
 
-inline void FSUReader::SortHit(){
+inline void FSUReader::SortHit(int verbose){
+  if( verbose) printf("\nQuick Sort hit array according to time...");
   std::sort(hit.begin(), hit.end(), [](const Hit& a, const Hit& b) {
     return a.timestamp < b.timestamp;
   });
+  if( verbose) printf(".......done.\n");
 }
 
-inline void FSUReader::ScanNumBlock(bool verbose, uShort saveData){
+inline void FSUReader::ScanNumBlock(int verbose, uShort saveData){
   if( feof(inFile) ) return;
 
   blockID = 0;
@@ -277,7 +287,7 @@ inline void FSUReader::ScanNumBlock(bool verbose, uShort saveData){
   fseek(inFile, 0L, SEEK_SET);
   filePos = 0;
 
-  while( ReadNextBlock(true, false, saveData) == 0 ){
+  while( ReadNextBlock(saveData < 2 ? true : false, verbose - 1, saveData) == 0 ){
     blockPos.push_back(filePos);
     blockTimeStamp.push_back(data->aggTime);
     blockID ++;
@@ -298,10 +308,77 @@ inline void FSUReader::ScanNumBlock(bool verbose, uShort saveData){
   blockID = 0;  
   filePos = 0;
 
-  if(saveData) {
-    if( verbose) printf("\nQuick Sort hit array according to time...");
-    SortHit();
-    if( verbose) printf(".......done.\n");
+  SortHit(verbose);
+
+}
+
+inline std::string FSUReader::SaveHit2NewFile(std::string saveFolder){
+
+  printf("FSUReader::%s\n", __func__);
+
+  std::string folder = "";
+  size_t found = fileName.find_last_of('/');
+  std::string outFileName = fileName;
+  if( found != std::string::npos ){
+    folder = fileName.substr(0, found + 1);
+    outFileName = fileName.substr(found +1 );
   }
+
+  if( saveFolder.empty() ) saveFolder = "./";
+  if( saveFolder.back() != '/') saveFolder += '/';
+
+  //checkif the saveFolder exist;
+  if( saveFolder != "./"){
+    if (!std::filesystem::exists(saveFolder)) {
+      if (std::filesystem::create_directory(saveFolder)) {
+        std::cout << "Directory created successfully." << std::endl;
+      } else {
+        std::cerr << "Failed to create directory." << std::endl;
+      }
+    } 
+  }
+
+  outFileName = saveFolder + outFileName + ".ts";
+
+  FILE * outFile = fopen(outFileName.c_str(), "wb"); //overwrite binary
+
+  uint32_t header = 0xAA000000;
+  header += sn;
+  fwrite( &header, 4, 1, outFile );
+
+  for( ulong i = 0; i < numHit; i++){
+
+    printf("Saving %lu/%lu (%.2f%%)\n\033[A\r", i, numHit, i*100./numHit);
+
+    fwrite( &(hit[i].sn), 2, 1, outFile);
+    fwrite( &(hit[i].ch), 1, 1, outFile);
+    fwrite( &(hit[i].energy), 2, 1, outFile);
+    fwrite( &(hit[i].energy2), 2, 1, outFile);
+    fwrite( &(hit[i].timestamp), 8, 1, outFile);
+    fwrite( &(hit[i].fineTime), 2, 1, outFile);
+    fwrite( &(hit[i].traceLength), 2, 1, outFile);
+    
+    for( uShort j = 0; j < hit[i].traceLength; j++){
+      fwrite( &(hit[i].trace[j]), 2, 1, outFile);
+    }
+    
+  }
+
+  off_t outFileSize = ftello(outFile);  // unsigned int =  Max ~4GB
+  fclose(outFile);
+
+  printf("Saved to %s, size: ", outFileName.c_str());
+  if( outFileSize < 1024 ) {
+    printf(" %ld Byte", outFileSize);
+  }else if( outFileSize < 1024*1024 ) {
+    printf(" %.2f kB", outFileSize/1024.);
+  }else if( outFileSize < 1024*1024*1024){
+    printf(" %.2f MB", outFileSize/1024./1024.);
+  }else{
+    printf(" %.2f GB", outFileSize/1024./1024./1024.);
+  }
+  printf("\n");
+
+  return outFileName;
 
 }

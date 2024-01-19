@@ -33,7 +33,7 @@ int main(){
       count ++;
 
       data->DataIndex[ch] ++;
-      if( data->DataIndex[ch] > MaxNData ) {
+      if( data->DataIndex[ch] > data->GetDataSize() ) {
         data->LoopIndex[ch] ++;
         data->DataIndex[ch] = 0;
       }

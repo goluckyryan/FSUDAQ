@@ -1,5 +1,4 @@
 #include "fsuReader.h"
-#include <chrono>
 
 #include "TROOT.h"
 #include "TSystem.h"
@@ -42,15 +41,6 @@ struct GroupInfo{
   bool finished;
 
 };
-
-
-unsigned long long getTime_ns(){
-
-  std::chrono::high_resolution_clock::time_point currentTime = std::chrono::high_resolution_clock::now();
-  std::chrono::nanoseconds nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(currentTime.time_since_epoch());
-  return nanoseconds.count();
-
-}
 
 
 //^#############################################################
@@ -114,7 +104,7 @@ int main(int argc, char **argv) {
   
     printf("Processing %s (%d/%d) ..... \n\033[A\r", inFileName[i].Data(), i+1, nFile);
 
-    reader[i] = new FSUReader(inFileName[i].Data(), false);
+    reader[i] = new FSUReader(inFileName[i].Data(), 0, false);
     reader[i]->ScanNumBlock(0, 1);
     // reader[i]->FillHitList();
   

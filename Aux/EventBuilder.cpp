@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
     printf("Incorrect number of arguments:\n");
     printf("%s [timeWindow] [Buffer] [traceOn/Off] [verbose] [inFile1]  [inFile2] .... \n", argv[0]);
     printf("    timeWindow : in ns \n");   
-    printf("        Buffer : Fraction of %d, recommand 0.4 \n", MaxNData);   
+    printf("        Buffer : Fraction of %d, recommand 0.4 \n", DefaultDataSize);   
     printf("   traceOn/Off : is traces stored \n");   
     printf("       verbose : > 0 for debug  \n");   
     printf("    Output file name is contructed from inFile1 \n");   
@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
   for( int i = 0; i < nFile; i++) printf("%2d | %s \n", i, inFileName[i].Data());
   printf("=====================================\n");  
   printf(" Time Window = %u ns = %.1f us\n", timeWindow, timeWindow/1000.);
-  printf(" Buffer size = %.0f event/channel\n", MaxNData * bufferSize);
+  printf(" Buffer size = %.0f event/channel\n", DefaultDataSize * bufferSize);
   printf("===================================== input files:\n");  
   printf("Scanning files.....\n");
 
@@ -289,6 +289,8 @@ int main(int argc, char **argv) {
           //data[i]->PrintStat();
         }
 
+        uShort dataSize = data[i]->GetDataSize();
+
         for( int ch = 0; ch < data[i]->GetNChannel(); ch ++){
 
           int iData = data[i]->DataIndex[ch];
@@ -296,8 +298,8 @@ int main(int argc, char **argv) {
 
           if( iData < 0 ) continue;
 
-          if( (iLoop*MaxNData + iData) - (lastLoopIndex[i][ch]*MaxNData + lastDataIndex[i][ch]) > MaxNData * bufferSize ) {
-            if( debug ) printf("############# BREAK!!!! Group: %d, ch : %d | last : %d(%d), Present : %d(%d) | BufferSize : %.0f \n", i, ch, lastDataIndex[i][ch], lastLoopIndex[i][ch], iData, iLoop, MaxNData * bufferSize);
+          if( (iLoop*dataSize + iData) - (lastLoopIndex[i][ch]*dataSize + lastDataIndex[i][ch]) > dataSize * bufferSize ) {
+            if( debug ) printf("############# BREAK!!!! Group: %d, ch : %d | last : %d(%d), Present : %d(%d) | BufferSize : %.0f \n", i, ch, lastDataIndex[i][ch], lastLoopIndex[i][ch], iData, iLoop, dataSize * bufferSize);
             fillFlag = false;
           }
 
