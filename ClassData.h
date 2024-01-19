@@ -179,6 +179,10 @@ inline Data::~Data(){
 
 inline void Data::AllocateDataSize(uShort dataSize){
 
+  if( dataSize < 1) {
+    printf("dataSize cannot < 1, set dataSize = 1.\n");
+    dataSize = 1;
+  }
   printf("Data::%s, size: %u\n", __func__, dataSize);
 
   this->dataSize = dataSize;
@@ -276,6 +280,15 @@ inline void Data::ClearData(){
   for( int ch = 0 ; ch < MaxNChannels; ch++){
     LoopIndex[ch] = 0;
     DataIndex[ch] = -1;
+    NumEventsDecoded[ch] = 0;
+    NumNonPileUpDecoded[ch] = 0;
+
+    TotNumNonPileUpEvents[ch] = 0 ;
+
+    calIndexes[ch][0] = -1;
+    calIndexes[ch][1] = -1;
+
+    if( ch >= numInputCh) break;
     for( int j = 0; j < dataSize; j++){
       Timestamp[ch][j] = 0;
       fineTime[ch][j] = 0;
@@ -289,13 +302,6 @@ inline void Data::ClearData(){
       DigiWaveform4[ch][j].clear();
     }
 
-    NumEventsDecoded[ch] = 0;
-    NumNonPileUpDecoded[ch] = 0;
-
-    TotNumNonPileUpEvents[ch] = 0 ;
-
-    calIndexes[ch][0] = -1;
-    calIndexes[ch][1] = -1;
   }
   
   tempWaveform1.clear();
@@ -304,6 +310,7 @@ inline void Data::ClearData(){
   tempDigiWaveform2.clear();
   tempDigiWaveform3.clear();
   tempDigiWaveform4.clear();
+
 }
 
 inline void Data::ClearBuffer(){
@@ -462,7 +469,7 @@ inline void Data::PrintChData(unsigned short ch, unsigned int maxRowDisplay) con
 
   if( DataIndex[ch] < 0  ) printf("no data in ch-%d\n", ch);
   printf("------------ ch : %d, DataIndex : %d, loop : %d\n", ch, DataIndex[ch], LoopIndex[ch]);
-  for( int ev = 0; ev <= (LoopIndex[ch] > 0 ? dataSize : DataIndex[ch]) ; ev++){
+  for( int ev = 0; ev < (LoopIndex[ch] > 0 ? dataSize : DataIndex[ch]) ; ev++){
     if( DPPType == DPPType::DPP_PHA_CODE || DPPType == DPPType::DPP_QDC_CODE ) printf("%4d, %5u, %15llu, %5u \n", ev, Energy[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
     if( DPPType == DPPType::DPP_PSD_CODE ) printf("%4d, %5u, %5u, %15llu, %5u \n", ev, Energy[ch][ev], Energy2[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
     if( maxRowDisplay > 0 && (unsigned int) ev > maxRowDisplay ) break;
