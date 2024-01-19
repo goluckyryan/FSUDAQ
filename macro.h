@@ -22,13 +22,20 @@
 
 #include <sys/time.h> /** struct timeval, select() */
 
-inline unsigned int get_time(){
+inline unsigned int get_time_us(){
   unsigned int time_us;
   struct timeval t1;
   struct timezone tz;
   gettimeofday(&t1, &tz);
   time_us = (t1.tv_sec) * 1000 * 1000 + t1.tv_usec;
   return time_us;
+}
+
+#include <chrono>
+inline unsigned long long getTime_ns(){
+  std::chrono::high_resolution_clock::time_point currentTime = std::chrono::high_resolution_clock::now();
+  std::chrono::nanoseconds nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(currentTime.time_since_epoch());
+  return nanoseconds.count();
 }
 
 typedef unsigned short uShort;
