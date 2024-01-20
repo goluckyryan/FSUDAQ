@@ -7,7 +7,7 @@
 #include "TFile.h"
 #include "TTree.h"
 
-#define MAX_MULTI  100
+#define MAX_MULTI  10000
 
 #define ORDERSHIFT 100000
 
@@ -21,12 +21,12 @@ struct FileInfo {
   unsigned short order;
   unsigned short readerID;
 
-  unsigned ID; // sn + 100000 * order
+  unsigned long ID; // sn + 100000 * order
 
   void CalOrder(){ ID = ORDERSHIFT * SN + order; }
 
   void Print(){
-    printf("%6d | %3d | %50s | %2d | %6lu | %10u Bytes = %.2f MB\n", 
+    printf(" %10lu | %3d | %50s | %2d | %6lu | %10u Bytes = %.2f MB\n", 
             ID, DPPType, fileName.Data(), tick2ns, hitCount, fileSize, fileSize/1024./1024.);  
   }
 };
@@ -69,9 +69,7 @@ int main(int argc, char **argv) {
   
   ///============= read input
   unsigned int  timeWindow = atoi(argv[1]);
-  //float bufferSize = atof(argv[2]);
   //bool traceOn = atoi(argv[3]);
-  bool traceOn = false;
   unsigned int debug = atoi(argv[2]);
   int nFile = argc - 3;
   TString inFileName[nFile];
@@ -105,8 +103,8 @@ int main(int argc, char **argv) {
   
     printf("Processing %s (%d/%d) ..... \n\033[A\r", inFileName[i].Data(), i+1, nFile);
 
-    reader[i] = new FSUReader(inFileName[i].Data(), 0, false);
-    reader[i]->ScanNumBlock(0, 1);
+    reader[i] = new FSUReader(inFileName[i].Data(), 50, 0); // the 1000 is expecting each agg, there are maximum 1000 hit/ch.
+    reader[i]->ScanNumBlock(1, 1);
     // reader[i]->FillHitList();
   
     FileInfo tempInfo;
@@ -164,9 +162,7 @@ int main(int argc, char **argv) {
     for( int j = 0; j< (int) group[i].readerIDList.size(); j++){
       uShort rID = group[i].readerIDList[j];
       printf("             %s \n", reader[rID]->GetFileName().c_str());
-
-      uLong hitCount = reader[rID]->GetHitCount();
-      for( uLong k = 0; k < (hitCount < 5 ? hitCount : 10); k++){ reader[rID]->GetHit(k).Print(); }
+      reader[rID]->PrintHit(10, 0);
     }
   }
 
@@ -198,12 +194,12 @@ int main(int argc, char **argv) {
   //unsigned short  traceLength[MAX_MULTI] = {0};
   //TGraph * trace = nullptr;
 
-  if( traceOn ) {
+  // if( traceOn ) {
     // arrayTrace = new TClonesArray("TGraph");
     // tree->Branch("traceLength", traceLength, "traceLength[multi]/s");
     // tree->Branch("trace",       arrayTrace, 2560000);
     // arrayTrace->BypassStreamer();
-  }
+  // }
 
 
   //*====================================== build events

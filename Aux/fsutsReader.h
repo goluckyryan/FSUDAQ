@@ -26,7 +26,7 @@ class FSUTSReader{
     int  ReadHitAt(unsigned int ID, bool withTrace = true, int verbose = 0);
 
     unsigned int  GetHitID()  const {return hitIndex;}
-    unsigned long GetNumHit() const {return numHit;}
+    unsigned long GetNumHit() const {return hitCount;}
 
     std::string   GetFileName()     const {return fileName;}
     unsigned long GetFileByteSize() const {return inFileSize;}
@@ -43,7 +43,7 @@ class FSUTSReader{
     std::string fileName;
     unsigned long inFileSize;
     unsigned int  filePos;
-    unsigned long numHit;
+    unsigned long hitCount;
 
     uShort sn;
     int order;
@@ -114,7 +114,7 @@ inline void FSUTSReader::OpenFile(std::string fileName, int verbose){
   fseek(inFile, 0L, SEEK_SET);
   filePos = 0;
 
-  numHit = 0;
+  hitCount = 0;
   hitIndex = -1;
   hitStartPos.clear();
   hit = new Hit();
@@ -174,8 +174,8 @@ inline int FSUTSReader::ReadNextHit(bool withTrace, int verbose){
 }
 
 inline int FSUTSReader::ReadHitAt(unsigned int ID, bool withTrace, int verbose){
-  if( numHit == 0 ) return -1;
-  if( ID >= numHit ) return -1;
+  if( hitCount == 0 ) return -1;
+  if( ID >= hitCount ) return -1;
 
   fseek(inFile, 0L, SEEK_SET);
 
@@ -208,8 +208,8 @@ inline void FSUTSReader::ScanFile(int verbose){
     if(verbose) printf(" %u, %.2f%% %u/%lu\n\033[A\r", hitIndex, filePos*100./inFileSize, filePos, inFileSize);
   }
 
-  numHit = hitIndex + 1;
-  if(verbose) printf("-----> Scan complete: number of hit : %lu\n", numHit);
+  hitCount = hitIndex + 1;
+  if(verbose) printf("-----> Scan complete: number of hit : %lu\n", hitCount);
 
   rewind(inFile);
   dummy = fread(&header, 4, 1, inFile);

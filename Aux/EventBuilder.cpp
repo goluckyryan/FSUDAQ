@@ -226,7 +226,6 @@ int main(int argc, char **argv) {
     }
   }
 
-
   // //*====================================== create tree
   TFile * outRootFile = new TFile(outFileName, "recreate");
   TTree * tree = new TTree("tree", outFileName);
@@ -358,7 +357,6 @@ int main(int argc, char **argv) {
 
     }
 
-
     if( hasEvent ){
       outRootFile->cd();
       tree->Fill();
@@ -419,7 +417,6 @@ int main(int argc, char **argv) {
     if( gpCount == (int) group.size() ) break;
 
   }while(true);
-
 
   tree->Write();
 

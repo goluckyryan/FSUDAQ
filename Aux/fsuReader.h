@@ -14,7 +14,7 @@ class FSUReader{
     bool isOpen() const{return inFile == nullptr ? false : true;}
 
     void ScanNumBlock(int verbose = 1, uShort saveData = 0);
-    int  ReadNextBlock(bool skipTrace= false, int verbose = 0, uShort saveData = 0); // saveData = 0 (no save), 1 (no trace), 2 (with trace);
+    int  ReadNextBlock(bool traceON = false, int verbose = 0, uShort saveData = 0); // saveData = 0 (no save), 1 (no trace), 2 (with trace);
     int  ReadBlock(unsigned int ID, int verbose = 0);
 
     unsigned long GetTotNumBlock() const{ return totNumBlock;}
@@ -32,16 +32,22 @@ class FSUReader{
     unsigned long GetFileByteSize() const {return inFileSize;}
 
     void ClearHitList() { hit.clear();}
-    Hit GetHit(int id) const {return hit[id];}
+    Hit GetHit(unsigned int id) const {return hit[id];}
     ulong GetHitListLength() const {return hit.size();}
  
-    void ClearHitCount() {numHit = 0;}
-    ulong GetHitCount() const{ return numHit;}
+    void ClearHitCount() {hitCount = 0;}
+    ulong GetHitCount() const{return hitCount;}
     std::vector<Hit> GetHitVector() const {return hit;}
     void SortHit(int verbose = false);
 
     std::string SaveHit2NewFile(std::string saveFolder = "./");
     off_t GetTSFileSize() const {return tsFileSize;}
+
+    void PrintHit(ulong numHit = -1, ulong startIndex = 0) {
+      for( ulong i = startIndex; i < std::min(numHit, hitCount); i++){
+        printf("%10zu ", i); hit[i].Print();
+      }
+    }
 
   private:
 
@@ -66,7 +72,7 @@ class FSUReader{
     std::vector<unsigned int> blockPos;
     std::vector<unsigned int > blockTimeStamp;
 
-    unsigned long numHit;
+    unsigned long hitCount;
 
     std::vector<Hit> hit;
 
@@ -122,7 +128,7 @@ inline void FSUReader::OpenFile(std::string fileName, uShort dataSize, int verbo
   blockPos.clear();
   blockTimeStamp.clear();
 
-  numHit = 0;
+  hitCount = 0;
   hit.clear();
 
   //check is the file is *.fsu or *.fsu.X
@@ -172,7 +178,7 @@ inline void FSUReader::OpenFile(std::string fileName, uShort dataSize, int verbo
 
 }
 
-inline int FSUReader::ReadNextBlock(bool skipTrace, int verbose, uShort saveData){
+inline int FSUReader::ReadNextBlock(bool traceON, int verbose, uShort saveData){
   if( inFile == NULL ) return -1;
   if( feof(inFile) ) return -1;
   if( filePos >= inFileSize) return -1;
@@ -199,7 +205,7 @@ inline int FSUReader::ReadNextBlock(bool skipTrace, int verbose, uShort saveData
       return -30;
     }
 
-    data->DecodeBuffer(buffer, aggSize, skipTrace, verbose); // data will own the buffer
+    data->DecodeBuffer(buffer, aggSize, !traceON, verbose); // data will own the buffer
 
   }else if( (header & 0xF ) == 0x8 ) { /// dual channel header
 
@@ -209,7 +215,7 @@ inline int FSUReader::ReadNextBlock(bool skipTrace, int verbose, uShort saveData
     filePos = ftell(inFile);
 
     data->buffer = buffer;
-    data->DecodeDualBlock(buffer, dualSize, DPPType, chMask, skipTrace, verbose);    
+    data->DecodeDualBlock(buffer, dualSize, DPPType, chMask, !traceON, verbose);    
 
   }else{
     printf("incorrect header.\n trminate.");
@@ -219,30 +225,35 @@ inline int FSUReader::ReadNextBlock(bool skipTrace, int verbose, uShort saveData
   for( int ch = 0; ch < data->GetNChannel(); ch++){
     if( data->NumEventsDecoded[ch] == 0 ) continue;
 
-    numHit += data->NumEventsDecoded[ch];
+    hitCount += data->NumEventsDecoded[ch];
 
     if( saveData ){
       int start = data->DataIndex[ch] - data->NumEventsDecoded[ch] + 1;
-      int stop  = data->DataIndex[ch];
+      if( start < 0 ) start = start + data->GetDataSize();
 
-      for( int i = start; i <= stop; i++ ){
-        i = i % data->GetDataSize();
+      for( int i = start; i < start + data->NumEventsDecoded[ch]; i++ ){
+        int k  = i % data->GetDataSize();
         
         temp.sn = sn;
         temp.ch = ch;
-        temp.energy = data->Energy[ch][i];
-        temp.energy2 = data->Energy2[ch][i];
-        temp.timestamp = data->Timestamp[ch][i];
-        temp.fineTime = data->fineTime[ch][i];
+        temp.energy = data->Energy[ch][k];
+        temp.energy2 = data->Energy2[ch][k];
+        temp.timestamp = data->Timestamp[ch][k];
+        temp.fineTime = data->fineTime[ch][k];
         if( saveData > 1 ) {
-          temp.traceLength = data->Waveform1[ch][i].size();
-          temp.trace = data->Waveform1[ch][i];
+          temp.traceLength = data->Waveform1[ch][k].size();
+          temp.trace = data->Waveform1[ch][k];
         }else{
           temp.traceLength = 0;
           if( temp.trace.size() > 0 ) temp.trace.clear();
         }
 
         hit.push_back(temp);
+
+        // if( data->Timestamp[ch][k] == 0 ){
+        //   printf("-------- %lu \n", blockID);
+        //   return 1;
+        // }
 
       }
     }
@@ -290,7 +301,7 @@ inline void FSUReader::ScanNumBlock(int verbose, uShort saveData){
   fseek(inFile, 0L, SEEK_SET);
   filePos = 0;
 
-  while( ReadNextBlock(saveData < 2 ? true : false, verbose - 1, saveData) == 0 ){
+  while( ReadNextBlock(saveData < 2 ? false : true, verbose - 1, saveData) == 0 ){
     blockPos.push_back(filePos);
     blockTimeStamp.push_back(data->aggTime);
     blockID ++;
@@ -300,7 +311,7 @@ inline void FSUReader::ScanNumBlock(int verbose, uShort saveData){
   totNumBlock = blockID;
   if(verbose) {
     printf("\nScan complete: number of data Block : %lu\n", totNumBlock);
-    printf(  "                      number of hit : %lu\n", numHit);
+    printf(  "                      number of hit : %lu\n", hitCount);
 
     if( saveData ){
       size_t sizeT = sizeof(hit[0]) * hit.size();
@@ -311,8 +322,12 @@ inline void FSUReader::ScanNumBlock(int verbose, uShort saveData){
   blockID = 0;  
   filePos = 0;
 
-  SortHit(verbose);
-
+  //check is the hitCount == hit.size();
+  if( hitCount != hit.size() ){
+    printf("!!!!!! the Data::dataSize is not big enough. !!!!!!!!!!!!!!!\n");
+  }else{
+    SortHit(verbose);
+  }
 }
 
 inline std::string FSUReader::SaveHit2NewFile(std::string saveFolder){
@@ -351,9 +366,9 @@ inline std::string FSUReader::SaveHit2NewFile(std::string saveFolder){
   header += sn;
   fwrite( &header, 4, 1, outFile );
 
-  for( ulong i = 0; i < numHit; i++){
+  for( ulong i = 0; i < hitCount; i++){
 
-    printf("Saving %lu/%lu (%.2f%%)\n\033[A\r", i, numHit, i*100./numHit);
+    printf("Saving %lu/%lu (%.2f%%)\n\033[A\r", i, hitCount, i*100./hitCount);
 
     fwrite( &(hit[i].sn), 2, 1, outFile);
     fwrite( &(hit[i].ch), 1, 1, outFile);
