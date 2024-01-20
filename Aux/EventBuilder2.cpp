@@ -29,7 +29,7 @@ struct FileInfo {
   void CalOrder(){ ID = ORDERSHIFT * SN + order; }
 
   void Print(){
-    printf(" %10lu | %3d | %50s | %2d | %6lu | %u Bytes = %.2f MB\n", 
+    printf(" %10lu | %3d | %50s | %2d | %6lu | %10u Bytes = %.2f MB\n", 
             ID, DPPType, fileName.c_str(), tick2ns, hitCount, fileSize, fileSize/1024./1024.);  
   }
 };
@@ -106,48 +106,82 @@ int main(int argc, char **argv) {
   printf("===================================== Load the files\n");  
 
   //check if all input files is ts file;
-  // bool isTSFiles = false;
-  // int count = 0;
-  // for( int i = 0; i < nFile; i++){
-  //   FILE * temp = fopen(inFileName[i].Data(), "r");
-  //   uint32_t header;
-  //   size_t dummy = fread(&header, 4, 1, temp);
-  //   if( (header >> 24) != 0xAA ){ count++; }
-  // }
-  // if( count == nFile ) isTSFiles = true;
+  bool isTSFiles = false;
+  int count = 0;
+  for( int i = 0; i < nFile; i++){
+    FILE * temp = fopen(inFileName[i].Data(), "r");
+    uint32_t header;
+    fread(&header, 4, 1, temp);
+    if( (header >> 24) == 0xAA ) count++; 
+  }
+  if( count == nFile ) isTSFiles = true;
 
-  ///============= sorting file by the serial number & order
   std::vector<FileInfo> fileInfo; 
 
-  FSUReader ** reader = new FSUReader*[nFile];
-  // file name format is expName_runID_SN_DPP_tick2ns_order.fsu
-  for( int i = 0; i < nFile; i++){
-    printf("Processing %s (%d/%d) ..... \n", inFileName[i].Data(), i+1, nFile);
-    reader[i] = new FSUReader(inFileName[i].Data(), 1, false);
-    if( !reader[i]->isOpen() ) continue;
+  if( !isTSFiles ){
+    printf("######### All files are not time-sorted files\n");
 
-    reader[i]->ScanNumBlock(false, 2); 
+    ///============= sorting file by the serial number & order
+    FSUReader ** reader = new FSUReader*[nFile];
+    // file name format is expName_runID_SN_DPP_tick2ns_order.fsu
+    for( int i = 0; i < nFile; i++){
+      printf("Processing %s (%d/%d) ..... \n", inFileName[i].Data(), i+1, nFile);
+      reader[i] = new FSUReader(inFileName[i].Data(), 1, false);
+      if( !reader[i]->isOpen() ) continue;
+
+      reader[i]->ScanNumBlock(false, 2); 
+    
+      std::string outFileName = reader[i]->SaveHit2NewFile(tempFolder);
+
+      FileInfo tempInfo;
+      tempInfo.fileName = outFileName;
+      tempInfo.readerID = i;
+      tempInfo.SN = reader[i]->GetSN();
+      tempInfo.hitCount = reader[i]->GetHitCount();
+      tempInfo.fileSize = reader[i]->GetTSFileSize();
+      tempInfo.tick2ns = reader[i]->GetTick2ns();
+      tempInfo.DPPType = reader[i]->GetDPPType();
+      tempInfo.order = reader[i]->GetFileOrder();
+      tempInfo.CalOrder();
+
+      tempInfo.t0 = reader[i]->GetHit(0).timestamp;
+
+      fileInfo.push_back(tempInfo);
+    
+      delete reader[i];
+    }
+    delete [] reader;
+
+  }else{
+
+    printf("######### All files are time sorted files\n");
+
+    FSUTSReader ** reader = new FSUTSReader*[nFile];
+    // file name format is expName_runID_SN_DPP_tick2ns_order.fsu
+    for( int i = 0; i < nFile; i++){
+      printf("Processing %s (%d/%d) ..... \n", inFileName[i].Data(), i+1, nFile);
+      reader[i] = new FSUTSReader(inFileName[i].Data(), false);
+
+      reader[i]->ScanFile(0); 
   
-    std::string outFileName = reader[i]->SaveHit2NewFile(tempFolder);
+      FileInfo tempInfo;
+      tempInfo.fileName = inFileName[i].Data();
+      tempInfo.readerID = i;
+      tempInfo.SN = reader[i]->GetSN();
+      tempInfo.hitCount = reader[i]->GetNumHit();
+      tempInfo.fileSize = reader[i]->GetFileByteSize();
+      tempInfo.order = reader[i]->GetFileOrder();
+      tempInfo.CalOrder();
 
-    FileInfo tempInfo;
-    tempInfo.fileName = outFileName;
-    tempInfo.readerID = i;
-    tempInfo.SN = reader[i]->GetSN();
-    tempInfo.hitCount = reader[i]->GetHitCount();
-    tempInfo.fileSize = reader[i]->GetTSFileSize();
-    tempInfo.tick2ns = reader[i]->GetTick2ns();
-    tempInfo.DPPType = reader[i]->GetDPPType();
-    tempInfo.order = reader[i]->GetFileOrder();
-    tempInfo.CalOrder();
+      tempInfo.t0 = reader[i]->GetT0();;
 
-    tempInfo.t0 = reader[i]->GetHit(0).timestamp;
+      fileInfo.push_back(tempInfo);
+    
+      delete reader[i];
+    }
+    delete [] reader;
 
-    fileInfo.push_back(tempInfo);
-  
-    delete reader[i];
   }
-  delete [] reader;
 
   std::sort(fileInfo.begin(), fileInfo.end(), [](const FileInfo& a, const FileInfo& b) {
     return a.ID < b.ID;

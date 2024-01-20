@@ -26,7 +26,7 @@ struct FileInfo {
   void CalOrder(){ ID = ORDERSHIFT * SN + order; }
 
   void Print(){
-    printf("%6d | %3d | %30s | %2d | %6lu | %u Bytes = %.2f MB\n", 
+    printf("%6d | %3d | %50s | %2d | %6lu | %10u Bytes = %.2f MB\n", 
             ID, DPPType, fileName.Data(), tick2ns, hitCount, fileSize, fileSize/1024./1024.);  
   }
 };

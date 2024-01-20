@@ -15,23 +15,25 @@ class FSUTSReader{
 
   public:
     FSUTSReader();
-    FSUTSReader(std::string fileName, int verbose = true);
+    FSUTSReader(std::string fileName, int verbose = 1);
     ~FSUTSReader();
 
-    void OpenFile(std::string fileName, int verbose = true);
+    void OpenFile(std::string fileName, int verbose = 1);
     bool isOpen() const{return inFile == nullptr ? false : true;}
 
-    void ScanFile(int verbose = true);
+    void ScanFile(int verbose = 1);
     int  ReadNextHit(bool withTrace = true, int verbose = 0);
     int  ReadHitAt(unsigned int ID, bool withTrace = true, int verbose = 0);
 
-    unsigned int GetHitID() const{return hitIndex;}
-    unsigned long GetNumHit() const{ return numHit;}
+    unsigned int  GetHitID()  const {return hitIndex;}
+    unsigned long GetNumHit() const {return numHit;}
 
-    std::string   GetFileName() const{return fileName;}
+    std::string   GetFileName()     const {return fileName;}
     unsigned long GetFileByteSize() const {return inFileSize;}
-    int           GetSN()        const{return sn;}
-
+    int           GetFileOrder()    const {return order;}  
+    uShort        GetSN()           const {return sn;}
+    ullong        GetT0()           const {return t0;}
+    
     Hit* GetHit() const{return hit;}
 
   private:
@@ -43,11 +45,14 @@ class FSUTSReader{
     unsigned int  filePos;
     unsigned long numHit;
 
-    ushort sn;
+    uShort sn;
+    int order;
 
     Hit* hit;
     unsigned int  hitIndex;
     std::vector<unsigned int> hitStartPos;
+
+    unsigned long long t0;
 
     uint32_t header;
     size_t dummy;
@@ -84,6 +89,24 @@ inline void FSUTSReader::OpenFile(std::string fileName, int verbose){
   }
 
   this->fileName = fileName;
+
+  std::string fileNameNoExt;
+  size_t found = fileName.find_last_of(".fsu.ts");
+  size_t found2 = fileName.find_last_of('/');
+  if( found2 == std::string::npos ){
+    fileNameNoExt = fileName.substr(0, found-7);
+  }else{
+    fileNameNoExt = fileName.substr(found2+1, found-7);
+  }
+
+  // Split the string by underscores
+  std::istringstream iss(fileNameNoExt);
+  std::vector<std::string> tokens;
+  std::string token;
+
+  while (std::getline(iss, token, '_')) { tokens.push_back(token); }
+  sn = atoi(tokens[2].c_str());
+  order = atoi(tokens[5].c_str());
 
   fseek(inFile, 0L, SEEK_END);
   inFileSize = ftell(inFile);
@@ -177,6 +200,8 @@ inline void FSUTSReader::ScanFile(int verbose){
 
   while( ReadNextHit(false, verbose-1) == 0 ){ // no trace
     hitStartPos.push_back(filePos);
+
+    if( hitIndex == 0 ) t0 = hit->timestamp;
 
     if(verbose > 1 ) printf("hitIndex : %u, Pos : %u - %u\n" , hitIndex, hitStartPos[hitIndex], hitStartPos[hitIndex+1]);
 
