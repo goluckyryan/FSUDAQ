@@ -1,6 +1,5 @@
-#include "../ClassData.h"
-#include "../MultiBuilder.h"
 #include "fsuReader.h"
+#include "fsutsReader.h"
 
 #include "TROOT.h"
 #include "TSystem.h"
@@ -10,11 +9,41 @@
 #include "TTree.h"
 
 #define MAX_MULTI  100
-#define TIMEJUMP 1e8 // 0.1 sec or 10 Hz, any signal less than 10 Hz should increase the value.
 
-template<typename T> void swap(T * a, T *b );
-int partition(int arr[], int kaka[], TString file[], unsigned int fileSize[], unsigned int numBlock[], int t2ns[], int start, int end);
-void quickSort(int arr[], int kaka[], TString file[], unsigned int fileSize[], unsigned int numBlock[], int t2ns[], int start, int end);
+#define ORDERSHIFT 100000
+
+struct FileInfo {
+  std::string fileName;
+  unsigned int fileSize;
+  unsigned int SN;
+  unsigned long hitCount;
+  unsigned short DPPType;
+  unsigned short tick2ns;
+  unsigned short order;
+  unsigned short readerID;
+
+  unsigned long long t0;
+
+  unsigned long ID; // sn + 100000 * order
+
+  void CalOrder(){ ID = ORDERSHIFT * SN + order; }
+
+  void Print(){
+    printf(" %10lu | %3d | %50s | %2d | %6lu | %10u Bytes = %.2f MB\n", 
+            ID, DPPType, fileName.c_str(), tick2ns, hitCount, fileSize, fileSize/1024./1024.);  
+  }
+};
+
+struct GroupInfo{
+
+  std::vector<unsigned short> fileIDList;
+  uInt sn;
+  unsigned short currentID ; // the ID of the readerIDList;
+  ulong hitCount ; // this is the hitCount for the currentID;
+  uInt usedHitCount ;
+  bool finished;
+
+};
 
 //^#############################################################
 //^#############################################################
@@ -25,16 +54,17 @@ int main(int argc, char **argv) {
   printf("=========================================\n");  
   if (argc <= 3)    {
     printf("Incorrect number of arguments:\n");
-    printf("%s [timeWindow] [Buffer] [traceOn/Off] [verbose] [inFile1]  [inFile2] .... \n", argv[0]);
+    printf("%s [timeWindow] [withTrace] [verbose] [tempFolder] [inFile1]  [inFile2] .... \n", argv[0]);
     printf("    timeWindow : in ns \n");   
-    printf("        Buffer : Fraction of %d, recommand 0.4 \n", DefaultDataSize);   
-    printf("   traceOn/Off : is traces stored \n");   
+    printf("     withTrace : 0 for no trace, 1 for trace \n");   
     printf("       verbose : > 0 for debug  \n");   
+    printf("    tempFolder : temperary folder for file breakdown  \n");   
     printf("    Output file name is contructed from inFile1 \n");   
     printf("\n");
-    printf("  * there is a TIMEJUMP = 1e8 ns in EventBuilder.cpp.\n");
-    printf("       This control the time diff for a time jumping.\n");
-    printf("       Any signal with trigger rate < 1/TIMEJUMP should increase the value.\n");
+    printf("=========================== Working flow\n");
+    printf("  1) Break down the fsu files into dual channel, save in tempFolder as *.fsu.X\n");
+    printf("  2) Load the *.fsu.X files and do the event building\n");
+    printf("\n\n");
     return 1;
   }
 
@@ -48,20 +78,19 @@ int main(int argc, char **argv) {
   
   ///============= read input
   unsigned int  timeWindow = atoi(argv[1]);
-  float bufferSize = atof(argv[2]);
-  bool traceOn = atoi(argv[3]);
-  unsigned int debug = atoi(argv[4]);
+  bool traceOn = atoi(argv[2]);
+  unsigned int debug = atoi(argv[3]);
+  std::string tempFolder = argv[4];
   int nFile = argc - 5;
   TString inFileName[nFile];
-  for( int i = 0 ; i < nFile ; i++){
-    inFileName[i] = argv[i+5];
-  }
+  for( int i = 0 ; i < nFile ; i++){ inFileName[i] = argv[i+5];}
   
   /// Form outFileName;
   TString outFileName = inFileName[0];
   int pos = outFileName.Index("_");
   pos = outFileName.Index("_", pos+1);
   outFileName.Remove(pos);  
+  outFileName += "_" + std::to_string(timeWindow);
   outFileName += ".root";
   printf("-------> Out file name : %s \n", outFileName.Data());
   
@@ -70,402 +99,341 @@ int main(int argc, char **argv) {
   for( int i = 0; i < nFile; i++) printf("%2d | %s \n", i, inFileName[i].Data());
   printf("=====================================\n");  
   printf(" Time Window = %u ns = %.1f us\n", timeWindow, timeWindow/1000.);
-  printf(" Buffer size = %.0f event/channel\n", DefaultDataSize * bufferSize);
-  printf("===================================== input files:\n");  
-  printf("Scanning files.....\n");
+  //printf(" Buffer size = %.0f event/channel\n", MaxNData * bufferSize);
+  printf("===================================== Breaking down files\n");  
+  
+  ///========================================
+  printf("===================================== Load the files\n");  
 
-  ///============= sorting file by the serial number & order
-  int ID[nFile]; /// serial+ order*1000;
-  int type[nFile];
-  unsigned int fileSize[nFile];
-  unsigned int numBlock[nFile];
-  int tick2ns[nFile];
-  // file name format is expName_runID_SN_DPP_tick2ns_order.fsu
+  //check if all input files is ts file;
+  bool isTSFiles = false;
+  int count = 0;
   for( int i = 0; i < nFile; i++){
-  
-    FSUReader * reader = new FSUReader(inFileName[i].Data(), false);
-    reader->ScanNumBlock(false);
-    numBlock[i] = reader->GetTotNumBlock();
-    fileSize[i] = reader->GetFileByteSize();
-    tick2ns[i] = reader->GetTick2ns();
-    type[i] = reader->GetDPPType();
-
-    int sn = reader->GetSN();
-    int order = reader->GetFileOrder();
-
-    ID[i] = sn + order * 100000;
-
-    delete reader;
-  
+    FILE * temp = fopen(inFileName[i].Data(), "r");
+    uint32_t header;
+    fread(&header, 4, 1, temp);
+    if( (header >> 24) == 0xAA ) count++; 
   }
-  quickSort(&(ID[0]), &(type[0]), &(inFileName[0]), &(fileSize[0]), &(numBlock[0]), &(tick2ns[0]), 0, nFile-1);
-  unsigned int totBlock = 0;
+  if( count == nFile ) isTSFiles = true;
+
+  std::vector<FileInfo> fileInfo; 
+
+  if( !isTSFiles ){
+    printf("######### All files are not time-sorted files\n");
+
+    ///============= sorting file by the serial number & order
+    FSUReader ** reader = new FSUReader*[nFile];
+    // file name format is expName_runID_SN_DPP_tick2ns_order.fsu
+    for( int i = 0; i < nFile; i++){
+      printf("Processing %s (%d/%d) ..... \n", inFileName[i].Data(), i+1, nFile);
+      reader[i] = new FSUReader(inFileName[i].Data(), 1, false);
+      if( !reader[i]->isOpen() ) continue;
+
+      reader[i]->ScanNumBlock(false, 2); 
+    
+      std::string outFileName = reader[i]->SaveHit2NewFile(tempFolder);
+
+      FileInfo tempInfo;
+      tempInfo.fileName = outFileName;
+      tempInfo.readerID = i;
+      tempInfo.SN = reader[i]->GetSN();
+      tempInfo.hitCount = reader[i]->GetHitCount();
+      tempInfo.fileSize = reader[i]->GetTSFileSize();
+      tempInfo.tick2ns = reader[i]->GetTick2ns();
+      tempInfo.DPPType = reader[i]->GetDPPType();
+      tempInfo.order = reader[i]->GetFileOrder();
+      tempInfo.CalOrder();
+
+      tempInfo.t0 = reader[i]->GetHit(0).timestamp;
+
+      fileInfo.push_back(tempInfo);
+    
+      delete reader[i];
+    }
+    delete [] reader;
+
+  }else{
+
+    printf("######### All files are time sorted files\n");
+
+    FSUTSReader ** reader = new FSUTSReader*[nFile];
+    // file name format is expName_runID_SN_DPP_tick2ns_order.fsu
+    for( int i = 0; i < nFile; i++){
+      printf("Processing %s (%d/%d) ..... \n", inFileName[i].Data(), i+1, nFile);
+      reader[i] = new FSUTSReader(inFileName[i].Data(), false);
+
+      reader[i]->ScanFile(0); 
+  
+      FileInfo tempInfo;
+      tempInfo.fileName = inFileName[i].Data();
+      tempInfo.readerID = i;
+      tempInfo.SN = reader[i]->GetSN();
+      tempInfo.hitCount = reader[i]->GetNumHit();
+      tempInfo.fileSize = reader[i]->GetFileByteSize();
+      tempInfo.order = reader[i]->GetFileOrder();
+      tempInfo.CalOrder();
+
+      tempInfo.t0 = reader[i]->GetT0();;
+
+      fileInfo.push_back(tempInfo);
+    
+      delete reader[i];
+    }
+    delete [] reader;
+
+  }
+
+  std::sort(fileInfo.begin(), fileInfo.end(), [](const FileInfo& a, const FileInfo& b) {
+    return a.ID < b.ID;
+  });
+  
+  unsigned int totHitCount = 0;
+  
+  printf("===================================== number of file %d.\n", nFile);  
   for( int i = 0 ; i < nFile; i++){
-    printf("%d | %6d | %3d | %30s | %2d | %6u | %u Bytes = %.2f MB\n", i, 
-                ID[i], type[i], inFileName[i].Data(), tick2ns[i], numBlock[i], fileSize[i], fileSize[i]/1024./1024.);
-    totBlock += numBlock[i];
+    printf("%d |", i);
+    fileInfo[i].Print();
+    totHitCount += fileInfo[i].hitCount;
+    //printf(" %30s | ID %10ld \n", fileInfo[i].fileName.Data(), fileInfo[i].ID);
   }
 
-  printf("----- total number of block : %u.\n", totBlock);
-  
+  printf("----- total number of hit : %u.\n", totHitCount);
+
   //*======================================= Sort files into groups 
-  std::vector<int> snList; // store the serial number of the group
-  std::vector<int> typeList; // store the DPP type of the group
-  std::vector<std::vector<TString>> fileList; // store the file list of the group
-  std::vector<int> t2nsList;
+  std::vector<GroupInfo> group; // group by SN and chMask
+
   for( int i = 0; i < nFile; i++){
-    if( ID[i] / 100000 == 0 ) {
-      std::vector<TString> temp = {inFileName[i]};
-      fileList.push_back(temp);
-      typeList.push_back(type[i]);
-      snList.push_back(ID[i]%100000);
-      t2nsList.push_back(tick2ns[i]);
+    if( i == 0 || group.back().sn != fileInfo[i].SN  ){
+      group.push_back(GroupInfo());
+      group.back().fileIDList.push_back(i); // an empty struct
+      group.back().currentID = 0;
+      group.back().hitCount = fileInfo[i].hitCount;
+      group.back().sn = fileInfo[i].SN;
+      group.back().finished = false;
+
     }else{
-      for( int p = 0; p < (int) snList.size(); p++){
-        if( (ID[i] % 1000) == snList[p] ) {
-          fileList[p].push_back(inFileName[i]);
-        } 
-      }
+      group.back().fileIDList.push_back(i);
     }
   }
-  
-  int nGroup = snList.size();
+
+  int nGroup = group.size();
   printf("===================================== number of file Group by digitizer %d.\n", nGroup);  
   for( int i = 0; i < nGroup; i++){
-    printf("............ Digi-%d \n", snList[i]);
-    for( int j = 0; j< (int) fileList[i].size(); j++){
-      printf(" %s | %d\n", fileList[i][j].Data(), typeList[i]);
+    printf(" Digi-%d, DPPType: %d \n", group[i].sn, fileInfo[group[i].currentID].DPPType);
+    for( int j = 0; j< (int) group[i].fileIDList.size(); j++){
+      uShort fID = group[i].fileIDList[j];
+      printf("             %s \n", fileInfo[fID].fileName.c_str());
     }
   }
 
 
-  //*======================================= open raw files 
-  printf("##############################################\n"); 
-  /// for each detector, open it
-  std::vector<int> inFileIndex(nGroup); // the index of the the opened file for each group
-  FILE ** inFile = new FILE *[nGroup];
-  Data ** data = new Data *[nGroup];
-  for( int i = 0; i < nGroup; i++){
-    inFile[i] = fopen(fileList[i][0], "r");
-    if( inFile[i] ){
-      inFileIndex[i] = 0;
-      if( typeList[i] == DPPType::DPP_PHA_CODE || typeList[i] == DPPType::DPP_PSD_CODE ) data[i] = new Data(16);
-      if( typeList[i] == DPPType::DPP_QDC_CODE ) data[i] = new Data(64);
-      data[i]->DPPType = typeList[i];
-      data[i]->boardSN = snList[i];
-      data[i]->tick2ns = t2nsList[i];
-    }else{
-      inFileIndex[i] = -1;
-      data[i] = nullptr;
-    }
-  }
-
-  //*====================================== create tree
+  // //*====================================== create tree
   TFile * outRootFile = new TFile(outFileName, "recreate");
   TTree * tree = new TTree("tree", outFileName);
 
-  unsigned long long                evID = -1;
-  unsigned short                   multi = 0;
+  unsigned long long                evID = 0;
+  unsigned int                     multi = 0;
   unsigned short           sn[MAX_MULTI] = {0}; /// board SN
   unsigned short           ch[MAX_MULTI] = {0}; /// chID
   unsigned short            e[MAX_MULTI] = {0}; /// 15 bit
   unsigned short           e2[MAX_MULTI] = {0}; /// 15 bit
   unsigned long long      e_t[MAX_MULTI] = {0}; /// timestamp 47 bit
   unsigned short          e_f[MAX_MULTI] = {0}; /// fine time 10 bit 
+  unsigned short  traceLength[MAX_MULTI];
 
   tree->Branch("evID",           &evID, "event_ID/l"); 
-  tree->Branch("multi",         &multi, "multi/s"); 
+  tree->Branch("multi",         &multi, "multi/i"); 
   tree->Branch("sn",                sn, "sn[multi]/s");
   tree->Branch("ch",                ch, "ch[multi]/s");
   tree->Branch("e",                  e, "e[multi]/s");
   tree->Branch("e2",                e2, "e2[multi]/s");
   tree->Branch("e_t",              e_t, "e_timestamp[multi]/l");
   tree->Branch("e_f",              e_f, "e_timestamp[multi]/s");
+  tree->Branch("traceLength", traceLength, "traceLength[multi]/s");
   
   TClonesArray * arrayTrace = nullptr;
-  unsigned short  traceLength[MAX_MULTI] = {0};
   TGraph * trace = nullptr;
 
   if( traceOn ) {
     arrayTrace = new TClonesArray("TGraph");
-    tree->Branch("traceLength", traceLength, "traceLength[multi]/s");
     tree->Branch("trace",       arrayTrace, 2560000);
     arrayTrace->BypassStreamer();
   }
 
+  //*======================================= Open time-sorted files
+  printf("===================================== Open time-sorted files.\n"); 
+
+  FSUTSReader ** tsReader = new FSUTSReader * [nGroup];
+  for( int i = 0; i < nGroup; i++){
+    std::string fileName = fileInfo[group[i].fileIDList[0]].fileName;
+    tsReader[i] = new FSUTSReader(fileName);
+
+    tsReader[i]->ScanFile(1);
+
+    group[i].usedHitCount = 0;
+  }
 
   //*====================================== build events
   printf("================= Building events....\n");
-  MultiBuilder * mb = new MultiBuilder(data, typeList, snList);
-  mb->SetTimeWindow(timeWindow);
-  mb->SetTimeJump(TIMEJUMP);
+  
+  uInt hitProcessed = 0;
 
-  ///------------------ read data
-  char * buffer = nullptr;
-  unsigned int word[1]; // 4 byte = 32 bit
+  //find the earliest time
+  ullong t0 = -1;
+  uShort gp0 = -1;
 
-  int lastDataIndex[nGroup][MAX_MULTI]; // keep track of the DataIndex
-  int lastLoopIndex[nGroup][MAX_MULTI]; // keep track of the LoopIndex
-  int aggCount[nGroup];
+  bool hasEvent = false;
 
   for( int i = 0; i < nGroup; i++){
-    aggCount[i] = 0;
-    for( int j = 0; j < MAX_MULTI; j++){
-      lastDataIndex[i][j] = 0;
-      lastLoopIndex[i][j] = 0;
+    if( fileInfo[group[i].fileIDList[0]].t0 < t0 ) {
+      t0 = fileInfo[group[i].fileIDList[0]].t0;
+      gp0 = i;
     }
-  }
+  } 
+
+  if( debug ) printf("First timestamp is %llu, group : %u\n", t0, gp0);
+
+  unsigned int maxUInt = -1;
 
   do{
 
-    /// fill the data class with some agg;
-    bool fillFlag = true;
-    do{
+    if( debug ) printf("################################ ev build %llu \n", evID);
 
-      // Get many agg. from each file.
-      for ( int i = 0; i < nGroup; i++){
-        if( inFile[i] == nullptr ) continue;
+    ///===================== check if the file is finished.
+    for( int i = 0; i < nGroup; i++){
+      uShort gpID = (i + gp0) % nGroup;
 
-        size_t dummy = fread(word, 4, 1, inFile[i]);
-        if( dummy != 1) {
-          //printf("fread error, should read 4 bytes, but read %ld x 4 byte, file pos: %ld byte (%s)\n", dummy, ftell(inFile[i]), fileList[i][inFileIndex[i]].Data());
-          // go to next file in same digitizer
-          if( feof(inFile[i])){
-            fclose(inFile[i]);
-            if( inFileIndex[i] + 1 < (int) fileList[i].size() ){
-              inFile[i] = fopen(fileList[i][inFileIndex[i]+1], "r");
-              inFileIndex[i]++;
-              printf("---- go to next file for digi-%d\n", snList[i]);
-            }else{
-              inFile[i] = nullptr;
-              inFileIndex[i] = -1;
-              printf("---- no more file for digi-%d.\n", snList[i]);
-              continue;
+      if( group[gpID].finished ) continue;
+
+      short endCount = 0;
+
+      do{
+
+        if( group[gpID].usedHitCount > tsReader[gpID]->GetHitID() || tsReader[gpID]->GetHitID() == maxUInt){
+          if( tsReader[gpID]->ReadNextHit(traceOn, 0) == 0 ){ 
+            hitProcessed ++;
+            if( debug ){ printf("............ Get Data | "); tsReader[gpID]->GetHit()->Print();}
+          }
+        }
+
+        if( tsReader[gpID]->GetHit()->timestamp - t0 <= timeWindow ) {
+
+          sn[multi] = tsReader[gpID]->GetHit()->sn;
+          ch[multi] = tsReader[gpID]->GetHit()->ch;
+          e[multi] = tsReader[gpID]->GetHit()->energy;
+          e2[multi] = tsReader[gpID]->GetHit()->energy2;
+          e_t[multi] = tsReader[gpID]->GetHit()->timestamp;
+          e_f[multi] = tsReader[gpID]->GetHit()->fineTime;
+          
+          traceLength[multi] = tsReader[gpID]->GetHit()->traceLength;
+          if( traceOn ){
+            trace = (TGraph *) arrayTrace->ConstructedAt(multi, "C");
+            trace->Clear();
+            for( int hh = 0; hh < traceLength[multi]; hh++){
+              trace->SetPoint(hh, hh, tsReader[gpID]->GetHit()->trace[hh]);
             }
-            // if( inFile[i] ){
-            //   inFileIndex[i]++;
-            //   printf("---- go to next file for digi-%d\n", snList[i]);
-            // }else{
-            //   inFileIndex[i] = -1;
-            //   printf("---- no more file for digi-%d.\n", snList[i]);
-            //   continue;
-            // }
+          }
+
+          if( debug ) printf("(%5d, %2d) %6d %16llu, %u\n", sn[multi], ch[multi], e[multi], e_t[multi], traceLength[multi]);
+
+          hasEvent = true;
+          multi ++;
+
+          group[gpID].usedHitCount ++;
+          if( tsReader[gpID]->ReadNextHit(traceOn, 0) == 0 ){ 
+            hitProcessed ++;
+            if( debug ){ printf("..Get Data after fill | "); tsReader[gpID]->GetHit()->Print();}
           }
 
         }else{
-          fseek(inFile[i], -4, SEEK_CUR); // roll back
-
-          short header = ((word[0] >> 28 ) & 0xF);
-          if( header != 0xA ) break;
-          unsigned int aggSize = (word[0] & 0x0FFFFFFF) * 4; ///byte
-
-          buffer = new char[aggSize];
-          size_t dummy2 = fread(buffer, aggSize, 1, inFile[i]);
-          if( dummy2 != 1) {
-            printf("fread error, should read %d bytes, but read %ld x %d byte, file pos: %ld byte (%s)\n", aggSize, dummy, aggSize, ftell(inFile[i]), fileList[i][inFileIndex[i]].Data());
-          }else{
-            data[i]->DecodeBuffer(buffer, aggSize, false, 0);
-            data[i]->ClearBuffer();
-
-            aggCount[i] ++;
-          }
+          break;
         }
 
-      }
+        if( timeWindow == 0) break;
 
-      //if all file exhausted, break
-      int okFileNum = 0;
-      for( int i = 0; i < nGroup; i++){
-        if( inFileIndex[i] != -1 ) okFileNum ++;
-      }
-      if( okFileNum == 0 ) break;
+        if( tsReader[gpID]->GetHitID() + 1 >= tsReader[gpID]->GetNumHit() ) endCount ++; 
+        if( endCount == 2 ) break;
 
-      //check if Data Index near MaxNData. if near by 50%, break
-      //printf("-----------------------------------\n");
-      for( int i = 0; i < nGroup; i++){
+      }while(true);
 
-        if( debug ){
-          printf("-------------------------> %3d | agg : %d | %u \n", snList[i], aggCount[i], data[i]->aggTime);
-          //data[i]->PrintStat();
-        }
-
-        uShort dataSize = data[i]->GetDataSize();
-
-        for( int ch = 0; ch < data[i]->GetNChannel(); ch ++){
-
-          int iData = data[i]->DataIndex[ch];
-          int iLoop = data[i]->LoopIndex[ch];
-
-          if( iData < 0 ) continue;
-
-          if( (iLoop*dataSize + iData) - (lastLoopIndex[i][ch]*dataSize + lastDataIndex[i][ch]) > dataSize * bufferSize ) {
-            if( debug ) printf("############# BREAK!!!! Group: %d, ch : %d | last : %d(%d), Present : %d(%d) | BufferSize : %.0f \n", i, ch, lastDataIndex[i][ch], lastLoopIndex[i][ch], iData, iLoop, dataSize * bufferSize);
-            fillFlag = false;
-          }
-
-          if( debug ){
-            unsigned long long t1 = data[i]->Timestamp[ch][iData];
-            printf("digi:%5d | ch: %2d DataIndex: %5d (%d) [%5d(%d)] | %16llu\n", data[i]->boardSN, ch, iData, iLoop, lastDataIndex[i][ch], lastLoopIndex[i][ch], t1);
-          }
-
-        }
-      }
-
-    }while(fillFlag);
-
-    for( int i = 0; i < nGroup; i++){
-      for( int ch = 0; ch < data[i]->GetNChannel(); ch ++){
-        lastDataIndex[i][ch] = data[i]->DataIndex[ch];
-        lastLoopIndex[i][ch] = data[i]->LoopIndex[ch];
-      }
-      //data[i]->PrintAllData();
     }
 
-    mb->BuildEvents(0, !traceOn, debug);
-    if( debug ) mb->PrintStat();
 
-    ///----------- save to tree;
-    long startIndex = mb->eventIndex - mb->eventBuilt + 1;
-    //printf("startIndex : %6ld -> %6ld, %6ld, %6ld, %ld | %llu\n", startIndex, startIndex < 0 ? startIndex + MaxNEvent : startIndex, mb->eventIndex, mb->eventBuilt, mb->totalEventBuilt, tree->GetEntries());
-    if (startIndex < 0 ) startIndex += MaxNEvent;
-    for( long p = startIndex; p < startIndex + mb->eventBuilt; p++){
-      int k =  p % MaxNEvent;
-      multi = mb->events[k].size();
-      if( multi > MAX_MULTI) {
-        printf("!!!!! MAX_MULTI %d reached.\n", MAX_MULTI);
-        break;
-      }
-      evID ++;
-      for( int j = 0; j < multi; j ++){
-        sn[j]  = mb->events[k][j].sn;
-        ch[j]  = mb->events[k][j].ch;
-        e[j]   = mb->events[k][j].energy;
-        e2[j]  = mb->events[k][j].energy2;
-        e_t[j] = mb->events[k][j].timestamp;
-        e_f[j] = mb->events[k][j].fineTime;
-        if( traceOn ){
-          traceLength[j] = mb->events[k][j].trace.size();
-          trace = (TGraph *) arrayTrace->ConstructedAt(j, "C");
-          trace->Clear();
-          for( int hh = 0; hh < traceLength[j]; hh++){
-            trace->SetPoint(hh, hh, mb->events[k][j].trace[hh]);
-          }
-        }
-      }
+    if( hasEvent ){
       outRootFile->cd();
       tree->Fill();
-    } 
-
-    int okFileNum = 0;
-    for( int i = 0; i < nGroup; i++){
-      if( inFileIndex[i] != -1 ) okFileNum ++;
+      multi = 0;
+      evID ++;
+      hasEvent = false;
     }
-    if( okFileNum == 0 ) break;
+
+    printf("hit Porcessed %u/%u....%.2f%%\n\033[A\r", hitProcessed, totHitCount,  hitProcessed*100./totHitCount);
+    
+
+    ///===================== find the next first timestamp
+    t0 = -1;
+    gp0 = -1;
+
+    for( int i = 0; i < nGroup; i++) {
+      if( group[i].finished ) continue;
+      if( tsReader[i]->GetHit()->timestamp < t0) {
+        t0 = tsReader[i]->GetHit()->timestamp;
+        gp0 = i;
+      }
+    } 
+    if( debug ) printf("Next First timestamp is %llu, group : %u\n", t0, gp0);
+
+
+    ///===================== check if the file is finished.
+    int gpCount = 0;
+    for( int gpID = 0; gpID < nGroup; gpID ++) {      
+      if( group[gpID].finished ) {
+        gpCount ++;
+        continue;
+      }
+
+      if( group[gpID].usedHitCount >= tsReader[gpID]->GetNumHit() ) {
+
+        group[gpID].currentID ++;
+
+        if( group[gpID].currentID >= group[gpID].fileIDList.size() ) {
+          group[gpID].finished = true;
+          printf("-----> no more file for this group, S/N : %d.\n", group[gpID].sn);
+          
+        }else{
+          uShort fID = group[gpID].fileIDList[group[gpID].currentID];
+          std::string fileName = fileInfo[fID].fileName;
+
+          delete tsReader[gpID];
+          tsReader[gpID] = new FSUTSReader(fileName);
+          tsReader[gpID]->ScanFile(1);
+          printf("-----> go to the next file, %s \n", fileName.c_str() );
+
+          group[gpID].usedHitCount = 0;
+
+        }
+      }
+
+      if( group[gpID].finished ) gpCount ++;
+    }
+    if( gpCount == (int) group.size() ) break;
 
   }while(true);
 
-  if( timeWindow >= 0 ){
-    printf("------------------- build the last data\n");
 
-    mb->BuildEvents(1, 0, debug);
-    //mb->PrintStat();
-
-    ///----------- save to tree;
-    long startIndex = mb->eventIndex - mb->eventBuilt + 1;
-    //printf("startIndex : %ld -> %ld, %ld, %ld, %ld\n", startIndex, startIndex < 0 ? startIndex + MaxNEvent : startIndex, mb->eventIndex, mb->eventBuilt, mb->totalEventBuilt);
-    if( startIndex < 0 ) startIndex += MaxNEvent;
-    for( long p = startIndex; p < startIndex + mb->eventBuilt; p++){
-      int k =  p % MaxNEvent;
-      multi = mb->events[k].size();
-      if( multi > MAX_MULTI) {
-        printf("!!!!! MAX_MULTI %d reached.\n", MAX_MULTI);
-        break;
-      }
-      evID ++;
-      for( int j = 0; j < multi; j ++){
-        sn[j]  = mb->events[k][j].sn;
-        ch[j]  = mb->events[k][j].ch;
-        e[j]   = mb->events[k][j].energy;
-        e2[j]  = mb->events[k][j].energy2;
-        e_t[j] = mb->events[k][j].timestamp;
-        e_f[j] = mb->events[k][j].fineTime;
-        if( traceOn ){
-          traceLength[j] = mb->events[k][j].trace.size();
-          trace = (TGraph *) arrayTrace->ConstructedAt(j, "C");
-          trace->Clear();
-          for( int hh = 0; hh < traceLength[j]; hh++){
-            trace->SetPoint(hh, hh, mb->events[k][j].trace[hh]);
-          }
-        }
-      }
-      outRootFile->cd();
-      tree->Fill();
-    } 
-  }
-    
   tree->Write();
 
   printf("========================= finished.\n");
-  printf("total events built = %llu(%llu)\n", evID + 1, tree->GetEntriesFast());
+  printf("total events built = %llu(%llu)\n", evID, tree->GetEntriesFast());
   printf("=======> saved to %s \n", outFileName.Data());
 
   outRootFile->Close();
 
-  delete mb;
-  for( int i = 0 ; i < nGroup; i++) delete data[i];
-  delete [] data;
+  for( int i = 0; i < nGroup; i++){
+    delete tsReader[i];
+  }
+  delete tsReader;
 
-}
-
-//^#############################################################
-//^#############################################################
-template<typename T> void swap(T * a, T *b ){
-  T temp = * b;
-  *b = *a;
-  *a = temp;
+  return 0;
 }
 
-int partition(int arr[], int kaka[], TString file[], unsigned int fileSize[], unsigned int numBlock[], int tick2ns[], int start, int end){
-    int pivot = arr[start];
-    int count = 0;
-    for (int i = start + 1; i <= end; i++) {
-        if (arr[i] <= pivot) count++;
-    }
-    /// Giving pivot element its correct position
-    int pivotIndex = start + count;
-    swap(&arr[pivotIndex], &arr[start]);
-    swap(&file[pivotIndex], &file[start]);
-    swap(&kaka[pivotIndex], &kaka[start]);
-    swap(&fileSize[pivotIndex], &fileSize[start]);
-    swap(&numBlock[pivotIndex], &numBlock[start]);
-    swap(&tick2ns[pivotIndex], &tick2ns[start]);
-    
-    /// Sorting left and right parts of the pivot element
-    int i = start, j = end;
-    while (i < pivotIndex && j > pivotIndex) { 
-        while (arr[i] <= pivot) {i++;}
-        while (arr[j] > pivot) {j--;}
-        if (i < pivotIndex && j > pivotIndex) {
-          int ip = i++;
-          int jm = j--;
-          swap( &arr[ip],  &arr[jm]);
-          swap(&file[ip], &file[jm]);
-          swap(&kaka[ip], &kaka[jm]);
-          swap(&fileSize[ip], &fileSize[jm]);
-          swap(&numBlock[ip], &numBlock[jm]);
-          swap(&tick2ns[ip], &tick2ns[jm]);
-        }
-    }
-    return pivotIndex;
-}
- 
-void quickSort(int arr[], int kaka[], TString file[], unsigned int fileSize[], unsigned int numBlock[], int tick2ns[], int start, int end){
-    /// base case
-    if (start >= end) return;
-    /// partitioning the array
-    int p = partition(arr, kaka, file, fileSize, numBlock, tick2ns, start, end); 
-    /// Sorting the left part
-    quickSort(arr, kaka, file, fileSize, numBlock, tick2ns, start, p - 1);
-    /// Sorting the right part
-    quickSort(arr, kaka, file, fileSize, numBlock, tick2ns, p + 1, end);
-}

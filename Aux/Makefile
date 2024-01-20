@@ -14,7 +14,7 @@ ROOTLIBS = `root-config --cflags --glibs`
 
 OBJS = ClassDigitizer.o MultiBuilder.o
 
-ALL = test test_indep DataGenerator EventBuilder EventBuilder2 EventBuilderNoTrace DataReader DumpFSU2ROOT SettingsExplorer 
+ALL = test test_indep DataGenerator EventBuilder EventBuilderNoTrace DataReader DumpFSU2ROOT SettingsExplorer 
 
 #########################################################################
 
@@ -45,13 +45,13 @@ DataReader : DataReaderScript.cpp ../ClassData.h MultiBuilder.o
 		@echo "--------- making DataReader"
 		$(CC) $(COPTS) -o DataReader DataReaderScript.cpp ../ClassData.h MultiBuilder.o
 
-EventBuilder : EventBuilder.cpp ../ClassData.h MultiBuilder.o fsuReader.h
-		@echo "--------- making EventBuilder"
-		$(CC) $(COPTS) -o EventBuilder EventBuilder.cpp MultiBuilder.o $(ROOTLIBS) 
+# EventBuilder_old : EventBuilder_old.cpp ../ClassData.h MultiBuilder.o fsuReader.h
+# 		@echo "--------- making EventBuilder"
+# 		$(CC) $(COPTS) -o EventBuilder_old EventBuilder_old.cpp MultiBuilder.o $(ROOTLIBS) 
 
-EventBuilder2 : EventBuilder2.cpp ../ClassData.h fsuReader.h fsutsReader.h
-		@echo "--------- making EventBuilder2"
-		$(CC) $(COPTS) -o EventBuilder2 EventBuilder2.cpp $(ROOTLIBS) 
+EventBuilder : EventBuilder.cpp ../ClassData.h fsuReader.h fsutsReader.h
+		@echo "--------- making EventBuilder"
+		$(CC) $(COPTS) -o EventBuilder EventBuilder.cpp $(ROOTLIBS) 
 
 EventBuilderNoTrace : EventBuilderNoTrace.cpp ../ClassData.h fsuReader.h ../Hit.h
 		@echo "--------- making EventBuilderNoTrace"
