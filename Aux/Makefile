@@ -49,9 +49,9 @@ EventBuilder : EventBuilder.cpp ../ClassData.h MultiBuilder.o fsuReader.h
 		@echo "--------- making EventBuilder"
 		$(CC) $(COPTS) -o EventBuilder EventBuilder.cpp MultiBuilder.o $(ROOTLIBS) 
 
-EventBuilder2 : EventBuilder2.cpp ../ClassData.h fsuReader.h AggSeparator.h MultiBuilder.o
+EventBuilder2 : EventBuilder2.cpp ../ClassData.h fsuReader.h fsutsReader.h
 		@echo "--------- making EventBuilder2"
-		$(CC) $(COPTS) -o EventBuilder2 EventBuilder2.cpp MultiBuilder.o $(ROOTLIBS) 
+		$(CC) $(COPTS) -o EventBuilder2 EventBuilder2.cpp $(ROOTLIBS) 
 
 EventBuilderNoTrace : EventBuilderNoTrace.cpp ../ClassData.h fsuReader.h ../Hit.h
 		@echo "--------- making EventBuilderNoTrace"

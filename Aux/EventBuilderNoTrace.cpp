@@ -83,7 +83,8 @@ int main(int argc, char **argv) {
   TString outFileName = inFileName[0];
   int pos = outFileName.Index("_");
   pos = outFileName.Index("_", pos+1);
-  outFileName.Remove(pos);  
+  outFileName.Remove(pos);
+  outFileName += "_" + std::to_string(timeWindow) + "_noTrace";  
   outFileName += ".root";
   printf("-------> Out file name : %s \n", outFileName.Data());
   
@@ -174,7 +175,7 @@ int main(int argc, char **argv) {
   TTree * tree = new TTree("tree", outFileName);
 
   unsigned long long                evID = -1;
-  unsigned short                   multi = 0;
+  unsigned int                     multi = 0;
   unsigned short           sn[MAX_MULTI] = {0}; /// board SN
   //unsigned short           bd[MAX_MULTI] = {0}; /// boardID
   unsigned short           ch[MAX_MULTI] = {0}; /// chID
@@ -184,7 +185,7 @@ int main(int argc, char **argv) {
   unsigned short          e_f[MAX_MULTI] = {0}; /// fine time 10 bit 
 
   tree->Branch("evID",           &evID, "event_ID/l"); 
-  tree->Branch("multi",         &multi, "multi/s"); 
+  tree->Branch("multi",         &multi, "multi/i"); 
   tree->Branch("sn",                sn, "sn[multi]/s");
   //tree->Branch("bd",                bd, "bd[multi]/s");
   tree->Branch("ch",                ch, "ch[multi]/s");
@@ -231,7 +232,7 @@ int main(int argc, char **argv) {
       //when all hit are used, go to next file or make the group.finished = true
       if( group[gpID].hitID >=  group[gpID].hitCount) {
 
-        printf(" group ID : %d, reader ID : %d is finished. \n", gpID, group[gpID].readerIDList[group[gpID].currentID]);
+        // printf(" group ID : %d, reader ID : %d is finished. \n", gpID, group[gpID].readerIDList[group[gpID].currentID]);
 
         group[gpID].currentID ++;
 

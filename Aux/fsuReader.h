@@ -41,6 +41,7 @@ class FSUReader{
     void SortHit(int verbose = false);
 
     std::string SaveHit2NewFile(std::string saveFolder = "./");
+    off_t GetTSFileSize() const {return tsFileSize;}
 
   private:
 
@@ -72,6 +73,8 @@ class FSUReader{
     unsigned int word[1]; /// 4 byte
     size_t dummy;
     char * buffer;
+
+    off_t  tsFileSize;
 
 };
 
@@ -314,7 +317,7 @@ inline void FSUReader::ScanNumBlock(int verbose, uShort saveData){
 
 inline std::string FSUReader::SaveHit2NewFile(std::string saveFolder){
 
-  printf("FSUReader::%s\n", __func__);
+  // printf("FSUReader::%s\n", __func__);
 
   std::string folder = "";
   size_t found = fileName.find_last_of('/');
@@ -340,6 +343,8 @@ inline std::string FSUReader::SaveHit2NewFile(std::string saveFolder){
 
   outFileName = saveFolder + outFileName + ".ts";
 
+  //TODO Check if the ts file is newer than the fsu file, if yes, don't need to do unless forced.
+
   FILE * outFile = fopen(outFileName.c_str(), "wb"); //overwrite binary
 
   uint32_t header = 0xAA000000;
@@ -364,18 +369,18 @@ inline std::string FSUReader::SaveHit2NewFile(std::string saveFolder){
     
   }
 
-  off_t outFileSize = ftello(outFile);  // unsigned int =  Max ~4GB
+  tsFileSize = ftello(outFile);  // unsigned int =  Max ~4GB
   fclose(outFile);
 
   printf("Saved to %s, size: ", outFileName.c_str());
-  if( outFileSize < 1024 ) {
-    printf(" %ld Byte", outFileSize);
-  }else if( outFileSize < 1024*1024 ) {
-    printf(" %.2f kB", outFileSize/1024.);
-  }else if( outFileSize < 1024*1024*1024){
-    printf(" %.2f MB", outFileSize/1024./1024.);
+  if( tsFileSize < 1024 ) {
+    printf(" %ld Byte", tsFileSize);
+  }else if( tsFileSize < 1024*1024 ) {
+    printf(" %.2f kB", tsFileSize/1024.);
+  }else if( tsFileSize < 1024*1024*1024){
+    printf(" %.2f MB", tsFileSize/1024./1024.);
   }else{
-    printf(" %.2f GB", outFileSize/1024./1024./1024.);
+    printf(" %.2f GB", tsFileSize/1024./1024./1024.);
   }
   printf("\n");
 
