@@ -54,7 +54,12 @@ int main(int argc, char **argv) {
     printf("%s [timeWindow] [verbose] [inFile1]  [inFile2] .... \n", argv[0]);
     printf("    timeWindow : in ns \n");   
     printf("       verbose : > 0 for debug  \n");   
-    printf("    Output file name is contructed from inFile1 \n");   
+    printf("    Output file name is contructed from inFile1 \n");
+    printf("\n");
+    printf("=========================== Working flow\n");
+    printf("  1) Load all data into memories as vector and sort\n");
+    printf("  2) Build event.\n");
+    printf("\n\n");
     return 1;
   }
 
@@ -104,9 +109,10 @@ int main(int argc, char **argv) {
   
     printf("Processing %s (%d/%d) ..... \n\033[A\r", inFileName[i].Data(), i+1, nFile);
 
-    reader[i] = new FSUReader(inFileName[i].Data(), 50, 0); // the 1000 is expecting each agg, there are maximum 1000 hit/ch.
+    reader[i] = new FSUReader(inFileName[i].Data(), 600, 0); // the 600 is expecting each agg, there are maximum 1000 hit/ch.
     reader[i]->ScanNumBlock(1, 1);
-    // reader[i]->FillHitList();
+ 
+    reader[i]->GetData()->ClearDataPointer();
   
     FileInfo tempInfo;
     tempInfo.fileName = inFileName[i];
@@ -293,7 +299,7 @@ int main(int argc, char **argv) {
     if( evID == 0) tStart = event.front().timestamp;
 
     if( multi > 0  ) {
-      tEnd = event.back().timestamp;
+      if( hitProcessed >= totHitCount ) tEnd = event.back().timestamp;
       for( size_t j = 0; j < multi ; j++){     
 
         sn[j]  = event[j].sn;

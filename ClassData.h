@@ -206,6 +206,8 @@ inline void Data::AllocateDataSize(uShort dataSize){
 
 inline void Data::ClearDataPointer(){
 
+  if( dataSize == 0) return;
+
   for(int ch = 0; ch < numInputCh;  ch++){
     delete [] Timestamp[ch] ;
     delete [] fineTime[ch];

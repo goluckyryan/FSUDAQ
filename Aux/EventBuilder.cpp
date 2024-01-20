@@ -63,10 +63,13 @@ int main(int argc, char **argv) {
     printf("\n");
     printf("=========================== Working flow\n");
     printf("  1) Break down the fsu files into dual channel, save in tempFolder as *.fsu.X\n");
+    printf("     1a) if the *.fsu file has trace, *.fsu.ts will also has trace.\n");
     printf("  2) Load the *.fsu.X files and do the event building\n");
     printf("\n\n");
     return 1;
   }
+
+  uInt runStartTime = get_time_us();
 
   /// File format must be YYY...Y_runXXX_AAA_BBB_TT_CCC.fsu
   /// YYY...Y  = prefix
@@ -126,8 +129,16 @@ int main(int argc, char **argv) {
     // file name format is expName_runID_SN_DPP_tick2ns_order.fsu
     for( int i = 0; i < nFile; i++){
       printf("Processing %s (%d/%d) ..... \n", inFileName[i].Data(), i+1, nFile);
-      reader[i] = new FSUReader(inFileName[i].Data(), 1, false);
-      if( !reader[i]->isOpen() ) continue;
+      reader[i] = new FSUReader(inFileName[i].Data(), 600, false);
+
+      if( !reader[i]->isOpen() ){
+        printf("------- cannot open file.\n");
+        continue;
+      }
+      if( reader[i]->GetFileByteSize() == 0 ){
+        printf("------- file size is ZERO.\n");
+        continue;
+      }
 
       reader[i]->ScanNumBlock(false, 2); 
     
@@ -182,6 +193,8 @@ int main(int argc, char **argv) {
     delete [] reader;
 
   }
+
+  nFile = (int) fileInfo.size();
 
   std::sort(fileInfo.begin(), fileInfo.end(), [](const FileInfo& a, const FileInfo& b) {
     return a.ID < b.ID;
@@ -281,6 +294,9 @@ int main(int argc, char **argv) {
   ullong t0 = -1;
   uShort gp0 = -1;
 
+  ullong tStart = 0;
+  ullong tEnd = 0;
+
   bool hasEvent = false;
 
   for( int i = 0; i < nGroup; i++){
@@ -316,6 +332,9 @@ int main(int argc, char **argv) {
         }
 
         if( tsReader[gpID]->GetHit()->timestamp - t0 <= timeWindow ) {
+
+          if( evID == 0) tStart = tsReader[gpID]->GetHit()->timestamp;
+          if( hitProcessed >= totHitCount ) tEnd = tsReader[gpID]->GetHit()->timestamp;
 
           sn[multi] = tsReader[gpID]->GetHit()->sn;
           ch[multi] = tsReader[gpID]->GetHit()->ch;
@@ -367,7 +386,6 @@ int main(int argc, char **argv) {
 
     printf("hit Porcessed %u/%u....%.2f%%\n\033[A\r", hitProcessed, totHitCount,  hitProcessed*100./totHitCount);
     
-
     ///===================== find the next first timestamp
     t0 = -1;
     gp0 = -1;
@@ -420,8 +438,16 @@ int main(int argc, char **argv) {
 
   tree->Write();
 
+  uInt runEndTime = get_time_us();
+  double runTime = (runEndTime - runStartTime) * 1e-6;
+
   printf("========================= finished.\n");
-  printf("total events built = %llu(%llu)\n", evID, tree->GetEntriesFast());
+  printf(" event building time = %.2f sec = %.2f min\n", runTime, runTime/60.);
+  printf("  total events built = %llu by event builder (%llu in tree)\n", evID, tree->GetEntriesFast());
+  double tDuration_sec = (tEnd - tStart) * 1e-9;
+  printf("     first timestamp = %20llu ns\n", tStart);
+  printf("      last timestamp = %20llu ns\n", tEnd);
+  printf(" total data duration = %.2f sec = %.2f min\n", tDuration_sec, tDuration_sec/60.);
   printf("=======> saved to %s \n", outFileName.Data());
 
   outRootFile->Close();

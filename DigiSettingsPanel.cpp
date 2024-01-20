@@ -210,7 +210,11 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
 
       bhAutoSetEventPulling = new QPushButton("Autoset Reading Conf.", this);
       buttonLayout->addWidget(bhAutoSetEventPulling, rowID, 1);
-      connect(bhAutoSetEventPulling, &QPushButton::clicked, this, [=](){ digi[ID]->AutoSetDPPEventAggregation(); UpdateBoardAndChannelsStatus();});
+      connect(bhAutoSetEventPulling, &QPushButton::clicked, this, [=](){ 
+        SendLogMsg("Digi-" +QString::number(digi[ID]->GetSerialNumber()) + " : AutoSetDPPEventAggregation()");
+        digi[ID]->AutoSetDPPEventAggregation(); 
+        UpdateBoardAndChannelsStatus();
+      });
 
       // bnSendSoftwareClockSyncSignal = new QPushButton("Send SW Clock-Sync Signal", this);
       // buttonLayout->addWidget(bnSendSoftwareClockSyncSignal, rowID, 1);
