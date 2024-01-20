@@ -42,7 +42,6 @@ struct GroupInfo{
 
 };
 
-
 //^#############################################################
 //^#############################################################
 int main(int argc, char **argv) {
@@ -58,6 +57,8 @@ int main(int argc, char **argv) {
     printf("    Output file name is contructed from inFile1 \n");   
     return 1;
   }
+
+  uInt runStartTime = get_time_us();
 
   /// File format must be YYY...Y_runXXX_AAA_BBB_TT_CCC.fsu
   /// YYY...Y  = prefix
@@ -170,7 +171,7 @@ int main(int argc, char **argv) {
   TFile * outRootFile = new TFile(outFileName, "recreate");
   TTree * tree = new TTree("tree", outFileName);
 
-  unsigned long long                evID = -1;
+  unsigned long long                evID = 0;
   unsigned int                     multi = 0;
   unsigned short           sn[MAX_MULTI] = {0}; /// board SN
   //unsigned short           bd[MAX_MULTI] = {0}; /// boardID
@@ -205,7 +206,6 @@ int main(int argc, char **argv) {
   //*====================================== build events
   printf("================= Building events....\n");
 
-  evID = 0;
   std::vector<Hit> event;
   Hit temp;
 
@@ -214,13 +214,15 @@ int main(int argc, char **argv) {
 
   uInt hitProcessed = 0;
 
+  ullong tStart = 0;
+  ullong tEnd = 0;
+
   do{
 
     event.clear();
     t0 = -1;
 
-    //// Find earliest time
-    // ullong torg = getTime_ns(); 
+    /// Find earliest time
     for( int gpID = 0; gpID < nGroup; gpID++){
 
       if( group[gpID].finished ) continue;
@@ -229,7 +231,6 @@ int main(int argc, char **argv) {
       if( group[gpID].hitID >=  group[gpID].hitCount) {
 
         // printf(" group ID : %d, reader ID : %d is finished. \n", gpID, group[gpID].readerIDList[group[gpID].currentID]);
-
         group[gpID].currentID ++;
 
         if( group[gpID].currentID >= group[gpID].readerIDList.size() ) {
@@ -254,9 +255,6 @@ int main(int argc, char **argv) {
     }
     if (debug ) printf("the eariliest time is %llu at Group : %u, hitID : %lu, %s\n", t0, group0, group[group0].hitID, fileInfo[group[group0].currentID].fileName.Data());
 
-    // ullong t1 = getTime_ns();
-    // printf("Find earliest Time used : %llu ns \n", t1 - torg);
-
     printf("hit Porcessed %u/%u....%.2f%%\n\033[A\r", hitProcessed, totHitCount,  hitProcessed*100./totHitCount);
     
     for(int i = 0; i < nGroup; i++){
@@ -277,15 +275,10 @@ int main(int argc, char **argv) {
         }else{
           break;
         }
-
         if( timeWindow == 0 ) break;
       }
-
       if( timeWindow == 0  ) break;
     }
-
-    // ullong t2 = getTime_ns();
-    // printf(" getting an event used %llu ns\n", t2 - t1);
 
     if( event.size() > 1) {
       std::sort(event.begin(), event.end(), [](const Hit& a, const Hit& b) {
@@ -297,43 +290,50 @@ int main(int argc, char **argv) {
 
     if (debug )printf("########### evID : %llu, multi : %u \n", evID, multi); 
 
-    if( multi == 0 ) break;
+    if( evID == 0) tStart = event.front().timestamp;
 
-    // ullong t3 = getTime_ns();
-    // printf(" sort event used %llu ns\n", t3 - t2);
+    if( multi > 0  ) {
+      tEnd = event.back().timestamp;
+      for( size_t j = 0; j < multi ; j++){     
 
+        sn[j]  = event[j].sn;
+        ch[j]  = event[j].ch;
+        e[j]   = event[j].energy;
+        e2[j]  = event[j].energy2;
+        e_t[j] = event[j].timestamp;
+        e_f[j] = event[j].fineTime;
 
-    for( size_t j = 0; j < multi ; j++){      
-      sn[j]  = event[j].sn;
-      ch[j]  = event[j].ch;
-      e[j]   = event[j].energy;
-      e2[j]  = event[j].energy2;
-      e_t[j] = event[j].timestamp;
-      e_f[j] = event[j].fineTime;
+        if (debug )event[j].Print();
+      }
 
-      if (debug )event[j].Print();
-    } 
-
-    outRootFile->cd();
-    tree->Fill();
-
-    // ullong t4 = getTime_ns();
-    // printf(" Fill tree used %llu ns\n", t4 - t3);
+      outRootFile->cd();
+      tree->Fill();
+      evID ++;
+    }
 
     //check if all groups are finished 
     int gpCount = 0;
     for( size_t i = 0; i < group.size(); i++){
       if( group[i].finished ) gpCount ++;
     }
-    if( gpCount == (int) group.size() ) break;
+    if( gpCount == (int) group.size() ) {
+      break;
+    }
 
-    evID ++;
   }while(true);
 
   tree->Write();
 
+  uInt runEndTime = get_time_us();
+  double runTime = (runEndTime - runStartTime) * 1e-6;
+
   printf("========================= finished.\n");
-  printf("total events built = %llu(%llu)\n", evID, tree->GetEntriesFast());
+  printf(" event building time = %.2f sec = %.2f min\n", runTime, runTime/60.);
+  printf("  total events built = %llu by event builder (%llu in tree)\n", evID, tree->GetEntriesFast());
+  double tDuration_sec = (tEnd - tStart) * 1e-9;
+  printf("     first timestamp = %20llu ns\n", tStart);
+  printf("      last timestamp = %20llu ns\n", tEnd);
+  printf(" total data duration = %.2f sec = %.2f min\n", tDuration_sec, tDuration_sec/60.);
   printf("=======> saved to %s \n", outFileName.Data());
 
   outRootFile->Close();
