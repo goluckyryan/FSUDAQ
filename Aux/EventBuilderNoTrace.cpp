@@ -7,40 +7,7 @@
 #include "TFile.h"
 #include "TTree.h"
 
-#define MAX_MULTI  10000
-
-#define ORDERSHIFT 100000
-
-struct FileInfo {
-  TString fileName;
-  unsigned int fileSize;
-  unsigned int SN;
-  unsigned long hitCount;
-  unsigned short DPPType;
-  unsigned short tick2ns;
-  unsigned short order;
-  unsigned short readerID;
-
-  unsigned long ID; // sn + 100000 * order
-
-  void CalOrder(){ ID = ORDERSHIFT * SN + order; }
-
-  void Print(){
-    printf(" %10lu | %3d | %50s | %2d | %6lu | %10u Bytes = %.2f MB\n", 
-            ID, DPPType, fileName.Data(), tick2ns, hitCount, fileSize, fileSize/1024./1024.);  
-  }
-};
-
-struct GroupInfo{
-
-  std::vector<unsigned short> readerIDList;
-  uInt sn;
-  unsigned short currentID ; // the ID of the readerIDList;
-  ulong hitCount ; // this is the hitCount for the currentID;
-  ulong hitID ; // this is the ID for the reader->GetHit(hitID);
-  bool finished;
-
-};
+#define MAX_MULTI  1000
 
 //^#############################################################
 //^#############################################################
@@ -64,14 +31,6 @@ int main(int argc, char **argv) {
   }
 
   uInt runStartTime = get_time_us();
-
-  /// File format must be YYY...Y_runXXX_AAA_BBB_TT_CCC.fsu
-  /// YYY...Y  = prefix
-  /// XXX = runID, 3 digits
-  /// AAA = board Serial Number, 3 digits
-  /// BBB = DPPtype, 3 digits
-  ///  TT = tick2ns, any digits
-  /// CCC = over size index, 3 digits
   
   ///============= read input
   unsigned int  timeWindow = atoi(argv[1]);
@@ -180,7 +139,6 @@ int main(int argc, char **argv) {
   unsigned long long                evID = 0;
   unsigned int                     multi = 0;
   unsigned short           sn[MAX_MULTI] = {0}; /// board SN
-  //unsigned short           bd[MAX_MULTI] = {0}; /// boardID
   unsigned short           ch[MAX_MULTI] = {0}; /// chID
   unsigned short            e[MAX_MULTI] = {0}; /// 15 bit
   unsigned short           e2[MAX_MULTI] = {0}; /// 15 bit
@@ -190,7 +148,6 @@ int main(int argc, char **argv) {
   tree->Branch("evID",           &evID, "event_ID/l"); 
   tree->Branch("multi",         &multi, "multi/i"); 
   tree->Branch("sn",                sn, "sn[multi]/s");
-  //tree->Branch("bd",                bd, "bd[multi]/s");
   tree->Branch("ch",                ch, "ch[multi]/s");
   tree->Branch("e",                  e, "e[multi]/s");
   tree->Branch("e2",                e2, "e2[multi]/s");
@@ -207,7 +164,6 @@ int main(int argc, char **argv) {
     // tree->Branch("trace",       arrayTrace, 2560000);
     // arrayTrace->BypassStreamer();
   // }
-
 
   //*====================================== build events
   printf("================= Building events....\n");
@@ -247,7 +203,7 @@ int main(int argc, char **argv) {
           group[gpID].hitID = 0;
           uShort rID = group[gpID].readerIDList[group[gpID].currentID];
           group[gpID].hitCount = reader[rID]->GetHitCount();
-          printf("-----> go to the next file, %s \n", fileInfo[rID].fileName.Data() );
+          printf("-----> go to the next file, %s \n", fileInfo[rID].fileName.c_str() );
         }
       }
 
@@ -259,7 +215,7 @@ int main(int argc, char **argv) {
         group0 = gpID;
       }
     }
-    if (debug ) printf("the eariliest time is %llu at Group : %u, hitID : %lu, %s\n", t0, group0, group[group0].hitID, fileInfo[group[group0].currentID].fileName.Data());
+    if (debug ) printf("the eariliest time is %llu at Group : %u, hitID : %lu, %s\n", t0, group0, group[group0].hitID, fileInfo[group[group0].currentID].fileName.c_str());
 
     printf("hit Porcessed %u/%u....%.2f%%\n\033[A\r", hitProcessed, totHitCount,  hitProcessed*100./totHitCount);
     

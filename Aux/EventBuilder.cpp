@@ -8,42 +8,7 @@
 #include "TFile.h"
 #include "TTree.h"
 
-#define MAX_MULTI  100
-
-#define ORDERSHIFT 100000
-
-struct FileInfo {
-  std::string fileName;
-  unsigned int fileSize;
-  unsigned int SN;
-  unsigned long hitCount;
-  unsigned short DPPType;
-  unsigned short tick2ns;
-  unsigned short order;
-  unsigned short readerID;
-
-  unsigned long long t0;
-
-  unsigned long ID; // sn + 100000 * order
-
-  void CalOrder(){ ID = ORDERSHIFT * SN + order; }
-
-  void Print(){
-    printf(" %10lu | %3d | %50s | %2d | %6lu | %10u Bytes = %.2f MB\n", 
-            ID, DPPType, fileName.c_str(), tick2ns, hitCount, fileSize, fileSize/1024./1024.);  
-  }
-};
-
-struct GroupInfo{
-
-  std::vector<unsigned short> fileIDList;
-  uInt sn;
-  unsigned short currentID ; // the ID of the readerIDList;
-  ulong hitCount ; // this is the hitCount for the currentID;
-  uInt usedHitCount ;
-  bool finished;
-
-};
+#define MAX_MULTI  1000
 
 //^#############################################################
 //^#############################################################
@@ -71,14 +36,6 @@ int main(int argc, char **argv) {
 
   uInt runStartTime = get_time_us();
 
-  /// File format must be YYY...Y_runXXX_AAA_BBB_TT_CCC.fsu
-  /// YYY...Y  = prefix
-  /// XXX = runID, 3 digits
-  /// AAA = board Serial Number, 3 digits
-  /// BBB = DPPtype, 3 digits
-  ///  TT = tick2ns, any digits
-  /// CCC = over size index, 3 digits
-  
   ///============= read input
   unsigned int  timeWindow = atoi(argv[1]);
   bool traceOn = atoi(argv[2]);
@@ -173,8 +130,17 @@ int main(int argc, char **argv) {
       printf("Processing %s (%d/%d) ..... \n", inFileName[i].Data(), i+1, nFile);
       reader[i] = new FSUTSReader(inFileName[i].Data(), false);
 
+      if( !reader[i]->isOpen() ){
+        printf("------- cannot open file.\n");
+        continue;
+      }
       reader[i]->ScanFile(0); 
-  
+
+      if( reader[i]->GetNumHit() == 0 ){
+        printf("------- file has no data.\n");
+        continue;
+      }
+
       FileInfo tempInfo;
       tempInfo.fileName = inFileName[i].Data();
       tempInfo.readerID = i;
@@ -279,9 +245,7 @@ int main(int argc, char **argv) {
   for( int i = 0; i < nGroup; i++){
     std::string fileName = fileInfo[group[i].fileIDList[0]].fileName;
     tsReader[i] = new FSUTSReader(fileName);
-
-    tsReader[i]->ScanFile(1);
-
+    tsReader[i]->ScanFile(0);
     group[i].usedHitCount = 0;
   }
 
@@ -307,9 +271,6 @@ int main(int argc, char **argv) {
   } 
 
   if( debug ) printf("First timestamp is %llu, group : %u\n", t0, gp0);
-
-  unsigned int maxUInt = -1;
-
   do{
 
     if( debug ) printf("################################ ev build %llu \n", evID);
@@ -317,14 +278,11 @@ int main(int argc, char **argv) {
     ///===================== check if the file is finished.
     for( int i = 0; i < nGroup; i++){
       uShort gpID = (i + gp0) % nGroup;
-
       if( group[gpID].finished ) continue;
-
       short endCount = 0;
-
       do{
 
-        if( group[gpID].usedHitCount > tsReader[gpID]->GetHitID() || tsReader[gpID]->GetHitID() == maxUInt){
+        if( group[gpID].usedHitCount > tsReader[gpID]->GetHitID() || tsReader[gpID]->GetFilePos() <= 4){
           if( tsReader[gpID]->ReadNextHit(traceOn, 0) == 0 ){ 
             hitProcessed ++;
             if( debug ){ printf("............ Get Data | "); tsReader[gpID]->GetHit()->Print();}
@@ -361,6 +319,10 @@ int main(int argc, char **argv) {
           if( tsReader[gpID]->ReadNextHit(traceOn, 0) == 0 ){ 
             hitProcessed ++;
             if( debug ){ printf("..Get Data after fill | "); tsReader[gpID]->GetHit()->Print();}
+          }
+
+          if( multi > MAX_MULTI) {
+            printf("  !!!!!! multi > %d\n", MAX_MULTI);
           }
 
         }else{

@@ -30,6 +30,7 @@ class FSUTSReader{
 
     std::string   GetFileName()     const {return fileName;}
     unsigned long GetFileByteSize() const {return inFileSize;}
+    unsigned int  GetFilePos()      const {return filePos;}
     int           GetFileOrder()    const {return order;}  
     uShort        GetSN()           const {return sn;}
     ullong        GetT0()           const {return t0;}
@@ -110,7 +111,7 @@ inline void FSUTSReader::OpenFile(std::string fileName, int verbose){
 
   fseek(inFile, 0L, SEEK_END);
   inFileSize = ftell(inFile);
-  if(verbose) printf("###### %s | file size : %ld Byte = %.2f MB\n", fileName.c_str() , inFileSize, inFileSize/1024./1024.);
+  if(verbose) printf("###### %50s | %11ld Byte = %.2f MB\n", fileName.c_str() , inFileSize, inFileSize/1024./1024.);
   fseek(inFile, 0L, SEEK_SET);
   filePos = 0;
 

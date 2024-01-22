@@ -3,6 +3,47 @@
 #include <algorithm>
 #include <filesystem>
 
+#define ORDERSHIFT 100000
+
+struct FileInfo {
+  std::string fileName;
+  unsigned int fileSize;
+  unsigned int SN;
+  unsigned long hitCount;
+  unsigned short DPPType;
+  unsigned short tick2ns;
+  unsigned short order;
+  unsigned short readerID;
+
+  unsigned long long t0;
+
+  unsigned long ID; // sn + 100000 * order
+
+  void CalOrder(){ ID = ORDERSHIFT * SN + order; }
+
+  void Print(){
+    printf(" %10lu | %3d | %50s | %2d | %6lu | %10u Bytes = %.2f MB\n", 
+            ID, DPPType, fileName.c_str(), tick2ns, hitCount, fileSize, fileSize/1024./1024.);  
+  }
+};
+
+struct GroupInfo{
+
+  std::vector<unsigned short> fileIDList;
+  uInt usedHitCount ;
+
+  std::vector<unsigned short> readerIDList;
+  ulong hitID ; // this is the ID for the reader->GetHit(hitID);
+
+  unsigned short currentID ; // the ID of the readerIDList;
+  ulong hitCount ; // this is the hitCount for the currentID;
+  uInt sn;
+  bool finished;
+
+  unsigned long long timeShift; 
+
+};
+
 class FSUReader{
 
   public:
@@ -106,6 +147,14 @@ inline FSUReader::FSUReader(std::string fileName, uShort dataSize, int verbose){
 }
 
 inline void FSUReader::OpenFile(std::string fileName, uShort dataSize, int verbose){
+
+  /// File format must be YYY...Y_runXXX_AAA_BBB_TT_CCC.fsu
+  /// YYY...Y  = prefix
+  /// XXX = runID, 3 digits
+  /// AAA = board Serial Number, 3 digits
+  /// BBB = DPPtype, 3 digits
+  ///  TT = tick2ns, any digits
+  /// CCC = over size index, 3 digits
 
   inFile = fopen(fileName.c_str(), "r");
 
