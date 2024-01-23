@@ -354,7 +354,7 @@ inline void FSUReader::ScanNumBlock(int verbose, uShort saveData){
     blockPos.push_back(filePos);
     blockTimeStamp.push_back(data->aggTime);
     blockID ++;
-    if(verbose) printf("%u, %.2f%% %u/%lu\n\033[A\r", blockID, filePos*100./inFileSize, filePos, inFileSize);
+    if(verbose && blockID % 10000 == 0) printf("%u, %.2f%% %u/%lu\n\033[A\r", blockID, filePos*100./inFileSize, filePos, inFileSize);
   }
 
   totNumBlock = blockID;
@@ -417,7 +417,7 @@ inline std::string FSUReader::SaveHit2NewFile(std::string saveFolder){
 
   for( ulong i = 0; i < hitCount; i++){
 
-    printf("Saving %lu/%lu (%.2f%%)\n\033[A\r", i, hitCount, i*100./hitCount);
+    if( i% 10000 == 0 ) printf("Saving %lu/%lu Hit (%.2f%%)\n\033[A\r", i, hitCount, i*100./hitCount);
 
     fwrite( &(hit[i].sn), 2, 1, outFile);
     fwrite( &(hit[i].ch), 1, 1, outFile);

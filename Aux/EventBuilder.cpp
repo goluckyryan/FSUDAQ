@@ -346,7 +346,7 @@ int main(int argc, char **argv) {
       hasEvent = false;
     }
 
-    printf("hit Porcessed %u/%u....%.2f%%\n\033[A\r", hitProcessed, totHitCount,  hitProcessed*100./totHitCount);
+    if( hitProcessed % 10000 == 0 ) printf("hit Porcessed %u/%u hit....%.2f%%\n\033[A\r", hitProcessed, totHitCount,  hitProcessed*100./totHitCount);
     
     ///===================== find the next first timestamp
     t0 = -1;

@@ -206,7 +206,7 @@ inline void FSUTSReader::ScanFile(int verbose){
 
     if(verbose > 1 ) printf("hitIndex : %u, Pos : %u - %u\n" , hitIndex, hitStartPos[hitIndex], hitStartPos[hitIndex+1]);
 
-    if(verbose) printf(" %u, %.2f%% %u/%lu\n\033[A\r", hitIndex, filePos*100./inFileSize, filePos, inFileSize);
+    if(verbose) printf(" %u, %.2f%% %u/%lu byte \n\033[A\r", hitIndex, filePos*100./inFileSize, filePos, inFileSize);
   }
 
   hitCount = hitIndex + 1;
