@@ -64,8 +64,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     
     cbOpenMethod = new RComboBox(this);
     cbOpenMethod->addItem("w/o settings", 0);
-    cbOpenMethod->addItem("default Program", 1);
     cbOpenMethod->addItem("w/ settings", 1);
+    cbOpenMethod->addItem("default Program", 2);
     layout->addWidget(cbOpenMethod, 1, 0);
 
     bnCloseDigitizers = new QPushButton("Close Digitizers", this);
@@ -628,12 +628,12 @@ void MainWindow::OpenDigitizers(){
     digi[i] = new Digitizer(portList[i].first, portList[i].second);
     //digi[i]->Reset();
 
-    if( cbOpenMethod->currentData().toInt() == 1 ) {
+    if( cbOpenMethod->currentData().toInt() == 2 ) {
       digi[i]->ProgramBoard();
     }
 
     ///============== load settings 
-    if( cbOpenMethod->currentData().toInt() == 2 ){
+    if( cbOpenMethod->currentData().toInt() <= 1 ){
       QString fileName = rawDataPath + "/Digi-" + QString::number(digi[i]->GetSerialNumber()) + "_" + QString::fromStdString(digi[i]->GetData()->DPPTypeStr) + ".bin";
       QFile file(fileName);
       if( !file.open(QIODevice::Text | QIODevice::ReadOnly) ) {
@@ -655,12 +655,19 @@ void MainWindow::OpenDigitizers(){
         }
       }else{
         LogMsg("Found <b>" + fileName + "</b> for digitizer settings.");
-        if( digi[i]->LoadSettingBinaryToMemory(fileName.toStdString().c_str()) == 0 ){
-          LogMsg("Loaded settings file <b>" + fileName + "</b> for Digi-" + QString::number(digi[i]->GetSerialNumber()));
-          digi[i]->ProgramSettingsToBoard();
+        
+        if( cbOpenMethod->currentData().toInt() == 1 ){
+          if( digi[i]->LoadSettingBinaryToMemory(fileName.toStdString().c_str()) == 0 ){
+            LogMsg("Loaded settings file <b>" + fileName + "</b> for Digi-" + QString::number(digi[i]->GetSerialNumber()));
+            digi[i]->ProgramSettingsToBoard();
+          }else{
+            LogMsg("Fail to Loaded settings file " + fileName + " for Digi-" + QString::number(digi[i]->GetSerialNumber()));
+          }
         }else{
-          LogMsg("Fail to Loaded settings file " + fileName + " for Digi-" + QString::number(digi[i]->GetSerialNumber()));
+          LogMsg("Save the setting file path, but not load.");
+          digi[i]->SetSettingBinaryPath(fileName.toStdString());
         }
+        
       }
     }    
     digi[i]->ReadAllSettingsFromBoard(true);

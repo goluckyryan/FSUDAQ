@@ -7,6 +7,8 @@
 #include <QDir>
 #include <QFileDialog>
 #include <QSortFilterProxyModel>
+
+#define ComBoxMixed "Mixed"
                                                                                   // bit = 0, bit = 1
 std::vector<std::pair<std::pair<QString, QString>, unsigned short>> ACQToolTip = {{{"ACQ STOP", "ACQ RUN"}, 2}, 
                                                                                   {{"No Event", "Has Events"}, 3},
@@ -36,7 +38,7 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
   enableSignalSlot = false;
 
   setWindowTitle("Digitizer Settings");
-  setGeometry(0, 0, 1600, 850);  
+  setGeometry(0, 0, 1700, 850);  
 
   tabWidget = new QTabWidget(this);
   setCentralWidget(tabWidget);
@@ -368,7 +370,7 @@ void DigiSettingsPanel::SetUpComboBoxBit(RComboBox * &cb, QString label, QGridLa
   cb = new RComboBox(this);
   gLayout->addWidget(cb, row, col + 1, 1, colspan);
 
-  if( ch < 0 ) cb->addItem("", -999);
+  if( ch < 0 ) cb->addItem(ComBoxMixed, -999);
 
   for(int i = 0; i < (int) items.size(); i++){
     cb->addItem(QString::fromStdString(items[i].first), items[i].second);
@@ -377,7 +379,7 @@ void DigiSettingsPanel::SetUpComboBoxBit(RComboBox * &cb, QString label, QGridLa
   connect(cb, &RComboBox::currentIndexChanged, this, [=](){
     if( !enableSignalSlot ) return;
 
-    if( ch == -1 && cb->currentText() == "" ) return;
+    if( ch == -1 && cb->currentText() == ComBoxMixed ) return;
 
     int chID = ch < 0 ? chSelection[ID]->currentData().toInt() : ch;
 
@@ -397,7 +399,7 @@ void DigiSettingsPanel::SetUpComboBox(RComboBox * &cb, QString label, QGridLayou
   cb = new RComboBox(this);
   gLayout->addWidget(cb, row, col + 1);
 
-  if( ch < 0 ) cb->addItem("", -999);
+  if( ch < 0 ) cb->addItem(ComBoxMixed, -999);
 
   std::vector<std::pair<std::string, unsigned int>> items = para.GetComboList();
   for(int i = 0; i < (int) items.size(); i++){
@@ -407,7 +409,7 @@ void DigiSettingsPanel::SetUpComboBox(RComboBox * &cb, QString label, QGridLayou
   connect(cb, &RComboBox::currentIndexChanged, this, [=](){
     if( !enableSignalSlot ) return;
 
-    if( ch == -1 && cb->currentText() == "" ) return;
+    if( ch == -1 && cb->currentText() == ComBoxMixed ) return;
 
     int chID = ch < 0 ? chSelection[ID]->currentData().toInt() : ch;
     digi[ID]->WriteRegister(para, cb->currentData().toUInt(), chID);
@@ -1386,7 +1388,7 @@ void DigiSettingsPanel::SetUpACQReadOutTab(){
 
 //&###########################################################
 void DigiSettingsPanel::SetUpBoard_PHA(){
-  printf("============== %s \n", __func__);
+  printf("============== DigiSettingsPanel::%s \n", __func__);
 
   SetUpCheckBox(chkAutoDataFlush[ID],        "Auto Data Flush", bdCfgLayout[ID], 1, 0, DPP::BoardConfiguration, DPP::Bit_BoardConfig::EnableAutoDataFlush);
   SetUpCheckBox(chkTrigPropagation[ID],      "Trig. Propagate", bdCfgLayout[ID], 2, 0, DPP::BoardConfiguration, DPP::Bit_BoardConfig::TrigPropagation);  
@@ -1843,7 +1845,7 @@ void DigiSettingsPanel::SetUpChannel_PHA(){
 
 //&###########################################################
 void DigiSettingsPanel::SetUpBoard_PSD(){
-  printf("============== %s \n", __func__);
+  printf("============== DigiSettingsPanel::%s \n", __func__);
 
   SetUpCheckBox(chkAutoDataFlush[ID],        "Auto Data Flush", bdCfgLayout[ID], 1, 0, DPP::BoardConfiguration, DPP::Bit_BoardConfig::EnableAutoDataFlush);
   SetUpCheckBox(chkTrigPropagation[ID],      "Trig. Propagate", bdCfgLayout[ID], 2, 0, DPP::BoardConfiguration, DPP::Bit_BoardConfig::TrigPropagation);  
@@ -2425,7 +2427,7 @@ void DigiSettingsPanel::SetUpChannel_PSD(){
 
 //&###########################################################
 void DigiSettingsPanel::SetUpBoard_QDC(){
-  printf("============== %s \n", __func__);
+  printf("============== DigiSettingsPanel::%s \n", __func__);
 
   SetUpCheckBox(chkTraceRecording[ID],  "Record Trace ", bdCfgLayout[ID], 1, 1, DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace);
   SetUpCheckBox(chkEnableExtra2[ID],    "Enable Extra ", bdCfgLayout[ID], 1, 2, DPP::BoardConfiguration, DPP::Bit_BoardConfig::EnableExtra2);
@@ -3502,7 +3504,7 @@ void DigiSettingsPanel::SyncComboBox(RComboBox *(&cb)[][MaxRegChannel+1]){
     //printf("%d =? %d , %s\n", count, nCh, text.toStdString().c_str());
     enableSignalSlot = false;
     if( count != nCh ){
-       cb[ID][nCh]->setCurrentText("");
+       cb[ID][nCh]->setCurrentText(ComBoxMixed);
     }else{
        cb[ID][nCh]->setCurrentText(text);
     }
@@ -4075,7 +4077,7 @@ void DigiSettingsPanel::LoadSetting(){
 
   if( digi[ID]->LoadSettingBinaryToMemory(fileName.toStdString().c_str()) == 0 ){
     SendLogMsg("Loaded settings file " + fileName + " for Digi-" + QString::number(digi[ID]->GetSerialNumber()));
-    leSaveFilePath[ID]->setText(fileName + " | dynamic update");
+    leSaveFilePath[ID]->setText(fileName);
     digi[ID]->ProgramSettingsToBoard();
     UpdatePanelFromMemory();
 
