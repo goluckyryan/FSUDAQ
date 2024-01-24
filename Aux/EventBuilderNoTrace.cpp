@@ -44,9 +44,10 @@ int main(int argc, char **argv) {
   
   /// Form outFileName;
   TString outFileName = inFileName[0];
-  int pos = outFileName.Index("_");
-  pos = outFileName.Index("_", pos+1);
-  outFileName.Remove(pos);
+  int pos = outFileName.Last('/');
+  pos = outFileName.Index("_", pos+1); // find next "_"
+  pos = outFileName.Index("_", pos+1); // find next "_"
+  outFileName.Remove(pos); // remove the rest
   outFileName += "_" + std::to_string(timeWindow) + "_noTrace";  
   outFileName += ".root";
   printf("-------> Out file name : %s \n", outFileName.Data());
