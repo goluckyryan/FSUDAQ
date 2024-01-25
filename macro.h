@@ -11,7 +11,7 @@
 #define MaxRecordLength 0x3fff * 8 
 #define MaxSaveFileSize  1024 * 1024 * 1024 * 2
 
-#define MaxDisplayTraceDataLength 1250 //data point, 
+#define MaxDisplayTraceTimeLength 10000 //ns
 #define ScopeUpdateMiliSec  200 // msec
 #define MaxNumberOfTrace  5   // in an event
 
@@ -22,7 +22,7 @@
 
 #include <sys/time.h> /** struct timeval, select() */
 
-inline unsigned int get_time_us(){
+inline unsigned int getTime_us(){
   unsigned int time_us;
   struct timeval t1;
   struct timezone tz;

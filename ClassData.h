@@ -170,7 +170,7 @@ inline void Data::AllocateDataSize(uShort dataSize){
     printf("dataSize cannot < 1, set dataSize = 1.\n");
     dataSize = 1;
   }
-  //printf("Data::%s, size: %u\n", __func__, dataSize);
+  printf("Data::%s, size: %u, No. Ch: %u\n", __func__, dataSize, numInputCh);
 
   this->dataSize = dataSize;
 
@@ -494,6 +494,8 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
   //  NumNonPileUpDecoded[ch] = 0;
   //}
 
+  // if( DPPType == DPPType::DPP_QDC_CODE ) verbose = 10;
+
   if( nByte == 0 ) return;
   nw = 0;
 
@@ -554,6 +556,9 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
     ///printf("nw : %d ,x 4 = %d, nByte : %d \n", nw, 4*nw, nByte);
   }while(4*nw < nByte);
   
+  // bool debug = false;
+  // if( DPPType == DPPType::DPP_QDC_CODE ) debug = true;
+
   ///^===================Calculate trigger rate and first and last Timestamp
   for(int ch = 0; ch < MaxNChannels; ch++){
     if( ch > numInputCh ) continue;
@@ -568,7 +573,7 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
       continue;
     }
 
-    //printf("Ch : %2d | Decoded Event : %d \n", ch, NumEventsDecoded[ch]);
+    // if( debug ) printf("Ch : %2d | Decoded Event : %d \n", ch, NumEventsDecoded[ch]);
     
     if( NumEventsDecoded[ch] > 4 ){
 
@@ -576,11 +581,11 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
       if( indexStart < 0  ) indexStart += dataSize;
 
       unsigned long long dTime = Timestamp[ch][DataIndex[ch]] - Timestamp[ch][indexStart]; 
-      double sec =  dTime * tick2ns / 1e9;
+      double sec =  dTime / 1e9;
 
       TriggerRate[ch] = (NumEventsDecoded[ch]-1)/sec;
       NonPileUpRate[ch] = (NumNonPileUpDecoded[ch]-1)/sec;
-      //printf("%d %d| %d %d | %llu, %.3e | %.2f, %.2f\n", indexStart, DataIndex[ch], NumEventsDecoded[ch], NumNonPileUpDecoded[ch], dTime, sec , TriggerRate[ch], NonPileUpRate[ch]);
+      // if( debug ) printf("%d %d| %d %d | %llu, %.3e | %.2f, %.2f\n", indexStart, DataIndex[ch], NumEventsDecoded[ch], NumNonPileUpDecoded[ch], dTime, sec , TriggerRate[ch], NonPileUpRate[ch]);
 
     }else{ // look in to the data in the memory, not just this agg.
       
@@ -633,7 +638,7 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
         }
         NonPileUpRate[ch] = (nEvent - pileUpCount)/sec;
 
-        //printf("%2d | %10llu  %10llu, %.0f = %f sec, rate = %f, nEvent %d pileUp %d \n", ch, t1, t0, tick2ns, sec, nEvent / sec, nEvent, pileUpCount);
+        // if( debug ) printf("%2d | %10llu  %10llu, %d = %f sec, rate = %f, nEvent %d pileUp %d \n", ch, t1, t0, tick2ns, sec, nEvent / sec, nEvent, pileUpCount);
       }
       
     }

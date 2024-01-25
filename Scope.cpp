@@ -1,5 +1,6 @@
 #include "Scope.h"
 
+#include <QApplication>
 #include <QValueAxis>
 #include <QRandomGenerator>
 #include <QGroupBox>
@@ -247,7 +248,7 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
 
   rowID ++;
   //TODO =========== Trace step
-  QLabel * lbinfo2 = new QLabel("Maximum time range is " + QString::number(MaxDisplayTraceDataLength * 8) + " ns due to processing speed.", this);
+  QLabel * lbinfo2 = new QLabel("Maximum time range is " + QString::number(MaxDisplayTraceTimeLength) + " ns due to processing speed.", this);
   layout->addWidget(lbinfo2, rowID, 0, 1, 5);
 
   //================ close button
@@ -457,10 +458,8 @@ void Scope::UpdateScope(){
   if( digi[ID]->GetInputChannelOnOff(ch) == false) return;
 
   //printf("### %d %d \n", ch, digi[ID]->GetData()->DataIndex[ch]);
-  
-  digiMTX[ID].lock();
 
-  uint32_t acqStatus = digi[ID]->ReadRegister(DPP::AcquisitionStatus_R);
+  uint32_t acqStatus = digi[ID]->GetACQStatusFromMemory();
   if( ( acqStatus >> 2 ) & 0x1 ){
     runStatus->setStyleSheet("background-color : green;");
   }else{
@@ -468,9 +467,11 @@ void Scope::UpdateScope(){
   }
 
   Data * data = digi[ID]->GetData();
+  int index = data->DataIndex[ch];
+  int traceLength = data->Waveform1[ch][index].size();
+  if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) traceLength =  data->DigiWaveform1[ch][index].size();
 
-  //leTriggerRate->setText(QString::number(data->TriggerRate[ch]) + " [" + QString::number(data->NumEventsDecoded[ch]) + "]");
-  if( data->TriggerRate[ch] == 0){
+  if( index < 0 || data->TriggerRate[ch] == 0){
     leTriggerRate->setStyleSheet("font-weight : bold; color : red;");
     leTriggerRate->setText("No Trigger");
   }else{
@@ -478,17 +479,14 @@ void Scope::UpdateScope(){
     leTriggerRate->setText(QString::number(data->TriggerRate[ch]));
   }
 
-  int index = data->DataIndex[ch];
-  int traceLength = data->Waveform1[ch][index].size();
-  if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) traceLength =  data->DigiWaveform1[ch][index].size();
+  if( traceLength * tick2ns > MaxDisplayTraceTimeLength) traceLength = MaxDisplayTraceTimeLength / tick2ns;
 
-  if( traceLength > MaxDisplayTraceDataLength) traceLength = MaxDisplayTraceDataLength;
-
-  //printf("--- %s| %d, %d, %d | %d | %d, %d\n", __func__, ch, data->LoopIndex[ch], index, traceLength, factor, tick2ns );
-  if( data->TriggerRate[ch] > 0 ){
+  // printf("--- %s| %d, %d, %d | %d | %d, %d\n", __func__, ch, data->LoopIndex[ch], index, traceLength, factor, tick2ns );
+  if( index < 0 || data->TriggerRate[ch] > 0 ){
 
     QVector<QPointF> points[5];
     if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) {
+      if( dataTrace[4]->count() > 0 ) dataTrace[4]->clear();
       for( int i = 0; i < traceLength ; i++ ) {
         points[0].append(QPointF(tick2ns * i * factor, (data->Waveform1[ch][index])[i])); 
         if( i < (int) data->Waveform2[ch][index].size() )      points[1].append(QPointF(tick2ns * i * factor, (data->Waveform2[ch][index])[i]));
@@ -502,11 +500,12 @@ void Scope::UpdateScope(){
     }
 
     if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) {
+      if( dataTrace[4]->count() > 0 ) dataTrace[4]->clear();
       for( int i = 0; i < traceLength ; i++ ) {
         points[0].append(QPointF(tick2ns * i * factor, (data->Waveform1[ch][index])[i])); 
         if( i < (int) data->Waveform2[ch][index].size() )      points[1].append(QPointF(tick2ns * i * factor, (data->Waveform2[ch][index])[i]));
-        if( i < (int) data->DigiWaveform1[ch][index].size() )  points[2].append(QPointF(tick2ns * i,          (data->DigiWaveform1[ch][index])[i] * 1000));
-        if( i < (int) data->DigiWaveform2[ch][index].size() )  points[3].append(QPointF(tick2ns * i,          (data->DigiWaveform2[ch][index])[i] * 1000 + 500));
+        if( i < (int) data->DigiWaveform1[ch][index].size() )  points[2].append(QPointF(tick2ns * i * factor, (data->DigiWaveform1[ch][index])[i] * 1000));
+        if( i < (int) data->DigiWaveform2[ch][index].size() )  points[3].append(QPointF(tick2ns * i * factor, (data->DigiWaveform2[ch][index])[i] * 1000 + 500));
       }
       dataTrace[0]->replace(points[0]);
       dataTrace[1]->replace(points[1]);
@@ -515,12 +514,13 @@ void Scope::UpdateScope(){
     }
 
     if( digi[ID]->GetDPPType() == V1740_DPP_QDC_CODE ) {
+
       for( int i = 0; i < traceLength ; i++ ) {
-        points[0].append(QPointF(tick2ns * i * factor, (data->Waveform1[ch][index])[i])); 
-        if( i < (int) data->DigiWaveform1[ch][index].size() )  points[1].append(QPointF(tick2ns * i,          (data->DigiWaveform1[ch][index])[i] * 1000));
-        if( i < (int) data->DigiWaveform2[ch][index].size() )  points[2].append(QPointF(tick2ns * i,          (data->DigiWaveform2[ch][index])[i] * 1000 + 500));
-        if( i < (int) data->DigiWaveform3[ch][index].size() )  points[3].append(QPointF(tick2ns * i,          (data->DigiWaveform3[ch][index])[i] * 1000 + 1000));
-        if( i < (int) data->DigiWaveform4[ch][index].size() )  points[4].append(QPointF(tick2ns * i,          (data->DigiWaveform4[ch][index])[i] * 1000 + 1500));
+        points[0].append(QPointF(tick2ns * i, (data->Waveform1[ch][index])[i])); 
+        if( i < (int) data->DigiWaveform1[ch][index].size() )  points[1].append(QPointF(tick2ns * i,  (data->DigiWaveform1[ch][index])[i] * 1000));
+        if( i < (int) data->DigiWaveform2[ch][index].size() )  points[2].append(QPointF(tick2ns * i,  (data->DigiWaveform2[ch][index])[i] * 1000 + 500));
+        if( i < (int) data->DigiWaveform3[ch][index].size() )  points[3].append(QPointF(tick2ns * i,  (data->DigiWaveform3[ch][index])[i] * 1000 + 1000));
+        if( i < (int) data->DigiWaveform4[ch][index].size() )  points[4].append(QPointF(tick2ns * i,  (data->DigiWaveform4[ch][index])[i] * 1000 + 1500));
       }
       dataTrace[0]->replace(points[0]);
       dataTrace[1]->replace(points[1]);
@@ -530,7 +530,7 @@ void Scope::UpdateScope(){
     }
   }
   //data->ClearTriggerRate();
-  digiMTX[ID].unlock();
+  //digiMTX[ID].unlock();
 
   // if( data->TriggerRate[ch] == 0 ){
   //     dataTrace[0]->clear();
@@ -541,6 +541,8 @@ void Scope::UpdateScope(){
   // }
 
   plot->axes(Qt::Horizontal).first()->setRange(0, tick2ns * traceLength * factor);
+
+  QCoreApplication::processEvents();
 
 }
 

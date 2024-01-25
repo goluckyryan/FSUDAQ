@@ -1131,6 +1131,7 @@ void MainWindow::StopACQ(){
     digiMTX[i].unlock();
     if( chkSaveData->isChecked() ) digi[i]->GetData()->CloseSaveFile();
     LogMsg("Digi-" + QString::number(digi[i]->GetSerialNumber()) + " ACQ is stopped." );
+    QCoreApplication::processEvents();
   }
 
   if( scalarThread->isRunning()){
@@ -1164,6 +1165,7 @@ void MainWindow::StopACQ(){
       }else{
         runStatus[iDigi]->setStyleSheet("");
       }
+      QCoreApplication::processEvents();
     }
   }
 
