@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  uInt runStartTime = get_time_us();
+  uInt runStartTime = getTime_us();
   
   ///============= read input
   unsigned int  timeWindow = atoi(argv[1]);
@@ -45,8 +45,9 @@ int main(int argc, char **argv) {
   /// Form outFileName;
   TString outFileName = inFileName[0];
   int pos = outFileName.Last('/');
-  pos = outFileName.Index("_", pos+1); // find next "_"
-  pos = outFileName.Index("_", pos+1); // find next "_"
+  pos = outFileName.Index("_", pos+1); // find next "_", expName
+  pos = outFileName.Index("_", pos+1); // find next "_", runID
+  if( nFile == 1 ) pos = outFileName.Index("_", pos+1); // find next "_", S/N
   outFileName.Remove(pos); // remove the rest
   outFileName += "_" + std::to_string(timeWindow) + "_noTrace";  
   outFileName += ".root";
@@ -145,6 +146,7 @@ int main(int argc, char **argv) {
   unsigned short           e2[MAX_MULTI] = {0}; /// 15 bit
   unsigned long long      e_t[MAX_MULTI] = {0}; /// timestamp 47 bit
   unsigned short          e_f[MAX_MULTI] = {0}; /// fine time 10 bit 
+  bool                 pileUp[MAX_MULTI] = {false};          
 
   tree->Branch("evID",           &evID, "event_ID/l"); 
   tree->Branch("multi",         &multi, "multi/i"); 
@@ -154,6 +156,7 @@ int main(int argc, char **argv) {
   tree->Branch("e2",                e2, "e2[multi]/s");
   tree->Branch("e_t",              e_t, "e_timestamp[multi]/l");
   tree->Branch("e_f",              e_f, "e_timestamp[multi]/s");
+  tree->Branch("pileUp",        pileUp, "pileUp[multi]/O");
   
   //TClonesArray * arrayTrace = nullptr;
   //unsigned short  traceLength[MAX_MULTI] = {0};
@@ -218,7 +221,7 @@ int main(int argc, char **argv) {
     }
     if (debug ) printf("the eariliest time is %llu at Group : %u, hitID : %lu, %s\n", t0, group0, group[group0].hitID, fileInfo[group[group0].currentID].fileName.c_str());
 
-    printf("hit Porcessed %u/%u....%.2f%%\n\033[A\r", hitProcessed, totHitCount,  hitProcessed*100./totHitCount);
+    if( hitProcessed % 10000 == 0 ) printf("hit Porcessed %u/%u....%.2f%%\n\033[A\r", hitProcessed, totHitCount,  hitProcessed*100./totHitCount);
     
     for(int i = 0; i < nGroup; i++){
       uShort gpID = (i + group0) % nGroup;
@@ -259,12 +262,13 @@ int main(int argc, char **argv) {
       if( hitProcessed >= totHitCount ) tEnd = event.back().timestamp;
       for( size_t j = 0; j < multi ; j++){     
 
-        sn[j]  = event[j].sn;
-        ch[j]  = event[j].ch;
-        e[j]   = event[j].energy;
-        e2[j]  = event[j].energy2;
-        e_t[j] = event[j].timestamp;
-        e_f[j] = event[j].fineTime;
+        sn[j]     = event[j].sn;
+        ch[j]     = event[j].ch;
+        e[j]      = event[j].energy;
+        e2[j]     = event[j].energy2;
+        e_t[j]    = event[j].timestamp;
+        e_f[j]    = event[j].fineTime;
+        pileUp[j] = event[j].pileUp;
 
         if (debug )event[j].Print();
       }
@@ -287,7 +291,7 @@ int main(int argc, char **argv) {
 
   tree->Write();
 
-  uInt runEndTime = get_time_us();
+  uInt runEndTime = getTime_us();
   double runTime = (runEndTime - runStartTime) * 1e-6;
 
   printf("========================= finished.\n");

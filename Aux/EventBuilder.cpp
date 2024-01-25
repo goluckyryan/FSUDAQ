@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  uInt runStartTime = get_time_us();
+  uInt runStartTime = getTime_us();
 
   ///============= read input
   unsigned int  timeWindow = atoi(argv[1]);
@@ -50,6 +50,7 @@ int main(int argc, char **argv) {
   int pos = outFileName.Last('/');
   pos = outFileName.Index("_", pos+1); // find next "_"
   pos = outFileName.Index("_", pos+1); // find next "_"
+  if( nFile == 1 ) pos = outFileName.Index("_", pos+1); // find next "_", S/N
   outFileName.Remove(pos); // remove the rest
   outFileName += "_" + std::to_string(timeWindow);
   outFileName += ".root";
@@ -135,9 +136,9 @@ int main(int argc, char **argv) {
         printf("------- cannot open file.\n");
         continue;
       }
-      reader[i]->ScanFile(0); 
+      //reader[i]->ScanFile(1); 
 
-      if( reader[i]->GetNumHit() == 0 ){
+      if( reader[i]->GetNumHitFromHeader() == 0 ){
         printf("------- file has no data.\n");
         continue;
       }
@@ -146,7 +147,7 @@ int main(int argc, char **argv) {
       tempInfo.fileName = inFileName[i].Data();
       tempInfo.readerID = i;
       tempInfo.SN = reader[i]->GetSN();
-      tempInfo.hitCount = reader[i]->GetNumHit();
+      tempInfo.hitCount = reader[i]->GetNumHitFromHeader();
       tempInfo.fileSize = reader[i]->GetFileByteSize();
       tempInfo.order = reader[i]->GetFileOrder();
       tempInfo.CalOrder();
@@ -246,7 +247,7 @@ int main(int argc, char **argv) {
   for( int i = 0; i < nGroup; i++){
     std::string fileName = fileInfo[group[i].fileIDList[0]].fileName;
     tsReader[i] = new FSUTSReader(fileName);
-    tsReader[i]->ScanFile(0);
+    // tsReader[i]->ScanFile(1);
     group[i].usedHitCount = 0;
   }
 
@@ -323,7 +324,7 @@ int main(int argc, char **argv) {
           }
 
           if( multi > MAX_MULTI) {
-            printf("  !!!!!! multi > %d\n", MAX_MULTI);
+            printf("  !!!!!! multi > MAX_MULTI = %d\n", MAX_MULTI);
           }
 
         }else{
@@ -332,7 +333,7 @@ int main(int argc, char **argv) {
 
         if( timeWindow == 0) break;
 
-        if( tsReader[gpID]->GetHitID() + 1 >= tsReader[gpID]->GetNumHit() ) endCount ++; 
+        if( tsReader[gpID]->GetHitID() + 1 >= tsReader[gpID]->GetNumHitFromHeader() ) endCount ++; 
         if( endCount == 2 ) break;
 
       }while(true);
@@ -371,7 +372,7 @@ int main(int argc, char **argv) {
         continue;
       }
 
-      if( group[gpID].usedHitCount >= tsReader[gpID]->GetNumHit() ) {
+      if( group[gpID].usedHitCount >= tsReader[gpID]->GetNumHitFromHeader() ) {
 
         group[gpID].currentID ++;
 
@@ -401,7 +402,7 @@ int main(int argc, char **argv) {
 
   tree->Write();
 
-  uInt runEndTime = get_time_us();
+  uInt runEndTime = getTime_us();
   double runTime = (runEndTime - runStartTime) * 1e-6;
 
   printf("========================= finished.\n");

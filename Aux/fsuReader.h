@@ -22,7 +22,7 @@ struct FileInfo {
   void CalOrder(){ ID = ORDERSHIFT * SN + order; }
 
   void Print(){
-    printf(" %10lu | %3d | %50s | %2d | %6lu | %10u Bytes = %.2f MB\n", 
+    printf(" %10lu | %3d | %60s | %2d | %6lu | %10u Bytes = %.2f MB\n", 
             ID, DPPType, fileName.c_str(), tick2ns, hitCount, fileSize, fileSize/1024./1024.);  
   }
 };
@@ -236,7 +236,8 @@ inline int FSUReader::ReadNextBlock(bool traceON, int verbose, uShort saveData){
   fseek(inFile, -4, SEEK_CUR);
 
   if( dummy != 1) {
-    printf("fread error, should read 4 bytes, but read %ld x 4 byte, file pos: %ld byte\n", dummy, ftell(inFile));
+    printf("fread error, should read 4 bytes, but read %ld x 4 byte, file pos: %ld / %ld byte\n", 
+            dummy, ftell(inFile), inFileSize);
     return -10;
   }
   short header = ((word[0] >> 28 ) & 0xF);
@@ -250,7 +251,8 @@ inline int FSUReader::ReadNextBlock(bool traceON, int verbose, uShort saveData){
     dummy = fread(buffer, aggSize, 1, inFile);
     filePos = ftell(inFile);
     if( dummy != 1) {
-      printf("fread error, should read %d bytes, but read %ld x %d byte, file pos: %ld byte \n", aggSize, dummy, aggSize, ftell(inFile));
+      printf("fread error, should read %d bytes, but read %ld x %d byte, file pos: %ld / %ld byte \n", 
+             aggSize, dummy, aggSize, ftell(inFile), inFileSize);
       return -30;
     }
 
@@ -289,6 +291,7 @@ inline int FSUReader::ReadNextBlock(bool traceON, int verbose, uShort saveData){
         temp.energy2 = data->Energy2[ch][k];
         temp.timestamp = data->Timestamp[ch][k];
         temp.fineTime = data->fineTime[ch][k];
+        temp.pileUp = data->PileUp[ch][k];
         if( saveData > 1 ) {
           temp.traceLength = data->Waveform1[ch][k].size();
           temp.trace = data->Waveform1[ch][k];
@@ -375,7 +378,7 @@ inline void FSUReader::ScanNumBlock(int verbose, uShort saveData){
   if( hitCount != hit.size() ){
     printf("!!!!!! the Data::dataSize is not big enough. !!!!!!!!!!!!!!!\n");
   }else{
-    SortHit(verbose);
+    SortHit(verbose+1);
   }
 }
 
@@ -414,6 +417,7 @@ inline std::string FSUReader::SaveHit2NewFile(std::string saveFolder){
   uint32_t header = 0xAA000000;
   header += sn;
   fwrite( &header, 4, 1, outFile );
+  fwrite( &hitCount, 8, 1, outFile);
 
   for( ulong i = 0; i < hitCount; i++){
 
@@ -425,6 +429,7 @@ inline std::string FSUReader::SaveHit2NewFile(std::string saveFolder){
     fwrite( &(hit[i].energy2), 2, 1, outFile);
     fwrite( &(hit[i].timestamp), 8, 1, outFile);
     fwrite( &(hit[i].fineTime), 2, 1, outFile);
+    fwrite( &(hit[i].pileUp), 1, 1, outFile);
     fwrite( &(hit[i].traceLength), 2, 1, outFile);
     
     for( uShort j = 0; j < hit[i].traceLength; j++){

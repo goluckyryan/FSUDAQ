@@ -27,6 +27,7 @@ class FSUTSReader{
 
     unsigned int  GetHitID()  const {return hitIndex;}
     unsigned long GetNumHit() const {return hitCount;}
+    unsigned long GetNumHitFromHeader() const {return hitCount0;}
 
     std::string   GetFileName()     const {return fileName;}
     unsigned long GetFileByteSize() const {return inFileSize;}
@@ -45,6 +46,7 @@ class FSUTSReader{
     unsigned long inFileSize;
     unsigned int  filePos;
     unsigned long hitCount;
+    unsigned long hitCount0; // hit count from file
 
     uShort sn;
     int order;
@@ -131,7 +133,10 @@ inline void FSUTSReader::OpenFile(std::string fileName, int verbose){
   }
   sn = (header & 0xFFFFFF);
   hit->sn = sn;
-  printf(" S/N : %u \n", sn);
+  printf(" S/N : %u, ", sn);
+
+  dummy = fread(&hitCount0, 8, 1, inFile);
+  printf(" hitCount : %lu \n", hitCount0);
 
 }
 
@@ -149,6 +154,7 @@ inline int FSUTSReader::ReadNextHit(bool withTrace, int verbose){
   dummy = fread(&(hit->timestamp), 8, 1, inFile);
   dummy = fread(&(hit->fineTime), 2, 1, inFile);
   dummy = fread(&(hit->traceLength), 2, 1, inFile);
+  dummy = fread(&(hit->pileUp), 1, 1, inFile);
 
   if( hit->trace.size() > 0 ) hit->trace.clear();
 
@@ -195,6 +201,7 @@ inline void FSUTSReader::ScanFile(int verbose){
   hitStartPos.clear();
   fseek(inFile, 0L, SEEK_SET);
   dummy = fread(&header, 4, 1, inFile);
+  dummy = fread(&hitCount0, 8, 1, inFile);
   filePos = ftell(inFile);
   hitStartPos.push_back(filePos);
   hitIndex = -1;
@@ -206,15 +213,21 @@ inline void FSUTSReader::ScanFile(int verbose){
 
     if(verbose > 1 ) printf("hitIndex : %u, Pos : %u - %u\n" , hitIndex, hitStartPos[hitIndex], hitStartPos[hitIndex+1]);
 
-    if(verbose) printf(" %u, %.2f%% %u/%lu byte \n\033[A\r", hitIndex, filePos*100./inFileSize, filePos, inFileSize);
+    if(verbose && hitIndex%10000 == 0 ) printf(" %u, %.2f%% %u/%lu byte \n\033[A\r", hitIndex, filePos*100./inFileSize, filePos, inFileSize);
   }
 
   hitCount = hitIndex + 1;
-  if(verbose) printf("-----> Scan complete: number of hit : %lu\n", hitCount);
+  if(verbose) {
+    printf("\n-----> Scan complete\n");
+    printf("   number of hit : %lu\n", hitCount);
+    printf(" first timestamp : %16llu\n", t0);
+    printf("  last timestamp : %16llu\n", hit->timestamp);
+    double dt = (hit->timestamp - t0)*1e-9;
+    printf("        duration : %.2f sec = %.2f min\n", dt, dt/60.);
+  }
 
-  rewind(inFile);
-  dummy = fread(&header, 4, 1, inFile);
-  hitIndex = -1;  
-  filePos = ftell(inFile);
-
+  fseek(inFile, 0L, SEEK_SET);
+  fseek(inFile, hitStartPos[0], SEEK_CUR);
+  filePos = hitStartPos[0];
+  hitIndex = -1;
 }

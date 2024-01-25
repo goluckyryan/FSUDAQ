@@ -10,6 +10,7 @@ public:
   unsigned short energy2;
   unsigned long long timestamp;
   unsigned short fineTime;
+  bool pileUp;
 
   unsigned short traceLength;
   std::vector<short> trace;
@@ -27,11 +28,12 @@ public:
     timestamp = 0;
     fineTime = 0;
     traceLength = 0;
+    pileUp = false;
     trace.clear();
   }
 
   void Print(){
-    printf("(%5d, %2d) %6d %16llu, %6d, %5ld\n", sn, ch, energy, timestamp, fineTime, trace.size());
+    printf("(%5d, %2d) %6d %16llu, %6d, %d, %5ld\n", sn, ch, energy, timestamp, fineTime, pileUp, trace.size());
   }
 
   void PrintTrace(){
