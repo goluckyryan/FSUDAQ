@@ -45,11 +45,11 @@ DataReader : DataReaderScript.cpp ../ClassData.h MultiBuilder.o
 # 		@echo "--------- making EventBuilder"
 # 		$(CC) $(COPTS) -o EventBuilder_old EventBuilder_old.cpp MultiBuilder.o $(ROOTLIBS) 
 
-EventBuilder : EventBuilder.cpp ../ClassData.h fsuReader.h fsutsReader.h
+EventBuilder : EventBuilder.cpp ../ClassData.h fsuReader.h fsutsReader.h ../Hit.h CustomStruct.h
 		@echo "--------- making EventBuilder"
 		$(CC) $(COPTS) -o EventBuilder EventBuilder.cpp $(ROOTLIBS) 
 
-EventBuilderNoTrace : EventBuilderNoTrace.cpp ../ClassData.h fsuReader.h ../Hit.h
+EventBuilderNoTrace : EventBuilderNoTrace.cpp ../ClassData.h fsuReader.h ../Hit.h CustomStruct.h
 		@echo "--------- making EventBuilderNoTrace"
 		$(CC) $(COPTS) -o EventBuilderNoTrace EventBuilderNoTrace.cpp  $(ROOTLIBS) 
 

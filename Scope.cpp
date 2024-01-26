@@ -482,7 +482,7 @@ void Scope::UpdateScope(){
   if( traceLength * tick2ns > MaxDisplayTraceTimeLength) traceLength = MaxDisplayTraceTimeLength / tick2ns;
 
   //printf("--- %s| %d, %d, %d | %d | %d, %d\n", __func__, ch, data->LoopIndex[ch], index, traceLength, factor, tick2ns );
-  if( index > 0 || data->TriggerRate[ch] > 0 ){
+  if( index > 0 && data->TriggerRate[ch] > 0 ){
 
     QVector<QPointF> points[5];
     if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) {
