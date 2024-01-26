@@ -28,7 +28,7 @@ enum DPPType{
 class Data{
 
   public:
-    char *buffer;                     /// readout buffer
+    char * buffer;                     /// readout buffer
     int DPPType;
     std::string DPPTypeStr; /// only for saving fiel name
     unsigned short boardSN;
@@ -49,15 +49,16 @@ class Data{
     //it is a circular memory
     bool IsNotRollOverFakeAgg;
 
-    int       LoopIndex[MaxNChannels];     /// number of loop in the circular memory
-    int       DataIndex[MaxNChannels];
+    int GetLoopIndex(unsigned short ch) const {return LoopIndex[ch];}
+    int GetDataIndex(unsigned short ch) const {return DataIndex[ch];}
 
     uShort GetDataSize() const {return dataSize;}
-    ullong ** Timestamp; /// 47 bit
-    uShort ** fineTime;  /// 10 bits, in unit of tick2ns / 1000 = ps
-    uShort ** Energy ;   /// 15 bit
-    uShort ** Energy2 ;  /// 15 bit, in PSD, Energy = Qshort, Energy2 = Qlong
-    bool   ** PileUp ;   /// pile up flag
+
+    ullong GetTimestamp(unsigned short ch, unsigned int index) const {return Timestamp[ch][index];}
+    uShort GetFineTime(unsigned short ch, unsigned int index)  const {return fineTime[ch][index];}
+    uShort GetEnergy(unsigned short ch, unsigned int index)    const {return Energy[ch][index];}
+    uShort GetEnergy2(unsigned short ch, unsigned int index)   const {return Energy2[ch][index];}
+    bool   GetPileUp(unsigned short ch, unsigned int index)    const {return PileUp[ch][index];}
 
     std::vector<short> ** Waveform1    ; // used at least 14 MB
     std::vector<short> ** Waveform2    ;
@@ -107,6 +108,15 @@ class Data{
     unsigned int nw;
 
     uShort dataSize;
+
+    int       LoopIndex[MaxNChannels];     /// number of loop in the circular memory
+    int       DataIndex[MaxNChannels];
+
+    ullong ** Timestamp; /// 47 bit
+    uShort ** fineTime;  /// 10 bits, in unit of tick2ns / 1000 = ps
+    uShort ** Energy ;   /// 15 bit
+    uShort ** Energy2 ;  /// 15 bit, in PSD, Energy = Qshort, Energy2 = Qlong
+    bool   ** PileUp ;   /// pile up flag
 
     ///for temperary
     std::vector<short> tempWaveform1; 

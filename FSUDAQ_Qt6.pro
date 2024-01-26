@@ -36,6 +36,7 @@ HEADERS += ClassData.h \
            influxdb.h\
            Scope.h \
            SingleSpectra.h \
+           Hit.h \
            MultiBuilder.h \
            qcustomplot.h \
            analyzers/Isotope.h \

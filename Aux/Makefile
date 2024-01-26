@@ -14,7 +14,7 @@ ROOTLIBS = `root-config --cflags --glibs`
 
 OBJS = ClassDigitizer.o MultiBuilder.o
 
-ALL = test test_indep DataGenerator EventBuilder EventBuilderNoTrace DataReader DumpFSU2ROOT SettingsExplorer 
+ALL = test test_indep EventBuilder EventBuilderNoTrace DataReader DumpFSU2ROOT SettingsExplorer 
 
 #########################################################################
 
@@ -36,10 +36,6 @@ test	:	test.cpp ../ClassDigitizer.o ../MultiBuilder.o
 test_indep : test_indep.cpp ../RegisterAddress.h ../macro.h
 		@echo "--------- making test_indep"
 		$(CC) $(COPTS) -o test_indep test_indep.cpp $(CAENLIBS) 
-
-DataGenerator : DataGenerator.cpp ../ClassDigitizer.o
-		@echo "--------- making DataGenerator"
-		$(CC) $(COPTS) -o DataGenerator DataGenerator.cpp ../ClassDigitizer.o $(CAENLIBS)
 
 DataReader : DataReaderScript.cpp ../ClassData.h MultiBuilder.o
 		@echo "--------- making DataReader"

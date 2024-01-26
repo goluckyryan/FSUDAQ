@@ -279,7 +279,7 @@ inline int FSUReader::ReadNextBlock(bool traceON, int verbose, uShort saveData){
     hitCount += data->NumEventsDecoded[ch];
 
     if( saveData ){
-      int start = data->DataIndex[ch] - data->NumEventsDecoded[ch] + 1;
+      int start = data->GetDataIndex(ch) - data->NumEventsDecoded[ch] + 1;
       if( start < 0 ) start = start + data->GetDataSize();
 
       for( int i = start; i < start + data->NumEventsDecoded[ch]; i++ ){
@@ -287,11 +287,11 @@ inline int FSUReader::ReadNextBlock(bool traceON, int verbose, uShort saveData){
         
         temp.sn = sn;
         temp.ch = ch;
-        temp.energy = data->Energy[ch][k];
-        temp.energy2 = data->Energy2[ch][k];
-        temp.timestamp = data->Timestamp[ch][k];
-        temp.fineTime = data->fineTime[ch][k];
-        temp.pileUp = data->PileUp[ch][k];
+        temp.energy    = data->GetEnergy(ch, k);
+        temp.energy2   = data->GetEnergy2(ch, k);
+        temp.timestamp = data->GetTimestamp(ch, k);
+        temp.fineTime  = data->GetFineTime(ch, k);
+        temp.pileUp    = data->GetPileUp(ch, k);
         if( saveData > 1 ) {
           temp.traceLength = data->Waveform1[ch][k].size();
           temp.trace = data->Waveform1[ch][k];

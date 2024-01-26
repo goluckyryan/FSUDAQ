@@ -109,9 +109,9 @@ void MultiBuilder::FindEarlistTimeAndCh(bool verbose){
         continue;
       }
 
-      if( data[i]->Timestamp[ch][data[i]->DataIndex[ch]] == 0 || 
-          data[i]->DataIndex[ch] == -1 || 
-          loopIndex[i][ch] * dataSize[i] > data[i]->LoopIndex[ch] * dataSize[i] +  data[i]->DataIndex[ch]) {
+      if( data[i]->GetTimestamp(ch, data[i]->GetDataIndex(ch)) == 0 || 
+          data[i]->GetDataIndex(ch) == -1 || 
+          loopIndex[i][ch] * dataSize[i] > data[i]->GetLoopIndex(ch) * dataSize[i] +  data[i]->GetDataIndex(ch)) {
         nExhaushedCh ++;
         chExhaused[i][ch] = true;
         continue;
@@ -119,7 +119,7 @@ void MultiBuilder::FindEarlistTimeAndCh(bool verbose){
 
       if( nextIndex[i][ch] == -1 ) nextIndex[i][ch] = 0;
 
-      unsigned long long time = data[i]->Timestamp[ch][nextIndex[i][ch]];
+      unsigned long long time = data[i]->GetTimestamp(ch, nextIndex[i][ch]);
       if( time < earlistTime ) {
         earlistTime = time;
         earlistDigi = i;
@@ -156,7 +156,7 @@ void MultiBuilder::FindLatestTimeAndCh(bool verbose){
         continue;
       }
 
-      unsigned long long time = data[i]->Timestamp[ch][nextIndex[i][ch]];
+      unsigned long long time = data[i]->GetTimestamp(ch, nextIndex[i][ch]);
       // printf(", time : %llu\n", time );
       if( time > latestTime ) {
         latestTime = time;
@@ -177,10 +177,10 @@ void MultiBuilder::FindEarlistTimeAmongLastData(bool verbose){
   for( int i = 0; i < nData; i++){
     for( unsigned ch = 0; ch < data[i]->GetNChannel(); ch++ ){
       if( chExhaused[i][ch] ) continue;
-      int index = data[i]->DataIndex[ch];
+      int index = data[i]->GetDataIndex(ch);
       if( index == -1 ) continue;
-      if( data[i]->Timestamp[ch][index] < latestTime ) {
-        latestTime = data[i]->Timestamp[ch][index];
+      if( data[i]->GetTimestamp(ch, index) < latestTime ) {
+        latestTime = data[i]->GetTimestamp(ch, index);
         latestCh = ch;
         latestDigi = i;
       }
@@ -195,10 +195,10 @@ void MultiBuilder::FindLatestTimeOfData(bool verbose){
   latestDigi = -1;
   for( int i = 0; i < nData; i++){
     for( unsigned ch = 0; ch < data[i]->GetNChannel(); ch++ ){
-      int index = data[i]->DataIndex[ch];
+      int index = data[i]->GetDataIndex(ch);
       if( index == -1 ) continue;
-      if( data[i]->Timestamp[ch][index] > latestTime ) {
-        latestTime = data[i]->Timestamp[ch][index];
+      if( data[i]->GetTimestamp(ch, index) > latestTime ) {
+        latestTime = data[i]->GetTimestamp(ch, index);
         latestCh = ch;
         latestDigi = i;
       }
@@ -240,7 +240,7 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
         int ch = (i + earlistCh ) % numCh;
         // printf("ch : %d | exhaused ? %s \n", ch, chExhaused[bd][ch] ? "Yes" : "No");
         if( chExhaused[bd][ch] ) continue;
-        if( loopIndex[bd][ch] * dataSize[bd] + nextIndex[bd][ch] > data[bd]->LoopIndex[ch] * dataSize[bd] +  data[bd]->DataIndex[ch]) {
+        if( loopIndex[bd][ch] * dataSize[bd] + nextIndex[bd][ch] > data[bd]->GetLoopIndex(ch) * dataSize[bd] +  data[bd]->GetDataIndex(ch)) {
           nExhaushedCh ++;
           chExhaused[bd][ch] = true;
           continue;
@@ -248,19 +248,19 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
 
         do {
 
-          unsigned long long time = data[bd]->Timestamp[ch][nextIndex[bd][ch]];
+          unsigned long long time = data[bd]->GetTimestamp(ch, nextIndex[bd][ch]);
           //printf("%6ld, sn: %5d, ch: %2d, timestamp : %16llu | earlistTime : %16llu | timeWindow : %u \n", eventIndex, data[bd]->boardSN, ch, time, earlistTime, timeWindow);
 
           if( time >= earlistTime && (time - earlistTime <=  timeWindow) ){
             em.sn = snList[bd];
             em.bd = bd;
             em.ch = ch;
-            em.energy = data[bd]->Energy[ch][nextIndex[bd][ch]];
+            em.energy = data[bd]->GetEnergy(ch, nextIndex[bd][ch]);
             em.timestamp = time;
-            em.fineTime = data[bd]->fineTime[ch][nextIndex[bd][ch]];
+            em.fineTime = data[bd]->GetFineTime(ch, nextIndex[bd][ch]);
 
             if( !skipTrace ) em.trace = data[bd]->Waveform1[ch][nextIndex[bd][ch]];
-            if( typeList[bd] == DPPType::DPP_PSD_CODE ) em.energy2 = data[bd]->Energy2[ch][nextIndex[bd][ch]];
+            if( typeList[bd] == DPPType::DPP_PSD_CODE ) em.energy2 = data[bd]->GetEnergy2(ch, nextIndex[bd][ch]);
 
             events[eventIndex].push_back(em);
             nextIndex[bd][ch]++;
@@ -338,8 +338,8 @@ void MultiBuilder::BuildEventsBackWard(int maxNumEvent, bool verbose){
   // remember the end of DataIndex, prevent over build
   for( int k = 0; k < nData; k++){
     for( int i = 0; i < data[k]->GetNChannel(); i++){
-      nextIndex[k][i] = data[k]->DataIndex[i];
-      loopIndex[k][i] = data[k]->LoopIndex[i];
+      nextIndex[k][i] = data[k]->GetDataIndex(i);
+      loopIndex[k][i] = data[k]->GetLoopIndex(i);
     }
   }
 
@@ -374,18 +374,18 @@ void MultiBuilder::BuildEventsBackWard(int maxNumEvent, bool verbose){
 
         do{
 
-          unsigned long long time = data[bd]->Timestamp[ch][nextIndex[bd][ch]];
+          unsigned long long time = data[bd]->GetTimestamp(ch, nextIndex[bd][ch]);
           if( time <= latestTime && (latestTime - time <= timeWindow)){
             em.sn = snList[bd];
             em.bd = bd;
             em.ch = ch;
-            em.energy = data[bd]->Energy[ch][nextIndex[bd][ch]];
+            em.energy = data[bd]->GetEnergy(ch, nextIndex[bd][ch]);
             em.timestamp = time;
-            if( typeList[bd] == DPPType::DPP_PSD_CODE ) em.energy2 = data[bd]->Energy2[ch][nextIndex[bd][ch]];
+            if( typeList[bd] == DPPType::DPP_PSD_CODE ) em.energy2 = data[bd]->GetEnergy2(ch, nextIndex[bd][ch]);
 
             events[eventIndex].push_back(em);
             nextIndex[bd][ch]--;
-            if( nextIndex[bd][ch] < 0 && data[bd]->LoopIndex[ch] > 0 ) nextIndex[bd][ch] = dataSize[bd] - 1;
+            if( nextIndex[bd][ch] < 0 && data[bd]->GetLoopIndex(ch) > 0 ) nextIndex[bd][ch] = dataSize[bd] - 1;
             
           }else{
             break;

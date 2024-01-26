@@ -205,8 +205,8 @@ void SingleSpectra::FillHistograms(){
 
     digiMTX[i].lock();
     for( int ch = 0; ch < digi[i]->GetNumInputCh(); ch ++ ){
-      int lastIndex = digi[i]->GetData()->DataIndex[ch];
-      int loopIndex = digi[i]->GetData()->LoopIndex[ch];
+      int lastIndex = digi[i]->GetData()->GetDataIndex(ch);
+      int loopIndex = digi[i]->GetData()->GetLoopIndex(ch);
 
       int temp1 = lastIndex + loopIndex * digi[i]->GetData()->GetDataSize();
       int temp2 = lastFilledIndex[i][ch] + loopFilledIndex[i][ch] * digi[i]->GetData()->GetDataSize();
@@ -222,9 +222,9 @@ void SingleSpectra::FillHistograms(){
           lastFilledIndex[i][ch] = 0;
           loopFilledIndex[i][ch] ++;
         }
-        hist[i][ch]->Fill( digi[i]->GetData()->Energy[ch][lastFilledIndex[i][ch]]);
+        hist[i][ch]->Fill( digi[i]->GetData()->GetEnergy(ch, lastFilledIndex[i][ch]));
 
-        hist2D[i]->Fill(ch, digi[i]->GetData()->Energy[ch][lastFilledIndex[i][ch]]);
+        hist2D[i]->Fill(ch, digi[i]->GetData()->GetEnergy(ch, lastFilledIndex[i][ch]));
 
       }
       if( histVisibility[i][ch]  ) hist[i][ch]->UpdatePlot();
