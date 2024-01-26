@@ -8,6 +8,8 @@
 #include "TFile.h"
 #include "TTree.h"
 
+#include "CustomStruct.h"
+
 #define MAX_MULTI  1000
 
 //^#############################################################

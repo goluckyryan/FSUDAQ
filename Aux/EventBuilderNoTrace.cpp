@@ -1,4 +1,5 @@
 #include "fsuReader.h"
+#include "CustomStruct.h"
 
 #include "TROOT.h"
 #include "TSystem.h"
