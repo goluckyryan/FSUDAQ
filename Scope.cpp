@@ -107,7 +107,7 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   QValueAxis * xaxis = qobject_cast<QValueAxis*> (plot->axes(Qt::Horizontal).first());
   yaxis->setTickCount(7);
   yaxis->setTickInterval((0x1FFF)/4);
-  yaxis->setRange(-(0x1FFF), 0x1FFF);
+  yaxis->setRange(-(0x3FFF), 0x3FFF);
   yaxis->setLabelFormat("%.0f");
 
   xaxis->setRange(0, 4000);
@@ -466,6 +466,8 @@ void Scope::UpdateScope(){
     runStatus->setStyleSheet("");
   }
 
+  factor = digi[ID]->IsDualTrace_PHA() ? 2 : 1;
+
   Data * data = digi[ID]->GetData();
   int index = data->GetDataIndex(ch);
   int traceLength = data->Waveform1[ch][index].size();
@@ -479,9 +481,9 @@ void Scope::UpdateScope(){
     leTriggerRate->setText(QString::number(data->TriggerRate[ch]));
   }
 
-  if( traceLength * tick2ns > MaxDisplayTraceTimeLength) traceLength = MaxDisplayTraceTimeLength / tick2ns;
+  if( traceLength * tick2ns * factor > MaxDisplayTraceTimeLength) traceLength = MaxDisplayTraceTimeLength / tick2ns/ factor;
 
-  //printf("--- %s| %d, %d, %d | %d | %d, %d\n", __func__, ch, data->LoopIndex[ch], index, traceLength, factor, tick2ns );
+  //printf("--- %s| %d, %d, %d | %ld(%d) | %d, %d | %d\n", __func__, ch, data->GetLoopIndex(ch), index, data->Waveform1[ch][index].size(), traceLength, factor, tick2ns, traceLength * tick2ns * factor );
   if( index > 0 && data->TriggerRate[ch] > 0 ){
 
     QVector<QPointF> points[5];

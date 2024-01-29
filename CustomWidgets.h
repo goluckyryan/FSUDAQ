@@ -128,7 +128,10 @@ protected:
 
       QAction * a1 = menu->addAction("UnZoom");
       QAction *selectedAction = menu->exec(event->globalPosition().toPoint());
-      if( selectedAction == a1 ) chart()->zoomReset();
+      if( selectedAction == a1 ) {
+        chart()->zoomReset();
+        chart()->axes(Qt::Vertical).first()->setRange(-(0x3FFF), 0x3FFF);
+      }
 
     }
   }
@@ -166,8 +169,7 @@ protected:
       case Qt::Key_Down: chart()->scroll(0, -10);  break;
       case Qt::Key_R : 
         chart()->zoomReset();
-        //chart()->axes(Qt::Vertical).first()->setRange(-(0x1FFF), 0x1FFF);
-        //chart()->axes(Qt::Vertical).first()->setRange(vRangeMin, vRangeMax);
+        chart()->axes(Qt::Vertical).first()->setRange(-(0x3FFF), 0x3FFF);
         break;
       default: QGraphicsView::keyPressEvent(event); break;
     }
