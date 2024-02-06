@@ -32,11 +32,6 @@ When programSettings.txt is presented in the same folder as the FSUDAQ_Qt, the p
 If no programSettings.txt is found. The program can still search for all digitizers that connected using optical cable. 
 Missing the raw data path will disable save data run, but still can start the ACQ. Missing InfluxDB (elog) variables will disable influxDB (elog). 
 
-# Undergoing
-
-the following additional functions are planned and I am working on them
-
-- support V1740 DPP-QDC
 
 # ToDo
 
