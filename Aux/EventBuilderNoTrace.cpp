@@ -7,6 +7,7 @@
 #include "TGraph.h"
 #include "TFile.h"
 #include "TTree.h"
+#include "TMacro.h"
 
 #define MAX_MULTI  1000
 
@@ -303,6 +304,11 @@ int main(int argc, char **argv) {
   printf("      last timestamp = %20llu ns\n", tEnd);
   printf(" total data duration = %.2f sec = %.2f min\n", tDuration_sec, tDuration_sec/60.);
   printf("=======> saved to %s \n", outFileName.Data());
+
+  TMacro info;
+  info.AddLine(Form("tStart= %20llu ns",tStart));
+  info.AddLine(Form("  tEnd= %20llu ns",tEnd));
+  info.Write("info");
 
   outRootFile->Close();
 

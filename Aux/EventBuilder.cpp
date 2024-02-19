@@ -7,6 +7,7 @@
 #include "TGraph.h"
 #include "TFile.h"
 #include "TTree.h"
+#include "TMacro.h"
 
 #include "CustomStruct.h"
 
@@ -19,7 +20,7 @@ int main(int argc, char **argv) {
   printf("=========================================\n");
   printf("===      *.fsu Events Builder         ===\n");
   printf("=========================================\n");  
-  if (argc <= 3)    {
+  if (argc <= 6)    {
     printf("Incorrect number of arguments:\n");
     printf("%s [timeWindow] [withTrace] [verbose] [tempFolder] [inFile1]  [inFile2] .... \n", argv[0]);
     printf("    timeWindow : in ns \n");   
@@ -415,6 +416,11 @@ int main(int argc, char **argv) {
   printf("      last timestamp = %20llu ns\n", tEnd);
   printf(" total data duration = %.2f sec = %.2f min\n", tDuration_sec, tDuration_sec/60.);
   printf("=======> saved to %s \n", outFileName.Data());
+
+  TMacro info;
+  info.AddLine(Form("tStart= %20llu ns",tStart));
+  info.AddLine(Form("  tEnd= %20llu ns",tEnd));
+  info.Write("info");
 
   outRootFile->Close();
 

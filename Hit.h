@@ -1,6 +1,8 @@
 #ifndef Hit_H
 #define Hit_H
 
+#include <vector>
+
 class Hit{
 public:
   unsigned short sn;
