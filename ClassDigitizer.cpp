@@ -502,16 +502,6 @@ void Digitizer::StartACQ(){
   }
 
   data->AllocateMemory(bufferSize);
-  ret = CAEN_DGTZ_SWStartAcquisition(handle);
-  
-  if( ret != 0 ) {
-    ErrorMsg("Start ACQ");
-    return;
-  }
-  
-  printf("\e[1m\e[33m======= Acquisition Started for %d | Board %d, Port %d\e[0m\n", BoardInfo.SerialNumber, boardID, portID);
-  AcqRun = true;
-  data->ClearTriggerRate();
 
   unsigned int acqID = ExtractBits(GetSettingFromMemory(DPP::AcquisitionControl), DPP::Bit_AcquistionControl::StartStopMode);
   unsigned int trgOutID = ExtractBits(GetSettingFromMemory(DPP::FrontPanelIOControl), DPP::Bit_FrontPanelIOControl::TRGOUTConfig);
@@ -529,7 +519,35 @@ void Digitizer::StartACQ(){
     }
   }
 
+  if( DPPType == DPPType::DPP_PHA_CODE ) {
+
+    printf(" Setting Trapzoid Scaling Factor and Fine Gain \n");
+    for( int ch = 0; ch < NumRegChannel; ch++){
+      unsigned int riseTime = GetSettingFromMemory(DPP::PHA::TrapezoidRiseTime, ch);
+      unsigned int decayTime = GetSettingFromMemory(DPP::PHA::DecayTime, ch); 
+      unsigned int SHF = std::floor(std::log2(riseTime * decayTime));
+      SetBits(DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PHA::TrapRescaling, SHF, ch);
+
+      //Always fix the fineGate = fg = 1
+      unsigned int f = 0xFFFF * pow(2, SHF)/ riseTime / decayTime;
+      WriteRegister(DPP::PHA::FineGain, f, ch);
+
+    }
+
+  }
+
   printf("    ACQ mode : %s (%d), TRG-OUT mode : %s (%d) \n", acqStr.c_str(), acqID, trgOutStr.c_str(), trgOutID);
+
+  ret = CAEN_DGTZ_SWStartAcquisition(handle);
+  if( ret != 0 ) {
+    ErrorMsg("Start ACQ");
+    return;
+  }
+  
+  printf("\e[1m\e[33m======= Acquisition Started for %d | Board %d, Port %d\e[0m\n", BoardInfo.SerialNumber, boardID, portID);
+  AcqRun = true;
+  data->ClearTriggerRate();
+
 }
 
 void Digitizer::StopACQ(){
