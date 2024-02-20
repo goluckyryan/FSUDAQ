@@ -1513,7 +1513,7 @@ void DigiSettingsPanel::SetUpChannel_PHA(){
     SetUpComboBoxBit(cbBaseLineAvg[ID][numChannel],        "Baseline Avg. : ", trapLayout, 3, 2, DPP::Bit_DPPAlgorithmControl_PHA::ListBaselineAvg, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PHA::BaselineAvg);
     SetUpCheckBox(chkActiveBaseline[ID][numChannel],     "Active basline [G]", trapLayout, 4, 0, DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::ActivebaselineCalulation);
     SetUpCheckBox(chkBaselineRestore[ID][numChannel], "Baseline Restorer [G]", trapLayout, 4, 1, DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::EnableActiveBaselineRestoration);
-    SetUpSpinBox(sbFineGain[ID][numChannel],                   "Fine Gain : ", trapLayout, 4, 2, DPP::PHA::FineGain);
+    // SetUpSpinBox(sbFineGain[ID][numChannel],                   "Fine Gain : ", trapLayout, 4, 2, DPP::PHA::FineGain);
 
   }
 
@@ -1759,11 +1759,11 @@ void DigiSettingsPanel::SetUpChannel_PHA(){
           if( ch == 0 ){
             QLabel * lb1 = new QLabel("Peak holdoff [ns]", this); lb1->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb1, 0, 2);
             QLabel * lb2 = new QLabel("Rescaling", this); lb2->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb2, 0, 4);
-            QLabel * lb3 = new QLabel("Fine Gain", this); lb3->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb3, 0, 6);
+            // QLabel * lb3 = new QLabel("Fine Gain", this); lb3->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb3, 0, 6);
           }
           SetUpSpinBox(sbPeakingHoldOff[ID][ch],   "", tabLayout, ch + 1, 1, DPP::PHA::PeakHoldOff, ch);
           SetUpSpinBox(sbTrapScaling[ID][ch],      "", tabLayout, ch + 1, 3, DPP::PHA::DPPAlgorithmControl2_G, ch);
-          SetUpSpinBox(sbFineGain[ID][ch],         "", tabLayout, ch + 1, 5, DPP::PHA::FineGain, ch);
+          // SetUpSpinBox(sbFineGain[ID][ch],         "", tabLayout, ch + 1, 5, DPP::PHA::FineGain, ch);
 
           SetUpCheckBox(chkActiveBaseline[ID][ch], "Active basline [G]", tabLayout, ch + 1, 7, DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::ActivebaselineCalulation, ch);
           SetUpCheckBox(chkBaselineRestore[ID][ch], "Baseline Restorer [G]", tabLayout, ch + 1, 9, DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::EnableActiveBaselineRestoration, ch);
