@@ -43,6 +43,9 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
   tabWidget = new QTabWidget(this);
   setCentralWidget(tabWidget);
 
+  tabWidget->tabBar()->setStyleSheet("QTabBar::tab::selected {background-color: #00c110}");
+
+
   //@===================================== tab
   for( unsigned int iDigi = 0 ; iDigi < this->nDigi; iDigi ++ ){
   
@@ -317,6 +320,7 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
       ID = index;
       //if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) UpdatePanelFromMemory(); 
       UpdatePanelFromMemory(); 
+
     }
   });
 
@@ -3557,7 +3561,7 @@ void DigiSettingsPanel::SyncAllChannelsTab_PHA(){
   SyncSpinBox(sbTrapScaling);
   SyncSpinBox(sbPeaking);
   SyncSpinBox(sbPeakingHoldOff);
-  SyncSpinBox(sbFineGain);
+  // SyncSpinBox(sbFineGain);
   SyncSpinBox(sbNumEventAgg);
   SyncSpinBox(sbVetoWidth);
 
@@ -3608,7 +3612,7 @@ void DigiSettingsPanel::UpdateSettings_PHA(){
     UpdateSpinBox(sbTrapScaling[ID][ch],      DPP::PHA::DPPAlgorithmControl2_G, ch);
     UpdateSpinBox(sbPeaking[ID][ch],          DPP::PHA::PeakingTime, ch);
     UpdateSpinBox(sbPeakingHoldOff[ID][ch],   DPP::PHA::PeakHoldOff, ch);
-    UpdateSpinBox(sbFineGain[ID][ch],         DPP::PHA::FineGain, ch);
+    // UpdateSpinBox(sbFineGain[ID][ch],         DPP::PHA::FineGain, ch);
     UpdateSpinBox(sbNumEventAgg[ID][ch],      DPP::NumberEventsPerAggregate_G, ch);
     UpdateSpinBox(sbVetoWidth[ID][ch],        DPP::VetoWidth, ch);
 

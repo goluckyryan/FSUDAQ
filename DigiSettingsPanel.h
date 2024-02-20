@@ -229,7 +229,7 @@ private:
   RComboBox * cbPeakAvg[MaxNDigitizer][MaxRegChannel + 1];
   QCheckBox * chkActiveBaseline[MaxNDigitizer][MaxRegChannel + 1];
   QCheckBox * chkBaselineRestore[MaxNDigitizer][MaxRegChannel + 1];
-  RSpinBox * sbFineGain[MaxNDigitizer][MaxRegChannel + 1];
+  // RSpinBox * sbFineGain[MaxNDigitizer][MaxRegChannel + 1];
 
   QCheckBox * chkEnableRollOver[MaxNDigitizer][MaxRegChannel + 1];
   QCheckBox * chkEnablePileUp[MaxNDigitizer][MaxRegChannel + 1];
