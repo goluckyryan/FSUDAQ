@@ -340,18 +340,17 @@ void MainWindow::OpenDataPath(){
   if( result > 0 ) {
     leDataPath->setText(fileDialog.selectedFiles().at(0));
     rawDataPath = leDataPath->text();
-    bnStartACQ->setEnabled(true);
-    bnStartACQ->setStyleSheet("background-color: green;");
+    chkSaveData->setEnabled(true);
   }else{
     leDataPath->clear();
     rawDataPath = "";
-    bnStartACQ->setEnabled(false);
-    bnStartACQ->setStyleSheet("");
+    chkSaveData->setEnabled(false);
   }
 
   SaveProgramSettings();
 
   LoadLastRunFile();
+
 
 }
 
@@ -1105,6 +1104,8 @@ void MainWindow::StartACQ(){
     }
   }
 
+  chkSaveData->setEnabled(false);
+
 }
 
 void MainWindow::StopACQ(){
@@ -1192,6 +1193,8 @@ void MainWindow::StopACQ(){
       AppendElog(msg);
     }
   }
+
+  chkSaveData->setEnabled(true);
 
 }
 
