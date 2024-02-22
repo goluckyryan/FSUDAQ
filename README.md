@@ -71,7 +71,7 @@ THe libqt6charts6-dev should be replaced by qt6-chart-dev, and the elog need to 
 
 `sudo apt install qt6-base-dev qt6-chart-dev libcurl4-openssl-dev`
 
-I tested with a Raspberry Pi 5 with 8 GB. it works.
+I tested with a Raspberry Pi 5 with 8 GB + A4818 optical-USB adaptor. it works.
 
 # Compile
 
