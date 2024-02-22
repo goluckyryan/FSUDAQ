@@ -15,7 +15,7 @@ A 1-D and 2-D histogram is avalible. In the 2-D histogram, graphical cuts can be
 
 An online analyzer class is created as a template for online analysis. An example is the SplitPoleAnalyzer.h. It demo a 2-D histogram and a 1-D histogram, and the way to output the rates of cuts to influxDB.
 
-<span style="color:red;">Notice that, when the FSUDAQ is started, the online analyzer is a null pointer, no event will be built. Once the online anlyzer is created and opened, event will be built, event the window is closed. </span>
+<span style="color:red;">Notice that, when the FSUDAQ is started, the online analyzer is a null pointer, no event will be built. Once the online anlyzer is created and opened, event will be built, even the window is closed. </span>
 
 # Operation
 
@@ -36,8 +36,8 @@ Missing the raw data path will disable save data run, but still can start the AC
 # ToDo
 
 - Gaussians fitting for 1D Histogram
-- log scale for 1D and 2D Histogram
 - Improve the color scheme for 2D histogram
+- Save Histogram?
 
 # Required / Development enviroment
 
@@ -63,6 +63,16 @@ The libcurl4 is need for pushing data to InfluxDB v1.8
 
 The QCustomPlot (https://www.qcustomplot.com/index.php/introduction) source files are already included in the repository.
 
+## For Raspberry Pi installation
+
+All required CAEN Libraries support ARM archetect, so installation of those would not be a problem.
+
+THe libqt6charts6-dev should be replaced by qt6-chart-dev, and the elog need to be installed manually (or can be skipped)
+
+`sudo apt install qt6-base-dev qt6-chart-dev libcurl4-openssl-dev`
+
+I tested with a Raspberry Pi 5 with 8 GB. it works.
+
 # Compile
 
 ## in case the *.pro not exist
@@ -84,27 +94,19 @@ if you want to use GDB debugger, in the *.pro file add
 
 ` QMAKE_CXXFLAGS += -g`
 
-## exclude some files from the auto-gen *.pro
+# Auxillary programs
 
-The following files must be excluded from the *.pro, as they are not related to the GUI
-
-- DataGenerator.cpp
-- DataReaderScript.cpp
-- EventBuilder.cpp
-- test.cpp
-- test_indep.cpp
-
-Those file can be compiled using 
-
-`make -f Makefile_test`
+There is a folder Aux, this folder contains many auxillary programs, such as EventBuilder. User can `make` under the folder to compile the programs.
 
 # Known Issues
 
-* for PHA firmware, when the trigger rate changed, the Events per Agg need to be changed.
+* Although the Events/Agg used the CAEN API to recalculate before ACQ start, for PHA firmware, when the trigger rate changed, the Events per Agg need to be changed.
 * The Agg Organization, Event per Agg, Record Length are strongly correlated. Some settings are invalid and will cause the digitizer goes crazy.
+* load digitizer setting would not load everything, only load the channel settings and some board settings.
 * Sometimes, the buffer is not in time order, and make the trigger/Accept rate to be nagative. This is nothing to do with the program but the digitizer settings. Recommand reporgram the digitizer.
 * for 1740 QDC, RecordLenght is board setting, but readout is indivuial group.
+* FOr PHA, the trapezoid scaling and fine-gain register are calculated before ACQ start.
 
 # Known Bugs
 
-* There is no known bug. Please report if you find one.  
+* There is no known bug. Please report to rtang@fsu.edu if you find one.  
