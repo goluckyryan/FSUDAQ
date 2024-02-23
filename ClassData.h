@@ -45,10 +45,6 @@ class Data{
 
     unsigned int   aggTime; /// update every decode
 
-    /// store data for event building and deduce the trigger rate.
-    //it is a circular memory
-    bool IsNotRollOverFakeAgg;
-
     int GetLoopIndex(unsigned short ch) const {return LoopIndex[ch];}
     int GetDataIndex(unsigned short ch) const {return DataIndex[ch];}
 
@@ -78,6 +74,7 @@ class Data{
     void ClearDataPointer();
     void ClearData();
     void ClearTriggerRate();
+    void ClearNumEventsDecoded();
     void ClearBuffer();
 
     unsigned short GetNChannel() const {return numInputCh;}
@@ -101,6 +98,9 @@ class Data{
     unsigned int GetFileSize() const {return outFileSize;}
     uint64_t GetTotalFileSize() const {return FinishedOutFilesSize + outFileSize;}
     void ZeroTotalFileSize() { FinishedOutFilesSize = 0; }
+
+    void CalTriggerRate();
+    void ClearReferenceTime();
 
   protected:
   
@@ -132,7 +132,9 @@ class Data{
     std::string outFilePrefix;
     std::string outFileName;
     unsigned int outFileSize; // should be max at 2 GB
-    
+
+    ullong t0[MaxNChannels]; // for trigger rate calculation
+
     short calIndexes[MaxNChannels][2]; /// the index for trigger rate calculation
 
     unsigned int ReadBuffer(unsigned int nWord, int verbose = 0);
@@ -149,14 +151,17 @@ inline Data::Data(unsigned short numCh, uShort dataSize): numInputCh(numCh){
   boardSN = 0;
   DPPType = DPPType::DPP_PHA_CODE;
   DPPTypeStr = "";
-  IsNotRollOverFakeAgg = false;
   buffer = NULL;
 
   AllocateDataSize(dataSize);  
 
-  for ( int i = 0; i < MaxNChannels; i++) TotNumNonPileUpEvents[i] = 0;
+  for ( int i = 0; i < MaxNChannels; i++) {
+    TotNumNonPileUpEvents[i] = 0;
+    t0[i] = 0;
+  }
   ClearData();
   ClearTriggerRate();
+  ClearNumEventsDecoded();
   nw = 0;
 
   outFileIndex = 0;
@@ -265,6 +270,11 @@ inline void Data::ClearTriggerRate(){
   for( int i = 0 ; i < MaxNChannels; i++) {
     TriggerRate[i] = 0.0; 
     NonPileUpRate[i] = 0.0;
+  }
+}
+
+inline void Data::ClearNumEventsDecoded(){
+  for( int i = 0 ; i < MaxNChannels; i++) {
     NumEventsDecoded[i] = 0;
     NumNonPileUpDecoded[i] = 0;
   }
@@ -273,7 +283,6 @@ inline void Data::ClearTriggerRate(){
 inline void Data::ClearData(){
   nByte = 0;
   AllocatedSize = 0;
-  IsNotRollOverFakeAgg = false;
   for( int ch = 0 ; ch < MaxNChannels; ch++){
     LoopIndex[ch] = 0;
     DataIndex[ch] = -1;
@@ -320,6 +329,50 @@ inline void Data::ClearBuffer(){
 
 inline void Data::CopyBuffer(const char * buffer, const unsigned int size){
   std::memcpy(this->buffer, buffer, size);
+}
+
+inline void Data::ClearReferenceTime(){
+  for( int ch = 0; ch < numInputCh; ch ++ ) t0[ch] = 0;
+}
+
+inline void Data::CalTriggerRate(){
+
+  for( int ch = 0; ch < numInputCh; ch ++ ){
+    if( t0[ch] == 0 ) {
+      TriggerRate[ch] = 0;
+      NonPileUpRate[ch] = 0;
+      continue;
+    }
+
+    if( NumEventsDecoded[ch] < dataSize ){
+
+      unsigned long long dTime = Timestamp[ch][DataIndex[ch]] - t0[ch]; 
+      double sec =  dTime / 1e9;
+
+      TriggerRate[ch] = (NumEventsDecoded[ch]-1)/sec;
+      NonPileUpRate[ch] = (NumNonPileUpDecoded[ch]-1)/sec;
+
+    }else{
+
+      uShort nEvent = 100;
+      unsigned long long dTime = Timestamp[ch][DataIndex[ch]] - Timestamp[ch][DataIndex[ch] - 100]; 
+      double sec =  dTime / 1e9;
+
+      TriggerRate[ch] = (nEvent-1)/sec;
+      NonPileUpRate[ch] = (NumNonPileUpDecoded[ch])/sec * (nEvent-1)/(NumEventsDecoded[ch]);
+
+    }
+    // printf("%2d | %d(%d)| %llu  %llu | %d %d | %llu, %.3e | %.2f, %.2f\n", ch, DataIndex[ch], LoopIndex[ch], 
+    //                                                                     t0[ch], Timestamp[ch][DataIndex[ch]], 
+    //                                                                     NumEventsDecoded[ch], NumNonPileUpDecoded[ch], 
+    //                                                                     dTime, sec , 
+    //                                                                     TriggerRate[ch], NonPileUpRate[ch]);
+
+    t0[ch] = Timestamp[ch][DataIndex[ch]];
+    NumEventsDecoded[ch] = 0;
+    NumNonPileUpDecoded[ch] = 0;
+  }
+
 }
 
 //^###############################################
@@ -400,10 +453,6 @@ inline void Data::CloseSaveFile(){
 inline void Data::PrintStat(bool skipEmpty) {
 
   printf("============================= Print Stat. Digi-%d\n", boardSN);
-  if( !IsNotRollOverFakeAgg ) {
-    printf(" this is roll-over fake event or no events.\n");
-    return;
-  }
   printf("%2s | %6s | %9s | %9s | %6s | %6s(%4s)\n", "ch", "# Evt.", "Rate [Hz]", "Accept", "Tot. Evt.", "index", "loop");
   printf("---+--------+-----------+-----------+----------\n");
   for(int ch = 0; ch < numInputCh; ch++){
@@ -414,6 +463,7 @@ inline void Data::PrintStat(bool skipEmpty) {
   printf("---+--------+-----------+-----------+----------\n");
 
   ClearTriggerRate();
+  ClearNumEventsDecoded();
 
 }
 
@@ -566,95 +616,11 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
     ///printf("nw : %d ,x 4 = %d, nByte : %d \n", nw, 4*nw, nByte);
   }while(4*nw < nByte);
   
-  // bool debug = false;
-  // if( DPPType == DPPType::DPP_QDC_CODE ) debug = true;
-
-  ///^===================Calculate trigger rate and first and last Timestamp
-  for(int ch = 0; ch < MaxNChannels; ch++){
-    if( ch > numInputCh ) continue;
-    if( DataIndex[ch] < 0 ) continue;
-
-    if( NumEventsDecoded[ch] > 0 ) {
-      // printf("%s | ch %d | %d %d \n", __func__, ch, LoopIndex[ch], DataIndex[ch]);
-      IsNotRollOverFakeAgg = true;
-    }else{
-      // TriggerRate[ch] = 0;
-      // NonPileUpRate[ch] = 0;
-      continue;
-    }
-
-    // if( debug ) printf("Ch : %2d | Decoded Event : %d \n", ch, NumEventsDecoded[ch]);
-    
-    if( NumEventsDecoded[ch] > 4 ){
-
-      int indexStart = DataIndex[ch] - NumEventsDecoded[ch] + 1;
-      if( indexStart < 0  ) indexStart += dataSize;
-
-      unsigned long long dTime = Timestamp[ch][DataIndex[ch]] - Timestamp[ch][indexStart]; 
-      double sec =  dTime / 1e9;
-
-      TriggerRate[ch] = (NumEventsDecoded[ch]-1)/sec;
-      NonPileUpRate[ch] = (NumNonPileUpDecoded[ch]-1)/sec;
-      // if( debug ) printf("%d %d| %d %d | %llu, %.3e | %.2f, %.2f\n", indexStart, DataIndex[ch], NumEventsDecoded[ch], NumNonPileUpDecoded[ch], dTime, sec , TriggerRate[ch], NonPileUpRate[ch]);
-
-    }else{ // look in to the data in the memory, not just this agg.
-      
-      const short nEvent = 10;
-
-      if( TotNumNonPileUpEvents[ch] >=  nEvent ){
-
-        calIndexes[ch][1] = DataIndex[ch];
-        calIndexes[ch][0] = DataIndex[ch] - nEvent + 1;
-        if (calIndexes[ch][0] < 0 ) calIndexes[ch][0] += dataSize;
-        
-        // std::vector<unsigned long long> tList ;
-        // for( int i = 0; i < nEvent ; i ++){
-        //   int j = (calIndexes[ch][0] + i) % dataSize;
-        //   tList.push_back( Timestamp[ch][j]);
-        // }
-        // if( DPPType == DPPType::DPP_QDC_CODE){
-        //   //std::sort(tList.begin(), tList.end());
-        //   unsigned long long t0 = tList.front(); // earlier
-        //   unsigned long long t1 = tList.back(); // latest
-
-        //   for( int i = 0; i < (int) tList.size(); i++){
-        //     if( t0 < tList[i]) t0 = tList[i];
-        //     if( t1 > tList[i]) t1 = tList[i];
-        //   }
-        //   tList.front() = t0;
-        //   tList.back() = t1;
-        // }
-        //double sec = ( tList.back() - tList.front() ) * tick2ns / 1e9;
-
-
-        unsigned long long t0 = Timestamp[ch][(calIndexes[ch][0]) % dataSize]; // earlier
-        unsigned long long t1 = Timestamp[ch][(calIndexes[ch][1]) % dataSize];; // latest
-
-        if( t0 > t1 ) {
-          printf("digi-%d, ch-%d | data is not in time order\n", boardSN, ch);
-          unsigned long long tt = t1;
-          t1 = t0;
-          t0 = tt;
-        }
-
-        double sec = ( t1 - t0 ) * tick2ns / 1e9;
-
-        TriggerRate[ch] = nEvent / sec;
-
-        short pileUpCount = 0;
-        for( int i = 0 ; i < nEvent; i++ ) {
-          int j = (calIndexes[ch][0] + i) % dataSize;
-          if( PileUp[ch][j]  ) pileUpCount ++;
-        }
-        NonPileUpRate[ch] = (nEvent - pileUpCount)/sec;
-
-        // if( debug ) printf("%2d | %10llu  %10llu, %d = %f sec, rate = %f, nEvent %d pileUp %d \n", ch, t1, t0, tick2ns, sec, nEvent / sec, nEvent, pileUpCount);
-      }
-      
-    }
-
+  //Set the t0 for when frist hit comes
+  for( int ch = 0; ch < numInputCh; ch++){
+    if( t0[ch] == 0  && DataIndex[ch] > 0 ) t0[ch] = Timestamp[ch][0];
   }
-  
+
 }
 
 //*=================================================

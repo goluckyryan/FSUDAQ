@@ -98,8 +98,14 @@ if you want to use GDB debugger, in the *.pro file add
 
 There is a folder Aux, this folder contains many auxillary programs, such as EventBuilder. User can `make` under the folder to compile the programs.
 
+# Tested Trigger Rate
+
+* V1725, 1 MHz to 3 ch (decay = 500 ns), no trace. need to set Agg/Read = 1023 and Evt/Agg = 511.
+
 # Known Issues
 
+* Pile up rate is not accurate for very high input rate ( > 60 kHz ).
+* When using the scope, the Agg/Read must be smaller than 512.
 * Although the Events/Agg used the CAEN API to recalculate before ACQ start, for PHA firmware, when the trigger rate changed, the Events per Agg need to be changed.
 * The Agg Organization, Event per Agg, Record Length are strongly correlated. Some settings are invalid and will cause the digitizer goes crazy.
 * load digitizer setting would not load everything, only load the channel settings and some board settings.
@@ -109,4 +115,4 @@ There is a folder Aux, this folder contains many auxillary programs, such as Eve
 
 # Known Bugs
 
-* There is no known bug. Please report to rtang@fsu.edu if you find one.  
+* EventBuilder will crash when trigger rate of the data is very high.

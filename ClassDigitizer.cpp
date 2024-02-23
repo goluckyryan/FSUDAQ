@@ -483,7 +483,7 @@ void Digitizer::StartACQ(){
   if( softwareDisable ) return;
   if ( AcqRun ) return;
 
-  ret |= CAEN_DGTZ_SetDPPEventAggregation(handle, 0, 0); // Auto set
+  // ret |= CAEN_DGTZ_SetDPPEventAggregation(handle, 0, 0); // Auto set
 
   unsigned int bufferSize = 0;
   if( DPPType == V1730_DPP_PHA_CODE ){
@@ -536,6 +536,10 @@ void Digitizer::StartACQ(){
 
   }
 
+  AcqRun = true;
+  data->ClearTriggerRate();
+  data->ClearData();
+
   printf("    ACQ mode : %s (%d), TRG-OUT mode : %s (%d) \n", acqStr.c_str(), acqID, trgOutStr.c_str(), trgOutID);
 
   ret = CAEN_DGTZ_SWStartAcquisition(handle);
@@ -545,8 +549,7 @@ void Digitizer::StartACQ(){
   }
   
   printf("\e[1m\e[33m======= Acquisition Started for %d | Board %d, Port %d\e[0m\n", BoardInfo.SerialNumber, boardID, portID);
-  AcqRun = true;
-  data->ClearTriggerRate();
+
 
 }
 
@@ -559,7 +562,9 @@ void Digitizer::StopACQ(){
   AcqRun = false;
   data->PrintStat();
   data->ClearTriggerRate();
+  data->ClearNumEventsDecoded();
   data->ClearBuffer();
+  data->ClearReferenceTime();
   data->ZeroTotalFileSize();
 }
 

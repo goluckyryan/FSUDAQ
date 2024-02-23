@@ -369,8 +369,10 @@ void Scope::StartScope(){
     traceOn[iDigi] = digi[iDigi]->IsRecordTrace(); //remember setting
     SendLogMsg("Digi-" + QString::number(digi[iDigi]->GetSerialNumber()) + " is starting ACQ." );
     digi[iDigi]->WriteRegister(DPP::SoftwareClear_W, 1);
-    digi[iDigi]->GetData()->ClearData();
     digi[iDigi]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, 1, -1);
+
+    // SendLogMsg("Set Events/Agg to 1 for scope");
+    // digi[iDigi]->WriteRegister(DPP::NumberEventsPerAggregate_G, 1, -1);
 
     readDataThread[iDigi]->SetScopeMode(true);
     readDataThread[iDigi]->SetSaveData(false);
@@ -484,7 +486,7 @@ void Scope::UpdateScope(){
   if( traceLength * tick2ns * factor > MaxDisplayTraceTimeLength) traceLength = MaxDisplayTraceTimeLength / tick2ns/ factor;
 
   //printf("--- %s| %d, %d, %d | %ld(%d) | %d, %d | %d\n", __func__, ch, data->GetLoopIndex(ch), index, data->Waveform1[ch][index].size(), traceLength, factor, tick2ns, traceLength * tick2ns * factor );
-  if( index > 0 && data->TriggerRate[ch] > 0 ){
+  if( index > 0 ){
 
     QVector<QPointF> points[5];
     if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) {

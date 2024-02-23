@@ -340,12 +340,12 @@ void MainWindow::OpenDataPath(){
   if( result > 0 ) {
     leDataPath->setText(fileDialog.selectedFiles().at(0));
     rawDataPath = leDataPath->text();
-    chkSaveData->setEnabled(true);
   }else{
     leDataPath->clear();
     rawDataPath = "";
-    chkSaveData->setEnabled(false);
   }
+
+  if( !rawDataPath.isEmpty() ) chkSaveData->setEnabled(true);
 
   SaveProgramSettings();
 
@@ -468,7 +468,7 @@ void MainWindow::LoadProgramSettings(){
       if( rawDataDir.mkdir(rawDataPath) ){
           LogMsg("Created folder <b>" + rawDataPath + "</b> for storing root files.");
       }else{
-          LogMsg("<font style=\"color:red;\"><b>" + rawDataPath + "</b> cannot be created. Access right problem? </font>" );
+          LogMsg("<font style=\"color:red;\"><b>" + rawDataPath + "</b> Raw data folder cannot be created. Access right problem? </font>" );
       }
       }else{
         LogMsg("<b>" + rawDataPath + "</b> already exist." );
@@ -830,6 +830,7 @@ void MainWindow::SetupScalar(){
   lbScalarACQStatus = nullptr;
 
   scalarThread = new TimingThread(scalar);
+  scalarThread->SetWaitTimeinSec(1.0);
   connect(scalarThread, &TimingThread::timeUp, this, &MainWindow::UpdateScalar);
 
   unsigned short maxNChannel = 0;
@@ -987,6 +988,7 @@ void MainWindow::UpdateScalar(){
     if(digiSettings && digiSettings->isVisible() && digiSettings->GetTabID() == iDigi) digiSettings->UpdateACQStatus(acqStatus);
 
     digiMTX[iDigi].lock();
+    digi[iDigi]->GetData()->CalTriggerRate();
     // printf("### %d ", iDigi);
     // digi[iDigi]->GetData()->PrintAllData(true, 10);
     if( chkSaveData->isChecked() ) totalFileSize += digi[iDigi]->GetData()->GetTotalFileSize();
@@ -995,7 +997,7 @@ void MainWindow::UpdateScalar(){
       QString b = "";
       
       if( digi[iDigi]->GetInputChannelOnOff(i) == true ) {
-        //printf(" %3d %2d | %7.2f %7.2f \n", digi[iDigi]->GetSerialNumber(), i, digi[iDigi]->GetData()->TriggerRate[i], digi[iDigi]->GetData()->NonPileUpRate[i]);
+        // printf(" %3d %2d | %7.2f %7.2f \n", digi[iDigi]->GetSerialNumber(), i, digi[iDigi]->GetData()->TriggerRate[i], digi[iDigi]->GetData()->NonPileUpRate[i]);
         QString a = QString::number(digi[iDigi]->GetData()->TriggerRate[i], 'f', 2);
         QString b = QString::number(digi[iDigi]->GetData()->NonPileUpRate[i], 'f', 2);
         leTrigger[iDigi][i]->setText(a);
@@ -1007,8 +1009,6 @@ void MainWindow::UpdateScalar(){
 
       }
     }
-
-    digi[iDigi]->GetData()->ClearTriggerRate();
     digiMTX[iDigi].unlock();
   }
 
@@ -1052,7 +1052,6 @@ void MainWindow::StartACQ(){
     readDataThread[i]->SetSaveData(chkSaveData->isChecked());
     LogMsg("Digi-" + QString::number(digi[i]->GetSerialNumber()) + " is starting ACQ." );
     digi[i]->WriteRegister(DPP::SoftwareClear_W, 1);
-    digi[i]->GetData()->ClearData();
 
     digi[i]->StartACQ();
 
