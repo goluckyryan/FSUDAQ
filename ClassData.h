@@ -64,13 +64,13 @@ class Data{
     std::vector<bool>  ** DigiWaveform4;
 
   public:
-    Data(unsigned short numCh, uShort dataSize = DefaultDataSize);
+    Data(unsigned short numCh, uInt dataSize = DefaultDataSize);
     ~Data();
   
     void Allocate80MBMemory();
     void AllocateMemory(uint32_t size);
     
-    void AllocateDataSize(uShort dataSize);
+    void AllocateDataSize(int dataSize);
     void ClearDataPointer();
     void ClearData();
     void ClearTriggerRate();
@@ -107,7 +107,7 @@ class Data{
     const unsigned short numInputCh;
     unsigned int nw;
 
-    uShort dataSize;
+    int dataSize;
 
     int       LoopIndex[MaxNChannels];     /// number of loop in the circular memory
     int       DataIndex[MaxNChannels];
@@ -146,7 +146,7 @@ class Data{
 
 //==========================================
 
-inline Data::Data(unsigned short numCh, uShort dataSize): numInputCh(numCh){
+inline Data::Data(unsigned short numCh, uInt dataSize): numInputCh(numCh){
   tick2ns = 2.0;
   boardSN = 0;
   DPPType = DPPType::DPP_PHA_CODE;
@@ -179,7 +179,7 @@ inline Data::~Data(){
   ClearDataPointer();
 }
 
-inline void Data::AllocateDataSize(uShort dataSize){
+inline void Data::AllocateDataSize(int dataSize){
 
   if( dataSize < 1) {
     printf("dataSize cannot < 1, set dataSize = 1.\n");
@@ -337,6 +337,9 @@ inline void Data::ClearReferenceTime(){
 
 inline void Data::CalTriggerRate(){
 
+  unsigned long long dTime = 0;
+  double sec = -999;
+
   for( int ch = 0; ch < numInputCh; ch ++ ){
     if( t0[ch] == 0 ) {
       TriggerRate[ch] = 0;
@@ -346,27 +349,30 @@ inline void Data::CalTriggerRate(){
 
     if( NumEventsDecoded[ch] < dataSize ){
 
-      unsigned long long dTime = Timestamp[ch][DataIndex[ch]] - t0[ch]; 
+      dTime = Timestamp[ch][DataIndex[ch]] - t0[ch]; 
       double sec =  dTime / 1e9;
 
-      TriggerRate[ch] = (NumEventsDecoded[ch]-1)/sec;
-      NonPileUpRate[ch] = (NumNonPileUpDecoded[ch]-1)/sec;
+      TriggerRate[ch] = (NumEventsDecoded[ch])/sec;
+      NonPileUpRate[ch] = (NumNonPileUpDecoded[ch])/sec;
 
     }else{
 
       uShort nEvent = 100;
-      unsigned long long dTime = Timestamp[ch][DataIndex[ch]] - Timestamp[ch][DataIndex[ch] - 100]; 
-      double sec =  dTime / 1e9;
+      dTime = Timestamp[ch][DataIndex[ch]] - Timestamp[ch][DataIndex[ch] - 100]; 
+      sec =  dTime / 1e9;
 
-      TriggerRate[ch] = (nEvent-1)/sec;
-      NonPileUpRate[ch] = (NumNonPileUpDecoded[ch])/sec * (nEvent-1)/(NumEventsDecoded[ch]);
+      TriggerRate[ch] = (nEvent)/sec;
+      NonPileUpRate[ch] = (NumNonPileUpDecoded[ch])/sec * (nEvent)/(NumEventsDecoded[ch]);
 
     }
-    // printf("%2d | %d(%d)| %llu  %llu | %d %d | %llu, %.3e | %.2f, %.2f\n", ch, DataIndex[ch], LoopIndex[ch], 
-    //                                                                     t0[ch], Timestamp[ch][DataIndex[ch]], 
-    //                                                                     NumEventsDecoded[ch], NumNonPileUpDecoded[ch], 
-    //                                                                     dTime, sec , 
-    //                                                                     TriggerRate[ch], NonPileUpRate[ch]);
+
+    if( std::isinf(TriggerRate[ch]) ) {
+      printf("%2d | %d(%d)| %llu  %llu | %d %d | %llu, %.3e | %.2f, %.2f\n", ch, DataIndex[ch], LoopIndex[ch], 
+                                                                          t0[ch], Timestamp[ch][DataIndex[ch]], 
+                                                                          NumEventsDecoded[ch], NumNonPileUpDecoded[ch], 
+                                                                          dTime, sec , 
+                                                                          TriggerRate[ch], NonPileUpRate[ch]);
+    }
 
     t0[ch] = Timestamp[ch][DataIndex[ch]];
     NumEventsDecoded[ch] = 0;

@@ -43,10 +43,10 @@ Missing the raw data path will disable save data run, but still can start the AC
 
 Ubuntu 22.04
 
-- CAENVMELib v3.3
-- CAENCOmm v1.5.3
-- CAENDigitizer v2.17.1
-- CAEN A3818 Driver v1.6.8
+- CAENVMELib v3.3 +
+- CAENCOmm v1.5.3 +
+- CAENDigitizer v2.17.1 +
+- CAEN A3818 Driver v1.6.8 +
 
 - qt6-base-dev
 - libqt6charts6-dec
@@ -62,6 +62,16 @@ The elog installed using apt is 3.1.3. If a higher version is needed. Please go 
 The libcurl4 is need for pushing data to InfluxDB v1.8
 
 The QCustomPlot (https://www.qcustomplot.com/index.php/introduction) source files are already included in the repository.
+
+## For A4818 optical-USB 
+
+need to install the A4818 driver.
+
+Make sure connect the optical fiber before switch on the digitizer(s). If unplug the optical fiber and reconnect, need to restart the digitizer(s).
+
+## For A5818 PCI gen 3
+
+need to install CAENVMELib v4.0 +
 
 ## For Raspberry Pi installation
 

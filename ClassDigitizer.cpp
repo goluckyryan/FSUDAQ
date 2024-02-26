@@ -98,7 +98,7 @@ int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose
   }else{
     LinkType = CAEN_DGTZ_USB_A4818 ; // portID = A4818 PID
     ret = (int) CAEN_DGTZ_OpenDigitizer(LinkType, portID, boardID, VMEBaseAddress, &handle);
-    ErrorMsg("=== Open Digitizer port " +std::to_string(portID) + " board " + std::to_string(boardID) + " using A4818.");
+    ErrorMsg("=== Open Digitizer using A4818 (PID:" +std::to_string(portID) + ") board " + std::to_string(boardID) + ".");
   }
 
   if( ret == 0 ){

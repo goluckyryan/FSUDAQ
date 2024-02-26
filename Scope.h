@@ -81,6 +81,7 @@ private:
   int tick2ns;
   int factor; // whether dual trace or not
   bool traceOn[MaxNDigitizer];
+  int AggPerRead[MaxNDigitizer];
 
   ReadDataThread ** readDataThread;   
   TimingThread * updateTraceThread;
