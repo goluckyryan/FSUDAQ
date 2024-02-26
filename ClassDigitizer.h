@@ -156,6 +156,7 @@ class Digitizer{
 
     /// memory <--> file
     void         SaveAllSettingsAsText       (std::string fileName);
+    void         SaveAllSettingsAsTextForRun (std::string fileName);
     void         SaveAllSettingsAsBin        (std::string fileName); 
     std::string  GetSettingFileName()        {return settingFileName;}
     /// tell the digitizer where to look at the setting file.

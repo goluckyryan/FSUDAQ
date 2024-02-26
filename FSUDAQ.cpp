@@ -1044,6 +1044,9 @@ void MainWindow::StartACQ(){
   for( int i = (int) nDigi-1; i >= 0 ; i--){
     if( digi[i]->IsBoardDisabled() ) continue;
     if( chkSaveData->isChecked() ) {
+      std::string runSettingName =  (rawDataPath + "/" + prefix + "_" + QString::number(runID).rightJustified(3, '0') + "_" + QString::number(digi[i]->GetSerialNumber())).toStdString();
+      runSettingName += "_" + digi[i]->GetData()->DPPTypeStr + ".bin";
+      digi[i]->SaveAllSettingsAsTextForRun(runSettingName);
       if( digi[i]->GetData()->OpenSaveFile((rawDataPath + "/" + prefix + "_" + QString::number(runID).rightJustified(3, '0')).toStdString()) == false ) {
         LogMsg("Cannot open save file : " + QString::fromStdString(digi[i]->GetData()->GetOutFileName() ) + ". Probably read-only?");
        continue; 

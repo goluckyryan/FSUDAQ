@@ -1056,6 +1056,17 @@ void Digitizer::SaveSettingToFile(Reg registerAddress, unsigned int value, unsig
 }
 
 void Digitizer::SaveAllSettingsAsBin(std::string fileName){
+  
+  SaveAllSettingsAsTextForRun(fileName);
+  
+  if( !isSettingFilledinMemeory ) return;
+  
+  settingFileName = fileName;
+  isSettingFileExist = true;
+
+}
+
+void Digitizer::SaveAllSettingsAsTextForRun (std::string fileName){
   if( !isSettingFilledinMemeory ) return;
   
   FILE * binFile = fopen(fileName.c_str(), "w+");
@@ -1069,9 +1080,6 @@ void Digitizer::SaveAllSettingsAsBin(std::string fileName){
   unsigned int inFileSize = ftell(binFile);
   printf("Created file : %s. file size : %d Byte\n", fileName.c_str(), inFileSize);
   fclose (binFile);
-
-  settingFileName = fileName;
-  isSettingFileExist = true;
 
 }
 
