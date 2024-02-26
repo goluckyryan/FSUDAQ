@@ -7,10 +7,10 @@ class FSUReader{
 
   public:
     FSUReader();
-    FSUReader(std::string fileName, uShort dataSize = 100, int verbose = 1);
+    FSUReader(std::string fileName, uInt dataSize = 100, int verbose = 1);
     ~FSUReader();
 
-    void OpenFile(std::string fileName, uShort dataSize, int verbose = 1);
+    void OpenFile(std::string fileName, uInt dataSize, int verbose = 1);
     bool isOpen() const{return inFile == nullptr ? false : true;}
 
     void ScanNumBlock(int verbose = 1, uShort saveData = 0);
@@ -101,11 +101,11 @@ inline FSUReader::FSUReader(){
 
 }
 
-inline FSUReader::FSUReader(std::string fileName, uShort dataSize, int verbose){
+inline FSUReader::FSUReader(std::string fileName, uInt dataSize, int verbose){
   OpenFile(fileName, dataSize, verbose);
 }
 
-inline void FSUReader::OpenFile(std::string fileName, uShort dataSize, int verbose){
+inline void FSUReader::OpenFile(std::string fileName, uInt dataSize, int verbose){
 
   /// File format must be YYY...Y_runXXX_AAA_BBB_TT_CCC.fsu
   /// YYY...Y  = prefix
@@ -271,6 +271,7 @@ inline int FSUReader::ReadNextBlock(bool traceON, int verbose, uShort saveData){
   }
 
   data->ClearTriggerRate();
+  data->ClearNumEventsDecoded();
   data->ClearBuffer(); // this will clear the buffer.
 
   return 0;
@@ -312,7 +313,9 @@ inline void FSUReader::ScanNumBlock(int verbose, uShort saveData){
   fseek(inFile, 0L, SEEK_SET);
   filePos = 0;
 
-  while( ReadNextBlock(saveData < 2 ? false : true, verbose - 1, saveData) == 0 ){
+  bool isTraceOn = saveData < 2 ? false : true;
+
+  while( ReadNextBlock(isTraceOn, verbose - 1, saveData) == 0 ){
     blockPos.push_back(filePos);
     blockTimeStamp.push_back(data->aggTime);
     blockID ++;
@@ -323,6 +326,7 @@ inline void FSUReader::ScanNumBlock(int verbose, uShort saveData){
   if(verbose) {
     printf("\nScan complete: number of data Block : %lu\n", totNumBlock);
     printf(  "                      number of hit : %lu\n", hitCount);
+    if( saveData )printf(  "              size of the hit array : %lu\n", hit.size());
 
     if( saveData ){
       size_t sizeT = sizeof(hit[0]) * hit.size();
@@ -334,10 +338,12 @@ inline void FSUReader::ScanNumBlock(int verbose, uShort saveData){
   filePos = 0;
 
   //check is the hitCount == hit.size();
-  if( hitCount != hit.size() ){
-    printf("!!!!!! the Data::dataSize is not big enough. !!!!!!!!!!!!!!!\n");
-  }else{
-    SortHit(verbose+1);
+  if( saveData ){
+    if( hitCount != hit.size()){
+      printf("!!!!!! the Data::dataSize is not big enough. !!!!!!!!!!!!!!!\n");
+    }else{
+      SortHit(verbose+1);
+    }
   }
 }
 
