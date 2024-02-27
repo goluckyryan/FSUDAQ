@@ -27,27 +27,15 @@ public:
   void SetSaveData(bool onOff)  {this->isSaveData = onOff;}
   void SetScopeMode(bool onOff) {this->isScope = onOff;}
 
-  // void go(){
-  //   mutex.lock();
-  //   condition.wakeAll();
-  //   mutex.unlock();
-  // }
+  void SetReadCountZero() {readCount = 0;}
+  unsigned long GetReadCount() const {return readCount;}
 
   void run(){
 
     stop = false;
-
-    // mutex.lock();
-    // condition.wait(&mutex);
-    // mutex.unlock();
-
+    readCount = 0;
     clock_gettime(CLOCK_REALTIME, &t0);
-    //printf("--- %d, %ld nsec \n", ID, t0.tv_nsec);
     ta = t0;
-    // clock_gettime(CLOCK_REALTIME, &t1);
-
-    // digi->StartACQ();
-    // usleep(1000); // wait for some data;
 
     printf("ReadDataThread for digi-%d running.\n", digi->GetSerialNumber());
     do{
@@ -66,13 +54,6 @@ public:
         digi->GetData()->DecodeBuffer(!isScope, 0);
         if( isSaveData ) digi->GetData()->SaveData();
         digiMTX[ID].unlock();
-        
-        // clock_gettime(CLOCK_REALTIME, &t2);
-        // if( t2.tv_sec - t1.tv_sec > 2 )  {
-        //   printf("----Digi-%d read %ld / sec.\n", ID, readCount / 3);
-        //   readCount = 0;
-        //   t1 = t2;
-        // }
 
       }else{
         printf("ReadDataThread::%s------------ ret : %d \n", __func__, ret);
@@ -93,10 +74,10 @@ public:
         clock_gettime(CLOCK_REALTIME, &tb);
         if( tb.tv_sec - ta.tv_sec > 2 ) {
           digiMTX[ID].lock();
-          
           emit sendMsg("FileSize ("+ QString::number(digi->GetSerialNumber()) +"): " +  QString::number(digi->GetData()->GetTotalFileSize()/1024./1024., 'f', 4) + " MB [" + QString::number(tb.tv_sec-t0.tv_sec) + " sec]");
-          //digi->GetData()->PrintStat();
+          //emit sendMsg("FileSize ("+ QString::number(digi->GetSerialNumber()) +"): " +  QString::number(digi->GetData()->GetTotalFileSize()/1024./1024., 'f', 4) + " MB [" + QString::number(tb.tv_sec-t0.tv_sec) + " sec] (" + QString::number(readCount) + ")");
           digiMTX[ID].unlock();
+          // readCount = 0;
           ta = tb;
         }
       }
@@ -115,8 +96,6 @@ private:
   bool isScope;
   unsigned long readCount; 
 
-  // QMutex mutex;
-  // QWaitCondition condition;
 };
 
 //^#======================================================= Timing Thread

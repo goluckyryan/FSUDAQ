@@ -838,7 +838,7 @@ void MainWindow::SetupScalar(){
     if( digi[k]->GetNumInputCh() > maxNChannel ) maxNChannel = digi[k]->GetNumInputCh();
   }
 
-  scalar->setGeometry(0, 0, 10 + nDigi * 200, 110 + maxNChannel * 20);
+  scalar->setGeometry(0, 0, 100 + nDigi * 200, 200 + maxNChannel * 20);
 
   if( lbLastUpdateTime == nullptr ){
     lbLastUpdateTime = new QLabel("Last update : NA", scalar);
@@ -883,6 +883,10 @@ void MainWindow::SetupScalar(){
           QWidget * hBox = new QWidget(scalar);
           QHBoxLayout * hBoxLayout = new QHBoxLayout(hBox);
           scalarLayout->addWidget(hBox, rowID, 2*iDigi+1, 1, 2);
+
+          lbAggCount[iDigi] = new QLabel("AggCount/ReadCount", scalar);
+          lbAggCount[iDigi]->setAlignment(Qt::AlignLeft | Qt::AlignCenter);
+          hBoxLayout->addWidget(lbAggCount[iDigi]);
 
           QLabel * lbDigi = new QLabel("Digi-" + QString::number(digi[iDigi]->GetSerialNumber()), scalar); 
           lbDigi->setAlignment(Qt::AlignRight | Qt::AlignCenter);
@@ -988,9 +992,13 @@ void MainWindow::UpdateScalar(){
     if(digiSettings && digiSettings->isVisible() && digiSettings->GetTabID() == iDigi) digiSettings->UpdateACQStatus(acqStatus);
 
     digiMTX[iDigi].lock();
-    digi[iDigi]->GetData()->CalTriggerRate();
-    // printf("### %d ", iDigi);
-    // digi[iDigi]->GetData()->PrintAllData(true, 10);
+
+    QString blockCountStr = QString::number(digi[iDigi]->GetData()->AggCount);
+    blockCountStr += "/" + QString::number(readDataThread[iDigi]->GetReadCount());
+    readDataThread[iDigi]->SetReadCountZero();
+    lbAggCount[iDigi]->setText(blockCountStr);
+
+    digi[iDigi]->GetData()->CalTriggerRate(); //this will reset NumEventDecode & AggCount
     if( chkSaveData->isChecked() ) totalFileSize += digi[iDigi]->GetData()->GetTotalFileSize();
     for( int i = 0; i < digi[iDigi]->GetNumInputCh(); i++){
       QString a = "";
@@ -1009,6 +1017,7 @@ void MainWindow::UpdateScalar(){
 
       }
     }
+
     digiMTX[iDigi].unlock();
   }
 

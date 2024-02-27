@@ -40,9 +40,11 @@ class Data{
     float          TriggerRate          [MaxNChannels]; /// Hz
     float          NonPileUpRate        [MaxNChannels]; /// Hz
     unsigned long  TotNumNonPileUpEvents[MaxNChannels]; /// also exclude overthrow
-    unsigned short NumEventsDecoded     [MaxNChannels]; /// reset at every decode
-    unsigned short NumNonPileUpDecoded  [MaxNChannels]; /// reset at every decode
+    unsigned short NumEventsDecoded     [MaxNChannels]; /// reset after trig-rate calculation
+    unsigned short NumNonPileUpDecoded  [MaxNChannels]; /// reset after trig-rate calculation
 
+    unsigned int   TotalAggCount ; 
+    unsigned short AggCount ; /// reset after trig-rate calculation
     unsigned int   aggTime; /// update every decode
 
     int GetLoopIndex(unsigned short ch) const {return LoopIndex[ch];}
@@ -278,17 +280,17 @@ inline void Data::ClearNumEventsDecoded(){
     NumEventsDecoded[i] = 0;
     NumNonPileUpDecoded[i] = 0;
   }
+  AggCount = 0;
 }
 
 inline void Data::ClearData(){
   nByte = 0;
   AllocatedSize = 0;
+  TotalAggCount = 0;
   for( int ch = 0 ; ch < MaxNChannels; ch++){
     LoopIndex[ch] = 0;
     DataIndex[ch] = -1;
-    NumEventsDecoded[ch] = 0;
-    NumNonPileUpDecoded[ch] = 0;
-
+    
     TotNumNonPileUpEvents[ch] = 0 ;
 
     calIndexes[ch][0] = -1;
@@ -317,6 +319,9 @@ inline void Data::ClearData(){
   tempDigiWaveform3.clear();
   tempDigiWaveform4.clear();
 
+  ClearNumEventsDecoded();
+  ClearTriggerRate();
+
 }
 
 inline void Data::ClearBuffer(){
@@ -340,12 +345,14 @@ inline void Data::CalTriggerRate(){
   unsigned long long dTime = 0;
   double sec = -999;
 
+
   for( int ch = 0; ch < numInputCh; ch ++ ){
     if( t0[ch] == 0 ) {
       TriggerRate[ch] = 0;
       NonPileUpRate[ch] = 0;
       continue;
     }
+
 
     if( NumEventsDecoded[ch] < dataSize ){
 
@@ -379,6 +386,7 @@ inline void Data::CalTriggerRate(){
     NumNonPileUpDecoded[ch] = 0;
   }
 
+  AggCount = 0;
 }
 
 //^###############################################
@@ -458,7 +466,7 @@ inline void Data::CloseSaveFile(){
 //^####################################################### Print
 inline void Data::PrintStat(bool skipEmpty) {
 
-  printf("============================= Print Stat. Digi-%d\n", boardSN);
+  printf("============================= Print Stat. Digi-%d, TotalAggCount = %d\n", boardSN, TotalAggCount);
   printf("%2s | %6s | %9s | %9s | %6s | %6s(%4s)\n", "ch", "# Evt.", "Rate [Hz]", "Accept", "Tot. Evt.", "index", "loop");
   printf("---+--------+-----------+-----------+----------\n");
   for(int ch = 0; ch < numInputCh; ch++){
@@ -573,7 +581,9 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
     if( ( (word >> 28) & 0xF ) == 0xA ) { /// start of Board Agg
       unsigned int nWord = word & 0x0FFFFFFF ;
       if( verbose >= 1 ) printf("Number of words in this Agg : %u = %u Byte\n", nWord, nWord * 4);
-      
+      AggCount ++;
+      TotalAggCount ++;
+
       nw = nw + 1; word = ReadBuffer(nw, verbose);
       unsigned int BoardID = ((word >> 27) & 0x1F);
       unsigned short pattern = ((word >> 8 ) & 0x7FFF );

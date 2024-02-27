@@ -169,6 +169,7 @@ private:
   QPushButton * runStatus[MaxNDigitizer];
   QLabel * lbLastUpdateTime;
   QLabel * lbScalarACQStatus;
+  QLabel * lbAggCount[MaxNDigitizer];
 
   //@----- Run Record
   QMainWindow * runRecord;
