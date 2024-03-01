@@ -9,8 +9,6 @@
 
 class InfluxDB{
   private:
-    
-    bool isURLValid;
 
     CURL * curl;
     CURLcode respond;
@@ -18,8 +16,16 @@ class InfluxDB{
 
     std::string databaseIP;
     std::string dataPoints;
-    
+    std::string token;
+
+    struct curl_slist * headers;
+
     std::vector<std::string> databaseList;
+
+    unsigned short influxVersion;
+    std::string influxVersionStr;
+
+    bool connectionOK;
     
     static size_t WriteCallBack(char *contents, size_t size, size_t nmemb, void *userp);
   
@@ -28,14 +34,21 @@ class InfluxDB{
   public:
   
     InfluxDB(std::string url, bool verbose = false);
+    InfluxDB();
     ~InfluxDB();
     
     void SetURL(std::string url);
-    bool TestingConnection();
-    bool IsURLValid() const {return isURLValid;}
+    void SetToken(std::string token);
+    bool TestingConnection(bool debug = false);
+    bool IsConnectionOK() const {return connectionOK;}
 
-    /// Query
+    unsigned short GetVersionNo() const {return influxVersion;}
+    std::string GetVersionString() const {return influxVersionStr;}
+
+    /// Query, query will be in CSV format
+    std::string CheckInfluxVersion(bool debug = false);
     std::string CheckDatabases(); /// this save the list of database into databaseList
+    void PrintDataBaseList();
     std::string Query(std::string databaseName, std::string query);
 
     /// the CheckDatabases() function must be called before  

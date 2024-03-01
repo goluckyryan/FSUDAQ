@@ -2,6 +2,7 @@
 #include "../ClassData.h"
 #include "../ClassDigitizer.h"
 #include "../MultiBuilder.h"
+#include "../ClassInfluxDB.h"
 
 #include <TROOT.h>
 #include <TSystem.h>
@@ -15,6 +16,7 @@
 #include <sys/time.h> /** struct timeval, select() */
 #include <termios.h>  /** tcgetattr(), tcsetattr() */
 #include <vector>
+#include <regex>
 
 static struct termios g_old_kbd_mode;
 
@@ -24,11 +26,138 @@ static void raw(void);
 int keyboardhit();
 int getch(void);
 
+// #include <curl/curl.h>
+
+size_t WriteCallBack(char *contents, size_t size, size_t nmemb, void *userp){
+  // printf(" InfluxDB::%s \n", __func__);
+  ((std::string*)userp)->append((char*)contents, size * nmemb);
+  return size * nmemb;
+}
+
 //^======================================
 int main(int argc, char* argv[]){
 
-  Digitizer * digi = new Digitizer(0, 26006, false, true);
-  digi->Reset();
+  InfluxDB * influx = new InfluxDB();
+  
+  influx->SetURL("https://fsunuc.physics.fsu.edu/influx/");
+  //influx->SetURL("http://128.186.111.5:8086/");
+
+  influx->SetToken("wS-Oy17bU99qH0cTPJ-Q5tbiOWfaKyoASUx7WwmdM7KG8EJ1BpRowYkqpnPw8oeatnDaZfZtwIFT0kv_aIOAxQ==");
+
+  influx->TestingConnection();
+
+  influx->CheckDatabases();
+  influx->PrintDataBaseList();
+
+  // printf("=-------------------------\n");
+  // influx->TestingConnection(true);
+
+  printf("%s \n", influx->Query("testing", "show measurements").c_str());
+  
+  // printf("%s \n", influx->Query("testing", "SELECT * from haha ORDER by time DESC LIMIT 5").c_str());
+  
+
+
+  delete influx;
+
+
+  // CURL *curl = curl_easy_init();  
+  // CURLcode res;
+
+  // struct curl_slist * headers = nullptr;
+
+  // headers = curl_slist_append(headers, "Authorization: Token wS-Oy17bU99qH0cTPJ-Q5tbiOWfaKyoASUx7WwmdM7KG8EJ1BpRowYkqpnPw8oeatnDaZfZtwIFT0kv_aIOAxQ==");
+  // // // headers = curl_slist_append(headers, "Content-Type: text/plain; charset=utf-8");
+  // headers = curl_slist_append(headers, "Accept: application/csv");
+
+  
+  // printf("%s\n",headers->data);
+  // printf("%s\n",  headers->next->data);
+
+
+  // curl_slist_free_all(headers);
+
+  // // printf("%p \n",headers);
+
+  // headers = curl_slist_append(headers, "Accept: application/csv");
+
+  // printf("%s\n",headers->data);
+  
+
+  // curl_easy_setopt(curl, CURLOPT_POST, 1);
+  // curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+  // std::string databaseIP = "https://fsunuc.physics.fsu.edu/influx/";
+  // std::string databaseIP = "http://128.186.111.5:8086/";
+
+
+  //*===================== Check version
+
+  // curl_easy_setopt(curl, CURLOPT_URL, (databaseIP   + "ping").c_str());
+  // curl_easy_setopt(curl, CURLOPT_HEADER, 1);
+
+  //*===================== Query data 
+  
+  //=============== query databases
+  // curl_easy_setopt(curl, CURLOPT_URL, (databaseIP   + "query").c_str());
+  // std::string postFields="q=Show databases";
+
+  //=============== query measurement  
+  // curl_easy_setopt(curl, CURLOPT_URL, (databaseIP   + "query?db=testing").c_str());
+  // std::string postFields="q=SELECT * FROM \"haha\"";
+
+  //=============== write measurement
+  // curl_easy_setopt(curl, CURLOPT_URL, (databaseIP   + "write?db=testing").c_str());
+  // std::string postFields = "haha,BD=1 state=2.345";
+  // postFields += "\n";
+  // postFields += "haha,BD=2 state=9.876";
+  // postFields += "\n";
+  
+  // curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, static_cast<long>(postFields.length()));
+  // curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postFields.c_str());
+
+
+  // curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallBack);
+  // std::string readBuffer;
+  // curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+  
+  // // //curl_easy_setopt(curl, CURLOPT_URL, "https://fsunuc.physics.fsu.edu/influx/api/v2/write?org=FSUFoxLab&bucket=testing");
+
+  // res = curl_easy_perform(curl);
+  // long respondCode;
+  // curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &respondCode);
+
+  // printf("respond code : %ld \n", respondCode);
+  // if( res == CURLE_OK ) {
+  //   printf("================respond \n%s\n", readBuffer.c_str());
+  // }else{
+  //   printf("=========== curl_easy_perform fail.\n");
+  // }
+
+  // curl_slist_free_all(headers);
+  // curl_easy_cleanup(curl);
+
+
+  // std::regex pattern(R"(X-Influxdb-Version: (.*))");
+  // std::smatch match;
+
+  // if (regex_search(readBuffer, match, pattern)) {
+  //   // Extract and print the version
+  //   std::string version = match[1];
+
+  //   unsigned short vno = -1;
+  //   size_t dotPosition = version.find('.');
+  //   if( dotPosition != std::string::npos){
+  //     vno = atoi(version.substr(dotPosition-1, 1).c_str());
+  //   }
+  //   printf("%s | %d\n", version.c_str(), vno);  
+
+  // }
+
+  //============================================= end of influxDB example
+
+  // Digitizer * digi = new Digitizer(0, 26006, false, true);
+  // digi->Reset();
 
   //digi->ProgramBoard_PHA();
 
@@ -94,8 +223,8 @@ int main(int argc, char* argv[]){
   builder->PrintAllEvent(); // TODO
   */
 
-  digi->CloseDigitizer();
-  delete digi;
+  // digi->CloseDigitizer();
+  // delete digi;
   
   return 0;
 }

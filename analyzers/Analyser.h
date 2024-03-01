@@ -16,7 +16,7 @@
 #include "CustomThreads.h"
 #include "CustomWidgets.h"
 #include "MultiBuilder.h"
-#include "influxdb.h"
+#include "ClassInfluxDB.h"
 
 /**************************************
 

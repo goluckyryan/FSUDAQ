@@ -12,7 +12,7 @@ CAENLIBS	=	-lCAENDigitizer
 
 ROOTLIBS = `root-config --cflags --glibs`
 
-OBJS = ClassDigitizer.o MultiBuilder.o
+OBJS = ClassDigitizer.o MultiBuilder.o ClassInfluxDB.o
 
 ALL = test test_indep EventBuilder EventBuilderNoTrace DataReader DumpFSU2ROOT SettingsExplorer 
 
@@ -29,9 +29,12 @@ MultiBuilder.o : ../MultiBuilder.cpp ../MultiBuilder.h ../Hit.h
 ClassDigitizer.o : ../ClassDigitizer.cpp ../ClassDigitizer.h ../RegisterAddress.h ../macro.h ../ClassData.h
 		$(CC) $(COPTS) -c ../ClassDigitizer.cpp
 
-test	:	test.cpp ../ClassDigitizer.o ../MultiBuilder.o
+ClassInfluxDB.o : ../ClassInfluxDB.cpp ../ClassInfluxDB.h 
+		$(CC) $(COPTS) -c ../ClassInfluxDB.cpp -lcurl
+
+test	:	test.cpp ../ClassDigitizer.o ../MultiBuilder.o ../ClassInfluxDB.o
 		@echo "--------- making test"
-		$(CC) $(COPTS) -o test test.cpp ../ClassDigitizer.o ../MultiBuilder.o $(CAENLIBS)  $(ROOTLIBS)
+		$(CC) $(COPTS) -o test test.cpp ../ClassDigitizer.o ../MultiBuilder.o ../ClassInfluxDB.o $(CAENLIBS)  $(ROOTLIBS) -lcurl
 
 test_indep : test_indep.cpp ../RegisterAddress.h ../macro.h
 		@echo "--------- making test_indep"

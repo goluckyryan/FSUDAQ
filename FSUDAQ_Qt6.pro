@@ -33,7 +33,7 @@ HEADERS += ClassData.h \
            FSUDAQ.h \
            macro.h \
            RegisterAddress.h \
-           influxdb.h\
+           ClassInfluxDB.h\
            Scope.h \
            SingleSpectra.h \
            Hit.h \
@@ -49,7 +49,7 @@ SOURCES += ClassDigitizer.cpp \
            DigiSettingsPanel.cpp \
            FSUDAQ.cpp \
            main.cpp \
-           influxdb.cpp\
+           ClassInfluxDB.cpp\
            Scope.cpp \
            SingleSpectra.cpp \
            MultiBuilder.cpp \

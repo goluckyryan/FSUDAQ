@@ -17,7 +17,7 @@
 #include "Scope.h"
 #include "DigiSettingsPanel.h"
 #include "SingleSpectra.h"
-#include "influxdb.h"
+#include "ClassInfluxDB.h"
 #include "analyzers/Analyser.h"
 
 //^#===================================================== MainWindow
