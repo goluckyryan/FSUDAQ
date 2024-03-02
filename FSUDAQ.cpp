@@ -122,15 +122,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     leDatabaseName = new QLineEdit(this);
     leDatabaseName->setReadOnly(true);
     layout->addWidget(leDatabaseName, rowID, 4);
-
-    rowID ++;
-    QLabel * lbToken = new QLabel("Influx Token : ", this);
-    lbToken->setAlignment(Qt::AlignRight | Qt::AlignCenter);
-    layout->addWidget(lbToken, rowID, 1);
-
-    leInfluxToken = new QLineEdit(this);
-    leInfluxToken->setReadOnly(true);
-    layout->addWidget(leInfluxToken, rowID, 2, 1, 3);
     
     rowID ++;
     QLabel * lbElogIP = new QLabel("Elog IP : ", this);
@@ -460,7 +451,6 @@ void MainWindow::LoadProgramSettings(){
     leDataPath->setText(rawDataPath);
     leInfluxIP->setText(influxIP);
     leDatabaseName->setText(dataBaseName);
-    leInfluxToken->setText(influxToken);
     leElogIP->setText(elogIP);
     leElogName->setText(elogName);
 
@@ -1397,19 +1387,16 @@ void MainWindow::SetAndLockInfluxElog(){
 
     leInfluxIP->setReadOnly(false);
     leDatabaseName->setReadOnly(false);
-    leInfluxToken->setReadOnly(false);
     leElogIP->setReadOnly(false);
     leElogName->setReadOnly(false);
 
     leInfluxIP->setEnabled(true);
     leDatabaseName->setEnabled(true);
-    leInfluxToken->setEnabled(true);
     leElogIP->setEnabled(true);
     leElogName->setEnabled(true);
 
     leInfluxIP->setStyleSheet("color : blue;");
     leDatabaseName->setStyleSheet("color : blue;");
-    leInfluxToken->setStyleSheet("color : blue;");
     leElogIP->setStyleSheet("color : blue;");
     leElogName->setStyleSheet("color : blue;");
 
@@ -1418,21 +1405,47 @@ void MainWindow::SetAndLockInfluxElog(){
 
     leInfluxIP->setReadOnly(true);
     leDatabaseName->setReadOnly(true);
-    leInfluxToken->setReadOnly(true);
     leElogIP->setReadOnly(true);
     leElogName->setReadOnly(true);
 
     leInfluxIP->setStyleSheet("");
     leDatabaseName->setStyleSheet("");
-    leInfluxToken->setStyleSheet("");
     leElogIP->setStyleSheet("");
     leElogName->setStyleSheet("");
 
     influxIP = leInfluxIP->text();
     dataBaseName = leDatabaseName->text();
-    influxToken = leInfluxToken->text();
     elogIP = leElogIP->text();
     elogName = leElogName->text();
+
+    if( !influxIP.isEmpty() && !dataBaseName.isEmpty() ){
+      QDialog dialog;
+      dialog.setWindowTitle("Database Token");
+
+      QVBoxLayout layout(&dialog);
+
+      QLineEdit tokenLineEdit;
+      tokenLineEdit.setFixedSize(1000, 20);
+ 
+      tokenLineEdit.setText(influxToken);
+
+      layout.addWidget(new QLabel("Only for version 2+, version 1+ can be skipped."));
+      layout.addWidget(&tokenLineEdit);
+
+      // Buttons for OK and Cancel
+      QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+      layout.addWidget(&buttonBox);
+
+      QObject::connect(&buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+      QObject::connect(&buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+      dialog.resize(400, dialog.sizeHint().height()); // Set the width to 400 pixels
+
+      // Show the dialog and get the result
+      if (dialog.exec() == QDialog::Accepted) {
+          influxToken = tokenLineEdit.text();
+      }
+    }
 
     if( !elogIP.isEmpty() && !elogName.isEmpty() ){
       QDialog dialog;

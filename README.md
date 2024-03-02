@@ -41,8 +41,27 @@ When programSettings.txt is presented in the same folder as the FSUDAQ_Qt, the p
 - (line 8) elog user password
 
 If no programSettings.txt is found. The program can still search for all digitizers that connected using optical cable. 
+
 Missing the raw data path will disable save data run, but still can start the ACQ. Missing InfluxDB (elog) variables will disable influxDB (elog). 
 
+## Keyboard control
+
+- F4 open any drop-down list
+- tab for next element
+- crtl+tab for previous element
+- space for "press a button"
+- alt + tab for switching different windows
+- up/down arrow for increase/decrease number (<span style="color:blue">Blue Tex</span> = value not set, <span style="color:red">Red Tex</span> = value cannot set)
+
+## Data folder
+
+User must setup the data path for data take. Without the data path, user still can run the DAQ. Inside the data path, when a run is started there are
+
+- RunTimestamp.dat  <- this store the timestamps and comments for all runs
+- RunTimestamp.csv  <- csv format for the RunTimestamp.dat, easy for inport to excel
+- lastRun.sh <- some data for bash script
+- *.fsu <- all data file
+- *.bin <- setting file
 
 # ToDo
 
