@@ -1,3 +1,7 @@
+# Discord 
+
+https://discord.gg/vxAM2ZHM
+
 # Introduction
 
 This is a DAQ for 1st gen CAEN digitizer for V1725, V17255S, V1230 with PHA and PSD firmware.
