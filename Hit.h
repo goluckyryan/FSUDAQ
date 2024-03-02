@@ -6,7 +6,6 @@
 class Hit{
 public:
   unsigned short sn;
-  uint8_t bd;
   uint8_t ch;
   unsigned short energy;
   unsigned short energy2;
@@ -23,7 +22,6 @@ public:
 
   void Clear(){
     sn = 0;
-    bd = 0;
     ch = 0;
     energy = 0;
     energy2 = 0;

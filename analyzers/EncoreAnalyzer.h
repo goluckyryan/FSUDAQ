@@ -4,6 +4,15 @@
 #include "Analyser.h"
 #include "Isotope.h"
 
+int SN2Bd(int sn){
+  switch (sn) {
+    case 278 : return 0; break;
+    case  45 : return 1; break;
+    case 370 : return 2; break;
+  };
+  return 0;
+};
+
 namespace ChMap{
 
   const int mapping[3][16] = {
@@ -117,7 +126,8 @@ inline void Encore::UpdateHistograms(){
     double sum[17] = {0};
     for( int k = 0; k < (int) event.size(); k++ ){
 
-      int bd = event[k].bd;
+      int bd = SN2Bd(event[k].sn);
+
       int ch = event[k].ch;
 
       int ID = ChMap::mapping[bd][ch];

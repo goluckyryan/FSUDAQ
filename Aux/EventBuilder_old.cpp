@@ -149,8 +149,8 @@ int main(int argc, char **argv) {
     inFile[i] = fopen(fileList[i][0], "r");
     if( inFile[i] ){
       inFileIndex[i] = 0;
-      if( typeList[i] == DPPType::DPP_PHA_CODE || typeList[i] == DPPType::DPP_PSD_CODE ) data[i] = new Data(16);
-      if( typeList[i] == DPPType::DPP_QDC_CODE ) data[i] = new Data(64);
+      if( typeList[i] == DPPTypeCode::DPP_PHA_CODE || typeList[i] == DPPTypeCode::DPP_PSD_CODE ) data[i] = new Data(16);
+      if( typeList[i] == DPPTypeCode::DPP_QDC_CODE ) data[i] = new Data(64);
       data[i]->DPPType = typeList[i];
       data[i]->boardSN = snList[i];
       data[i]->tick2ns = t2nsList[i];

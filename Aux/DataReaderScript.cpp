@@ -93,9 +93,9 @@ int main(int argc, char **argv){
   if (argc <= 1)    {
     printf("Incorrect number of arguments:\n");
     printf("%s [inFile]  [DPPType] \n", argv[0]);
-    printf("                +-- PHA = %d\n", DPPType::DPP_PHA_CODE);   
-    printf("                +-- PSD = %d\n", DPPType::DPP_PSD_CODE);
-    printf("                +-- QDC = %d\n", DPPType::DPP_QDC_CODE);
+    printf("                +-- PHA = %d\n", DPPTypeCode::DPP_PHA_CODE);   
+    printf("                +-- PSD = %d\n", DPPTypeCode::DPP_PSD_CODE);
+    printf("                +-- QDC = %d\n", DPPTypeCode::DPP_QDC_CODE);
     return 1;
   }
 

@@ -147,16 +147,24 @@ inline int FSUTSReader::ReadNextHit(bool withTrace, int verbose){
   
   hitIndex ++;
 
-  dummy = fread(&(hit->sn), 2, 1, inFile);
-  dummy = fread(&(hit->ch), 1, 1, inFile);
-  dummy = fread(&(hit->energy), 2, 1, inFile);
-  dummy = fread(&(hit->energy2), 2, 1, inFile);
-  dummy = fread(&(hit->timestamp), 8, 1, inFile);
-  dummy = fread(&(hit->fineTime), 2, 1, inFile);
-  dummy = fread(&(hit->traceLength), 2, 1, inFile);
-  dummy = fread(&(hit->pileUp), 1, 1, inFile);
+  hit->sn = sn;
 
-  if( hit->trace.size() > 0 ) hit->trace.clear();
+  uint16_t temp = 0;
+  dummy = fread(&temp, 2, 1, inFile); // [0:7] ch [8] pileUp [14] hasTrace [15] hasEnergy2
+
+  hit->ch = (temp & 0xFF);
+  hit->pileUp = ((temp>>8) & 0x1);
+  bool hasEnergy2 = ((temp>>15) & 0x1);
+  bool hasTrace = ((temp>>14) & 0x1);
+
+  dummy = fread(&(hit->energy), 2, 1, inFile);
+  if( hasEnergy2 ) dummy = fread(&(hit->energy2), 2, 1, inFile);
+  dummy = fread(&(hit->timestamp), 6, 1, inFile);
+  dummy = fread(&(hit->fineTime), 2, 1, inFile);
+  if( hasTrace ) {
+    dummy = fread(&(hit->traceLength), 2, 1, inFile);
+    if( hit->trace.size() > 0 ) hit->trace.clear();
+  }
 
   if( withTrace && hit->traceLength > 0 ){
     for(uShort j = 0; j < hit->traceLength; j++){

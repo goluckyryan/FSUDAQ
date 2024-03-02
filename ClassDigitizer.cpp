@@ -26,7 +26,8 @@ void Digitizer::Initalization(){
   isInputChEqRegCh = true;
   NCoupledCh = 8;
   ADCbits  = 1;
-  DPPType = 0;
+  DPPType = DPPTypeCode::DPP_PHA_CODE;
+  ModelType = ModelTypeCode::VME;
   ADCFullSize = 0;
   tick2ns = 0; 
   BoardInfo = {};
@@ -122,13 +123,15 @@ int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose
       isInputChEqRegCh = true;
       regChannelMask = pow(2, NumInputCh)-1;
       switch(BoardInfo.Model){
-            case CAEN_DGTZ_V1730:  tick2ns =  2.0; NCoupledCh = NumInputCh/2; break; ///ns -> 500 MSamples/s
-            case CAEN_DGTZ_DT5730: tick2ns =  2.0; NCoupledCh = NumInputCh/2; break; ///ns -> 500 MSamples/s
-            case CAEN_DGTZ_V1725:  tick2ns =  4.0; NCoupledCh = NumInputCh/2; break; ///ns -> 250 MSamples/s
+            case CAEN_DGTZ_DT5730: tick2ns =  2.0; NCoupledCh = NumInputCh/2; ModelType = ModelTypeCode::DT; break; ///ns -> 500 MSamples/s
+            case CAEN_DGTZ_DT5720: tick2ns =  4.0; NCoupledCh = NumInputCh/2; ModelType = ModelTypeCode::DT; break; ///ns -> 250 MSamples/s
+            case CAEN_DGTZ_V1730:  tick2ns =  2.0; NCoupledCh = NumInputCh/2; ModelType = ModelTypeCode::VME; break; ///ns -> 500 MSamples/s
+            case CAEN_DGTZ_V1725:  tick2ns =  4.0; NCoupledCh = NumInputCh/2; ModelType = ModelTypeCode::VME; break; ///ns -> 250 MSamples/s
             case CAEN_DGTZ_V1740: {
               NumInputCh = 64;
               NCoupledCh = NumRegChannel;
               isInputChEqRegCh = false;
+              ModelType = ModelTypeCode::VME;
               tick2ns = 16.0; break; ///ns -> 62.5 MSamples/s
             }
             default : tick2ns = 4.0; break;
@@ -175,7 +178,7 @@ int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose
   ErrorMsg("========== Set BoardID");
   
   ///======================= Check virtual probe
-  if( DPPType != DPPType::DPP_QDC_CODE ){
+  if( DPPType != DPPTypeCode::DPP_QDC_CODE ){
     int probes[MAX_SUPPORTED_PROBES];
     int numProbes;
     ret = CAEN_DGTZ_GetDPP_SupportedVirtualProbes(handle, 1, probes, &numProbes);
@@ -229,9 +232,9 @@ int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose
   if( isConnected ) isDummy = false;
 
   if( isConnected  && program) {
-    if( DPPType == DPPType::DPP_PHA_CODE ) ProgramBoard_PHA();
-    if( DPPType == DPPType::DPP_PSD_CODE ) ProgramBoard_PSD();
-    if( DPPType == DPPType::DPP_QDC_CODE ) ProgramBoard_QDC();
+    if( DPPType == DPPTypeCode::DPP_PHA_CODE ) ProgramBoard_PHA();
+    if( DPPType == DPPTypeCode::DPP_PSD_CODE ) ProgramBoard_PSD();
+    if( DPPType == DPPTypeCode::DPP_QDC_CODE ) ProgramBoard_QDC();
   }
   
   //if( isConnected ) ReadAllSettingsFromBoard(); 
@@ -281,9 +284,9 @@ void Digitizer::SetRegChannelOnOff(unsigned short ch, bool onOff){
 }
 
 void Digitizer::ProgramBoard(){
-  if( DPPType == DPPType::DPP_PHA_CODE ) ProgramBoard_PHA();
-  if( DPPType == DPPType::DPP_PSD_CODE ) ProgramBoard_PSD();
-  if( DPPType == DPPType::DPP_QDC_CODE ) ProgramBoard_QDC();
+  if( DPPType == DPPTypeCode::DPP_PHA_CODE ) ProgramBoard_PHA();
+  if( DPPType == DPPTypeCode::DPP_PSD_CODE ) ProgramBoard_PSD();
+  if( DPPType == DPPTypeCode::DPP_QDC_CODE ) ProgramBoard_QDC();
 }
 
 int Digitizer::ProgramBoard_PHA(){
@@ -333,7 +336,7 @@ int Digitizer::ProgramBoard_PHA(){
   ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x5, 0xAAAA);
   ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x6, 0xAAAA);
   ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x7, 0xAAAA);
-  if( NumRegChannel > 8 ){
+  if( ModelType == ModelTypeCode::VME ){
     ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x8, 0xAAAA);
     ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x9, 0xAAAA);
     ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xA, 0xAAAA);
@@ -390,14 +393,16 @@ int Digitizer::ProgramBoard_PSD(){
   ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x5, 0xAAAA);
   ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x6, 0xAAAA);
   ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x7, 0xAAAA);
-  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x8, 0xAAAA);
-  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x9, 0xAAAA);
-  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xA, 0xAAAA);
-  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xB, 0xAAAA);
-  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xC, 0xAAAA);
-  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xD, 0xAAAA);
-  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xE, 0xAAAA);
-  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xF, 0xAAAA);
+  if( ModelType == ModelTypeCode::VME ){
+    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x8, 0xAAAA);
+    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x9, 0xAAAA);
+    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xA, 0xAAAA);
+    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xB, 0xAAAA);
+    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xC, 0xAAAA);
+    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xD, 0xAAAA);
+    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xE, 0xAAAA);
+    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xF, 0xAAAA);
+  }
 
   ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PreTrigger) + 0x7000 , 20 );
   ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::RecordLength_G) + 0x7000 , 80 );
@@ -522,7 +527,7 @@ void Digitizer::StartACQ(){
     }
   }
 
-  if( DPPType == DPPType::DPP_PHA_CODE ) {
+  if( DPPType == DPPTypeCode::DPP_PHA_CODE ) {
 
     printf(" Setting Trapzoid Scaling Factor and Fine Gain \n");
     for( int ch = 0; ch < NumRegChannel; ch++){
@@ -753,7 +758,7 @@ Reg Digitizer::FindRegister(uint32_t address){
   
   Reg tempReg;  
   ///========= Find Match Register
-  if( DPPType == DPPType::DPP_PHA_CODE || DPPType == DPPType::DPP_PSD_CODE ){
+  if( DPPType == DPPTypeCode::DPP_PHA_CODE || DPPType == DPPTypeCode::DPP_PSD_CODE ){
     for( int p = 0; p < (int) RegisterBoardList_PHAPSD[p]; p++){
       if( address == RegisterBoardList_PHAPSD[p].GetAddress() ) {
         tempReg = RegisterBoardList_PHAPSD[p];
@@ -805,11 +810,11 @@ void Digitizer::ReadAllSettingsFromBoard(bool force){
   printf("===== Digitizer(%d)::%s \n", GetSerialNumber(),  __func__);
 
   /// board setting
-  if( DPPType == DPPType::DPP_PHA_CODE || DPPType == DPPType::DPP_PSD_CODE ){
+  if( DPPType == DPPTypeCode::DPP_PHA_CODE || DPPType == DPPTypeCode::DPP_PSD_CODE ){
 
     for( int p = 0; p < (int) RegisterBoardList_PHAPSD.size(); p++){
       if( RegisterBoardList_PHAPSD[p].GetRWType() == RW::WriteONLY) continue;
-      if( BoardInfo.Model == CAEN_DGTZ_DT5730 && RegisterBoardList_PHAPSD[p].GetAddress() == 0x81C4 ) continue;
+      if( ModelType == ModelTypeCode::DT && RegisterBoardList_PHAPSD[p].GetAddress() == 0x81C4 ) continue;
       ReadRegister(RegisterBoardList_PHAPSD[p]); 
     }
     regChannelMask = GetSettingFromMemory(DPP::RegChannelEnableMask);
@@ -862,7 +867,7 @@ void Digitizer::ProgramSettingsToBoard(){
 
   Reg haha;
   
-  if( DPPType == DPPType::DPP_PHA_CODE || DPPType == DPPType::DPP_PSD_CODE ){
+  if( DPPType == DPPTypeCode::DPP_PHA_CODE || DPPType == DPPTypeCode::DPP_PSD_CODE ){
   
     /// board setting
     //for( int p = 0; p < (int) RegisterBoardList_PHAPSD.size(); p++){
@@ -884,8 +889,7 @@ void Digitizer::ProgramSettingsToBoard(){
     for( int ch = 0; ch < NumInputCh; ch ++){
       if( DPPType == V1730_DPP_PHA_CODE ){
         for( int p = 0; p < (int) RegisterChannelList_PHA.size(); p++){
-          if( RegisterChannelList_PHA[p].GetRWType() == RW::ReadWrite ){
-            if( BoardInfo.Model == CAEN_DGTZ_DT5730 && RegisterBoardList_PHAPSD[p].GetAddress() == 0x81C4 ) continue;            
+          if( RegisterChannelList_PHA[p].GetRWType() == RW::ReadWrite ){      
             haha = RegisterChannelList_PHA[p];
             WriteRegister(haha, GetSettingFromMemory(haha, ch), ch, false); 
             usleep(pauseMilliSec * 1000);
@@ -895,7 +899,6 @@ void Digitizer::ProgramSettingsToBoard(){
       if( DPPType == V1730_DPP_PSD_CODE ){
         for( int p = 0; p < (int) RegisterChannelList_PSD.size(); p++){
           if( RegisterChannelList_PSD[p].GetRWType() == RW::ReadWrite){
-            if( BoardInfo.Model == CAEN_DGTZ_DT5730 && RegisterBoardList_PHAPSD[p].GetAddress() == 0x81C4 ) continue;
             haha = RegisterChannelList_PSD[p];
             WriteRegister(haha, GetSettingFromMemory(haha, ch), ch, false); 
             usleep(pauseMilliSec * 1000);
@@ -1103,37 +1106,51 @@ void Digitizer::SaveAllSettingsAsText(std::string fileName){
   for( unsigned int i = 0; i < SETTINGSIZE ; i++){
     haha.SetName("");
     uint32_t actualAddress = haha.CalAddress(i);
-    
 
+    if( ModelType == ModelTypeCode::DT && actualAddress == 0x81C4 ) continue;
+    
     if ( DPPType == V1730_DPP_PHA_CODE || DPPType == V1730_DPP_PSD_CODE ){
       ///printf("%7d--- 0x%04X,  0x%04X\n", i, haha->GetAddress(), haha->ActualAddress());
       for( int p = 0; p < (int) RegisterBoardList_PHAPSD.size(); p++){
-        if( haha.GetAddress() == (uint32_t) RegisterBoardList_PHAPSD[p] ) haha = RegisterBoardList_PHAPSD[p];
+        if( haha.GetAddress() == (uint32_t) RegisterBoardList_PHAPSD[p] ) {
+          haha = RegisterBoardList_PHAPSD[p];
+          break;
+        }
       }
 
       if( DPPType == V1730_DPP_PHA_CODE) {
         for( int p = 0; p < (int) RegisterChannelList_PHA.size(); p++){
-          if( haha.GetAddress() == (uint32_t) RegisterChannelList_PHA[p] ) haha = RegisterChannelList_PHA[p];
+          if( haha.GetAddress() == (uint32_t) RegisterChannelList_PHA[p] ) {
+            haha = RegisterChannelList_PHA[p];
+            break;
+          }
         }
       }
       if( DPPType == V1730_DPP_PSD_CODE) {
         for( int p = 0; p < (int) RegisterChannelList_PSD.size(); p++){
-          if( haha.GetAddress() == (uint32_t) RegisterChannelList_PSD[p] ) haha = RegisterChannelList_PSD[p];
+          if( haha.GetAddress() == (uint32_t) RegisterChannelList_PSD[p] ) {
+            haha = RegisterChannelList_PSD[p];
+            break;
+          }
         }
       }
     }else{
 
-     for( int p = 0; p < (int) RegisterBoardList_QDC.size(); p++){
-        if( haha.GetAddress() == (uint32_t) RegisterBoardList_QDC[p] ) haha = RegisterBoardList_QDC[p];
+      for( int p = 0; p < (int) RegisterBoardList_QDC.size(); p++){
+        if( haha.GetAddress() == (uint32_t) RegisterBoardList_QDC[p] ) {
+          haha = RegisterBoardList_QDC[p];
+          break;
+        }
       }
 
       for( int p = 0; p < (int) RegisterChannelList_QDC.size(); p++){
-        if( haha.GetAddress() == (uint32_t) RegisterChannelList_QDC[p] ) haha = RegisterChannelList_QDC[p];
+        if( haha.GetAddress() == (uint32_t) RegisterChannelList_QDC[p] ) {
+          haha = RegisterChannelList_QDC[p];
+          break;
+        }
       }
 
     }
-
-    if( BoardInfo.Model == CAEN_DGTZ_DT5730 && haha.GetAddress() == 0x81C4 ) continue;
 
     if( haha.GetName() != "" )  {
       std::string typeStr ;

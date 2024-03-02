@@ -622,7 +622,7 @@ void DigiSettingsPanel::SetUpGlobalTriggerMaskAndFrontPanelMask(QGridLayout * & 
   maskLayout->setSpacing(2);
 
   int coupledNum = 2;
-  if( digi[ID]->GetDPPType() == DPPType::DPP_QDC_CODE ) coupledNum = 8;
+  if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_QDC_CODE ) coupledNum = 8;
 
   for( int i = 0; i < digi[ID]->GetCoupledChannels(); i++){
 
@@ -648,7 +648,7 @@ void DigiSettingsPanel::SetUpGlobalTriggerMaskAndFrontPanelMask(QGridLayout * & 
       }
     });
 
-    if( digi[ID]->GetDPPType() == DPPType::DPP_QDC_CODE ) bnGlobalTriggerMask[ID][i]->setEnabled(false);
+    if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_QDC_CODE ) bnGlobalTriggerMask[ID][i]->setEnabled(false);
 
     bnTRGOUTMask[ID][i] = new QPushButton(this);
     bnTRGOUTMask[ID][i]->setFixedSize(QSize(20,20));
@@ -725,7 +725,7 @@ void DigiSettingsPanel::SetUpGlobalTriggerMaskAndFrontPanelMask(QGridLayout * & 
 
   });
 
-  if( digi[ID]->GetDPPType() == DPPType::DPP_QDC_CODE ) sbGlbMajLvl[ID]->setEnabled(false);
+  if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_QDC_CODE ) sbGlbMajLvl[ID]->setEnabled(false);
 
 
   //*============================================
@@ -800,7 +800,7 @@ void DigiSettingsPanel::SetUpGlobalTriggerMaskAndFrontPanelMask(QGridLayout * & 
   });
 
   //^============================================ Trigger Validation Mask
-  if( digi[ID]->GetDPPType() == DPPType::DPP_QDC_CODE ) {
+  if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_QDC_CODE ) {
     QLabel * info = new QLabel ("No Trigger Mask for DPP-QDC firmware", this);
     bdTriggerLayout[ID]->addWidget(info, 0, 0, 1, 13 );
     return;
@@ -1277,7 +1277,7 @@ void DigiSettingsPanel::SetUpInquiryCopyTab(){
 void DigiSettingsPanel::SetUpChannelMask(unsigned int digiID){
 
   QString lbStr = "Channel Mask :";
-  if( digi[digiID]->GetDPPType() == DPPType::DPP_QDC_CODE ) lbStr = "Group Mask :";
+  if( digi[digiID]->GetDPPType() == DPPTypeCode::DPP_QDC_CODE ) lbStr = "Group Mask :";
 
   QLabel * chMaskLabel = new QLabel(lbStr, this);
   chMaskLabel->setAlignment(Qt::AlignRight | Qt::AlignCenter);
@@ -1291,12 +1291,12 @@ void DigiSettingsPanel::SetUpChannelMask(unsigned int digiID){
   chLayout->setSpacing(0);
 
   int nChGrp = digi[digiID]->GetNumRegChannels();
-  if( digi[digiID]->GetDPPType() == DPPType::DPP_QDC_CODE ) nChGrp = digi[digiID]->GetNumRegChannels();
+  if( digi[digiID]->GetDPPType() == DPPTypeCode::DPP_QDC_CODE ) nChGrp = digi[digiID]->GetNumRegChannels();
 
   for( int i = 0; i < nChGrp; i++){
     bnChEnableMask[digiID][i] = new QPushButton(this);
     bnChEnableMask[digiID][i]->setFixedSize(QSize(20,20));
-    if( digi[digiID]->GetDPPType() == DPPType::DPP_QDC_CODE ){
+    if( digi[digiID]->GetDPPType() == DPPTypeCode::DPP_QDC_CODE ){
       bnChEnableMask[digiID][i]->setToolTip("Ch:" + QString::number(8*i) + "-" + QString::number(8*(i+1)-1));
     }else{
       bnChEnableMask[digiID][i]->setToolTip("Ch:" + QString::number(i));
@@ -1313,14 +1313,14 @@ void DigiSettingsPanel::SetUpChannelMask(unsigned int digiID){
       if( bnChEnableMask[digiID][i]->styleSheet() == "" ){
          bnChEnableMask[digiID][i]->setStyleSheet("background-color : green;");
 
-         if( digi[digiID]->GetDPPType() == DPPType::DPP_QDC_CODE ){
+         if( digi[digiID]->GetDPPType() == DPPTypeCode::DPP_QDC_CODE ){
            digi[digiID]->SetBits(DPP::QDC::GroupEnableMask, {1, i}, 1, i);
          }else{
            digi[digiID]->SetBits(DPP::RegChannelEnableMask, {1, i}, 1, i);
          }
       }else{
          bnChEnableMask[digiID][i]->setStyleSheet("");
-         if( digi[digiID]->GetDPPType() == DPPType::DPP_QDC_CODE ){
+         if( digi[digiID]->GetDPPType() == DPPTypeCode::DPP_QDC_CODE ){
            digi[digiID]->SetBits(DPP::QDC::GroupEnableMask, {1, i}, 0, i);
          }else{
            digi[digiID]->SetBits(DPP::RegChannelEnableMask, {1, i}, 0, i);
@@ -3143,14 +3143,14 @@ void DigiSettingsPanel::UpdateBoardAndChannelsStatus(){
   for( int i = 0; i < digi[ID]->GetNumRegChannels(); i++){
     uint32_t chStatus = digi[ID]->ReadRegister(DPP::ChannelStatus_R, i);
 
-    if( digi[ID]->GetDPPType() == DPPType::DPP_PHA_CODE ||  digi[ID]->GetDPPType() == DPPType::DPP_PSD_CODE ){
+    if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_PHA_CODE ||  digi[ID]->GetDPPType() == DPPTypeCode::DPP_PSD_CODE ){
       bnChStatus[ID][i][0]->setStyleSheet( ( (chStatus >> 2 ) & 0x1 ) ? "background-color: red;" : "");
       bnChStatus[ID][i][1]->setStyleSheet( ( (chStatus >> 3 ) & 0x1 ) ? "background-color: green;" : "");
       bnChStatus[ID][i][2]->setStyleSheet( ( (chStatus >> 8 ) & 0x1 ) ? "background-color: red;" : "");
       leADCTemp[ID][i]->setText( QString::number( digi[ID]->GetSettingFromMemory(DPP::ChannelADCTemperature_R, i) ) );
     }
 
-    if( digi[ID]->GetDPPType() == DPPType::DPP_QDC_CODE ){
+    if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_QDC_CODE ){
       bnChStatus[ID][i][0]->setStyleSheet( ( (chStatus >> 2 ) & 0x1 ) ? "background-color: red;" : "");
     }
 

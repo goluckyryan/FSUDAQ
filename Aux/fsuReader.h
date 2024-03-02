@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <filesystem>
 
+#include "AggSeparator.h"
+
 class FSUReader{
 
   public:
@@ -173,11 +175,11 @@ inline void FSUReader::OpenFile(std::string fileName, uInt dataSize, int verbose
   order = atoi(tokens[5].c_str());
 
   DPPType = -1;
-  if( fileName.find("PHA") != std::string::npos ) DPPType = DPPType::DPP_PHA_CODE;
-  if( fileName.find("PSD") != std::string::npos ) DPPType = DPPType::DPP_PSD_CODE;
-  if( fileName.find("QDC") != std::string::npos ) DPPType = DPPType::DPP_QDC_CODE;
+  if( fileName.find("PHA") != std::string::npos ) DPPType = DPPTypeCode::DPP_PHA_CODE;
+  if( fileName.find("PSD") != std::string::npos ) DPPType = DPPTypeCode::DPP_PSD_CODE;
+  if( fileName.find("QDC") != std::string::npos ) DPPType = DPPTypeCode::DPP_QDC_CODE;
 
-  numCh = (DPPType == DPPType::DPP_QDC_CODE ? 64 : 16);
+  numCh = (DPPType == DPPTypeCode::DPP_QDC_CODE ? 64 : 16);
 
   data = new Data(numCh, dataSize);
   data->tick2ns = tick2ns;
@@ -225,7 +227,7 @@ inline int FSUReader::ReadNextBlock(bool traceON, int verbose, uShort saveData){
     filePos = ftell(inFile);
 
     data->buffer = buffer;
-    data->DecodeDualBlock(buffer, dualSize, DPPType, chMask, !traceON, verbose);    
+    data->DecodeDualBlock(buffer, dualSize, DPPType, chMask, !traceON, verbose);
 
   }else{
     printf("incorrect header.\n trminate.");
@@ -388,14 +390,21 @@ inline std::string FSUReader::SaveHit2NewFile(std::string saveFolder){
 
     if( i% 10000 == 0 ) printf("Saving %lu/%lu Hit (%.2f%%)\n\033[A\r", i, hitCount, i*100./hitCount);
 
-    fwrite( &(hit[i].sn), 2, 1, outFile);
-    fwrite( &(hit[i].ch), 1, 1, outFile);
+    //fwrite( &(hit[i].sn), 2, 1, outFile);
+
+    uint16_t flag = hit[i].ch + (hit[i].pileUp << 8) ;
+
+    if( DPPType == DPPTypeCode::DPP_PSD_CODE ) flag += ( 1 << 15);
+    if( hit[i].traceLength > 0 ) flag += (1 << 14);
+
+    // fwrite( &(hit[i].ch), 1, 1, outFile);
+    fwrite( &flag, 2, 1, outFile);
     fwrite( &(hit[i].energy), 2, 1, outFile);
-    fwrite( &(hit[i].energy2), 2, 1, outFile);
-    fwrite( &(hit[i].timestamp), 8, 1, outFile);
+    if( DPPType == DPPTypeCode::DPP_PSD_CODE ) fwrite( &(hit[i].energy2), 2, 1, outFile);
+    fwrite( &(hit[i].timestamp), 6, 1, outFile);
     fwrite( &(hit[i].fineTime), 2, 1, outFile);
-    fwrite( &(hit[i].pileUp), 1, 1, outFile);
-    fwrite( &(hit[i].traceLength), 2, 1, outFile);
+    // fwrite( &(hit[i].pileUp), 1, 1, outFile);
+    if( hit[i].traceLength > 0 ) fwrite( &(hit[i].traceLength), 2, 1, outFile);
     
     for( uShort j = 0; j < hit[i].traceLength; j++){
       fwrite( &(hit[i].trace[j]), 2, 1, outFile);

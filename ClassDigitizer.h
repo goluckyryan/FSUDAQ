@@ -33,6 +33,7 @@ class Digitizer{
     int                   NCoupledCh;    /// number of Coupled channel
     int                   ADCbits;       /// ADC bit
     int                   DPPType;       /// DPP verion
+    int                   ModelType;     /// VME or DT
     unsigned int          ADCFullSize;   /// pow(2, ADCbits) - 1
     float                 tick2ns;         /// channel to ns
     CAEN_DGTZ_BoardInfo_t BoardInfo;
@@ -132,6 +133,7 @@ class Digitizer{
     int         GetCoupledChannels()         const {return NCoupledCh;}
     int         GetHandle()                  const {return handle;}
     int         GetDPPType()                 const {return DPPType;}
+    int         GetModelType()               const {return ModelType;}
     std::string GetDPPString(int DPPType = 0);  /// if no input, use digitizer DPPType
     int         GetADCBits()                 const {return BoardInfo.ADC_NBits;}
     std::string GetROCVersion()              const {return BoardInfo.ROC_FirmwareRel;}

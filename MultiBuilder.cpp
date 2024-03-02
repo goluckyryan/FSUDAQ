@@ -253,14 +253,13 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
 
           if( time >= earlistTime && (time - earlistTime <=  timeWindow) ){
             em.sn = snList[bd];
-            em.bd = bd;
             em.ch = ch;
             em.energy = data[bd]->GetEnergy(ch, nextIndex[bd][ch]);
             em.timestamp = time;
             em.fineTime = data[bd]->GetFineTime(ch, nextIndex[bd][ch]);
 
             if( !skipTrace ) em.trace = data[bd]->Waveform1[ch][nextIndex[bd][ch]];
-            if( typeList[bd] == DPPType::DPP_PSD_CODE ) em.energy2 = data[bd]->GetEnergy2(ch, nextIndex[bd][ch]);
+            if( typeList[bd] == DPPTypeCode::DPP_PSD_CODE ) em.energy2 = data[bd]->GetEnergy2(ch, nextIndex[bd][ch]);
 
             events[eventIndex].push_back(em);
             nextIndex[bd][ch]++;
@@ -304,8 +303,15 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
       printf(">>>>>>>>>>>>>>>>> Event ID : %ld, total built: %ld, multiplicity : %ld\n", eventIndex, totalEventBuilt, events[eventIndex].size());
       for( int i = 0; i <(int) events[eventIndex].size(); i++){
         int chxxx = events[eventIndex][i].ch;
-        int bd = events[eventIndex][i].bd;
-        printf("%02d, %02d | %5d |  %5d %llu \n", bd, chxxx, nextIndex[bd][chxxx], events[eventIndex][i].energy, events[eventIndex][i].timestamp); 
+        int sn = events[eventIndex][i].sn;
+        int bd = 0;
+        for( int pp = 0; pp < nData; pp++){
+          if( sn == data[pp]->boardSN ) {
+            bd = pp;
+            break;
+          }
+        }
+        printf("%05d, %02d | %5d |  %5d %llu \n", sn, chxxx, nextIndex[bd][chxxx], events[eventIndex][i].energy, events[eventIndex][i].timestamp); 
       }
 
       if( nExhaushedCh == nData * MaxNChannels ) {
@@ -377,11 +383,10 @@ void MultiBuilder::BuildEventsBackWard(int maxNumEvent, bool verbose){
           unsigned long long time = data[bd]->GetTimestamp(ch, nextIndex[bd][ch]);
           if( time <= latestTime && (latestTime - time <= timeWindow)){
             em.sn = snList[bd];
-            em.bd = bd;
             em.ch = ch;
             em.energy = data[bd]->GetEnergy(ch, nextIndex[bd][ch]);
             em.timestamp = time;
-            if( typeList[bd] == DPPType::DPP_PSD_CODE ) em.energy2 = data[bd]->GetEnergy2(ch, nextIndex[bd][ch]);
+            if( typeList[bd] == DPPTypeCode::DPP_PSD_CODE ) em.energy2 = data[bd]->GetEnergy2(ch, nextIndex[bd][ch]);
 
             events[eventIndex].push_back(em);
             nextIndex[bd][ch]--;
@@ -407,8 +412,15 @@ void MultiBuilder::BuildEventsBackWard(int maxNumEvent, bool verbose){
       printf(">>>>>>>>>>>>>>>>> Event ID : %ld, total built: %ld, multiplicity : %ld\n", eventIndex, totalEventBuilt, events[eventIndex].size());
       for( int i = 0; i <(int) events[eventIndex].size(); i++){
         int chxxx = events[eventIndex][i].ch;
-        int bd = events[eventIndex][i].bd;
-        printf("%02d, %02d | %d |  %5d %llu \n", bd, chxxx, nextIndex[bd][chxxx], events[eventIndex][i].energy, events[eventIndex][i].timestamp); 
+        int sn = events[eventIndex][i].sn;
+        int bd = 0;
+        for( int pp = 0; pp < nData; pp++){
+          if( sn == data[pp]->boardSN ) {
+            bd = pp;
+            break;
+          }
+        }
+        printf("%05d, %02d | %5d |  %5d %llu \n", sn, chxxx, nextIndex[bd][chxxx], events[eventIndex][i].energy, events[eventIndex][i].timestamp); 
       }
 
       if( nExhaushedCh == nData * MaxNChannels ) {

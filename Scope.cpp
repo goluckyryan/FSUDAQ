@@ -579,7 +579,7 @@ void Scope::SetUpComboBox(RComboBox * &cb, QString str, int row, int col, const 
     int ch = cbScopeCh->currentIndex();
     int value = cb->currentData().toInt();
 
-    if( digi[ID]->GetDPPType() == DPPType::DPP_QDC_CODE ) {
+    if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_QDC_CODE ) {
       int grp = ch/8; // convert ch to grp 
 
       digiMTX[ID].lock();
@@ -664,7 +664,7 @@ void Scope::SetUpSpinBox(RSpinBox * &sb, QString str, int row, int col, const Re
 
     msg += " | 0x" + QString::number(value, 16); 
 
-    if( digi[ID]->GetDPPType() == DPPType::DPP_QDC_CODE ){
+    if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_QDC_CODE ){
       int grp = ch/8; // convert ch to grp 
       digiMTX[ID].lock();
         digi[ID]->WriteRegister(para, value, grp);
@@ -1023,7 +1023,7 @@ void Scope::UpdateComobox(RComboBox * &cb, const Reg para){
   enableSignalSlot = false;
   int haha = -99; 
 
-  if( digi[ID]->GetDPPType() == DPPType::DPP_QDC_CODE ){
+  if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_QDC_CODE ){
     haha = digi[ID]->GetSettingFromMemory(para, ch/8);
   }else{
     haha = digi[ID]->GetSettingFromMemory(para, ch);
@@ -1043,7 +1043,7 @@ void Scope::UpdateComobox(RComboBox * &cb, const Reg para){
 void Scope::UpdateSpinBox(RSpinBox * &sb, const Reg para){
   int ch = cbScopeCh->currentIndex();
 
-  if( digi[ID]->GetDPPType() == DPPType::DPP_QDC_CODE ) ch = ch /8;
+  if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_QDC_CODE ) ch = ch /8;
 
   enableSignalSlot = false;
   unsigned int haha = digi[ID]->GetSettingFromMemory(para, ch);

@@ -16,7 +16,6 @@
 
 #define NumCoupledChannel 8 // the max numnber of Coupled/RegChannel is 8 for PHA, PSD, QDC
 
-
 std::vector<std::string> AggSeperator(std::string inFileName, std::string saveFolder = "./", short verbose = false){
 
   printf("================ AggSeperator \n");
@@ -53,7 +52,7 @@ std::vector<std::string> AggSeperator(std::string inFileName, std::string saveFo
 
   for( int i = 0; i < NumCoupledChannel; i++){
     newFileFlag[i] = true;
-    outputFileList.push_back( saveFolder + fileName + "." + std::to_string(i));
+    outputFileList.push_back( saveFolder + fileName + "." + std::to_string(i) + ".agg");
   }
 
   do{

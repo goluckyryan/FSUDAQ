@@ -57,9 +57,9 @@ int main(int argc, char **argv){
     TString typeStr = &inFileName[i][snPos+9];
     typeStr.Resize(3);
 
-    if( typeStr == "PHA" ) type[i] = DPPType::DPP_PHA_CODE;
-    if( typeStr == "PSD" ) type[i] = DPPType::DPP_PSD_CODE;
-    if( typeStr == "QDC" ) type[i] = DPPType::DPP_QDC_CODE;
+    if( typeStr == "PHA" ) type[i] = DPPTypeCode::DPP_PHA_CODE;
+    if( typeStr == "PSD" ) type[i] = DPPTypeCode::DPP_PSD_CODE;
+    if( typeStr == "QDC" ) type[i] = DPPTypeCode::DPP_QDC_CODE;
 
     int order = atoi(&inFileName[i][snPos+13]);
     ID[i] = sn[i] + order * 1000;
@@ -84,8 +84,8 @@ int main(int argc, char **argv){
   for( int i = 0; i < nFile; i++){
     inFile[i] = fopen(inFileName[i].Data(), "r");
     if( inFile[i] ){
-      if( type[i] == DPPType::DPP_PHA_CODE || type[i] == DPPType::DPP_PSD_CODE ) data[i] = new Data(16);
-      if( type[i] == DPPType::DPP_QDC_CODE ) data[i] = new Data(64);
+      if( type[i] == DPPTypeCode::DPP_PHA_CODE || type[i] == DPPTypeCode::DPP_PSD_CODE ) data[i] = new Data(16);
+      if( type[i] == DPPTypeCode::DPP_QDC_CODE ) data[i] = new Data(64);
       data[i]->DPPType = type[i];
       data[i]->boardSN = ID[i]%1000;
     }else{

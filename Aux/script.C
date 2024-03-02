@@ -3,7 +3,7 @@
 
 void script(){
 
-    FSUReader * reader = new FSUReader("/data1/20230816_Encore/data_raw/temp_006_334_PHA_000.fsu", 16);
+    FSUReader * reader = new FSUReader("~/ExpData/testing/.fsu", 16);
     Data * data = reader->GetData();
     data->tick2ns = 4;
 

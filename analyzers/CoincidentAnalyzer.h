@@ -251,7 +251,7 @@ inline void CoincidentAnalyzer::SetUpCanvas(){
       boxLayout->addWidget(lbaDigi, 7, 0);
       aDigi = new RComboBox(this);
       for(unsigned int i = 0; i < nDigi; i ++ ){
-        aDigi->addItem("Digi-" +  QString::number(digi[i]->GetSerialNumber()), i);
+        aDigi->addItem("Digi-" +  QString::number(digi[i]->GetSerialNumber()), digi[i]->GetSerialNumber());
       }
       boxLayout->addWidget(aDigi, 7, 1);
 
@@ -390,16 +390,16 @@ inline void CoincidentAnalyzer::UpdateHistograms(){
     unsigned long long xT = 0;
     for( int k = 0; k < (int) event.size(); k++ ){
       //event[k].Print();
-      if( event[k].bd == a_bd && event[k].ch == a_ch) {
+      if( event[k].sn == a_bd && event[k].ch == a_ch) {
         h1->Fill(event[k].energy);
         aE = event[k].energy;
       }
 
-      if( event[k].bd == x_bd && event[k].ch == x_ch) {
+      if( event[k].sn == x_bd && event[k].ch == x_ch) {
         xE = event[k].energy;
         xT = event[k].timestamp;
       }
-      if( event[k].bd == y_bd && event[k].ch == y_ch) yE = event[k].energy; 
+      if( event[k].sn == y_bd && event[k].ch == y_ch) yE = event[k].energy; 
     }
 
     if( xE >= 0 && yE >= 0 ) h2D->Fill(xE, yE);

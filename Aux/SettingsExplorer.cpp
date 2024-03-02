@@ -52,9 +52,9 @@ void keyPressCommand(){
   }
   if (c == 'b') { //========== 
 
-    if( digi->GetDPPType() == DPPType::DPP_PHA_CODE || digi->GetDPPType() == DPPType::DPP_PSD_CODE ){
+    if( digi->GetDPPType() == DPPTypeCode::DPP_PHA_CODE || digi->GetDPPType() == DPPTypeCode::DPP_PSD_CODE ){
       RegList = RegisterBoardList_PHAPSD;
-    }else if(digi->GetDPPType() == DPPType::DPP_QDC_CODE) {
+    }else if(digi->GetDPPType() == DPPTypeCode::DPP_QDC_CODE) {
       RegList = RegisterBoardList_QDC;
     }
 
@@ -131,9 +131,9 @@ void keyPressCommand(){
       return;
     }
 
-    if( digi->GetDPPType() == DPPType::DPP_PHA_CODE ) RegList = RegisterChannelList_PHA;
-    if( digi->GetDPPType() == DPPType::DPP_PSD_CODE ) RegList = RegisterChannelList_PSD;
-    if( digi->GetDPPType() == DPPType::DPP_QDC_CODE ) RegList = RegisterChannelList_QDC;
+    if( digi->GetDPPType() == DPPTypeCode::DPP_PHA_CODE ) RegList = RegisterChannelList_PHA;
+    if( digi->GetDPPType() == DPPTypeCode::DPP_PSD_CODE ) RegList = RegisterChannelList_PSD;
+    if( digi->GetDPPType() == DPPTypeCode::DPP_QDC_CODE ) RegList = RegisterChannelList_QDC;
 
     for( int i = 0; i < (int) RegList.size(); i++){
       std::string typeStr ;
@@ -245,9 +245,9 @@ int main(int argc, char **argv) {
   digi = new Digitizer();
   digi->LoadSettingBinaryToMemory(argv[1]);
 
-  if( !(digi->GetDPPType() == DPPType::DPP_PHA_CODE ||
-        digi->GetDPPType() == DPPType::DPP_PSD_CODE ||
-        digi->GetDPPType() == DPPType::DPP_QDC_CODE )){
+  if( !(digi->GetDPPType() == DPPTypeCode::DPP_PHA_CODE ||
+        digi->GetDPPType() == DPPTypeCode::DPP_PSD_CODE ||
+        digi->GetDPPType() == DPPTypeCode::DPP_QDC_CODE )){
     printf("DPP-type not supported. Or Binary file is not supported.\n");
     delete digi;
     return -1;

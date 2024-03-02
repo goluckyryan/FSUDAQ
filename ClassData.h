@@ -19,10 +19,15 @@
 //#define MaxNData 10000 /// store 10k events per channels
 #define DefaultDataSize 10000
 
-enum DPPType{ 
+enum DPPTypeCode{ 
   DPP_PHA_CODE = 0x8B,
   DPP_PSD_CODE = 0x88,
   DPP_QDC_CODE = 0x87
+};
+
+enum ModelTypeCode{
+  VME = 0,
+  DT = 1
 };
 
 class Data{
@@ -57,6 +62,8 @@ class Data{
     uShort GetEnergy(unsigned short ch, unsigned int index)    const {return Energy[ch][index];}
     uShort GetEnergy2(unsigned short ch, unsigned int index)   const {return Energy2[ch][index];}
     bool   GetPileUp(unsigned short ch, unsigned int index)    const {return PileUp[ch][index];}
+
+    uInt GetWordIndex() const {return nw;}
 
     std::vector<short> ** Waveform1    ; // used at least 14 MB
     std::vector<short> ** Waveform2    ;
@@ -151,7 +158,7 @@ class Data{
 inline Data::Data(unsigned short numCh, uInt dataSize): numInputCh(numCh){
   tick2ns = 2.0;
   boardSN = 0;
-  DPPType = DPPType::DPP_PHA_CODE;
+  DPPType = DPPTypeCode::DPP_PHA_CODE;
   DPPTypeStr = "";
   buffer = NULL;
 
@@ -518,8 +525,8 @@ inline void Data::PrintAllData(bool tableMode, unsigned int maxRowDisplay) const
       if( DataIndex[ch] < 0  ) continue;
       printf("------------ ch : %d, DataIndex : %d, loop : %d\n", ch, DataIndex[ch], LoopIndex[ch]);
       for( int ev = 0; ev <= (LoopIndex[ch] > 0 ? dataSize : DataIndex[ch]) ; ev++){
-        if( DPPType == DPPType::DPP_PHA_CODE || DPPType == DPPType::DPP_QDC_CODE ) printf("%4d, %5u, %18llu, %5u \n", ev, Energy[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
-        if( DPPType == DPPType::DPP_PSD_CODE ) printf("%4d, %5u, %5u, %18llu, %5u \n", ev, Energy[ch][ev], Energy2[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
+        if( DPPType == DPPTypeCode::DPP_PHA_CODE || DPPType == DPPTypeCode::DPP_QDC_CODE ) printf("%4d, %5u, %18llu, %5u \n", ev, Energy[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
+        if( DPPType == DPPTypeCode::DPP_PSD_CODE ) printf("%4d, %5u, %5u, %18llu, %5u \n", ev, Energy[ch][ev], Energy2[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
         if( maxRowDisplay > 0 && (unsigned int) ev > maxRowDisplay ) break;
       }
     }
@@ -531,8 +538,8 @@ inline void Data::PrintChData(unsigned short ch, unsigned int maxRowDisplay) con
   if( DataIndex[ch] < 0  ) printf("no data in ch-%d\n", ch);
   printf("------------ ch : %d, DataIndex : %d, loop : %d\n", ch, DataIndex[ch], LoopIndex[ch]);
   for( int ev = 0; ev < (LoopIndex[ch] > 0 ? dataSize : DataIndex[ch]) ; ev++){
-    if( DPPType == DPPType::DPP_PHA_CODE || DPPType == DPPType::DPP_QDC_CODE ) printf("%4d, %5u, %15llu, %5u \n", ev, Energy[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
-    if( DPPType == DPPType::DPP_PSD_CODE ) printf("%4d, %5u, %5u, %15llu, %5u \n", ev, Energy[ch][ev], Energy2[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
+    if( DPPType == DPPTypeCode::DPP_PHA_CODE || DPPType == DPPTypeCode::DPP_QDC_CODE ) printf("%4d, %5u, %15llu, %5u \n", ev, Energy[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
+    if( DPPType == DPPTypeCode::DPP_PSD_CODE ) printf("%4d, %5u, %5u, %15llu, %5u \n", ev, Energy[ch][ev], Energy2[ch][ev], Timestamp[ch][ev], fineTime[ch][ev]);
     if( maxRowDisplay > 0 && (unsigned int) ev > maxRowDisplay ) break;
   }
 
@@ -594,9 +601,9 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
       
       if( BoardID > 0 ) {
         switch(BoardID){
-          case 0x8 : DPPType = DPPType::DPP_PSD_CODE; break;
-          case 0xB : DPPType = DPPType::DPP_PHA_CODE; break;
-          case 0x7 : DPPType = DPPType::DPP_QDC_CODE; break;
+          case 0x8 : DPPType = DPPTypeCode::DPP_PSD_CODE; break;
+          case 0xB : DPPType = DPPTypeCode::DPP_PHA_CODE; break;
+          case 0x7 : DPPType = DPPTypeCode::DPP_QDC_CODE; break;
         }
       }
       
@@ -614,13 +621,13 @@ inline void Data::DecodeBuffer(bool fastDecode, int verbose){
 
         nw = nw + 1; 
         
-        if( DPPType == DPPType::DPP_PHA_CODE ) {
+        if( DPPType == DPPTypeCode::DPP_PHA_CODE ) {
           if ( DecodePHADualChannelBlock(chMask, fastDecode, verbose) < 0 ) break;
         }
-        if( DPPType == DPPType::DPP_PSD_CODE ) {
+        if( DPPType == DPPTypeCode::DPP_PSD_CODE ) {
           if ( DecodePSDDualChannelBlock(chMask, fastDecode, verbose) < 0 ) break;
         }
-        if( DPPType == DPPType::DPP_QDC_CODE ) {
+        if( DPPType == DPPTypeCode::DPP_QDC_CODE ) {
           if ( DecodeQDCGroupedChannelBlock(chMask, fastDecode, verbose) < 0 ) break;
         }
       }
@@ -646,13 +653,13 @@ inline void Data::DecodeDualBlock(char * &buffer, unsigned int size, int DPPType
 
   nw = 0;
 
-  if( DPPType == DPPType::DPP_PHA_CODE ) {
+  if( DPPType == DPPTypeCode::DPP_PHA_CODE ) {
     DecodePHADualChannelBlock(chMask, fastDecode, verbose) ; 
   }
-  if( DPPType == DPPType::DPP_PSD_CODE ) {
+  if( DPPType == DPPTypeCode::DPP_PSD_CODE ) {
     DecodePSDDualChannelBlock(chMask, fastDecode, verbose) ;
   }
-  if( DPPType == DPPType::DPP_QDC_CODE ) {
+  if( DPPType == DPPTypeCode::DPP_QDC_CODE ) {
     DecodeQDCGroupedChannelBlock(chMask, fastDecode, verbose) ;
   }
 
