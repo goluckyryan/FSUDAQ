@@ -114,6 +114,7 @@ There is a folder Aux, this folder contains many auxillary programs, such as Eve
 
 # Known Issues
 
+* If accessing the database takes too long, recommend to disable the database.
 * Pile up rate is not accurate for very high input rate ( > 60 kHz ).
 * When using the scope, the Agg/Read must be smaller than 512.
 * Although the Events/Agg used the CAEN API to recalculate before ACQ start, for PHA firmware, when the trigger rate changed, the Events per Agg need to be changed.

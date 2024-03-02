@@ -122,8 +122,9 @@ int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose
       isInputChEqRegCh = true;
       regChannelMask = pow(2, NumInputCh)-1;
       switch(BoardInfo.Model){
-            case CAEN_DGTZ_V1730: tick2ns =  2.0; NCoupledCh = NumInputCh/2; break; ///ns -> 500 MSamples/s
-            case CAEN_DGTZ_V1725: tick2ns =  4.0; NCoupledCh = NumInputCh/2; break; ///ns -> 250 MSamples/s
+            case CAEN_DGTZ_V1730:  tick2ns =  2.0; NCoupledCh = NumInputCh/2; break; ///ns -> 500 MSamples/s
+            case CAEN_DGTZ_DT5730: tick2ns =  2.0; NCoupledCh = NumInputCh; break; ///ns -> 500 MSamples/s
+            case CAEN_DGTZ_V1725:  tick2ns =  4.0; NCoupledCh = NumInputCh/2; break; ///ns -> 250 MSamples/s
             case CAEN_DGTZ_V1740: {
               NumInputCh = 64;
               NCoupledCh = NumRegChannel;
@@ -332,14 +333,16 @@ int Digitizer::ProgramBoard_PHA(){
   ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x5, 0xAAAA);
   ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x6, 0xAAAA);
   ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x7, 0xAAAA);
-  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x8, 0xAAAA);
-  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x9, 0xAAAA);
-  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xA, 0xAAAA);
-  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xB, 0xAAAA);
-  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xC, 0xAAAA);
-  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xD, 0xAAAA);
-  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xE, 0xAAAA);
-  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xF, 0xAAAA);
+  if( NumRegChannel > 8 ){
+    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x8, 0xAAAA);
+    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x9, 0xAAAA);
+    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xA, 0xAAAA);
+    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xB, 0xAAAA);
+    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xC, 0xAAAA);
+    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xD, 0xAAAA);
+    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xE, 0xAAAA);
+    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xF, 0xAAAA);
+  }
 
   ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PreTrigger) + 0x7000 , 32 );
   ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::InputDynamicRange) + 0x7000 , 0x0 );
@@ -806,6 +809,7 @@ void Digitizer::ReadAllSettingsFromBoard(bool force){
 
     for( int p = 0; p < (int) RegisterBoardList_PHAPSD.size(); p++){
       if( RegisterBoardList_PHAPSD[p].GetRWType() == RW::WriteONLY) continue;
+      if( BoardInfo.Model == CAEN_DGTZ_DT5730 && RegisterBoardList_PHAPSD[p].GetAddress() == 0x81C4 ) continue;
       ReadRegister(RegisterBoardList_PHAPSD[p]); 
     }
     regChannelMask = GetSettingFromMemory(DPP::RegChannelEnableMask);
@@ -881,6 +885,7 @@ void Digitizer::ProgramSettingsToBoard(){
       if( DPPType == V1730_DPP_PHA_CODE ){
         for( int p = 0; p < (int) RegisterChannelList_PHA.size(); p++){
           if( RegisterChannelList_PHA[p].GetRWType() == RW::ReadWrite ){
+            if( BoardInfo.Model == CAEN_DGTZ_DT5730 && RegisterBoardList_PHAPSD[p].GetAddress() == 0x81C4 ) continue;            
             haha = RegisterChannelList_PHA[p];
             WriteRegister(haha, GetSettingFromMemory(haha, ch), ch, false); 
             usleep(pauseMilliSec * 1000);
@@ -890,6 +895,7 @@ void Digitizer::ProgramSettingsToBoard(){
       if( DPPType == V1730_DPP_PSD_CODE ){
         for( int p = 0; p < (int) RegisterChannelList_PSD.size(); p++){
           if( RegisterChannelList_PSD[p].GetRWType() == RW::ReadWrite){
+            if( BoardInfo.Model == CAEN_DGTZ_DT5730 && RegisterBoardList_PHAPSD[p].GetAddress() == 0x81C4 ) continue;
             haha = RegisterChannelList_PSD[p];
             WriteRegister(haha, GetSettingFromMemory(haha, ch), ch, false); 
             usleep(pauseMilliSec * 1000);
@@ -1126,6 +1132,9 @@ void Digitizer::SaveAllSettingsAsText(std::string fileName){
       }
 
     }
+
+    if( BoardInfo.Model == CAEN_DGTZ_DT5730 && haha.GetAddress() == 0x81C4 ) continue;
+
     if( haha.GetName() != "" )  {
       std::string typeStr ;
       if( haha.GetRWType() == RW::ReadWrite ) typeStr = "R/W";

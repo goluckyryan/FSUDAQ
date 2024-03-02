@@ -124,6 +124,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     layout->addWidget(leDatabaseName, rowID, 4);
 
     rowID ++;
+    QLabel * lbToken = new QLabel("Influx Token : ", this);
+    lbToken->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+    layout->addWidget(lbToken, rowID, 1);
+
+    leInfluxToken = new QLineEdit(this);
+    leInfluxToken->setReadOnly(true);
+    layout->addWidget(leInfluxToken, rowID, 2, 1, 3);
+    
+    rowID ++;
     QLabel * lbElogIP = new QLabel("Elog IP : ", this);
     lbElogIP->setAlignment(Qt::AlignRight | Qt::AlignCenter);
     layout->addWidget(lbElogIP, rowID, 1);
@@ -279,6 +288,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
   elogPWD = "";
   influxIP = "";
   dataBaseName = "";
+  influxToken = "";
   programSettingsFilePath = QDir::current().absolutePath() + "/programSettings.txt";
   LoadProgramSettings();
 
@@ -436,10 +446,11 @@ void MainWindow::LoadProgramSettings(){
       if( count == 0 ) rawDataPath = line;
       if( count == 1 ) influxIP = line;
       if( count == 2 ) dataBaseName = line;
-      if( count == 3 ) elogIP = line;
-      if( count == 4 ) elogName = line;
-      if( count == 5 ) elogUser = line;
-      if( count == 6 ) elogPWD = line;
+      if( count == 3 ) influxToken = line;
+      if( count == 4 ) elogIP = line;
+      if( count == 5 ) elogName = line;
+      if( count == 6 ) elogUser = line;
+      if( count == 7 ) elogPWD = line;
 
       count ++;
       line = in.readLine();
@@ -449,17 +460,19 @@ void MainWindow::LoadProgramSettings(){
     leDataPath->setText(rawDataPath);
     leInfluxIP->setText(influxIP);
     leDatabaseName->setText(dataBaseName);
+    leInfluxToken->setText(influxToken);
     leElogIP->setText(elogIP);
     leElogName->setText(elogName);
 
     logMsgHTMLMode = false;
-    LogMsg("Raw Data Path : " + rawDataPath);
-    LogMsg("    Influx IP : " + influxIP);
-    LogMsg("Database Name : " + dataBaseName);
-    LogMsg("      Elog IP : " + elogIP);
-    LogMsg("    Elog Name : " + elogName);
-    LogMsg("    Elog User : " + elogUser);
-    LogMsg("     Elog PWD : " + elogPWD);
+    LogMsg(" Raw Data Path : " + rawDataPath);
+    LogMsg("     Influx IP : " + influxIP);
+    LogMsg(" Database Name : " + dataBaseName);
+    LogMsg("Database Token : " + influxToken);
+    LogMsg("       Elog IP : " + elogIP);
+    LogMsg("     Elog Name : " + elogName);
+    LogMsg("     Elog User : " + elogUser);
+    LogMsg("      Elog PWD : " + elogPWD);
     logMsgHTMLMode = true;
 
     //check is rawDataPath exist, if not, create one
@@ -489,6 +502,7 @@ void MainWindow::SaveProgramSettings(){
   file.write((rawDataPath+"\n").toStdString().c_str());
   file.write((influxIP+"\n").toStdString().c_str());
   file.write((dataBaseName+"\n").toStdString().c_str());
+  file.write((influxToken+"\n").toStdString().c_str());
   file.write((elogIP+"\n").toStdString().c_str());
   file.write((elogName+"\n").toStdString().c_str());
   file.write((elogUser+"\n").toStdString().c_str());
@@ -1383,16 +1397,19 @@ void MainWindow::SetAndLockInfluxElog(){
 
     leInfluxIP->setReadOnly(false);
     leDatabaseName->setReadOnly(false);
+    leInfluxToken->setReadOnly(false);
     leElogIP->setReadOnly(false);
     leElogName->setReadOnly(false);
 
     leInfluxIP->setEnabled(true);
     leDatabaseName->setEnabled(true);
+    leInfluxToken->setEnabled(true);
     leElogIP->setEnabled(true);
     leElogName->setEnabled(true);
 
     leInfluxIP->setStyleSheet("color : blue;");
     leDatabaseName->setStyleSheet("color : blue;");
+    leInfluxToken->setStyleSheet("color : blue;");
     leElogIP->setStyleSheet("color : blue;");
     leElogName->setStyleSheet("color : blue;");
 
@@ -1401,16 +1418,19 @@ void MainWindow::SetAndLockInfluxElog(){
 
     leInfluxIP->setReadOnly(true);
     leDatabaseName->setReadOnly(true);
+    leInfluxToken->setReadOnly(true);
     leElogIP->setReadOnly(true);
     leElogName->setReadOnly(true);
 
     leInfluxIP->setStyleSheet("");
     leDatabaseName->setStyleSheet("");
+    leInfluxToken->setStyleSheet("");
     leElogIP->setStyleSheet("");
     leElogName->setStyleSheet("");
 
     influxIP = leInfluxIP->text();
     dataBaseName = leDatabaseName->text();
+    influxToken = leInfluxToken->text();
     elogIP = leElogIP->text();
     elogName = leElogName->text();
 
@@ -1784,14 +1804,24 @@ void MainWindow::SetUpInflux(){
   influx = new InfluxDB(influxIP.toStdString(), false);
 
   if( influx->TestingConnection() ){
-    LogMsg("<font style=\"color : green;\"> InfluxDB URL (<b>"+ influxIP + "</b>) is Valid </font>");
+    LogMsg("<font style=\"color : green;\"> InfluxDB URL (<b>"+ influxIP + "</b>) is Valid. Version : " + QString::fromStdString(influx->GetVersionString())+ " </font>");
+
+    if( influx->GetVersionNo() > 1 && influxToken.isEmpty() ) {
+      LogMsg("<font style=\"color : red;\">A Token is required for accessing the database.</font>");
+      delete influx;
+      influx = nullptr;
+      return;
+    }
+
+    influx->SetToken(influxToken.toStdString());
+
     //==== chck database exist
-    //LogMsg("List of database:");
+    influx->CheckDatabases();
     std::vector<std::string> databaseList = influx->GetDatabaseList();
     bool foundDatabase = false;
     for( int i = 0; i < (int) databaseList.size(); i++){
       if( databaseList[i] == dataBaseName.toStdString() ) foundDatabase = true;
-      //LogMsg(QString::number(i) + "|" + QString::fromStdString(databaseList[i]));
+      // LogMsg(QString::number(i) + "|" + QString::fromStdString(databaseList[i]));
     }
     if( foundDatabase ){
       LogMsg("<font style=\"color : green;\"> Database <b>" + dataBaseName + "</b> found.");

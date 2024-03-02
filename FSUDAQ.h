@@ -131,9 +131,11 @@ private:
 
   QString influxIP;
   QString dataBaseName;
+  QLineEdit * leInfluxToken;
   QLineEdit * leInfluxIP;
   QLineEdit * leDatabaseName;
   QPushButton * bnLock;
+  QString influxToken;
   
   //@----- Elog
   QString elogIP;

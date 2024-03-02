@@ -41,17 +41,16 @@ void InfluxDB::SetURL(std::string url){
   }else{
     this->databaseIP = url;
   }
-
-  headers = curl_slist_append(headers, "Accept: application/csv");
 }
 
 void InfluxDB::SetToken(std::string token){
   this->token = token;
-  headers = curl_slist_append(headers, ("Authorization: Token " + token).c_str());
+  headers = curl_slist_append(headers, "Accept: application/csv");
+  if( !token.empty() ) headers = curl_slist_append(headers, ("Authorization: Token " + token).c_str());
 }
 
 bool InfluxDB::TestingConnection(bool debug){
-  CheckInfluxVersion();
+  CheckInfluxVersion(debug);
   if( respond != CURLE_OK ) return false;
   connectionOK = true;
   return true;
@@ -86,7 +85,7 @@ std::string InfluxDB::CheckInfluxVersion(bool debug){
     }
   }
 
-  printf("Influx Version : %s | %u\n", influxVersionStr.c_str(), influxVersion);
+  // printf("Influx Version : %s | %u\n", influxVersionStr.c_str(), influxVersion);
 
   return respondStr;
 
