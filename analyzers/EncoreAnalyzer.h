@@ -4,16 +4,15 @@
 #include "Analyser.h"
 #include "Isotope.h"
 
-int SN2Bd(int sn){
-  switch (sn) {
-    case 278 : return 0; break;
-    case  45 : return 1; break;
-    case 370 : return 2; break;
-  };
-  return 0;
-};
+#include <map>
 
-namespace ChMap{
+namespace EncoreChMap{
+
+  const std::map<unsigned short, int> SN2Bd = {
+    {278, 0},
+    {45, 1},
+    {370, 2}
+  };
 
   const int mapping[3][16] = {
     // 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15
@@ -126,22 +125,22 @@ inline void Encore::UpdateHistograms(){
     double sum[17] = {0};
     for( int k = 0; k < (int) event.size(); k++ ){
 
-      int bd = SN2Bd(event[k].sn);
+      int bd = EncoreChMap::SN2Bd.at(event[k].sn);
 
       int ch = event[k].ch;
 
-      int ID = ChMap::mapping[bd][ch];
+      int ID = EncoreChMap::mapping[bd][ch];
 
       if( ID < 0 ) continue;
 
       double eC = event[k].energy;
       if(   0 <= ID && ID < 100 ) {
-         eC *=  ChMap::corr[ch][bd];
+         eC *=  EncoreChMap::corr[ch][bd];
          hLeft->Fill(ID, eC);
          sum[ID] += eC;
       }
       if( 100 <= ID && ID < 200 ) {
-         eC *=  ChMap::corr[ch][bd];
+         eC *=  EncoreChMap::corr[ch][bd];
          hRight->Fill(ID-100, eC );
          sum[ID-100] += eC ;
       }

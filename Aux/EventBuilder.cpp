@@ -427,7 +427,7 @@ int main(int argc, char **argv) {
   for( int i = 0; i < nGroup; i++){
     delete tsReader[i];
   }
-  delete tsReader;
+  delete [] tsReader;
 
   return 0;
 }

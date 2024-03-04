@@ -42,7 +42,7 @@ public:
     }
   }
 
-   // Define operator< for sorting
+  // Define operator< for sorting
   bool operator<(const Hit& other) const {
     return timestamp < other.timestamp;
   }

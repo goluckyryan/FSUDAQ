@@ -124,7 +124,7 @@ int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose
       regChannelMask = pow(2, NumInputCh)-1;
       switch(BoardInfo.Model){
             case CAEN_DGTZ_DT5730: tick2ns =  2.0; NCoupledCh = NumInputCh/2; ModelType = ModelTypeCode::DT; break; ///ns -> 500 MSamples/s
-            case CAEN_DGTZ_DT5720: tick2ns =  4.0; NCoupledCh = NumInputCh/2; ModelType = ModelTypeCode::DT; break; ///ns -> 250 MSamples/s
+            case CAEN_DGTZ_DT5725: tick2ns =  4.0; NCoupledCh = NumInputCh/2; ModelType = ModelTypeCode::DT; break; ///ns -> 250 MSamples/s
             case CAEN_DGTZ_V1730:  tick2ns =  2.0; NCoupledCh = NumInputCh/2; ModelType = ModelTypeCode::VME; break; ///ns -> 500 MSamples/s
             case CAEN_DGTZ_V1725:  tick2ns =  4.0; NCoupledCh = NumInputCh/2; ModelType = ModelTypeCode::VME; break; ///ns -> 250 MSamples/s
             case CAEN_DGTZ_V1740: {

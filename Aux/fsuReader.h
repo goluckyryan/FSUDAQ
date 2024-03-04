@@ -51,6 +51,8 @@ class FSUReader{
       }
     }
 
+    //void SaveAsCAENCoMPASSFormat();
+
   private:
 
     FILE * inFile;
@@ -218,6 +220,7 @@ inline int FSUReader::ReadNextBlock(bool traceON, int verbose, uShort saveData){
     }
 
     data->DecodeBuffer(buffer, aggSize, !traceON, verbose); // data will own the buffer
+    printf(" word Index = %u | filePos : %u | ", data->GetWordIndex(), filePos);
 
   }else if( (header & 0xF ) == 0x8 ) { /// dual channel header
 
@@ -234,10 +237,13 @@ inline int FSUReader::ReadNextBlock(bool traceON, int verbose, uShort saveData){
     return -20;
   }
 
+  unsigned int eventCout  = 0;
+
   for( int ch = 0; ch < data->GetNChannel(); ch++){
     if( data->NumEventsDecoded[ch] == 0 ) continue;
 
     hitCount += data->NumEventsDecoded[ch];
+    eventCout += data->NumEventsDecoded[ch];
 
     if( saveData ){
       int start = data->GetDataIndex(ch) - data->NumEventsDecoded[ch] + 1;
@@ -272,9 +278,13 @@ inline int FSUReader::ReadNextBlock(bool traceON, int verbose, uShort saveData){
     }
   }
 
+  printf(" event cout : %u\n", eventCout);
+
   data->ClearTriggerRate();
   data->ClearNumEventsDecoded();
   data->ClearBuffer(); // this will clear the buffer.
+
+  //
 
   return 0;
 
@@ -430,3 +440,5 @@ inline std::string FSUReader::SaveHit2NewFile(std::string saveFolder){
   return outFileName;
 
 }
+
+
