@@ -108,7 +108,8 @@ class Digitizer{
     void   ReadAndPrintACQStatue();
     void   ReadACQStatus() { acqStatus = ReadRegister(DPP::AcquisitionStatus_R); }
 
-    unsigned int CalByteForBuffer();
+    unsigned int CalByteForBuffer(bool verbose = false);
+    unsigned int CalByteForBufferCAEN();
 
     //^================= Settings
     /// write value to digitizer, memory, and settingFile (if exist)

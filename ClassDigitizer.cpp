@@ -501,9 +501,9 @@ void Digitizer::StartACQ(){
       //return;
     }
   }else if( DPPType == V1730_DPP_PSD_CODE) {
-    bufferSize = 200 * 1024 * 1024; //TODO allocate 200 MB for PSD
+    bufferSize = CalByteForBufferCAEN();
   }else if( DPPType == V1740_DPP_QDC_CODE) {
-    bufferSize = 200 * 1024 * 1024; //TODO allocate 200 MB for QDC
+    bufferSize = CalByteForBufferCAEN();
   }else{
     printf("DPP type not supported. ACQ not start.\n");
     return;
@@ -576,7 +576,7 @@ void Digitizer::StopACQ(){
   data->ZeroTotalFileSize();
 }
 
-unsigned int Digitizer::CalByteForBuffer(){
+unsigned int Digitizer::CalByteForBuffer(bool verbose){
   unsigned int numAggBLT;
   unsigned int chMask   ;    
   unsigned int boardCfg ;
@@ -605,14 +605,18 @@ unsigned int Digitizer::CalByteForBuffer(){
     }
   }
   
-  ///printf("      agg. orgainzation (bit) : 0x%X \n", aggOrgan);
-  ///printf("                 Channel Mask : %04X \n", chMask);
-  ///printf("Max number of Agg per Readout : %u \n", numAggBLT);
-  ///printf("             is Extra2 enabed : %u \n", ((boardCfg >> 17) & 0x1) );
-  ///printf("               is Record wave : %u \n", ((boardCfg >> 16) & 0x1) );
-  ///for( int pCh = 0; pCh < NumInputCh/2; pCh++){
-  ///  printf("Paired Ch : %d, RecordLength (bit value): %u, Event per Agg. : %u \n", pCh, recordLength[pCh], eventAgg[pCh]);
-  ///}
+  if( verbose ){
+    printf("=================================== Setting related to Buffer\n");
+    printf("      agg. orgainzation (bit) : 0x%X \n", aggOrgan);
+    printf("                 Channel Mask : %04X \n", chMask);
+    printf("Max number of Agg per Readout : %u \n", numAggBLT);
+    printf("             is Extra2 enabed : %u \n", ((boardCfg >> 17) & 0x1) );
+    printf("               is Record wave : %u \n", ((boardCfg >> 16) & 0x1) );
+    for( int pCh = 0; pCh < NumInputCh/2; pCh++){
+      printf("Paired Ch : %d, RecordLength (bit value): %u, Event per Agg. : %u \n", pCh, recordLength[pCh], eventAgg[pCh]);
+    }
+    printf("==============================================================\n");
+  }
 
   unsigned int bufferSize = aggOrgan; // just for get rip of the warning in complier
   bufferSize = 0;
@@ -625,6 +629,15 @@ unsigned int Digitizer::CalByteForBuffer(){
 
   ///printf("=============== Buffer Size : %8d Byte \n", bufferSize );
   return  bufferSize ;
+}
+
+unsigned int Digitizer::CalByteForBufferCAEN(){
+
+  char * BufferCAEN;
+  uint32_t AllocatedSize, BufferSize;
+  ret = CAEN_DGTZ_MallocReadoutBuffer(handle, &BufferCAEN, &AllocatedSize);
+  return AllocatedSize;
+
 }
 
 int Digitizer::ReadData(){

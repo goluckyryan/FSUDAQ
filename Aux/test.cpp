@@ -26,7 +26,7 @@ static void raw(void);
 int keyboardhit();
 int getch(void);
 
-// #include <curl/curl.h>
+#include <curl/curl.h>
 
 size_t WriteCallBack(char *contents, size_t size, size_t nmemb, void *userp){
   // printf(" InfluxDB::%s \n", __func__);
@@ -34,9 +34,7 @@ size_t WriteCallBack(char *contents, size_t size, size_t nmemb, void *userp){
   return size * nmemb;
 }
 
-//^======================================
-int main(int argc, char* argv[]){
-
+void testInflux(){
   InfluxDB * influx = new InfluxDB();
   
   influx->SetURL("https://fsunuc.physics.fsu.edu/influx/");
@@ -56,10 +54,7 @@ int main(int argc, char* argv[]){
   
   // printf("%s \n", influx->Query("testing", "SELECT * from haha ORDER by time DESC LIMIT 5").c_str());
   
-
-
   delete influx;
-
 
   // CURL *curl = curl_easy_init();  
   // CURLcode res;
@@ -156,14 +151,92 @@ int main(int argc, char* argv[]){
 
   //============================================= end of influxDB example
 
-  // Digitizer * digi = new Digitizer(0, 26006, false, true);
-  // digi->Reset();
+}
 
-  //digi->ProgramBoard_PHA();
 
-  //digi->WriteRegister(DPP::SoftwareClear_W, 1);
+void CheckBufferSize(int MaxAggPreRead, int EvtPreAgg){
 
-  // digi->WriteRegister(DPP::QDC::RecordLength, 31, -1); // T = N * 8 * 16
+
+  //Buffer depends on 
+
+  Digitizer * digi = new Digitizer(0, 26006, false, true);
+  digi->Reset();
+  digi->ProgramBoard();
+
+  digi->WriteRegister(DPP::SoftwareClear_W, 1);
+
+  digi->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, 0, -1);
+  digi->WriteRegister(DPP::RecordLength_G, 10, -1);
+
+  digi->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::EnableExtra2, 1, -1);
+
+  digi->WriteRegister(DPP::MaxAggregatePerBlockTransfer, MaxAggPreRead);
+  digi->WriteRegister(DPP::NumberEventsPerAggregate_G, EvtPreAgg);
+
+  unsigned int bufferSize = digi->CalByteForBuffer(true);
+  unsigned int bufferSizeCAEN = digi->CalByteForBufferCAEN();
+
+  printf("Manual Buffer Size : %u Byte = %u words\n", bufferSize, bufferSize/4);
+  printf("  CAEN Buffer Size : %u Byte = %u words\n", bufferSizeCAEN, bufferSizeCAEN/4);
+
+  unsigned int haha  = bufferSize*2  + 16 *( 1-  MaxAggPreRead );
+  printf("----                 %u        %u \n", haha, haha/4);
+
+
+  delete digi;
+
+}
+
+void GetOneAgg(){
+
+  Digitizer * digi = new Digitizer(0, 26006, false, true);
+
+  if( digi->IsConnected() ){
+    digi->Reset();
+    digi->ProgramBoard();
+
+    digi->WriteRegister(DPP::SoftwareClear_W, 1);
+
+    digi->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, 0, -1);
+    digi->WriteRegister(DPP::RecordLength_G, 10, -1);
+
+    digi->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::EnableExtra2, 1, -1);
+
+    digi->WriteRegister(DPP::MaxAggregatePerBlockTransfer, 1);
+    digi->WriteRegister(DPP::NumberEventsPerAggregate_G, 2);
+
+    unsigned int bufferSize = digi->CalByteForBuffer(true);
+    unsigned int bufferSizeCAEN = digi->CalByteForBufferCAEN();
+
+    printf("Manual Buffer Size : %u Byte = %u words\n", bufferSize, bufferSize/4);
+    printf("  CAEN Buffer Size : %u Byte = %u words\n", bufferSizeCAEN, bufferSizeCAEN/4);
+
+
+    digi->StartACQ();
+
+    usleep(5000*1000); // wait 1sec 
+
+
+    digi->ReadData();
+    digi->GetData()->DecodeBuffer(false, 4);
+
+    digi->StopACQ();
+  }
+
+  delete digi;
+
+}
+
+
+//^======================================
+int main(int argc, char* argv[]){
+
+  
+  // CheckBufferSize(5, 4);
+
+  GetOneAgg();
+
+
   // digi->WriteRegister(DPP::QDC::PreTrigger, 60, -1);
 
   // digi->WriteRegister(DPP::QDC::TriggerThreshold_sub2, 17, -1);

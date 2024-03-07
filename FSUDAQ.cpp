@@ -1807,7 +1807,12 @@ void MainWindow::UpdateAllPanels(int panelID){
 //***************************************************************
 void MainWindow::SetUpInflux(){
 
-  if( influxIP == "" ) return;
+  if( influxIP == "" ) {
+    LogMsg("<font style=\"color : red;\">Influx missing inputs. skip.</font>");
+    leInfluxIP->setEnabled(false);
+    leDatabaseName->setEnabled(false);
+    return;
+  }
 
   if( influx ) {
     delete influx;
