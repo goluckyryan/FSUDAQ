@@ -493,21 +493,8 @@ void Digitizer::StartACQ(){
 
   // ret |= CAEN_DGTZ_SetDPPEventAggregation(handle, 0, 0); // Auto set
 
-  unsigned int bufferSize = 0;
-  if( DPPType == V1730_DPP_PHA_CODE ){
-    bufferSize = CalByteForBuffer();
-    if( bufferSize  > 160 * 1024 * 1024 ){
-      printf("============= buffer size bigger than 160 MB (%u)\n", bufferSize );
-      //return;
-    }
-  }else if( DPPType == V1730_DPP_PSD_CODE) {
-    bufferSize = CalByteForBufferCAEN();
-  }else if( DPPType == V1740_DPP_QDC_CODE) {
-    bufferSize = CalByteForBufferCAEN();
-  }else{
-    printf("DPP type not supported. ACQ not start.\n");
-    return;
-  }
+  unsigned int bufferSize = CalByteForBufferCAEN();
+  if( bufferSize  > 160 * 1024 * 1024 ) printf("============= buffer size bigger than 160 MB (%u)\n", bufferSize );
 
   data->AllocateMemory(bufferSize);
 
