@@ -621,8 +621,10 @@ unsigned int Digitizer::CalByteForBuffer(bool verbose){
 unsigned int Digitizer::CalByteForBufferCAEN(){
 
   char * BufferCAEN;
-  uint32_t AllocatedSize, BufferSize;
+  uint32_t AllocatedSize;
   ret = CAEN_DGTZ_MallocReadoutBuffer(handle, &BufferCAEN, &AllocatedSize);
+
+  delete BufferCAEN;
   return AllocatedSize;
 
 }

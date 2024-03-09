@@ -10,15 +10,17 @@ class FSUReader{
   public:
     FSUReader();
     FSUReader(std::string fileName, uInt dataSize = 100, int verbose = 1);
+    FSUReader(std::vector<std::string> fileList, uInt dataSize = 100, int verbose = 1);
     ~FSUReader();
 
     void OpenFile(std::string fileName, uInt dataSize, int verbose = 1);
     bool isOpen() const{return inFile == nullptr ? false : true;}
 
-    void ScanNumBlock(int verbose = 1, uShort saveData = 0);
+    void ScanNumBlock(int verbose = 1, uShort saveData = 0); // saveData = 0 (no save), 1 (no trace), 2 (with trace);
     int  ReadNextBlock(bool traceON = false, int verbose = 0, uShort saveData = 0); // saveData = 0 (no save), 1 (no trace), 2 (with trace);
     int  ReadBlock(unsigned int ID, int verbose = 0);
 
+    unsigned int GetFilePos() const {return filePos;}
     unsigned long GetTotNumBlock() const{ return totNumBlock;}
     std::vector<unsigned int> GetBlockTimestamp() const {return blockTimeStamp;}
 
@@ -34,15 +36,22 @@ class FSUReader{
     unsigned long GetFileByteSize() const {return inFileSize;}
 
     void ClearHitList() { hit.clear();}
-    Hit GetHit(unsigned int id) const {return hit[id];}
     ulong GetHitListLength() const {return hit.size();}
+    std::vector<Hit> GetHitVector() const {return hit;}
+    void SortHit(int verbose = false);
+    Hit GetHit(int id) const {
+      if( id < 0 ) id = hit.size() + id;
+      return hit[id];
+    }
  
     void ClearHitCount() {hitCount = 0;}
     ulong GetHitCount() const{return hitCount;}
-    std::vector<Hit> GetHitVector() const {return hit;}
-    void SortHit(int verbose = false);
 
-    std::string SaveHit2NewFile(std::string saveFolder = "./");
+    void SortAndSaveTS(int batchSize = 1000000, bool verbose = false);
+
+    std::string SaveHit(std::vector<Hit> hitList, bool isAppend = false);
+
+    // std::string SaveHit2NewFile(std::string saveFolder = "./", std::string indexStr = "");
     off_t GetTSFileSize() const {return tsFileSize;}
 
     void PrintHit(ulong numHit = -1, ulong startIndex = 0) {
@@ -50,6 +59,13 @@ class FSUReader{
         printf("%10zu ", i); hit[i].Print();
       }
     }
+
+    static void PrintHitList(std::vector<Hit> hitList, std::string name){
+      printf("============== %s, size : %zu \n", name.c_str(), hitList.size());
+      printf("t0 : %15llu \n", hitList.at(0).timestamp);
+      printf("t1 : %15llu \n", hitList.back().timestamp);
+    }
+
 
     //void SaveAsCAENCoMPASSFormat();
 
@@ -59,6 +75,8 @@ class FSUReader{
     Data * data;
 
     std::string fileName;
+    std::vector<std::string> fileList;
+    short fileID;
     unsigned long inFileSize;
     unsigned int  filePos;
     unsigned long totNumBlock;
@@ -66,11 +84,11 @@ class FSUReader{
 
     bool isDualBlock;
 
-    int sn;
-    int DPPType;
-    int tick2ns;
-    int order;
-    int chMask;
+    uShort sn;
+    uShort DPPType;
+    uShort tick2ns;
+    uShort order;
+    uShort chMask;
     uShort numCh;
 
     std::vector<unsigned int> blockPos;
@@ -91,7 +109,7 @@ class FSUReader{
 inline FSUReader::~FSUReader(){
   delete data;
 
-  fclose(inFile);
+  if( inFile  ) fclose(inFile);
 
 }
 
@@ -103,10 +121,36 @@ inline FSUReader::FSUReader(){
   blockTimeStamp.clear();
   hit.clear();
 
+  fileList.clear();
+  fileID = -1;
+
 }
 
 inline FSUReader::FSUReader(std::string fileName, uInt dataSize, int verbose){
+  inFile = nullptr;
+  data = nullptr;
+
+  blockPos.clear();
+  blockTimeStamp.clear();
+  hit.clear();
+
+  fileList.clear();
+  fileID = -1;
   OpenFile(fileName, dataSize, verbose);
+}
+
+inline FSUReader::FSUReader(std::vector<std::string> fileList, uInt dataSize = 100, int verbose = 1){
+  inFile = nullptr;
+  data = nullptr;
+
+  blockPos.clear();
+  blockTimeStamp.clear();
+  hit.clear();
+  //The files are the same DPPType and sn
+  this->fileList = fileList;
+  fileID = 0;
+  OpenFile(fileList[fileID], dataSize, verbose);
+
 }
 
 inline void FSUReader::OpenFile(std::string fileName, uInt dataSize, int verbose){
@@ -118,6 +162,8 @@ inline void FSUReader::OpenFile(std::string fileName, uInt dataSize, int verbose
   /// BBB = DPPtype, 3 digits
   ///  TT = tick2ns, any digits
   /// CCC = over size index, 3 digits
+
+  if( inFile != nullptr ) fclose(inFile);
 
   inFile = fopen(fileName.c_str(), "r");
 
@@ -134,6 +180,8 @@ inline void FSUReader::OpenFile(std::string fileName, uInt dataSize, int verbose
   if(verbose) printf("%s | file size : %ld Byte = %.2f MB\n", fileName.c_str() , inFileSize, inFileSize/1024./1024.);
   fseek(inFile, 0L, SEEK_SET);
   filePos = 0;
+
+  if( fileID > 0 ) return;
 
   totNumBlock = 0;
   blockID = 0;
@@ -176,10 +224,16 @@ inline void FSUReader::OpenFile(std::string fileName, uInt dataSize, int verbose
   tick2ns = atoi(tokens[4].c_str());
   order = atoi(tokens[5].c_str());
 
-  DPPType = -1;
+  DPPType = 0;
   if( fileName.find("PHA") != std::string::npos ) DPPType = DPPTypeCode::DPP_PHA_CODE;
   if( fileName.find("PSD") != std::string::npos ) DPPType = DPPTypeCode::DPP_PSD_CODE;
   if( fileName.find("QDC") != std::string::npos ) DPPType = DPPTypeCode::DPP_QDC_CODE;
+  if( DPPType == 0 ){
+    fclose(inFile);
+    inFile = nullptr;
+    printf("Cannot find DPPType in the filename. Abort.");
+    return ;
+  }
 
   numCh = (DPPType == DPPTypeCode::DPP_QDC_CODE ? 64 : 16);
 
@@ -192,8 +246,15 @@ inline void FSUReader::OpenFile(std::string fileName, uInt dataSize, int verbose
 
 inline int FSUReader::ReadNextBlock(bool traceON, int verbose, uShort saveData){
   if( inFile == NULL ) return -1;
-  if( feof(inFile) ) return -1;
-  if( filePos >= inFileSize) return -1;
+  if( feof(inFile) || filePos >= inFileSize) {
+    if( fileID >= 0 && fileID + 1  < fileList.size() ){
+      printf("-------------- next file\n");
+      fileID ++;
+      OpenFile(fileList[fileID], data->GetDataSize(), 1 );
+    }else{
+      return -1;
+    }
+  }
   
   dummy = fread(word, 4, 1, inFile);
   fseek(inFile, -4, SEEK_CUR);
@@ -220,7 +281,7 @@ inline int FSUReader::ReadNextBlock(bool traceON, int verbose, uShort saveData){
     }
 
     data->DecodeBuffer(buffer, aggSize, !traceON, verbose); // data will own the buffer
-    printf(" word Index = %u | filePos : %u | ", data->GetWordIndex(), filePos);
+    //printf(" word Index = %u | filePos : %u | ", data->GetWordIndex(), filePos);
 
   }else if( (header & 0xF ) == 0x8 ) { /// dual channel header
 
@@ -268,26 +329,14 @@ inline int FSUReader::ReadNextBlock(bool traceON, int verbose, uShort saveData){
         }
 
         hit.push_back(temp);
-
-        // if( data->Timestamp[ch][k] == 0 ){
-        //   printf("-------- %lu \n", blockID);
-        //   return 1;
-        // }
-
       }
     }
   }
 
-  printf(" event cout : %u\n", eventCout);
-
   data->ClearTriggerRate();
   data->ClearNumEventsDecoded();
   data->ClearBuffer(); // this will clear the buffer.
-
-  //
-
   return 0;
-
 }
 
 inline int FSUReader::ReadBlock(unsigned int ID, int verbose){
@@ -316,6 +365,7 @@ inline void FSUReader::SortHit(int verbose){
 }
 
 inline void FSUReader::ScanNumBlock(int verbose, uShort saveData){
+  if( inFile == nullptr ) return;
   if( feof(inFile) ) return;
 
   blockID = 0;
@@ -337,7 +387,9 @@ inline void FSUReader::ScanNumBlock(int verbose, uShort saveData){
   totNumBlock = blockID;
   if(verbose) {
     printf("\nScan complete: number of data Block : %lu\n", totNumBlock);
-    printf(  "                      number of hit : %lu\n", hitCount);
+    printf(  "                      number of hit : %lu", hitCount);
+    if( hitCount > 1e6 ) printf(" = %.3f million", hitCount/1e6); 
+    printf("\n");
     if( saveData )printf(  "              size of the hit array : %lu\n", hit.size());
 
     if( saveData ){
@@ -345,6 +397,12 @@ inline void FSUReader::ScanNumBlock(int verbose, uShort saveData){
       printf("size of hit array : %lu byte = %.2f kByte, = %.2f MByte\n", sizeT, sizeT/1024., sizeT/1024./1024.);
     }
   } 
+
+  if( fileList.size() > 0  ){
+    fileID = 0;
+    OpenFile(fileList[fileID], data->GetDataSize(), 0);
+  }
+
   rewind(inFile);
   blockID = 0;  
   filePos = 0;
@@ -359,70 +417,197 @@ inline void FSUReader::ScanNumBlock(int verbose, uShort saveData){
   }
 }
 
-inline std::string FSUReader::SaveHit2NewFile(std::string saveFolder){
+inline void FSUReader::SortAndSaveTS(int batchSize, bool verbose){
 
-  // printf("FSUReader::%s\n", __func__);
+  int count = 0;
+  std::vector<Hit> hitList_A ;
 
-  std::string folder = "";
-  size_t found = fileName.find_last_of('/');
-  std::string outFileName = fileName;
-  if( found != std::string::npos ){
-    folder = fileName.substr(0, found + 1);
-    outFileName = fileName.substr(found +1 );
-  }
+  do{
 
-  if( saveFolder.empty() ) saveFolder = "./";
-  if( saveFolder.back() != '/') saveFolder += '/';
+    if( verbose ) printf("***************************************************\n");
 
-  //checkif the saveFolder exist;
-  if( saveFolder != "./"){
-    if (!std::filesystem::exists(saveFolder)) {
-      if (std::filesystem::create_directory(saveFolder)) {
-        std::cout << "Directory created successfully." << std::endl;
-      } else {
-        std::cerr << "Failed to create directory." << std::endl;
+    int res = 0;
+    do{
+      res = ReadNextBlock(true, 0, 3);
+    }while ( hit.size() < batchSize && res == 0);
+
+    SortHit();
+    uLong t0_B = hit.at(0).timestamp;
+    uLong t1_B = hit.back().timestamp;
+
+    if( verbose ) {
+      printf(" hit in memeory : %7zu | %u | %lu \n", hit.size(), filePos, inFileSize);
+      printf("t0 : %15lu\n", t0_B);
+      printf("t1 : %15lu\n", t1_B);
+    }
+
+    if( count == 0 ) {
+      hitList_A = hit; // copy hit
+    }else{
+
+      uLong t0_A = hitList_A.at(0).timestamp;
+      uLong t1_A = hitList_A.back().timestamp;
+      ulong ID_A = 0;
+      ulong ID_B = 0;
+
+      if( t0_A > t0_B) {
+        printf("Need to increase the batch size. \n");
+        return;
       }
-    } 
+
+      if( t1_A > t0_B) { // need to sort between two hitList
+
+        if( verbose ) {
+          printf("############# need to sort \n");
+          printf("=========== sume of A + B : %zu \n", hitList_A.size() + hit.size());
+        }
+
+        std::vector<Hit> hitTemp;
+
+        for( size_t j = 0; j < hitList_A.size() ; j++){
+          if( hitList_A[j].timestamp < t0_B ) continue;
+          if( ID_A == 0 ) ID_A = j;
+          hitTemp.push_back(hitList_A[j]);
+        }
+
+        hitList_A.erase(hitList_A.begin() + ID_A, hitList_A.end() );
+        if( verbose ) {
+          printf("----------------- ID_A : %lu, Drop\n", ID_A);
+          PrintHitList(hitList_A, "hitList_A");
+        }
+  
+      
+        for( size_t j = 0; j < hit.size(); j++){
+          if( hit[j].timestamp > t1_A ) {
+            ID_B = j;
+            break;
+          }
+          hitTemp.push_back(hit[j]);
+        }
+
+        std::sort(hitTemp.begin(), hitTemp.end(), [](const Hit& a, const Hit& b) {
+          return a.timestamp < b.timestamp;
+        });
+
+        hit.erase(hit.begin(), hit.begin() + ID_B  );
+
+        if( verbose ) {
+          PrintHitList(hitTemp, "hitTemp");
+          printf("----------------- ID_B : %lu, Drop\n", ID_B);
+          PrintHitList(hit, "hit");
+          printf("=========== sume of A + B + Temp : %zu \n", hitList_A.size() + hit.size()  + hitTemp.size());
+          printf("----------------- refill hitList_A \n");
+        }
+        ulong ID_Temp = 0;
+        for( size_t j = 0; j < hitTemp.size(); j++){
+          hitList_A.push_back(hitTemp[j]);
+          if( hitList_A.size() >= batchSize ) {
+            ID_Temp = j+1;
+            break;
+          }
+        }
+
+        hitTemp.erase(hitTemp.begin(), hitTemp.begin() + ID_Temp );
+        for( size_t j = 0 ; j < hit.size(); j ++){
+          hitTemp.push_back(hit[j]);
+        }
+        SaveHit(hitList_A, count <= 1 ? false : true);
+
+        if( verbose ) {
+          PrintHitList(hitList_A, "hitList_A");
+          PrintHitList(hitTemp, "hitTemp");
+          printf("----------------- replace hitList_A by hitTemp \n");
+        }
+
+        hitList_A.clear();
+        hitList_A = hitTemp;
+        hit.clear();
+
+        if( verbose ) {
+          PrintHitList(hitList_A, "hitList_A");
+          printf("===========================================\n");
+        }
+
+      }else{ // save hitList_A, replace hitList_A 
+        
+        SaveHit(hitList_A, count <= 1? false : true);
+        hitList_A.clear();
+        hitList_A = hit;
+        if( verbose ) PrintHitList(hitList_A, "hitList_A");
+
+      }
+    }
+
+    ClearHitList();
+    count ++;
+  }while(filePos < inFileSize);  
+
+  SaveHit(hitList_A, count <= 1 ? false : true);
+
+  printf("================= finished.\n");
+}
+
+
+inline std::string FSUReader::SaveHit(std::vector<Hit> hitList, bool isAppend){
+
+  std::string outFileName;
+  if( fileList.empty() ) {
+    outFileName =  fileName + ".ts" ;
+  }else{
+    outFileName =  fileList[0] + ".ts" ;
+  }
+  uint64_t hitSize = hitList.size();
+
+  FILE * outFile ;
+  if( isAppend ) {
+    outFile = fopen(outFileName.c_str(), "rb+"); //read/write bineary
+
+    rewind(outFile);
+    fseek( outFile, 4, SEEK_CUR);
+    uint64_t org_hitSize;
+    fread(&org_hitSize, 8, 1, outFile);
+
+    rewind(outFile);
+    fseek( outFile, 4, SEEK_CUR);
+
+    org_hitSize += hitSize;
+
+    fwrite(&org_hitSize, 8, 1, outFile);
+    fseek(outFile, 0, SEEK_END);
+
+  }else{
+    outFile = fopen(outFileName.c_str(), "wb"); //overwrite binary
+    uint32_t header = 0xAA000000;
+    header += sn;
+    fwrite( &header, 4, 1, outFile );
+    fwrite( &hitSize, 8, 1, outFile);
   }
 
-  outFileName = saveFolder + outFileName + ".ts";
 
-  //TODO Check if the ts file is newer than the fsu file, if yes, don't need to do unless forced.
+  for( ulong i = 0; i < hitSize; i++){
 
-  FILE * outFile = fopen(outFileName.c_str(), "wb"); //overwrite binary
+    if( i% 10000 == 0 ) printf("Saving %lu/%lu Hit (%.2f%%)\n\033[A\r", i, hitSize, i*100./hitSize);
 
-  uint32_t header = 0xAA000000;
-  header += sn;
-  fwrite( &header, 4, 1, outFile );
-  fwrite( &hitCount, 8, 1, outFile);
-
-  for( ulong i = 0; i < hitCount; i++){
-
-    if( i% 10000 == 0 ) printf("Saving %lu/%lu Hit (%.2f%%)\n\033[A\r", i, hitCount, i*100./hitCount);
-
-    //fwrite( &(hit[i].sn), 2, 1, outFile);
-
-    uint16_t flag = hit[i].ch + (hit[i].pileUp << 8) ;
+    uint16_t flag = hitList[i].ch + (hitList[i].pileUp << 8) ;
 
     if( DPPType == DPPTypeCode::DPP_PSD_CODE ) flag += ( 1 << 15);
-    if( hit[i].traceLength > 0 ) flag += (1 << 14);
+    if( hitList[i].traceLength > 0 ) flag += (1 << 14);
 
     // fwrite( &(hit[i].ch), 1, 1, outFile);
     fwrite( &flag, 2, 1, outFile);
-    fwrite( &(hit[i].energy), 2, 1, outFile);
-    if( DPPType == DPPTypeCode::DPP_PSD_CODE ) fwrite( &(hit[i].energy2), 2, 1, outFile);
-    fwrite( &(hit[i].timestamp), 6, 1, outFile);
-    fwrite( &(hit[i].fineTime), 2, 1, outFile);
-    // fwrite( &(hit[i].pileUp), 1, 1, outFile);
-    if( hit[i].traceLength > 0 ) fwrite( &(hit[i].traceLength), 2, 1, outFile);
+    fwrite( &(hitList[i].energy), 2, 1, outFile);
+    if( DPPType == DPPTypeCode::DPP_PSD_CODE ) fwrite( &(hitList[i].energy2), 2, 1, outFile);
+    fwrite( &(hitList[i].timestamp), 6, 1, outFile);
+    fwrite( &(hitList[i].fineTime), 2, 1, outFile);
+    if( hitList[i].traceLength > 0 ) fwrite( &(hitList[i].traceLength), 2, 1, outFile);
     
-    for( uShort j = 0; j < hit[i].traceLength; j++){
-      fwrite( &(hit[i].trace[j]), 2, 1, outFile);
+    for( uShort j = 0; j < hitList[i].traceLength; j++){
+      fwrite( &(hitList[i].trace[j]), 2, 1, outFile);
     }
     
   }
 
-  tsFileSize = ftello(outFile);  // unsigned int =  Max ~4GB
+  off_t tsFileSize = ftello(outFile);  // unsigned int =  Max ~4GB
   fclose(outFile);
 
   printf("Saved to %s, size: ", outFileName.c_str());
@@ -440,5 +625,85 @@ inline std::string FSUReader::SaveHit2NewFile(std::string saveFolder){
   return outFileName;
 
 }
+
+
+// inline std::string FSUReader::SaveHit2NewFile(std::string saveFolder, std::string indexStr){
+
+//   std::string folder = "";
+//   size_t found = fileName.find_last_of('/');
+//   std::string outFileName = fileName;
+//   if( found != std::string::npos ){
+//     folder = fileName.substr(0, found + 1);
+//     outFileName = fileName.substr(found +1 );
+//   }
+
+//   if( saveFolder.empty() ) saveFolder = "./";
+//   if( saveFolder.back() != '/') saveFolder += '/';
+
+//   //checkif the saveFolder exist;
+//   if( saveFolder != "./"){
+//     if (!std::filesystem::exists(saveFolder)) {
+//       if (std::filesystem::create_directory(saveFolder)) {
+//         std::cout << "Directory created successfully." << std::endl;
+//       } else {
+//         std::cerr << "Failed to create directory." << std::endl;
+//       }
+//     } 
+//   }
+
+//   outFileName = saveFolder + outFileName + ".ts" + indexStr;
+
+//   SaveHit( this->hit, saveFolder + outFileName, indexStr);
+
+
+  // FILE * outFile = fopen(outFileName.c_str(), "wb"); //overwrite binary
+
+  // uint32_t header = 0xAA000000;
+  // header += sn;
+  // fwrite( &header, 4, 1, outFile );
+  // uint64_t hitSize = hit.size();
+  // fwrite( &hitSize, 8, 1, outFile);
+
+  // for( ulong i = 0; i < hitSize; i++){
+
+  //   if( i% 10000 == 0 ) printf("Saving %lu/%lu Hit (%.2f%%)\n\033[A\r", i, hitSize, i*100./hitSize);
+
+  //   uint16_t flag = hit[i].ch + (hit[i].pileUp << 8) ;
+
+  //   if( DPPType == DPPTypeCode::DPP_PSD_CODE ) flag += ( 1 << 15);
+  //   if( hit[i].traceLength > 0 ) flag += (1 << 14);
+
+  //   // fwrite( &(hit[i].ch), 1, 1, outFile);
+  //   fwrite( &flag, 2, 1, outFile);
+  //   fwrite( &(hit[i].energy), 2, 1, outFile);
+  //   if( DPPType == DPPTypeCode::DPP_PSD_CODE ) fwrite( &(hit[i].energy2), 2, 1, outFile);
+  //   fwrite( &(hit[i].timestamp), 6, 1, outFile);
+  //   fwrite( &(hit[i].fineTime), 2, 1, outFile);
+  //   if( hit[i].traceLength > 0 ) fwrite( &(hit[i].traceLength), 2, 1, outFile);
+    
+  //   for( uShort j = 0; j < hit[i].traceLength; j++){
+  //     fwrite( &(hit[i].trace[j]), 2, 1, outFile);
+  //   }
+    
+  // }
+
+  // tsFileSize = ftello(outFile);  // unsigned int =  Max ~4GB
+  // fclose(outFile);
+
+  // printf("Saved to %s, size: ", outFileName.c_str());
+  // if( tsFileSize < 1024 ) {
+  //   printf(" %ld Byte", tsFileSize);
+  // }else if( tsFileSize < 1024*1024 ) {
+  //   printf(" %.2f kB", tsFileSize/1024.);
+  // }else if( tsFileSize < 1024*1024*1024){
+  //   printf(" %.2f MB", tsFileSize/1024./1024.);
+  // }else{
+  //   printf(" %.2f GB", tsFileSize/1024./1024./1024.);
+  // }
+  // printf("\n");
+
+//   return outFileName;
+
+// }
 
 

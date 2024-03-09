@@ -234,7 +234,9 @@ int main(int argc, char* argv[]){
   
   // CheckBufferSize(5, 4);
 
-  GetOneAgg();
+  //GetOneAgg();
+
+
 
 
   // digi->WriteRegister(DPP::QDC::PreTrigger, 60, -1);
