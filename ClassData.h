@@ -194,7 +194,7 @@ inline void Data::AllocateDataSize(int dataSize){
     printf("dataSize cannot < 1, set dataSize = 1.\n");
     dataSize = 1;
   }
-  printf("Data::%s, size: %u, No. Ch: %u\n", __func__, dataSize, numInputCh);
+  //printf("Data::%s, size: %u, No. Ch: %u\n", __func__, dataSize, numInputCh);
 
   this->dataSize = dataSize;
 
