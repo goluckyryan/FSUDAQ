@@ -165,7 +165,7 @@ int main(int argc, char **argv) {
     for( size_t j = 0; j < fileGroupList[i].size(); j++){
       fList.push_back( fileGroupList[i][j].fileName );
     }
-    reader[i] = new FSUReader(fList, 1, debug);
+    reader[i] = new FSUReader(fList, 600, debug);
     hitList[i] = reader[i]->ReadBatch(batchSize, debug );
     reader[i]->PrintHitListInfo(hitList[i], "hitList-" + std::to_string(reader[i]->GetSN()));
     ID[i] = 0;
@@ -336,6 +336,11 @@ int main(int argc, char **argv) {
   printf("      last timestamp = %20llu ns\n", tEnd);
   printf(" total data duration = %.2f sec = %.2f min\n", tDuration_sec, tDuration_sec/60.);
   printf("==============> saved to %s \n", outFileName.Data());
+
+  TMacro info;
+  info.AddLine(Form("tStart= %20llu ns",tStart));
+  info.AddLine(Form("  tEnd= %20llu ns",tEnd));
+  info.Write("info");
 
   outRootFile->Close();
   

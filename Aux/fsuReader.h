@@ -478,6 +478,7 @@ inline std::vector<Hit> FSUReader::ReadBatch(unsigned int batchSize, bool verbos
 
     hitList_A = hit;
     hit.clear();
+
   }else{
 
     hitList_A = hit;
@@ -569,8 +570,8 @@ inline std::vector<Hit> FSUReader::ReadBatch(unsigned int batchSize, bool verbos
       printf("=========== sume of A + B : %zu \n", hitList_A.size() + hit.size());
     }
    
-  } 
-  
+  }
+
   return hitList_A;
 
 }
