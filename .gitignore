@@ -1,11 +1,13 @@
 *.o
 *.fsu
+*.root
 
 FSUDAQ_Qt6
 test
 test_indep
 programSettings.txt
 EventBuilder
+EventBuilderNew
 EventBuilder2
 EventBuilderNoTrace
 EventBuilder_sortTime
