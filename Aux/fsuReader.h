@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <filesystem>
 
-#include "AggSeparator.h"
+// #include "AggSeparator.h"
 
 class FSUReader{
 
@@ -65,12 +65,10 @@ class FSUReader{
 
     std::vector<Hit> ReadBatch(unsigned int batchSize = 1000000, bool verbose = false); // output the sorted Hit
 
-    void SortAndSaveTS(unsigned int batchSize = 1000000, bool verbose = false);
-
-    std::string SaveHit(std::vector<Hit> hitList, bool isAppend = false);
-
+    // std::string SaveHit(std::vector<Hit> hitList, bool isAppend = false);
     // std::string SaveHit2NewFile(std::string saveFolder = "./", std::string indexStr = "");
-    off_t GetTSFileSize() const {return tsFileSize;}
+    // void SortAndSaveTS(unsigned int batchSize = 1000000, bool verbose = false);
+    // off_t GetTSFileSize() const {return tsFileSize;}
 
     //TODO 
     //void SplitFile(unsigned long hitSizePreFile);
@@ -577,6 +575,7 @@ inline std::vector<Hit> FSUReader::ReadBatch(unsigned int batchSize, bool verbos
 
 }
 
+/*
 inline void FSUReader::SortAndSaveTS(unsigned int batchSize, bool verbose){
 
   int count = 0;
@@ -706,8 +705,9 @@ inline void FSUReader::SortAndSaveTS(unsigned int batchSize, bool verbose){
 
   printf("================= finished.\n");
 }
+*/
 
-
+/*
 inline std::string FSUReader::SaveHit(std::vector<Hit> hitList, bool isAppend){
 
   std::string outFileName;
@@ -785,85 +785,6 @@ inline std::string FSUReader::SaveHit(std::vector<Hit> hitList, bool isAppend){
   return outFileName;
 
 }
-
-
-// inline std::string FSUReader::SaveHit2NewFile(std::string saveFolder, std::string indexStr){
-
-//   std::string folder = "";
-//   size_t found = fileName.find_last_of('/');
-//   std::string outFileName = fileName;
-//   if( found != std::string::npos ){
-//     folder = fileName.substr(0, found + 1);
-//     outFileName = fileName.substr(found +1 );
-//   }
-
-//   if( saveFolder.empty() ) saveFolder = "./";
-//   if( saveFolder.back() != '/') saveFolder += '/';
-
-//   //checkif the saveFolder exist;
-//   if( saveFolder != "./"){
-//     if (!std::filesystem::exists(saveFolder)) {
-//       if (std::filesystem::create_directory(saveFolder)) {
-//         std::cout << "Directory created successfully." << std::endl;
-//       } else {
-//         std::cerr << "Failed to create directory." << std::endl;
-//       }
-//     } 
-//   }
-
-//   outFileName = saveFolder + outFileName + ".ts" + indexStr;
-
-//   SaveHit( this->hit, saveFolder + outFileName, indexStr);
-
-
-  // FILE * outFile = fopen(outFileName.c_str(), "wb"); //overwrite binary
-
-  // uint32_t header = 0xAA000000;
-  // header += sn;
-  // fwrite( &header, 4, 1, outFile );
-  // uint64_t hitSize = hit.size();
-  // fwrite( &hitSize, 8, 1, outFile);
-
-  // for( ulong i = 0; i < hitSize; i++){
-
-  //   if( i% 10000 == 0 ) printf("Saving %lu/%lu Hit (%.2f%%)\n\033[A\r", i, hitSize, i*100./hitSize);
-
-  //   uint16_t flag = hit[i].ch + (hit[i].pileUp << 8) ;
-
-  //   if( DPPType == DPPTypeCode::DPP_PSD_CODE ) flag += ( 1 << 15);
-  //   if( hit[i].traceLength > 0 ) flag += (1 << 14);
-
-  //   // fwrite( &(hit[i].ch), 1, 1, outFile);
-  //   fwrite( &flag, 2, 1, outFile);
-  //   fwrite( &(hit[i].energy), 2, 1, outFile);
-  //   if( DPPType == DPPTypeCode::DPP_PSD_CODE ) fwrite( &(hit[i].energy2), 2, 1, outFile);
-  //   fwrite( &(hit[i].timestamp), 6, 1, outFile);
-  //   fwrite( &(hit[i].fineTime), 2, 1, outFile);
-  //   if( hit[i].traceLength > 0 ) fwrite( &(hit[i].traceLength), 2, 1, outFile);
-    
-  //   for( uShort j = 0; j < hit[i].traceLength; j++){
-  //     fwrite( &(hit[i].trace[j]), 2, 1, outFile);
-  //   }
-    
-  // }
-
-  // tsFileSize = ftello(outFile);  // unsigned int =  Max ~4GB
-  // fclose(outFile);
-
-  // printf("Saved to %s, size: ", outFileName.c_str());
-  // if( tsFileSize < 1024 ) {
-  //   printf(" %ld Byte", tsFileSize);
-  // }else if( tsFileSize < 1024*1024 ) {
-  //   printf(" %.2f kB", tsFileSize/1024.);
-  // }else if( tsFileSize < 1024*1024*1024){
-  //   printf(" %.2f MB", tsFileSize/1024./1024.);
-  // }else{
-  //   printf(" %.2f GB", tsFileSize/1024./1024./1024.);
-  // }
-  // printf("\n");
-
-//   return outFileName;
-
-// }
+*/
 
 

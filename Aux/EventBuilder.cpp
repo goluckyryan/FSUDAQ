@@ -1,5 +1,4 @@
 #include "fsuReader.h"
-#include "fsutsReader.h"
 
 #include "TROOT.h"
 #include "TSystem.h"
@@ -9,9 +8,8 @@
 #include "TTree.h"
 #include "TMacro.h"
 
-//#include "CustomStruct.h"
 
-#define MAX_MULTI  1000
+#define MAX_MULTI  2000
 
 struct FileInfo{
 
