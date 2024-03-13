@@ -48,6 +48,8 @@ public:
   void RedefineEventBuilder(std::vector<int> idList);
   void SetBackwardBuild(bool TF, int maxNumEvent = 100) { isBuildBackward = TF; maxNumEventBuilt = maxNumEvent;}
 
+  double RandomGauss(double mean, double sigma);
+
 public slots:
   void StartThread();
   void StopThread();

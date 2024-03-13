@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
   if (argc < 6)    {
     printf("Incorrect number of arguments:\n");
     printf("%s [timeWindow] [withTrace] [verbose] [batchSize] [inFile1]  [inFile2] .... \n", argv[0]);
-    printf("    timeWindow : in ns \n");   
+    printf("    timeWindow : in ns, -1 = no event building \n");   
     printf("     withTrace : 0 for no trace, 1 for trace \n");   
     printf("       verbose : > 0 for debug  \n");   
     printf("     batchSize : the size of hit in a batch \n");   

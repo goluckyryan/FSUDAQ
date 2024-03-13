@@ -25,6 +25,7 @@ Analyzer::Analyzer(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent )
     snList.push_back(digi[k]->GetSerialNumber());
   }
 
+  isBuildBackward = false;
   mb = new MultiBuilder(dataList, typeList, snList);
 
   buildTimerThread = new TimingThread(this);
@@ -45,6 +46,18 @@ Analyzer::~Analyzer(){
   delete influx;
   delete mb;
   delete [] dataList;
+}
+
+double Analyzer::RandomGauss(double mean, double sigma){
+
+  // Box-Muller transform to generate normally distributed random numbers
+  double u1 = QRandomGenerator::global()->generateDouble();
+  double u2 = QRandomGenerator::global()->generateDouble();
+  double z0 = sqrt(-2.0 * log(u1)) * cos(2 * M_PI * u2);
+
+  // Apply mean and standard deviation
+  return mean + z0 * sigma;
+
 }
 
 void Analyzer::RedefineEventBuilder(std::vector<int> idList){
@@ -78,7 +91,7 @@ void Analyzer::StopThread(){
 
 
 void Analyzer::BuildEvents(bool verbose){
-
+  
   unsigned int nData = mb->GetNumOfDigitizer();
   std::vector<int> idList = mb->GetDigiIDList();
   for( unsigned int i = 0; i < nData; i++ ) digiMTX[idList[i]].lock();

@@ -308,7 +308,7 @@ int Digitizer::ProgramBoard_PHA(){
   ret |= CAEN_DGTZ_SetIOLevel(handle, CAEN_DGTZ_IOLevel_NIM);
   ret |= CAEN_DGTZ_SetExtTriggerInputMode(handle, CAEN_DGTZ_TRGMODE_ACQ_ONLY);
 
-  ret = CAEN_DGTZ_SetChannelEnableMask(handle, 0xFFFF);
+  ret = CAEN_DGTZ_SetChannelEnableMask(handle, ModelType == ModelTypeCode::VME ? 0xFFFF : 0x00FF);
   
   //ret = CAEN_DGTZ_SetNumEventsPerAggregate(handle, 0);
   

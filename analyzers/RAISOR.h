@@ -21,7 +21,7 @@ public:
     RedefineEventBuilder({0}); // only builder for the 0-th digitizer.
     tick2ns = digi[0]->GetTick2ns();
 
-    //SetBackwardBuild(false, 100); // using normal building (acceding in time) or backward building, int the case of backward building, default events to be build is 100. 
+    SetBackwardBuild(false, 100); // using normal building (acceding in time) or backward building, int the case of backward building, default events to be build is 100. 
     evtbder = GetEventBuilder();
     evtbder->SetTimeWindow(500);
  
@@ -58,7 +58,7 @@ inline void RAISOR::SetUpCanvas(){
   setGeometry(0, 0, 500, 500);  
 
   //============ histograms
-  hPID = new Histogram2D("RAISOR", "E", "dE", 100, 0, 5000, 100, 0, 5000, this);
+  hPID = new Histogram2D("RAISOR", "E", "dE", 100, 0, 5000, 100, 0, 20000, this);
   layout->addWidget(hPID, 0, 0);  
 
 }
@@ -67,7 +67,7 @@ inline void RAISOR::UpdateHistograms(){
 
   if( this->isVisible() == false ) return;
   
-  BuildEvents(); // call the event builder to build events
+  BuildEvents(false); // call the event builder to build events
 
   //============ Get events, and do analysis
   long eventBuilt = evtbder->eventBuilt;
@@ -97,7 +97,8 @@ inline void RAISOR::UpdateHistograms(){
       
     }
 
-    hPID->Fill(E, dE); // x, y
+    // printf("(E, dE) = (%f, %f)\n", E, dE);
+    hPID->Fill(E + RandomGauss(0, 100), dE+ RandomGauss(0, 100)); // x, y
     
     //check events inside any Graphical cut and extract the rate
     for(int p = 0; p < cutList.count(); p++ ){ 

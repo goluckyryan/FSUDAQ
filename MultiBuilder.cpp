@@ -93,24 +93,21 @@ void MultiBuilder::FindEarlistTimeAndCh(bool verbose){
   earlistTime = -1;
   earlistDigi = -1;
   earlistCh = -1;
-
   nExhaushedCh = 0;
-  
   for( int i = 0; i < nData; i++){
 
-    for( int j = 0; j < data[i]->GetNChannel(); j++ ){
-      chExhaused[i][j] = false;
-    }
+    for( int j = 0; j < data[i]->GetNChannel(); j++ ) chExhaused[i][j] = false;
 
-    for(unsigned int ch = 0; ch < MaxNChannels; ch ++){
-      if( ch >= data[i]->GetNChannel() ) {
+    for(unsigned int ch = 0; ch < data[i]->GetNChannel(); ch ++){
+
+      int index =  data[i]->GetDataIndex(ch);
+      if( ch >= data[i]->GetNChannel() || index < 0 ) {
         nExhaushedCh ++;
         chExhaused[i][ch] = true;
         continue;
       }
 
-      if( data[i]->GetTimestamp(ch, data[i]->GetDataIndex(ch)) == 0 || 
-          data[i]->GetDataIndex(ch) == -1 || 
+      if( data[i]->GetTimestamp(ch, index) == 0 ||  
           loopIndex[i][ch] * dataSize[i] > data[i]->GetLoopIndex(ch) * dataSize[i] +  data[i]->GetDataIndex(ch)) {
         nExhaushedCh ++;
         chExhaused[i][ch] = true;
@@ -142,16 +139,13 @@ void MultiBuilder::FindLatestTimeAndCh(bool verbose){
   
   for( int i = 0; i < nData; i++){
 
-    for( int j = 0; j < data[i]->GetNChannel(); j++ ){
-      chExhaused[i][j] = false;
-    }
+    for( int j = 0; j < data[i]->GetNChannel(); j++ ) chExhaused[i][j] = false;
 
     for(unsigned int ch = 0; ch < MaxNChannels; ch ++){
-      // printf(" %d, %d | %d", i, ch, nextIndex[i][ch]);
-      if( nextIndex[i][ch] < 0  || ch >= data[i]->GetNChannel()) {
+      
+      if( nextIndex[i][ch] < 0  || ch >= data[i]->GetNChannel() || data[i]->GetDataIndex(ch) < 0 ) {
         nExhaushedCh ++;
         chExhaused[i][ch] = true;
-
         // printf(", exhanshed. %d \n", nExhaushedCh);
         continue;
       }
@@ -194,8 +188,10 @@ void MultiBuilder::FindLatestTimeOfData(bool verbose){
   latestCh = -1;
   latestDigi = -1;
   for( int i = 0; i < nData; i++){
+    // printf("%s | digi-%d-th | %d\n", __func__, i, data[i]->GetNChannel());
     for( unsigned ch = 0; ch < data[i]->GetNChannel(); ch++ ){
       int index = data[i]->GetDataIndex(ch);
+      // printf("ch-%2d | index : %d \n", ch, index);
       if( index == -1 ) continue;
       if( data[i]->GetTimestamp(ch, index) > latestTime ) {
         latestTime = data[i]->GetTimestamp(ch, index);

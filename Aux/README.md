@@ -38,7 +38,7 @@ This defines the EventBuilder. The arguments are
 
 ```sh
 ./EventBuilder [timeWindow] [withTrace] [verbose] [batchSize] [inFile1]  [inFile2] .... 
-    timeWindow : in ns 
+    timeWindow : in ns, -1 = no event building 
      withTrace : 0 for no trace, 1 for trace 
        verbose : > 0 for debug  
      batchSize : the size of hit in a batch 
@@ -49,8 +49,72 @@ as an example,
 
 ```sh
 /EventBuilder 0 0 0 1000000 '\ls -1 test_001*.fsu'
-
 ```
+
+setting the timeWindow to be -1, will split out a timesorted Hit.
+
+## Important output message
+
+Sometimes, you may encounter following output in red color
+```sh
+!!!!!!!!!!!!!!!!! ReadBatch | Need to increase the batch size.
+```
+That means the fsuReder need larger batchSize.
+
+```sh
+event 786 has size = 2350 > MAX_MULTI = 2000
+```
+
+This indicate the event 786 has event size 2350, which is larger than MAX_MULTI of 2000. depends on your experimental setup. If you think multiplicity more than 2000 makes sense, you can edit the MAX_MULTI in the EventBuilder.cpp.
+
+## output 
+
+Evenbuilder output is standard information, an example structure is
+
+```sh
+******************************************************************************
+*Tree    :tree      : test_001_379_-1.root                                   *
+*Entries :  2017231 : Total =       121385718 bytes  File  Size =   47528456 *
+*        :          : Tree compression factor =   2.55                       *
+******************************************************************************
+*Br    0 :evID      : event_ID/l                                             *
+*Entries :  2017231 : Total  Size=   16167926 bytes  File Size  =    4222686 *
+*Baskets :      327 : Basket Size=    3835392 bytes  Compression=   3.83     *
+*............................................................................*
+*Br    1 :multi     : multi/i                                                *
+*Entries :  2017231 : Total  Size=    8084409 bytes  File Size  =      56959 *
+*Baskets :      165 : Basket Size=    1917952 bytes  Compression= 141.87     *
+*............................................................................*
+*Br    2 :sn        : sn[multi]/s                                            *
+*Entries :  2017231 : Total  Size=   12143148 bytes  File Size  =    4648638 *
+*Baskets :      406 : Basket Size=   25600000 bytes  Compression=   2.61     *
+*............................................................................*
+*Br    3 :ch        : ch[multi]/s                                            *
+*Entries :  2017231 : Total  Size=   12143148 bytes  File Size  =    4719909 *
+*Baskets :      406 : Basket Size=   25600000 bytes  Compression=   2.57     *
+*............................................................................*
+*Br    4 :e         : e[multi]/s                                             *
+*Entries :  2017231 : Total  Size=   12142738 bytes  File Size  =    7040714 *
+*Baskets :      406 : Basket Size=   25600000 bytes  Compression=   1.72     *
+*............................................................................*
+*Br    5 :e2        : e2[multi]/s                                            *
+*Entries :  2017231 : Total  Size=   12143148 bytes  File Size  =    4649857 *
+*Baskets :      406 : Basket Size=   25600000 bytes  Compression=   2.61     *
+*............................................................................*
+*Br    6 :e_t       : e_timestamp[multi]/l                                   *
+*Entries :  2017231 : Total  Size=   24270794 bytes  File Size  =   12883867 *
+*Baskets :      649 : Basket Size=   25600000 bytes  Compression=   1.88     *
+*............................................................................*
+*Br    7 :e_f       : e_fineTime[multi]/s                                    *
+*Entries :  2017231 : Total  Size=   12143579 bytes  File Size  =    4636856 *
+*Baskets :      406 : Basket Size=   25600000 bytes  Compression=   2.62     *
+*............................................................................*
+*Br    8 :traceLength : traceLength[multi]/s                                 *
+*Entries :  2017231 : Total  Size=   12146944 bytes  File Size  =    4640404 *
+*Baskets :      407 : Basket Size=   25600000 bytes  Compression=   2.62     *
+*............................................................................*
+```
+
 
 # SettingsExplorer.cpp
 
