@@ -1,6 +1,6 @@
 # Discord 
 
-https://discord.gg/vxAM2ZHM
+https://discord.gg/xVsRhNZF8G
 
 # Introduction
 
