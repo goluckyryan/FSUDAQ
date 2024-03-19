@@ -1148,6 +1148,7 @@ void MainWindow::StopACQ(){
     if( chkSaveData->isChecked() ) digi[i]->GetData()->CloseSaveFile();
     LogMsg("Digi-" + QString::number(digi[i]->GetSerialNumber()) + " ACQ is stopped." );
     QCoreApplication::processEvents();
+    digi[i]->ReadACQStatus();
   }
 
   if( scalarThread->isRunning()){

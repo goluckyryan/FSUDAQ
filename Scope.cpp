@@ -371,9 +371,9 @@ void Scope::StartScope(){
     digi[iDigi]->WriteRegister(DPP::SoftwareClear_W, 1);
     digi[iDigi]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, 1, -1);
 
-    AggPerRead[iDigi] = digi[iDigi]->GetSettingFromMemory(DPP::MaxAggregatePerBlockTransfer);
-    SendLogMsg("Set Events/Agg to 1 for scope, it was " + QString::number(AggPerRead[iDigi]) + ".");
-    digi[iDigi]->WriteRegister(DPP::MaxAggregatePerBlockTransfer, 1);
+    //AggPerRead[iDigi] = digi[iDigi]->GetSettingFromMemory(DPP::MaxAggregatePerBlockTransfer);
+    //SendLogMsg("Set Agg/Read to 1 for scope, it was " + QString::number(AggPerRead[iDigi]) + ".");
+    //digi[iDigi]->WriteRegister(DPP::MaxAggregatePerBlockTransfer, 1);
 
     readDataThread[iDigi]->SetScopeMode(true);
     readDataThread[iDigi]->SetSaveData(false);
@@ -431,7 +431,7 @@ void Scope::StopScope(){
     digiMTX[iDigi].unlock();
 
     digi[iDigi]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, traceOn[iDigi], -1);
-    digi[iDigi]->WriteRegister(DPP::MaxAggregatePerBlockTransfer, AggPerRead[iDigi]);
+    //digi[iDigi]->WriteRegister(DPP::MaxAggregatePerBlockTransfer, AggPerRead[iDigi]);
 
   }
 
@@ -883,7 +883,7 @@ void Scope::SetUpPanel_QDC() {
 
   int rowID = 0;
 
-  SetUpSpinBox(sbReordLength,     "Record Length [ns] ", rowID, 0, DPP::QDC::RecordLength_W);
+  SetUpSpinBox(sbReordLength,     "Record Length [ns] ", rowID, 0, DPP::QDC::RecordLength);
   SetUpSpinBox(sbPreTrigger,        "Pre Trigger [ns] ", rowID, 2, DPP::QDC::PreTrigger);
   SetUpSpinBox(sbDCOffset,             "DC offset [%] ", rowID, 4, DPP::QDC::DCOffset);
   sbDCOffset->setDecimals(2);   

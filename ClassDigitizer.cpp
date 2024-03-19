@@ -47,6 +47,7 @@ void Digitizer::Initalization(){
   isConnected = false; 
   AcqRun = false;
   isDummy = true;
+
 }
 
 void Digitizer::Reset(){
@@ -64,7 +65,7 @@ void Digitizer::Reset(){
 
 void Digitizer::PrintBoard (){
   printf("Connected to Model %s with handle %d using %s\n", BoardInfo.ModelName, handle, LinkType == CAEN_DGTZ_USB ? "USB" : "Optical Link");
-  printf("        Sampling rate : %.0f MHz = %.1f ns \n", 1000/tick2ns, tick2ns);
+  printf("        Sampling rate : %.1f MHz = %.1f ns \n", 1000./tick2ns, tick2ns);
   printf("No. of Input Channels : %d \n", NumInputCh);
   printf("  No. of Reg Channels : %d, mask : 0x%X\n", NumRegChannel, regChannelMask);
   printf("         SerialNumber :\e[1m\e[33m %d\e[0m\n", BoardInfo.SerialNumber);
@@ -436,7 +437,8 @@ int Digitizer::ProgramBoard_QDC(){
   int ret = 0;
 
   //WriteRegister(DPP::QDC::NumberEventsPerAggregate, 0x10, -1);
-  WriteRegister(DPP::QDC::RecordLength_W, 16, -1); // 128 sample = 2048 ns
+  WriteRegister(DPP::QDC::RecordLength, 16, -1); // 128 sample = 2048 ns
+
   WriteRegister(DPP::QDC::PreTrigger,  60, -1); // at 60 sample = 960 ns
 
   WriteRegister(DPP::QDC::GateWidth, 100/16, -1);
@@ -494,7 +496,9 @@ void Digitizer::StartACQ(){
   // ret |= CAEN_DGTZ_SetDPPEventAggregation(handle, 0, 0); // Auto set
 
   unsigned int bufferSize = CalByteForBufferCAEN();
-  if( bufferSize  > 160 * 1024 * 1024 ) printf("============= buffer size bigger than 160 MB (%u)\n", bufferSize );
+  // unsigned int bufferSize = 200 * 1024 * 1024;
+  // if( DPPType == DPPTypeCode::DPP_QDC_CODE ) bufferSize = 500 * 1024 * 1024;
+  // if( bufferSize  > 160 * 1024 * 1024 ) printf("============= buffer size bigger than 160 MB (%u)\n", bufferSize );
 
   data->AllocateMemory(bufferSize);
 
@@ -650,7 +654,7 @@ int Digitizer::ReadData(){
     }
   }
 
-  ReadACQStatus();
+  // ReadACQStatus();
 
   return ret;
 }
@@ -678,7 +682,7 @@ void Digitizer::ReadAndPrintACQStatue(){
 //===========================================================
 void Digitizer::WriteRegister (Reg registerAddress, uint32_t value, int ch, bool isSave2MemAndFile){
   if( softwareDisable ) return;
-  printf("%30s[0x%04X](digi-%d,ch-%02d) [0x%04X]: 0x%08X \n", registerAddress.GetNameChar(), registerAddress.GetAddress(),GetSerialNumber(), ch, registerAddress.ActualAddress(ch), value);
+  printf("WRITE|%30s[0x%04X](digi-%d,ch-%02d) [0x%04X]: 0x%08X \n", registerAddress.GetNameChar(), registerAddress.GetAddress(),GetSerialNumber(), ch, registerAddress.ActualAddress(ch), value);
 
   if( !isConnected ) {
     //SetSettingToMemory(registerAddress, value, ch); //TODO should the binary setting be edited offline?
@@ -720,6 +724,7 @@ uint32_t Digitizer::ReadRegister(Reg registerAddress, unsigned short ch, bool is
   if( softwareDisable ) return 0;
   if( !isConnected )  return 0;
   if( registerAddress.GetRWType() == RW::WriteONLY ) return 0;
+  // if( registerAddress == DPP::QDC::RecordLength_W ) return 0;
 
   ret = CAEN_DGTZ_ReadRegister(handle, registerAddress.ActualAddress(ch), &returnData);
   
@@ -732,8 +737,8 @@ uint32_t Digitizer::ReadRegister(Reg registerAddress, unsigned short ch, bool is
   std::stringstream ss;
   ss << std::hex << registerAddress.ActualAddress(ch);
 
-  ErrorMsg("ReadRegister:0x" + ss.str() + "(" + registerAddress.GetName() + ")");
-  if( str != "" ) printf("%s : 0x%04X(0x%04X) is 0x%08X \n", str.c_str(), 
+  ErrorMsg("Register:0x" + ss.str() + "(" + registerAddress.GetName() + ")");
+  if( !str.empty() ) printf("READ|%s : 0x%04X(0x%04X) is 0x%08X \n", str.c_str(), 
                              registerAddress.ActualAddress(ch), registerAddress.GetAddress(), returnData);
   return returnData;
 }
@@ -744,15 +749,15 @@ uint32_t Digitizer::PrintRegister(uint32_t address, std::string msg){
   printf("------------ %s = 0x%X \n", msg.c_str(), address);
   printf("----------------------------------------------------\e[0m\n");
 
-  uint32_t * value = new uint32_t[1];
-  CAEN_DGTZ_ReadRegister(handle, address, value);
+  uint32_t value;
+  CAEN_DGTZ_ReadRegister(handle, address, &value);
   printf(" %*s    32  28  24  20  16  12   8   4   0\n", (int) msg.length(), "");
   printf(" %*s     |   |   |   |   |   |   |   |   |\n", (int) msg.length(), "");
   printf(" %*s", (int) msg.length(), "");
-  std::cout <<    "  : 0b" << std::bitset<32>(value[0]) << std::endl;
-  printf(" %*s  : 0x%X\n", (int) msg.length(), msg.c_str(), value[0]);
+  std::cout <<    "  : 0b" << std::bitset<32>(value) << std::endl;
+  printf(" %*s  : 0x%08X = %u\n", (int) msg.length(), msg.c_str(), value, value);
   
-  return value[0];
+  return value;
 }
 
 //========================================== setting file IO
@@ -842,6 +847,7 @@ void Digitizer::ReadAllSettingsFromBoard(bool force){
       if( RegisterBoardList_QDC[p].GetRWType() == RW::WriteONLY) continue;
       ReadRegister(RegisterBoardList_QDC[p]); 
     }
+
     regChannelMask = GetSettingFromMemory(DPP::QDC::GroupEnableMask);
 
     for( int ch = 0; ch < GetNumRegChannels(); ch ++){

@@ -3117,6 +3117,7 @@ void DigiSettingsPanel::UpdateReadOutStatus(uint32_t status){
 
 void DigiSettingsPanel::UpdateBoardAndChannelsStatus(){
 
+  printf("%s\n", __func__);
   //*========================================
   uint32_t AcqStatus = digi[ID]->ReadRegister(DPP::AcquisitionStatus_R);
   UpdateACQStatus(AcqStatus);

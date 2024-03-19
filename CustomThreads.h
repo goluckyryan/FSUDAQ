@@ -70,6 +70,14 @@ public:
         break;
       }
 
+      clock_gettime(CLOCK_REALTIME, &t1);
+      if( t1.tv_sec - ta.tv_sec > 2 ){
+        digiMTX[ID].lock();
+        digi->ReadACQStatus();
+        digiMTX[ID].unlock();
+        ta = t1;
+      }
+
       if( isSaveData && !stop ) {
         clock_gettime(CLOCK_REALTIME, &tb);
         if( tb.tv_sec - ta.tv_sec > 2 ) {
