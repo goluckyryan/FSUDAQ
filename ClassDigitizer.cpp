@@ -437,7 +437,7 @@ int Digitizer::ProgramBoard_QDC(){
   int ret = 0;
 
   //WriteRegister(DPP::QDC::NumberEventsPerAggregate, 0x10, -1);
-  WriteRegister(DPP::QDC::RecordLength, 16, -1); // 128 sample = 2048 ns
+  WriteRegister(DPP::QDC::RecordLength_W, 16, -1); // 128 sample = 2048 ns
 
   WriteRegister(DPP::QDC::PreTrigger,  60, -1); // at 60 sample = 960 ns
 
@@ -715,6 +715,11 @@ void Digitizer::WriteRegister (Reg registerAddress, uint32_t value, int ch, bool
     }
   }
 
+  if( ret == 0 && isSave2MemAndFile && registerAddress == DPP::QDC::RecordLength_W){
+    SetSettingToMemory(registerAddress, value, 0);
+    SaveSettingToFile(registerAddress, value, 0);
+  }
+
   std::stringstream ss;
   ss << std::hex << registerAddress.ActualAddress(ch);
   ErrorMsg("WriteRegister:0x" + ss.str()+ "(" + registerAddress.GetName() + ")");
@@ -848,6 +853,8 @@ void Digitizer::ReadAllSettingsFromBoard(bool force){
       ReadRegister(RegisterBoardList_QDC[p]); 
     }
 
+    ReadQDCRecordLength();
+
     regChannelMask = GetSettingFromMemory(DPP::QDC::GroupEnableMask);
 
     for( int ch = 0; ch < GetNumRegChannels(); ch ++){
@@ -892,7 +899,7 @@ void Digitizer::ProgramSettingsToBoard(){
     haha = DPP::FrontPanelIOControl; WriteRegister(haha, GetSettingFromMemory(haha), -1, false);
     haha = DPP::FrontPanelTRGOUTEnableMask; WriteRegister(haha, GetSettingFromMemory(haha), -1, false);
     haha = DPP::RegChannelEnableMask; WriteRegister(haha, GetSettingFromMemory(haha), -1, false);
-    
+
     /// Channels Setting
     for( int ch = 0; ch < NumInputCh; ch ++){
       if( DPPType == V1730_DPP_PHA_CODE ){
@@ -932,6 +939,8 @@ void Digitizer::ProgramSettingsToBoard(){
     haha = DPP::FrontPanelIOControl; WriteRegister(haha, GetSettingFromMemory(haha), -1, false);
     haha = DPP::FrontPanelTRGOUTEnableMask; WriteRegister(haha, GetSettingFromMemory(haha), -1, false);
     haha = DPP::QDC::GroupEnableMask; WriteRegister(haha, GetSettingFromMemory(haha), -1, false);
+    haha = DPP::QDC::RecordLength_W; WriteRegister(haha, GetSettingFromMemory(haha), -1, false);
+    // haha = DPP::QDC::NumberEventsPerAggregate; WriteRegister(haha, GetSettingFromMemory(haha), -1, false);
 
     /// Channels Setting
     for( int ch = 0; ch < GetNumRegChannels(); ch ++){

@@ -185,6 +185,18 @@ class Digitizer{
     bool IsDualTrace_PHA()           {return ( (GetSettingFromMemory(DPP::BoardConfiguration) >> 11) & 0x1 );}
     bool IsRecordTrace()             {return ( (GetSettingFromMemory(DPP::BoardConfiguration) >> 16) & 0x1 );}
 
+    //QDC read recordLength
+    uint32_t ReadQDCRecordLength()  {
+      returnData = ReadRegister(DPP::QDC::RecordLength_R);
+      Reg temp = DPP::QDC::RecordLength_R; 
+      int indexR = temp.Index(0);
+      temp = DPP::QDC::RecordLength_W; 
+      int indexW = temp.Index(0);
+      setting[indexW] = setting[indexR];
+      //printf("%d %d | %u %u \n", indexR, indexW, setting[indexR], setting[indexW]);
+      return returnData;
+    }
+
 };
 
 

@@ -883,7 +883,7 @@ void Scope::SetUpPanel_QDC() {
 
   int rowID = 0;
 
-  SetUpSpinBox(sbReordLength,     "Record Length [ns] ", rowID, 0, DPP::QDC::RecordLength);
+  SetUpSpinBox(sbReordLength,     "Record Length [ns] ", rowID, 0, DPP::QDC::RecordLength_W);
   SetUpSpinBox(sbPreTrigger,        "Pre Trigger [ns] ", rowID, 2, DPP::QDC::PreTrigger);
   SetUpSpinBox(sbDCOffset,             "DC offset [%] ", rowID, 4, DPP::QDC::DCOffset);
   sbDCOffset->setDecimals(2);   
@@ -1223,7 +1223,8 @@ void Scope::UpdatePanel_QDC(){
   uint32_t haha = digi[ID]->GetSettingFromMemory(DPP::QDC::DCOffset, grp);
   sbDCOffset->setValue((1.0 - haha * 1.0 / 0xFFFF) * 100 );
 
-  UpdateSpinBox(sbReordLength, DPP::QDC::RecordLength);
+  //UpdateSpinBox(sbReordLength, DPP::QDC::RecordLength);
+  sbReordLength->setValue(digi[ID]->ReadQDCRecordLength());
   UpdateSpinBox(sbPreTrigger, DPP::QDC::PreTrigger);
 
   UpdateSpinBox(sbShortGate, DPP::QDC::GateWidth);
@@ -1300,7 +1301,10 @@ void Scope::ReadSettingsFromBoard(){
     int ch = cbScopeCh->currentIndex();
     int grp = ch/8;
 
-    digi[ID]->ReadRegister(DPP::QDC::RecordLength, grp);
+    //digi[ID]->ReadRegister(DPP::QDC::RecordLength, grp);
+
+    digi[ID]->ReadQDCRecordLength();
+    
     digi[ID]->ReadRegister(DPP::QDC::PreTrigger, grp);
     digi[ID]->ReadRegister(DPP::QDC::DCOffset, grp);
     digi[ID]->ReadRegister(DPP::QDC::DPPAlgorithmControl, grp);
