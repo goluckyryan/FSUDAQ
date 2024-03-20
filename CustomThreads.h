@@ -36,6 +36,7 @@ public:
     readCount = 0;
     clock_gettime(CLOCK_REALTIME, &t0);
     ta = t0;
+    t1 = t0;
 
     printf("ReadDataThread for digi-%d running.\n", digi->GetSerialNumber());
     do{
@@ -70,12 +71,12 @@ public:
         break;
       }
 
-      clock_gettime(CLOCK_REALTIME, &t1);
-      if( t1.tv_sec - ta.tv_sec > 2 ){
+      clock_gettime(CLOCK_REALTIME, &t2);
+      if( t2.tv_sec - t1.tv_sec > 2 ){
         digiMTX[ID].lock();
         digi->ReadACQStatus();
         digiMTX[ID].unlock();
-        ta = t1;
+        t2 = t1;
       }
 
       if( isSaveData && !stop ) {
