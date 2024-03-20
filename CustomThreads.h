@@ -72,7 +72,7 @@ public:
       }
 
       clock_gettime(CLOCK_REALTIME, &t2);
-      if( t2.tv_sec - t1.tv_sec > 2 ){
+      if( t2.tv_sec - t1.tv_sec > 1 ){
         digiMTX[ID].lock();
         digi->ReadACQStatus();
         digiMTX[ID].unlock();
