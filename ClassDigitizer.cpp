@@ -156,17 +156,6 @@ int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose
     }
   }
   
-  uint32_t boardInfo = GetSettingFromMemory(DPP::BoardInfo_R);
-  uint32_t haha = ((boardInfo >> 8 ) & 0xFF);
-  printf("------- 0x%08X = %u \n", boardInfo, haha);
-  switch(haha) {
-    case 0x01 : MemorySizekSample =  640; break;
-    case 0x02 : MemorySizekSample =  192; break;
-    case 0x08 : MemorySizekSample = 5242; break;
-    case 0x10 : MemorySizekSample = 1536; break;
-    default: MemorySizekSample =  192; break;
-  }
-
   ///====================== Check DPP firmware revision 
   sscanf(BoardInfo.AMC_FirmwareRel, "%d", &DPPType);
   data->DPPType = DPPType;
@@ -187,6 +176,19 @@ int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose
   }
   /// change address 0xEF08 (5 bits), this will reflected in the 2nd word of the Board Agg. header.
   ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardID, (DPPType & 0xF));
+
+
+  //TODO somehow the bdInfo does not work, use DPPType to set it
+  uint32_t bdInfo = GetSettingFromMemory(DPP::BoardInfo_R);
+  uint32_t haha = ((bdInfo >> 8 ) & 0xFF);
+  // printf("------- 0x%08X = %u \n", bdInfo, haha);
+  switch(haha) {
+    case 0x01 : MemorySizekSample =  640; break;
+    case 0x02 : MemorySizekSample =  192; break;
+    case 0x08 : MemorySizekSample = 5242; break;
+    case 0x10 : MemorySizekSample = 1536; break;
+    default: MemorySizekSample =  192; break;
+  }
 
   if ( verbose ){
     PrintBoard();    
@@ -560,7 +562,11 @@ void Digitizer::StartACQ(){
   data->ClearTriggerRate();
   data->ClearData();
 
+  if( DPPType == DPPTypeCode::DPP_QDC_CODE ) SetOptimialAggOrg();
+
   printf("    ACQ mode : %s (%d), TRG-OUT mode : %s (%d) \n", acqStr.c_str(), acqID, trgOutStr.c_str(), trgOutID);
+
+  usleep(1000); // wait for 1 msec to start/Arm ACQ;
 
   ret = CAEN_DGTZ_SWStartAcquisition(handle);
   if( ret != 0 ) {
@@ -1327,11 +1333,14 @@ void Digitizer::SetOptimialAggOrg(){
   printf("          Record Length (bit) : %u = %u sample = %u ns\n", RecordLen, RecordLen*8, RecordLen*8*16);
   printf("==============================================================\n");
 
-  int eventSize = 2 + traceOn * RecordLen * 8; // sample
-  double maxAggOrg = log2( MemorySizekSample * 1024 / eventSize );
+  int eventSize = 6 + 2 * Ex + traceOn * RecordLen * 8; // sample
+  double maxAggOrg = log2( MemorySizekSample * 1024 / eventSize / EventAgg );
   printf(" max Agg. Org. should be less than %.2f\n", maxAggOrg);
+  uint32_t aggOrg = std::floor(maxAggOrg) ;
+  int bufferSize = pow(2, aggOrg) * EventAgg * eventSize;
+  printf("================= BufferSize : %d kSample | system memeory : %d kSample \n", bufferSize / 1024, MemorySizekSample);
 
-  uint32_t aggOrg = std::floor(maxAggOrg);
   WriteRegister(DPP::AggregateOrganization, aggOrg);
+
 
 }
