@@ -31,6 +31,7 @@ void Digitizer::Initalization(){
   ADCFullSize = 0;
   tick2ns = 0; 
   BoardInfo = {};
+  MemorySizekSample = 0;
 
   regChannelMask = 0xFFFF;
   VMEBaseAddress = 0;
@@ -65,6 +66,7 @@ void Digitizer::Reset(){
 
 void Digitizer::PrintBoard (){
   printf("Connected to Model %s with handle %d using %s\n", BoardInfo.ModelName, handle, LinkType == CAEN_DGTZ_USB ? "USB" : "Optical Link");
+  printf("          Family Name : %s \n", familyName.c_str());
   printf("        Sampling rate : %.1f MHz = %.1f ns \n", 1000./tick2ns, tick2ns);
   printf("No. of Input Channels : %d \n", NumInputCh);
   printf("  No. of Reg Channels : %d, mask : 0x%X\n", NumRegChannel, regChannelMask);
@@ -73,6 +75,7 @@ void Digitizer::PrintBoard (){
   printf("              ADC bit : \e[33m%d\e[0m, %d = 0x%X\n", ADCbits, ADCFullSize, ADCFullSize);
   printf("     ROC FPGA Release : %s\n", BoardInfo.ROC_FirmwareRel);
   printf("     AMC FPGA Release : %s\n", BoardInfo.AMC_FirmwareRel);
+  printf(" Channle Memeory Size : %u kSample\n", MemorySizekSample);
 }
 
 int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose){
@@ -124,18 +127,25 @@ int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose
       isInputChEqRegCh = true;
       regChannelMask = pow(2, NumInputCh)-1;
       switch(BoardInfo.Model){
-            case CAEN_DGTZ_DT5730: tick2ns =  2.0; NCoupledCh = NumInputCh/2; ModelType = ModelTypeCode::DT; break; ///ns -> 500 MSamples/s
-            case CAEN_DGTZ_DT5725: tick2ns =  4.0; NCoupledCh = NumInputCh/2; ModelType = ModelTypeCode::DT; break; ///ns -> 250 MSamples/s
-            case CAEN_DGTZ_V1730:  tick2ns =  2.0; NCoupledCh = NumInputCh/2; ModelType = ModelTypeCode::VME; break; ///ns -> 500 MSamples/s
-            case CAEN_DGTZ_V1725:  tick2ns =  4.0; NCoupledCh = NumInputCh/2; ModelType = ModelTypeCode::VME; break; ///ns -> 250 MSamples/s
-            case CAEN_DGTZ_V1740: {
-              NumInputCh = 64;
-              NCoupledCh = NumRegChannel;
-              isInputChEqRegCh = false;
-              ModelType = ModelTypeCode::VME;
-              tick2ns = 16.0; break; ///ns -> 62.5 MSamples/s
-            }
-            default : tick2ns = 4.0; break;
+        case CAEN_DGTZ_DT5730: tick2ns =  2.0; NCoupledCh = NumInputCh/2; ModelType = ModelTypeCode::DT; break; ///ns -> 500 MSamples/s
+        case CAEN_DGTZ_DT5725: tick2ns =  4.0; NCoupledCh = NumInputCh/2; ModelType = ModelTypeCode::DT; break; ///ns -> 250 MSamples/s
+        case CAEN_DGTZ_V1730:  tick2ns =  2.0; NCoupledCh = NumInputCh/2; ModelType = ModelTypeCode::VME; break; ///ns -> 500 MSamples/s
+        case CAEN_DGTZ_V1725:  tick2ns =  4.0; NCoupledCh = NumInputCh/2; ModelType = ModelTypeCode::VME; break; ///ns -> 250 MSamples/s
+        case CAEN_DGTZ_V1740: {
+          NumInputCh = 64;
+          NCoupledCh = NumRegChannel;
+          isInputChEqRegCh = false;
+          ModelType = ModelTypeCode::VME;
+          tick2ns = 16.0; break; ///ns -> 62.5 MSamples/s
+        }
+        default : tick2ns = 4.0; break;
+      }
+
+      switch(BoardInfo.FamilyCode){
+        case CAEN_DGTZ_XX740_FAMILY_CODE: familyName = "740 family"; break;
+        case CAEN_DGTZ_XX730_FAMILY_CODE: familyName = "730 family"; break;
+        case CAEN_DGTZ_XX725_FAMILY_CODE: familyName = "725 family"; break;
+        default: familyName = "not supported"; break;
       }
 
       data = new Data(NumInputCh);
@@ -144,6 +154,17 @@ int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose
       ADCbits = BoardInfo.ADC_NBits;
       ADCFullSize = (unsigned int)( pow(2, ADCbits) -1 );
     }
+  }
+  
+  uint32_t boardInfo = GetSettingFromMemory(DPP::BoardInfo_R);
+  uint32_t haha = ((boardInfo >> 8 ) & 0xFF);
+  printf("------- 0x%08X = %u \n", boardInfo, haha);
+  switch(haha) {
+    case 0x01 : MemorySizekSample =  640; break;
+    case 0x02 : MemorySizekSample =  192; break;
+    case 0x08 : MemorySizekSample = 5242; break;
+    case 0x10 : MemorySizekSample = 1536; break;
+    default: MemorySizekSample =  192; break;
   }
 
   ///====================== Check DPP firmware revision 
@@ -1278,3 +1299,39 @@ void Digitizer::SetBits(Reg address, unsigned int bitValue, unsigned int bitLeng
   if( ret != 0 ) ErrorMsg(__func__);  
 }
 
+void Digitizer::SetOptimialAggOrg(){
+
+  if( DPPType != DPPTypeCode::DPP_QDC_CODE ) {
+    printf("%s | this method only support QDC board.\n", __func__); 
+    return;
+  }
+
+  uint32_t EventAgg = ReadRegister(DPP::QDC::NumberEventsPerAggregate, 0);
+  uint32_t chMask = ReadRegister(DPP::QDC::GroupEnableMask);
+  uint32_t RecordLen = ReadRegister(DPP::QDC::RecordLength_R, 0);  
+  
+  uint32_t AggRead  = ReadRegister(DPP::MaxAggregatePerBlockTransfer);
+  uint32_t boardCfg = ReadRegister(DPP::BoardConfiguration);
+  uint32_t aggOrgan = ReadRegister(DPP::AggregateOrganization);
+
+  bool Ex = ((boardCfg >> 17) & 0x1);
+  bool traceOn = ((boardCfg >> 16) & 0x1);
+
+  printf("=================================== Setting related to Buffer\n");
+  printf("      agg. orgainzation (bit) : 0x%X \n", aggOrgan);
+  printf("                 Channel Mask : %04X \n", chMask);
+  printf("Max number of Agg per Readout : %u \n", AggRead);
+  printf("              is Extra enabed : %u \n", Ex );
+  printf("               is Record wave : %u \n", traceOn );
+  printf("                  Event / Agg : %u \n", EventAgg );
+  printf("          Record Length (bit) : %u = %u sample = %u ns\n", RecordLen, RecordLen*8, RecordLen*8*16);
+  printf("==============================================================\n");
+
+  int eventSize = 2 + traceOn * RecordLen * 8; // sample
+  double maxAggOrg = log2( MemorySizekSample * 1024 / eventSize );
+  printf(" max Agg. Org. should be less than %.2f\n", maxAggOrg);
+
+  uint32_t aggOrg = std::floor(maxAggOrg);
+  WriteRegister(DPP::AggregateOrganization, aggOrg);
+
+}

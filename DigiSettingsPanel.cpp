@@ -85,10 +85,20 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
       SetUpInfo("ROC version ", digi[ID]->GetROCVersion(), infoLayout[ID], 2, 2);
       SetUpInfo("AMC version ", digi[ID]->GetAMCVersion(), infoLayout[ID], 2, 4);
 
+      SetUpInfo("Family Code ", digi[ID]->GetFamilyName(), infoLayout[ID], 3, 0);
+
+      QString memStr;
+      unsigned int memSize = digi[ID]->GetChMemSizekSample();
+      if( memSize < 1024 ){
+        memStr = QString::number( memSize ) + " kSample";
+      }else{
+        memStr = QString::number( memSize/1024., 'f', 1 ) + " MSample";
+      }
+      SetUpInfo("Ch. Mem. Size ",  memStr.toStdString() , infoLayout[ID], 3, 2);
+
       uint32_t boardInfo = digi[ID]->GetSettingFromMemory(DPP::BoardInfo_R);
-      SetUpInfo("Family Code ", (boardInfo & 0xFF) == 0x0E ? "725 Family" : "730 Family", infoLayout[ID], 3, 0);
-      SetUpInfo("Ch. Mem. Size ", ((boardInfo >> 8 ) & 0xFF) == 0x01 ? "640 kSample" : "5.12 MSample", infoLayout[ID], 3, 2);
-      SetUpInfo("Board Type ", ((boardInfo >> 16) & 0xFF) == 0x10 ? "16-ch VME" : "DT, NIM, or 8-ch VME", infoLayout[ID], 3, 4);
+      printf("----------- boardInfo : 0x%08X \n", boardInfo);
+      SetUpInfo("Board Type ", ((boardInfo >> 16) & 0xFF) == 0x10 ? "16-ch VME" : "8-ch Bd.", infoLayout[ID], 3, 4);
 
     }
 

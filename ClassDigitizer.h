@@ -36,6 +36,9 @@ class Digitizer{
     int                   ModelType;     /// VME or DT
     unsigned int          ADCFullSize;   /// pow(2, ADCbits) - 1
     float                 tick2ns;         /// channel to ns
+    unsigned int          MemorySizekSample; /// channel Memory size in kSample
+    std::string           familyName;
+
     CAEN_DGTZ_BoardInfo_t BoardInfo;
     
     //^----- adjustable parameters
@@ -144,6 +147,8 @@ class Digitizer{
     std::string GetAMCVersion()              const {return BoardInfo.AMC_FirmwareRel;}
     CAEN_DGTZ_ConnectionType   GetLinkType() const {return LinkType;}
     int         GetErrorCode()               const {return ret;}
+    unsigned int GetChMemSizekSample()       const {return MemorySizekSample;}
+    std::string GetFamilyName()              const {return familyName;}
     
     //^================ Setting 
     Reg FindRegister(uint32_t address);
@@ -184,6 +189,8 @@ class Digitizer{
     //====== Board Config breakDown
     bool IsDualTrace_PHA()           {return ( (GetSettingFromMemory(DPP::BoardConfiguration) >> 11) & 0x1 );}
     bool IsRecordTrace()             {return ( (GetSettingFromMemory(DPP::BoardConfiguration) >> 16) & 0x1 );}
+
+    void SetOptimialAggOrg();
 
     //QDC read recordLength
     uint32_t ReadQDCRecordLength()  {
