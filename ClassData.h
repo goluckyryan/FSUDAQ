@@ -47,6 +47,7 @@ class Data{
     unsigned long  TotNumNonPileUpEvents[MaxNChannels]; /// also exclude overthrow
     unsigned short NumEventsDecoded     [MaxNChannels]; /// reset after trig-rate calculation
     unsigned short NumNonPileUpDecoded  [MaxNChannels]; /// reset after trig-rate calculation
+    uShort countNumEventDecodeZero[MaxNChannels]; /// when > 3, set trigger rate to be zero;
 
     unsigned int   TotalAggCount ; 
     unsigned short AggCount ; /// reset after trig-rate calculation
@@ -71,6 +72,7 @@ class Data{
     std::vector<bool>  ** DigiWaveform2;
     std::vector<bool>  ** DigiWaveform3;
     std::vector<bool>  ** DigiWaveform4;
+
 
   public:
     Data(unsigned short numCh, uInt dataSize = DefaultDataSize);
@@ -108,7 +110,7 @@ class Data{
     uint64_t GetTotalFileSize() const {return FinishedOutFilesSize + outFileSize;}
     void ZeroTotalFileSize() { FinishedOutFilesSize = 0; }
 
-    void CalTriggerRate();
+    void CalTriggerRate(); // this method is called by FSUDAQ::UpdateScalar()
     void ClearReferenceTime();
 
   protected:
@@ -167,6 +169,7 @@ inline Data::Data(unsigned short numCh, uInt dataSize): numInputCh(numCh){
   for ( int i = 0; i < MaxNChannels; i++) {
     TotNumNonPileUpEvents[i] = 0;
     t0[i] = 0;
+    countNumEventDecodeZero[i] = 0;
   }
   ClearData();
   ClearTriggerRate();
@@ -286,6 +289,7 @@ inline void Data::ClearNumEventsDecoded(){
   for( int i = 0 ; i < MaxNChannels; i++) {
     NumEventsDecoded[i] = 0;
     NumNonPileUpDecoded[i] = 0;
+    countNumEventDecodeZero[i] = 0;
   }
   AggCount = 0;
 }
@@ -347,19 +351,23 @@ inline void Data::ClearReferenceTime(){
   for( int ch = 0; ch < numInputCh; ch ++ ) t0[ch] = 0;
 }
 
-inline void Data::CalTriggerRate(){
+inline void Data::CalTriggerRate(){ // this method is called by FSUDAQ::UpdateScalar()
 
   unsigned long long dTime = 0;
   double sec = -999;
 
-
   for( int ch = 0; ch < numInputCh; ch ++ ){
-    if( t0[ch] == 0 ) {
+    if( t0[ch] == 0 || countNumEventDecodeZero[ch] > 3) {
       TriggerRate[ch] = 0;
       NonPileUpRate[ch] = 0;
+      countNumEventDecodeZero[ch] = 0;
       continue;
     }
 
+    if( NumEventsDecoded[ch] == 0 ) {
+      countNumEventDecodeZero[ch] ++;
+      continue;
+    }
 
     if( NumEventsDecoded[ch] < dataSize ){
 
@@ -368,6 +376,8 @@ inline void Data::CalTriggerRate(){
 
       TriggerRate[ch] = (NumEventsDecoded[ch])/sec;
       NonPileUpRate[ch] = (NumNonPileUpDecoded[ch])/sec;
+
+      // printf("%2d | %d | %f %f \n", ch, NumEventsDecoded[ch], sec, TriggerRate[ch]);
 
     }else{
 

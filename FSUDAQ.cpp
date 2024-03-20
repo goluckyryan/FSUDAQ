@@ -766,6 +766,7 @@ void MainWindow::CloseDigitizers(){
   readDataThread = nullptr;
 
   for(unsigned int i = 0; i < nDigi; i ++){
+    digi[i]->StopACQ();
     digi[i]->CloseDigitizer();
     delete digi[i];
   }
@@ -1120,6 +1121,7 @@ void MainWindow::StartACQ(){
   }
 
   chkSaveData->setEnabled(false);
+  bnDigiSettings->setEnabled(false);
 
 }
 
@@ -1211,6 +1213,7 @@ void MainWindow::StopACQ(){
   }
 
   chkSaveData->setEnabled(true);
+  bnDigiSettings->setEnabled(true);
 
 }
 
