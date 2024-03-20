@@ -397,6 +397,17 @@ void DigiSettingsPanel::SetUpComboBoxBit(RComboBox * &cb, QString label, QGridLa
 
     int chID = ch < 0 ? chSelection[ID]->currentData().toInt() : ch;
 
+    if( ch == -1 && chID == -1) {
+
+      for(int kk = 0; kk < digi[ID]->GetNumRegChannels(); kk++){
+        digi[ID]->SetBits(para, bit, cb->currentData().toUInt(), kk);
+      }
+
+      UpdatePanelFromMemory();
+      emit UpdateOtherPanels();
+      return;
+    }
+
     digi[ID]->SetBits(para, bit, cb->currentData().toUInt(), chID);
     if( para.IsCoupled() == true && chID >= 0  ) digi[ID]->SetBits(para, bit, cb->currentData().toUInt(), chID%2 == 0 ? chID + 1 : chID - 1);
     UpdatePanelFromMemory();

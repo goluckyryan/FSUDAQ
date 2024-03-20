@@ -1339,8 +1339,10 @@ void Digitizer::SetOptimialAggOrg(){
   uint32_t aggOrg = std::floor(maxAggOrg) ;
   int bufferSize = pow(2, aggOrg) * EventAgg * eventSize;
   printf("================= BufferSize : %d kSample | system memeory : %d kSample \n", bufferSize / 1024, MemorySizekSample);
-
+  
   WriteRegister(DPP::AggregateOrganization, aggOrg);
+
+  //TODO when maxAggOrg < 1, need to reduce the Event/Agg
 
 
 }
