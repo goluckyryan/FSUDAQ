@@ -35,6 +35,9 @@ public:
   void LoadSetting();
   void SaveSetting();
 
+  void SetMaxFillTime(unsigned short milliSec) { maxFillTimeinMilliSec = milliSec;}
+  unsigned short GetMaxFillTime() const {return maxFillTimeinMilliSec;};
+
 public slots:
   void FillHistograms();
   void ChangeHistView();
@@ -65,6 +68,8 @@ private:
   bool fillHistograms;
 
   QString rawDataPath;
+
+  unsigned short maxFillTimeinMilliSec;
 
   bool isSignalSlotActive;
 

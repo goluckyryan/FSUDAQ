@@ -683,7 +683,7 @@ void MainWindow::OpenDigitizers(){
 
   canvas = new SingleSpectra(digi, nDigi, rawDataPath);
   histThread = new TimingThread(this);
-  histThread->SetWaitTimeinSec(0.5);
+  histThread->SetWaitTimeinSec(canvas->GetMaxFillTime()/1000.);
   connect(histThread, &TimingThread::timeUp, this, [=](){
     if( canvas == nullptr &&   !canvas->IsFillHistograms()) return; 
     canvas->FillHistograms();

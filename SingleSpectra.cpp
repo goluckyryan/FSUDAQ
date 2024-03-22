@@ -13,6 +13,8 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
   this->nDigi = nDigi;
   this->rawDataPath = rawDataPath;
 
+  maxFillTimeinMilliSec = 500;
+
   isSignalSlotActive = true;
 
   setWindowTitle("1-D Histograms");
@@ -201,9 +203,13 @@ void SingleSpectra::ChangeHistView(){
 void SingleSpectra::FillHistograms(){
   if( !fillHistograms ) return;
 
+  unsigned short maxFillTimePerDigi = maxFillTimeinMilliSec/nDigi;
+  timespec t0, t1;
+
   for( int i = 0; i < nDigi; i++){
 
     digiMTX[i].lock();
+    clock_gettime(CLOCK_REALTIME, &t0);
     for( int ch = 0; ch < digi[i]->GetNumInputCh(); ch ++ ){
       int lastIndex = digi[i]->GetData()->GetDataIndex(ch);
       if( lastIndex < 0 ) continue;
@@ -233,6 +239,9 @@ void SingleSpectra::FillHistograms(){
       }
       if( histVisibility[i][ch]  ) hist[i][ch]->UpdatePlot();
       if( hist2DVisibility[i] ) hist2D[i]->UpdatePlot();
+
+      clock_gettime(CLOCK_REALTIME, &t1);
+      if( t1.tv_nsec - t0.tv_nsec + (t1.tv_sec - t0.tv_sec)*1e9 > maxFillTimePerDigi * 1e6 ) break;  
     }
     digiMTX[i].unlock();
 
