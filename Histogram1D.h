@@ -2,6 +2,7 @@
 #define HISTOGRAM_1D_H
 
 #include "qcustomplot.h"
+#include "macro.h"
 
 #define MaxNHist 10
 
@@ -11,7 +12,7 @@ class Histogram1D : public QCustomPlot{
   Q_OBJECT
 public:
   Histogram1D(QString title, QString xLabel, int xbin, double xmin, double xmax, QWidget * parent = nullptr) : QCustomPlot(parent){
-
+    DebugPrint("%s", "Histogram1D");
     isLogY = false;
 
     for( int i = 0; i < 3; i ++) txt[i] = nullptr;
@@ -194,6 +195,7 @@ public:
   double GetXMax() const {return xMax;}
 
   void SetColor(QColor color, unsigned short ID = 0) {
+    DebugPrint("%s", "Histogram1D");
     graph(ID)->setPen(QPen(color));
     QColor haha = color;
     haha.setAlpha(20);
@@ -208,6 +210,7 @@ public:
   }
 
   void UpdatePlot(){
+    DebugPrint("%s", "Histogram1D");
     for( int ID = 0 ; ID < nData; ID ++) graph(ID)->setData(xList, yList[ID]);
     xAxis->setRangeLower(xMin);
     xAxis->setRangeUpper(xMax);
@@ -217,6 +220,7 @@ public:
   }
 
   void Clear(){
+    DebugPrint("%s", "Histogram1D");
     for( int ID = 0 ; ID < nData; ID ++) {
       for( int i = 0; i <= yList[ID].count(); i++) yList[ID][i] = 0;
     }
@@ -233,6 +237,7 @@ public:
   void SetXTitle(QString xTitle) { xAxis->setLabel(xTitle); }
 
   void Rebin(int xbin, double xmin, double xmax){
+    DebugPrint("%s", "Histogram1D");
     xMin = xmin;
     xMax = xmax;
     xBin = xbin;
@@ -263,6 +268,7 @@ public:
   }
 
   void Fill(double value, unsigned int ID = 0){
+    // DebugPrint("%s", "Histogram1D");
     if( ID == 0 ){
       totalEntry ++;
       txt[1]->setText("Total Entry : "+ QString::number(totalEntry));

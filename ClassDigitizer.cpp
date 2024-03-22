@@ -1,20 +1,24 @@
 #include "ClassDigitizer.h"
 
 Digitizer::Digitizer(){
+  DebugPrint("%s", "Digitizer");
   Initalization();
 }
 
 Digitizer::Digitizer(int boardID, int portID, bool program,  bool verbose){
+  DebugPrint("%s", "Digitizer");
   Initalization();
   OpenDigitizer(boardID, portID, program, verbose);
 }
 
 Digitizer::~Digitizer(){
+  DebugPrint("%s", "Digitizer");
   CloseDigitizer();
   delete data;
 }
 
 void Digitizer::Initalization(){
+  DebugPrint("%s", "Digitizer");
 
   data = nullptr; 
 
@@ -52,6 +56,7 @@ void Digitizer::Initalization(){
 }
 
 void Digitizer::Reset(){
+  DebugPrint("%s", "Digitizer");
   // ret = CAEN_DGTZ_Reset(handle);
   // if( ret != 0 ) ErrorMsg(__func__);
   
@@ -65,6 +70,7 @@ void Digitizer::Reset(){
 }
 
 void Digitizer::PrintBoard (){
+  DebugPrint("%s", "Digitizer");
   printf("Connected to Model %s with handle %d using %s\n", BoardInfo.ModelName, handle, LinkType == CAEN_DGTZ_USB ? "USB" : "Optical Link");
   printf("          Family Name : %s \n", familyName.c_str());
   printf("        Sampling rate : %.1f MHz = %.1f ns \n", 1000./tick2ns, tick2ns);
@@ -79,7 +85,7 @@ void Digitizer::PrintBoard (){
 }
 
 int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose){
-  
+  DebugPrint("%s", "Digitizer");
   this->boardID = boardID;
   this->portID = portID;
   
@@ -267,7 +273,7 @@ int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose
 }
 
 int Digitizer::CloseDigitizer(){
-
+  DebugPrint("%s", "Digitizer");
   if( !isConnected ) return 0;
   isConnected = false;
   ret  = CAEN_DGTZ_SWStopAcquisition(handle);
@@ -280,6 +286,7 @@ int Digitizer::CloseDigitizer(){
 
 
 void Digitizer::SetRegChannelMask(uint32_t mask){
+  DebugPrint("%s", "Digitizer");
   if( softwareDisable ) return;
   if( !isConnected ) return;
   regChannelMask = mask;
@@ -289,7 +296,8 @@ void Digitizer::SetRegChannelMask(uint32_t mask){
   ErrorMsg(__func__);
 }
 
-bool Digitizer::GetInputChannelOnOff(unsigned ch) { 
+bool Digitizer::GetInputChannelOnOff(unsigned ch) {
+  DebugPrint("%s", "Digitizer");
   if( softwareDisable ) return false;
 
   regChannelMask = GetSettingFromMemory(DPP::RegChannelEnableMask); 
@@ -301,6 +309,7 @@ bool Digitizer::GetInputChannelOnOff(unsigned ch) {
 } 
 
 void Digitizer::SetRegChannelOnOff(unsigned short ch, bool onOff){
+  DebugPrint("%s", "Digitizer");
   if( softwareDisable ) return;
   if( !isConnected ) return;
   regChannelMask = ((regChannelMask & ~( 1 << ch) ) | ( onOff << ch)) ;
@@ -308,12 +317,14 @@ void Digitizer::SetRegChannelOnOff(unsigned short ch, bool onOff){
 }
 
 void Digitizer::ProgramBoard(){
+  DebugPrint("%s", "Digitizer");
   if( DPPType == DPPTypeCode::DPP_PHA_CODE ) ProgramBoard_PHA();
   if( DPPType == DPPTypeCode::DPP_PSD_CODE ) ProgramBoard_PSD();
   if( DPPType == DPPTypeCode::DPP_QDC_CODE ) ProgramBoard_QDC();
 }
 
 int Digitizer::ProgramBoard_PHA(){
+  DebugPrint("%s", "Digitizer");
   if( softwareDisable ) return 0;
 
   printf("===== Digitizer::%s\n", __func__);
@@ -513,6 +524,7 @@ int Digitizer::ProgramBoard_QDC(){
 
 //========================================================= ACQ control
 void Digitizer::StartACQ(){
+  DebugPrint("%s", "Digitizer");
   if( softwareDisable ) return;
   if ( AcqRun ) return;
 
@@ -580,6 +592,7 @@ void Digitizer::StartACQ(){
 }
 
 void Digitizer::StopACQ(){
+  DebugPrint("%s", "Digitizer");
   if( !AcqRun ) return;
   int ret = CAEN_DGTZ_SWStopAcquisition(handle);
   ret |= CAEN_DGTZ_ClearData(handle);
@@ -595,6 +608,7 @@ void Digitizer::StopACQ(){
 }
 
 unsigned int Digitizer::CalByteForBuffer(bool verbose){
+  DebugPrint("%s", "Digitizer");
   unsigned int numAggBLT;
   unsigned int chMask   ;    
   unsigned int boardCfg ;
@@ -650,7 +664,7 @@ unsigned int Digitizer::CalByteForBuffer(bool verbose){
 }
 
 unsigned int Digitizer::CalByteForBufferCAEN(){
-
+  DebugPrint("%s", "Digitizer");
   char * BufferCAEN;
   uint32_t AllocatedSize;
   ret = CAEN_DGTZ_MallocReadoutBuffer(handle, &BufferCAEN, &AllocatedSize);
@@ -661,6 +675,7 @@ unsigned int Digitizer::CalByteForBufferCAEN(){
 }
 
 int Digitizer::ReadData(){
+  // DebugPrint("%s", "Digitizer");
   if( softwareDisable ) return CAEN_DGTZ_DigitizerNotReady;
   if( !isConnected ) return CAEN_DGTZ_DigitizerNotFound;
   if( !AcqRun) return CAEN_DGTZ_WrongAcqMode;
@@ -687,6 +702,7 @@ int Digitizer::ReadData(){
 }
 
 void Digitizer::ReadAndPrintACQStatue(){
+  DebugPrint("%s", "Digitizer");
   if( !isConnected ) return;
   unsigned int status = ReadRegister(DPP::AcquisitionStatus_R);
   
@@ -721,7 +737,7 @@ void Digitizer::WriteRegister (Reg registerAddress, uint32_t value, int ch, bool
   
   ret = CAEN_DGTZ_WriteRegister(handle, registerAddress.ActualAddress(ch), value);
 
-  if( ret == 0 && isSave2MemAndFile && registerAddress.GetRWType() == RW::ReadWrite) {
+  if( ret == 0 && isSave2MemAndFile && !AcqRun && registerAddress.GetRWType() == RW::ReadWrite ) {
     if( ch < 0 ) {
       if( registerAddress.GetAddress() < 0x8000 ){
         for(int i = 0; i < NumInputCh; i++){
@@ -742,7 +758,7 @@ void Digitizer::WriteRegister (Reg registerAddress, uint32_t value, int ch, bool
     }
   }
 
-  if( ret == 0 && isSave2MemAndFile && registerAddress == DPP::QDC::RecordLength_W){
+  if( ret == 0 && isSave2MemAndFile && !AcqRun && registerAddress == DPP::QDC::RecordLength_W){
     SetSettingToMemory(registerAddress, value, 0);
     SaveSettingToFile(registerAddress, value, 0);
   }
@@ -753,6 +769,7 @@ void Digitizer::WriteRegister (Reg registerAddress, uint32_t value, int ch, bool
 }
 
 uint32_t Digitizer::ReadRegister(Reg registerAddress, unsigned short ch, bool isSave2MemAndFile, std::string str ){
+  DebugPrint("%s", "Digitizer");
   if( softwareDisable ) return 0;
   if( !isConnected )  return 0;
   if( registerAddress.GetRWType() == RW::WriteONLY ) return 0;
@@ -760,7 +777,7 @@ uint32_t Digitizer::ReadRegister(Reg registerAddress, unsigned short ch, bool is
 
   ret = CAEN_DGTZ_ReadRegister(handle, registerAddress.ActualAddress(ch), &returnData);
   
-  if( ret == 0 && isSave2MemAndFile) {
+  if( ret == 0 && isSave2MemAndFile && !AcqRun) {
   //if( isSave2MemAndFile) {
     SetSettingToMemory(registerAddress, returnData, ch);
     SaveSettingToFile(registerAddress, returnData, ch);
@@ -900,6 +917,7 @@ void Digitizer::ReadAllSettingsFromBoard(bool force){
 }
 
 void Digitizer::ProgramSettingsToBoard(){
+  DebugPrint("%s", "Digitizer");
   if( softwareDisable ) return;
   if( !isConnected || isDummy ) return;
   
@@ -989,23 +1007,26 @@ void Digitizer::ProgramSettingsToBoard(){
 }
 
 void Digitizer::SetSettingToMemory(Reg registerAddress,  unsigned int value, unsigned short ch ){
+  DebugPrint("%s", "Digitizer");
   unsigned short index = registerAddress.Index(ch);
   if( index > SETTINGSIZE ) return;
   setting[index] = value;
 }
 
 unsigned int Digitizer::GetSettingFromMemory(Reg registerAddress, unsigned short ch ){
+  DebugPrint("%s", "Digitizer");
   unsigned short index = registerAddress.Index(ch);
   if( index > SETTINGSIZE ) return 0xFFFF;
   return setting[index] ;
 }
 
 void Digitizer::PrintSettingFromMemory(){
+  DebugPrint("%s", "Digitizer");
   for( int i = 0; i < SETTINGSIZE; i++) printf("%4d | 0x%04X |0x%08X = %u \n", i, i*4, setting[i], setting[i]);
 }
 
 void Digitizer::SetSettingBinaryPath(std::string fileName){
-  
+  DebugPrint("%s", "Digitizer");
   settingFile = fopen(fileName.c_str(), "r+");
   if( settingFile == NULL ){
     printf("cannot open file %s. Create one.\n", fileName.c_str());
@@ -1026,7 +1047,7 @@ void Digitizer::SetSettingBinaryPath(std::string fileName){
 }
 
 int Digitizer::LoadSettingBinaryToMemory(std::string fileName){
-  
+  DebugPrint("%s", "Digitizer");
   settingFile = fopen(fileName.c_str(), "r");
   
   if( settingFile == NULL ) {
@@ -1070,6 +1091,7 @@ int Digitizer::LoadSettingBinaryToMemory(std::string fileName){
 }
     
 unsigned int Digitizer::ReadSettingFromFile(Reg registerAddress, unsigned short ch){
+  DebugPrint("%s", "Digitizer");
   if ( !isSettingFileExist ) return -1;
   
   unsigned short index = registerAddress.Index(ch);
@@ -1090,7 +1112,7 @@ unsigned int Digitizer::ReadSettingFromFile(Reg registerAddress, unsigned short 
 }
 
 void Digitizer::SaveSettingToFile(Reg registerAddress, unsigned int value, unsigned short ch){
-
+  DebugPrint("%s", "Digitizer");
   if ( !isSettingFileExist ) return ;
   if ( !isSettingFileUpdate ) return;
 
@@ -1109,7 +1131,7 @@ void Digitizer::SaveSettingToFile(Reg registerAddress, unsigned int value, unsig
 }
 
 void Digitizer::SaveAllSettingsAsBin(std::string fileName){
-  
+  DebugPrint("%s", "Digitizer");
   SaveAllSettingsAsTextForRun(fileName);
   
   if( !isSettingFilledinMemeory ) return;
@@ -1120,6 +1142,7 @@ void Digitizer::SaveAllSettingsAsBin(std::string fileName){
 }
 
 void Digitizer::SaveAllSettingsAsTextForRun (std::string fileName){
+  DebugPrint("%s", "Digitizer");
   if( !isSettingFilledinMemeory ) return;
   
   FILE * binFile = fopen(fileName.c_str(), "w+");
@@ -1137,6 +1160,7 @@ void Digitizer::SaveAllSettingsAsTextForRun (std::string fileName){
 }
 
 void Digitizer::SaveAllSettingsAsText(std::string fileName){
+  DebugPrint("%s", "Digitizer");
   if( !isSettingFilledinMemeory && isConnected) return;
   
   FILE * txtFile = fopen(fileName.c_str(), "w+");  
@@ -1276,12 +1300,14 @@ void Digitizer::ErrorMsg(std::string header){
 
 //============================== DPP-Alpgorthm Control 
 void Digitizer::SetDPPAlgorithmControl(uint32_t bit, int ch){
+  DebugPrint("%s", "Digitizer");
   if( softwareDisable ) return;
   WriteRegister( DPP::DPPAlgorithmControl, bit, ch);    
   if( ret != 0 ) ErrorMsg(__func__);
 }
 
 unsigned int Digitizer::ReadBits(Reg address, unsigned int bitLength, unsigned int bitSmallestPos, int ch ){
+  DebugPrint("%s", "Digitizer");
   if( softwareDisable ) return 0;
   int tempCh = ch;
   if (ch < 0 && address < 0x8000 ) tempCh = 0; /// take ch-0 
@@ -1291,6 +1317,7 @@ unsigned int Digitizer::ReadBits(Reg address, unsigned int bitLength, unsigned i
 }
 
 void Digitizer::SetBits(Reg address, unsigned int bitValue, unsigned int bitLength, unsigned int bitSmallestPos, int ch){
+  DebugPrint("%s", "Digitizer");
   if( softwareDisable ) return;
   ///printf("address : 0x%X, value : 0x%X, len : %d, pos : %d, ch : %d \n", address, bitValue, bitLength, bitSmallestPos, ch);
   uint32_t bit ;
@@ -1306,7 +1333,7 @@ void Digitizer::SetBits(Reg address, unsigned int bitValue, unsigned int bitLeng
 }
 
 void Digitizer::SetOptimialAggOrg(){
-
+  DebugPrint("%s", "Digitizer");
   if( DPPType != DPPTypeCode::DPP_QDC_CODE ) {
     printf("%s | this method only support QDC board.\n", __func__); 
     return;

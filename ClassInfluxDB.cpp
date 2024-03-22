@@ -1,9 +1,10 @@
 #include "ClassInfluxDB.h"
+#include "macro.h"
 
 #include <regex>
 
 InfluxDB::InfluxDB(){
-
+  DebugPrint("%s", "InfluxDB")
   curl = curl_easy_init();  
   databaseIP = "";
   respondCode = 0;
@@ -16,7 +17,7 @@ InfluxDB::InfluxDB(){
 }
 
 InfluxDB::InfluxDB(std::string url, bool verbose){
-
+  DebugPrint("%s", "InfluxDB")
   curl = curl_easy_init();  
   if( verbose) curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
   SetURL(url);
@@ -30,11 +31,13 @@ InfluxDB::InfluxDB(std::string url, bool verbose){
 }
 
 InfluxDB::~InfluxDB(){
+  DebugPrint("%s", "InfluxDB")
   curl_slist_free_all(headers);
   curl_easy_cleanup(curl);
 }
 
 void InfluxDB::SetURL(std::string url){
+  DebugPrint("%s", "InfluxDB")
   // check the last char of url is "/"
   if( url.back() != '/') {
     this->databaseIP = url + "/";
@@ -44,12 +47,14 @@ void InfluxDB::SetURL(std::string url){
 }
 
 void InfluxDB::SetToken(std::string token){
+  DebugPrint("%s", "InfluxDB")
   this->token = token;
   headers = curl_slist_append(headers, "Accept: application/csv");
   if( !token.empty() ) headers = curl_slist_append(headers, ("Authorization: Token " + token).c_str());
 }
 
 bool InfluxDB::TestingConnection(bool debug){
+  DebugPrint("%s", "InfluxDB")
   CheckInfluxVersion(debug);
   if( respond != CURLE_OK ) return false;
   connectionOK = true;
@@ -57,7 +62,7 @@ bool InfluxDB::TestingConnection(bool debug){
 }
 
 std::string InfluxDB::CheckInfluxVersion(bool debug){
-
+  DebugPrint("%s", "InfluxDB")
   curl_easy_setopt(curl, CURLOPT_URL, (databaseIP   + "ping").c_str());
   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, NULL);
   curl_easy_setopt(curl, CURLOPT_HEADER, 1);
@@ -92,6 +97,7 @@ std::string InfluxDB::CheckInfluxVersion(bool debug){
 }
 
 std::string InfluxDB::CheckDatabases(){
+  DebugPrint("%s", "InfluxDB")
   if( ! connectionOK ) return "no connection. try TestConnection() again.";
   if( influxVersion == 2 && token.empty() ) return "token no provided, abort.";
 
@@ -169,7 +175,7 @@ std::string InfluxDB::CheckDatabases(){
 }
 
 void InfluxDB::PrintDataBaseList(){
-
+  DebugPrint("%s", "InfluxDB")
   for( size_t i = 0; i < databaseList.size(); i++){
     printf("%2ld| %s\n", i, databaseList[i].c_str());
   }
@@ -177,6 +183,7 @@ void InfluxDB::PrintDataBaseList(){
 }
 
 std::string InfluxDB::Query(std::string databaseName, std::string influxQL_query){
+  DebugPrint("%s", "InfluxDB")
   if( ! connectionOK ) return "no connection. try TestConnection() again.";
   if( influxVersion == 2 && token.empty() ) return "token no provided, abort.";
 
@@ -202,6 +209,7 @@ std::string InfluxDB::Query(std::string databaseName, std::string influxQL_query
 }
 
 void InfluxDB::CreateDatabase(std::string databaseName){
+  DebugPrint("%s", "InfluxDB")
   if( ! connectionOK ) return ;
   if( influxVersion == 2 && token.empty() ) return;
 
@@ -218,21 +226,25 @@ void InfluxDB::CreateDatabase(std::string databaseName){
 }
 
 void InfluxDB::AddDataPoint(std::string fullString){
+  DebugPrint("%s", "InfluxDB")
   // printf(" InfluxDB::%s |%s| \n", __func__, fullString.c_str());
   dataPoints += fullString + "\n";
 }
 
 void InfluxDB::ClearDataPointsBuffer(){
+  DebugPrint("%s", "InfluxDB")
   // printf(" InfluxDB::%s \n", __func__);
   dataPoints = "";
 }
 
 void InfluxDB::PrintDataPoints(){
+  DebugPrint("%s", "InfluxDB")
   // printf(" InfluxDB::%s \n", __func__);
   printf("%s\n", dataPoints.c_str());
 }
 
-void InfluxDB::WriteData(std::string databaseName){  
+void InfluxDB::WriteData(std::string databaseName){
+  DebugPrint("%s", "InfluxDB")
   if( ! connectionOK ) return ;
   if( influxVersion == 2 && token.empty() ) return;
 
@@ -250,6 +262,7 @@ void InfluxDB::WriteData(std::string databaseName){
 }
 
 void InfluxDB::Execute(){
+  DebugPrint("%s", "InfluxDB")
   // printf(" InfluxDB::%s \n", __func__);
   try{
     respond = curl_easy_perform(curl);
@@ -263,6 +276,7 @@ void InfluxDB::Execute(){
 }
 
 size_t InfluxDB::WriteCallBack(char *contents, size_t size, size_t nmemb, void *userp){
+  DebugPrint("%s", "InfluxDB")
   // printf(" InfluxDB::%s \n", __func__);
   ((std::string*)userp)->append((char*)contents, size * nmemb);
   return size * nmemb;

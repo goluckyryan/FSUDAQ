@@ -8,7 +8,7 @@
 #include <QLabel>
 
 QVector<QPointF> Scope::TrapezoidFilter(QVector<QPointF> data, int baseLineEndS, int riseTimeS, int flatTopS, float decayTime_ns){
-  
+  DebugPrint("%s", "Scope");
   QVector<QPointF>  trapezoid;
   trapezoid.clear();
   
@@ -47,7 +47,7 @@ QVector<QPointF> Scope::TrapezoidFilter(QVector<QPointF> data, int baseLineEndS,
 
 
 Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataThread, QMainWindow * parent) : QMainWindow(parent){
-
+  DebugPrint("%s", "Scope");
   this->digi = digi;
   this->nDigi = nDigi;
   this->readDataThread = readDataThread;
@@ -307,7 +307,7 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
 
 
 Scope::~Scope(){
-
+  DebugPrint("%s", "Scope");
   updateTraceThread->Stop();
   updateTraceThread->quit();
   updateTraceThread->wait();
@@ -323,7 +323,7 @@ Scope::~Scope(){
 }
 
 void Scope::NullThePointers(){
-
+  DebugPrint("%s", "Scope");
   sbReordLength = nullptr;
   sbPreTrigger = nullptr;
   sbDCOffset = nullptr;
@@ -359,6 +359,7 @@ void Scope::NullThePointers(){
 //*=======================================================
 //*=======================================================
 void Scope::StartScope(){
+  DebugPrint("%s", "Scope");
   if( !digi ) return;
 
   //TODO set other channel to be no trace;
@@ -406,6 +407,7 @@ void Scope::StartScope(){
 }
 
 void Scope::StopScope(){
+  DebugPrint("%s", "Scope");
   if( !digi ) return;
 
   // printf("------ Scope::%s \n", __func__);
@@ -455,7 +457,7 @@ void Scope::StopScope(){
 }
 
 void Scope::UpdateScope(){
-
+  DebugPrint("%s", "Scope");
   if( !digi ) return;
 
   int ch = cbScopeCh->currentIndex();
@@ -556,6 +558,7 @@ void Scope::UpdateScope(){
 //*=======================================================
 //*=======================================================
 void Scope::SetUpComboBoxSimple(RComboBox * &cb, QString str, int row, int col){
+  DebugPrint("%s", "Scope");
   QLabel * lb = new QLabel(str, settingGroup);
   lb->setAlignment(Qt::AlignRight | Qt::AlignCenter);
   settingLayout->addWidget(lb, row, col);
@@ -566,7 +569,7 @@ void Scope::SetUpComboBoxSimple(RComboBox * &cb, QString str, int row, int col){
 }
 
 void Scope::SetUpComboBox(RComboBox * &cb, QString str, int row, int col, const Reg para){
-  
+  DebugPrint("%s", "Scope");
   SetUpComboBoxSimple(cb, str, row, col);
 
   for( int i = 0; i < (int) para.GetComboList().size(); i++){
@@ -612,7 +615,7 @@ void Scope::SetUpComboBox(RComboBox * &cb, QString str, int row, int col, const 
 }
 
 void Scope::SetUpSpinBox(RSpinBox * &sb, QString str, int row, int col, const Reg para){
-
+  DebugPrint("%s", "Scope");
   QLabel * lb = new QLabel(str, settingGroup);
   lb->setAlignment(Qt::AlignRight | Qt::AlignCenter);
   settingLayout->addWidget(lb, row, col);
@@ -687,7 +690,7 @@ void Scope::SetUpSpinBox(RSpinBox * &sb, QString str, int row, int col, const Re
 }
 
 void Scope::CleanUpSettingsGroupBox(){
-
+  DebugPrint("%s", "Scope");
   QList<QLabel *> labelChildren1 = settingGroup->findChildren<QLabel *>();
   for( int i = 0; i < labelChildren1.size(); i++) delete labelChildren1[i];
   
@@ -983,7 +986,7 @@ void Scope::SetUpPanel_QDC() {
 }
 
 void Scope::EnableControl(bool enable){
-
+  DebugPrint("%s", "Scope");
   if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ){
 
     sbReordLength->setEnabled(enable);
@@ -1018,6 +1021,7 @@ void Scope::EnableControl(bool enable){
 //*=======================================================
 
 void Scope::UpdateComobox(RComboBox * &cb, const Reg para){
+  DebugPrint("%s", "Scope");
   int ch = cbScopeCh->currentIndex();
 
   enableSignalSlot = false;
@@ -1041,6 +1045,7 @@ void Scope::UpdateComobox(RComboBox * &cb, const Reg para){
 }
 
 void Scope::UpdateSpinBox(RSpinBox * &sb, const Reg para){
+  DebugPrint("%s", "Scope");
   int ch = cbScopeCh->currentIndex();
 
   if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_QDC_CODE ) ch = ch /8;
@@ -1071,6 +1076,7 @@ void Scope::UpdatePanelFromMomeory(){
 
 void Scope::UpdatePanel_PHA(){
   enableSignalSlot = false;
+  printf("==== %s \n", __func__);
 
   int ch = cbScopeCh->currentIndex();
 
@@ -1260,7 +1266,7 @@ void Scope::UpdatePanel_QDC(){
 }
 
 void Scope::ReadSettingsFromBoard(){
-
+  DebugPrint("%s", "Scope");
   digi[ID]->ReadRegister(DPP::BoardConfiguration);
 
   if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ){

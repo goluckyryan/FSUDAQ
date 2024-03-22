@@ -2,6 +2,7 @@
 #define HISTOGRAM_2D_H
 
 #include "qcustomplot.h"
+#include "macro.h"
 
 const QList<QPair<QColor, QString>> colorCycle = { {QColor(Qt::red), "Red"},
                                                    {QColor(Qt::blue), "Blue"},
@@ -19,7 +20,7 @@ class Histogram2D : public QCustomPlot{
   
 public:
   Histogram2D(QString title, QString xLabel, QString yLabel, int xbin, double xmin, double xmax, int ybin, double ymin, double ymax, QWidget * parent = nullptr) : QCustomPlot(parent){
-
+    DebugPrint("%s", "Histogram2D");
     for( int i = 0; i < 3; i ++ ){
       for( int j = 0; j < 3; j ++ ){
         box[i][j] = nullptr;
@@ -269,6 +270,7 @@ private:
 //^###############################################
 
 inline void Histogram2D::Fill(double x, double y){
+  // DebugPrint("%s", "Histogram2D");
   if( isBusy ) return;
   int xIndex, yIndex;
   colorMap->data()->coordToCell(x, y, &xIndex, &yIndex);
@@ -277,8 +279,8 @@ inline void Histogram2D::Fill(double x, double y){
   int xk = 1, yk = 1;
   if( xIndex < 0 ) xk = 0;
   if( xIndex >= xBin ) xk = 2;
-  if( yIndex < 0 ) yk = 0;
-  if( yIndex >= yBin ) yk = 2;
+  if( yIndex < 0 ) yk = 2;
+  if( yIndex >= yBin ) yk = 0;
   entry[xk][yk] ++;
 
   txt[xk][yk]->setText(QString::number(entry[xk][yk]));
@@ -295,6 +297,7 @@ inline void Histogram2D::Fill(double x, double y){
 }
 
 inline  void Histogram2D::Rebin(int xbin, double xmin, double xmax, int ybin, double ymin, double ymax){
+  DebugPrint("%s", "Histogram2D");
   xMin = xmin;
   xMax = xmax;
   yMin = ymin;
@@ -322,6 +325,7 @@ inline  void Histogram2D::Rebin(int xbin, double xmin, double xmax, int ybin, do
 }
 
 inline void Histogram2D::Clear(){
+  DebugPrint("%s", "Histogram2D");
   for( int i = 0; i < 3; i ++){
     for( int j = 0; j < 3; j ++){
       entry[i][j] = 0;
@@ -337,6 +341,7 @@ inline void Histogram2D::Clear(){
 
 
 inline void Histogram2D::ClearAllCuts(){
+  DebugPrint("%s", "Histogram2D");
   numCut = 0;
   tempCutID = -1;
   lastPlottableID = -1;
@@ -356,6 +361,7 @@ inline void Histogram2D::ClearAllCuts(){
 }
 
 inline void Histogram2D::PrintCutEntry() const{
+  DebugPrint("%s", "Histogram2D");
   if( numCut == 0 ) return;
   printf("=============== There are %d cuts.\n", numCut);
   for( int i = 0; i < cutList.count(); i++){
@@ -365,7 +371,7 @@ inline void Histogram2D::PrintCutEntry() const{
 }
 
 inline void Histogram2D::DrawCut(){
-
+  DebugPrint("%s", "Histogram2D");
   //The histogram is the 1st plottable.
   // the lastPlottableID should be numCut+ 1
   if( lastPlottableID != numCut ){
@@ -393,6 +399,7 @@ inline void Histogram2D::DrawCut(){
 }
 
 inline void Histogram2D::rightMouseClickMenu(QMouseEvent * event){
+  DebugPrint("%s", "Histogram2D");
   usingMenu = true;
   setSelectionRectMode(QCP::SelectionRectMode::srmNone);
 
@@ -544,6 +551,7 @@ inline void Histogram2D::rightMouseClickMenu(QMouseEvent * event){
 }
 
 inline void Histogram2D::rightMouseClickRebin(){
+  DebugPrint("%s", "Histogram2D");
   QDialog dialog(this);
   dialog.setWindowTitle("Rebin histogram");
 

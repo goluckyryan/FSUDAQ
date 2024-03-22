@@ -3,6 +3,7 @@
 #include <algorithm>
 
 MultiBuilder::MultiBuilder(Data ** multiData, std::vector<int> type, std::vector<int> sn) : nData(type.size()){
+  DebugPrint("%s", "MultiBuilder");
   data = multiData;
   typeList = type;
   snList = sn;
@@ -25,6 +26,7 @@ MultiBuilder::MultiBuilder(Data ** multiData, std::vector<int> type, std::vector
 }
 
 MultiBuilder::MultiBuilder(Data * singleData, int type, int sn): nData(1){
+  DebugPrint("%s", "MultiBuilder");
   data = new Data *[1];
   data[0] = singleData;
   typeList.push_back(type);
@@ -40,9 +42,11 @@ MultiBuilder::MultiBuilder(Data * singleData, int type, int sn): nData(1){
 }
 
 MultiBuilder::~MultiBuilder(){
+  DebugPrint("%s", "MultiBuilder");
 }
 
 void MultiBuilder::ClearEvents(){
+  DebugPrint("%s", "MultiBuilder");
   eventIndex = -1;
   eventBuilt = 0;
   totalEventBuilt = 0;
@@ -66,7 +70,7 @@ void MultiBuilder::ClearEvents(){
 }
 
 void MultiBuilder::PrintStat(){
-
+  DebugPrint("%s", "MultiBuilder");
   printf("Total number of evet built : %ld\n", totalEventBuilt);
   for( int i = 0; i < nData ; i++){
     for( int ch = 0; ch < data[i]->GetNChannel() ; ch++){
@@ -77,7 +81,7 @@ void MultiBuilder::PrintStat(){
 }
 
 void MultiBuilder::PrintAllEvent(){
-
+  DebugPrint("%s", "MultiBuilder");
   printf("Total number of evet built : %ld\n", totalEventBuilt);
   for( int i = 0; i < totalEventBuilt; i++){
     printf("%5d ------- size: %ld\n", i, events[i].size());
@@ -89,7 +93,7 @@ void MultiBuilder::PrintAllEvent(){
 }
 
 void MultiBuilder::FindEarlistTimeAndCh(bool verbose){
-
+  DebugPrint("%s", "MultiBuilder");
   earlistTime = -1;
   earlistDigi = -1;
   earlistCh = -1;
@@ -130,7 +134,7 @@ void MultiBuilder::FindEarlistTimeAndCh(bool verbose){
 }
 
 void MultiBuilder::FindLatestTimeAndCh(bool verbose){
-
+  DebugPrint("%s", "MultiBuilder");
   latestTime = 0;
   latestDigi = -1;
   latestCh = -1;
@@ -165,6 +169,7 @@ void MultiBuilder::FindLatestTimeAndCh(bool verbose){
 }
 
 void MultiBuilder::FindEarlistTimeAmongLastData(bool verbose){
+  DebugPrint("%s", "MultiBuilder");
   latestTime = -1;
   latestCh = -1;
   latestDigi = -1;
@@ -184,6 +189,7 @@ void MultiBuilder::FindEarlistTimeAmongLastData(bool verbose){
 }
   
 void MultiBuilder::FindLatestTimeOfData(bool verbose){
+  DebugPrint("%s", "MultiBuilder");
   latestTime = 0;
   latestCh = -1;
   latestDigi = -1;
@@ -204,7 +210,7 @@ void MultiBuilder::FindLatestTimeOfData(bool verbose){
 }
 
 void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
-
+  DebugPrint("%s", "MultiBuilder");
   FindEarlistTimeAmongLastData(verbose); // give lastest Time, Ch, and Digi
 
   FindEarlistTimeAndCh(verbose); //Give the earliest time, ch, digi
@@ -334,7 +340,7 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
 }
 
 void MultiBuilder::BuildEventsBackWard(int maxNumEvent, bool verbose){
-
+  DebugPrint("%s", "MultiBuilder");
   //skip trace, and only build for maxNumEvent events max
 
   // remember the end of DataIndex, prevent over build

@@ -43,4 +43,14 @@ typedef unsigned int uInt;
 typedef unsigned long  uLong;
 typedef unsigned long long ullong;
 
+#define DebugMode 0 //process check, when 1, print out all function call
+
+// if DebugMode is 1, define DebugPrint() to be printf(), else, DebugPrint() define nothing
+#if DebugMode
+#define DebugPrint(fmt, ...) printf(fmt "::%s\n",##__VA_ARGS__, __func__);
+#else
+#define DebugPrint(fmt, ...)
+#endif
+
+
 #endif

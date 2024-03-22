@@ -8,7 +8,7 @@
 #include <QRandomGenerator>
 
 SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawDataPath, QMainWindow * parent) : QMainWindow(parent){
-
+  DebugPrint("%s", "SingleSpectra");
   this->digi = digi;
   this->nDigi = nDigi;
   this->rawDataPath = rawDataPath;
@@ -69,8 +69,8 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
       for( unsigned int i = 0; i < nDigi; i++){
         for( int j = 0; j < digi[i]->GetNumInputCh(); j++){
           if( hist[i][j] ) hist[i][j]->Clear();
-          lastFilledIndex[i][j] = -1;
-          loopFilledIndex[i][j] = 0;
+          // lastFilledIndex[i][j] = -1;
+          // loopFilledIndex[i][j] = 0;
         }
         if( hist2D[i] ) hist2D[i]->Clear();
       }
@@ -132,7 +132,7 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
 }
 
 SingleSpectra::~SingleSpectra(){
-
+  DebugPrint("%s", "SingleSpectra");
   SaveSetting();
 
   for( unsigned int i = 0; i < nDigi; i++ ){
@@ -144,6 +144,7 @@ SingleSpectra::~SingleSpectra(){
 }
 
 void SingleSpectra::ClearInternalDataCount(){
+  DebugPrint("%s", "SingleSpectra");
   for( unsigned int i = 0; i < nDigi; i++){
     for( int ch = 0; ch < MaxRegChannel ; ch++) {
       lastFilledIndex[i][ch] = -1;
@@ -153,7 +154,7 @@ void SingleSpectra::ClearInternalDataCount(){
 }
 
 void SingleSpectra::ChangeHistView(){
-
+  DebugPrint("%s", "SingleSpectra");
   if( !isSignalSlotActive ) return;
 
   int bd = cbDigi->currentIndex();
@@ -201,6 +202,7 @@ void SingleSpectra::ChangeHistView(){
 }
 
 void SingleSpectra::FillHistograms(){
+  DebugPrint("%s", "SingleSpectra");
   if( !fillHistograms ) return;
 
   unsigned short maxFillTimePerDigi = maxFillTimeinMilliSec/nDigi;
@@ -249,7 +251,7 @@ void SingleSpectra::FillHistograms(){
 }
 
 void SingleSpectra::SaveSetting(){
-
+  DebugPrint("%s", "SingleSpectra");
   QFile file(rawDataPath + "/singleSpectraSetting.txt");
 
   file.open(QIODevice::Text | QIODevice::WriteOnly);
@@ -279,7 +281,7 @@ void SingleSpectra::SaveSetting(){
 }
 
 void SingleSpectra::LoadSetting(){
-
+  DebugPrint("%s", "SingleSpectra");
   QFile file(rawDataPath + "/singleSpectraSetting.txt");
 
   if( file.open(QIODevice::Text | QIODevice::ReadOnly) ){

@@ -29,7 +29,7 @@ std::vector<std::pair<std::pair<QString, QString>, unsigned short>> ReadoutToolT
                                                                                       {{"FIFO not empty", "FIFO is empty"}, 3}};
 
 DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QString rawDataPath, QMainWindow *parent): QMainWindow(parent){
-
+  DebugPrint("%s", "DigiSettingsPanel");;
   this->digi = digi;
   this->nDigi = nDigi;
 
@@ -356,6 +356,7 @@ DigiSettingsPanel::~DigiSettingsPanel(){
 //*================================================================
 //*================================================================
 void DigiSettingsPanel::SetUpInfo(QString label, std::string value, QGridLayout *gLayout, int row, int col){
+  DebugPrint("%s", "DigiSettingsPanel");;
   QLabel * lab = new QLabel(label, this);
   lab->setAlignment(Qt::AlignRight | Qt::AlignCenter);
   QLineEdit * leInfo = new QLineEdit(this);
@@ -367,7 +368,7 @@ void DigiSettingsPanel::SetUpInfo(QString label, std::string value, QGridLayout 
 }
 
 void DigiSettingsPanel::SetUpCheckBox(QCheckBox * &chkBox, QString label, QGridLayout *gLayout, int row, int col, Reg para, std::pair<unsigned short, unsigned short> bit, int ch, int colSpan){
-
+  DebugPrint("%s", "DigiSettingsPanel");;
   chkBox = new QCheckBox(label, this);
   gLayout->addWidget(chkBox, row, col, 1, colSpan);
 
@@ -384,7 +385,7 @@ void DigiSettingsPanel::SetUpCheckBox(QCheckBox * &chkBox, QString label, QGridL
 }
 
 void DigiSettingsPanel::SetUpComboBoxBit(RComboBox * &cb, QString label, QGridLayout *gLayout, int row, int col, std::vector<std::pair<std::string, unsigned int>> items, Reg para, std::pair<unsigned short, unsigned short> bit, int colspan, int ch){
-
+  DebugPrint("%s", "DigiSettingsPanel");;
   QLabel * lab = new QLabel(label, this);
   lab->setAlignment(Qt::AlignRight | Qt::AlignCenter);
   gLayout->addWidget(lab, row, col);
@@ -424,7 +425,7 @@ void DigiSettingsPanel::SetUpComboBoxBit(RComboBox * &cb, QString label, QGridLa
 }
 
 void DigiSettingsPanel::SetUpComboBox(RComboBox * &cb, QString label, QGridLayout *gLayout, int row, int col, Reg para, int ch){
-
+  DebugPrint("%s", "DigiSettingsPanel");;
   QLabel * lab = new QLabel(label, this);
   lab->setAlignment(Qt::AlignRight | Qt::AlignCenter);
   gLayout->addWidget(lab, row, col);
@@ -453,6 +454,7 @@ void DigiSettingsPanel::SetUpComboBox(RComboBox * &cb, QString label, QGridLayou
 }
 
 void DigiSettingsPanel::SetUpSpinBox(RSpinBox * &sb, QString label, QGridLayout *gLayout, int row, int col, Reg para, int ch, bool isBoard){
+  DebugPrint("%s", "DigiSettingsPanel");;
   QLabel * lab = new QLabel(label, this);
   lab->setAlignment(Qt::AlignRight | Qt::AlignCenter);
   gLayout->addWidget(lab, row, col);
@@ -534,7 +536,6 @@ void DigiSettingsPanel::SetUpSpinBox(RSpinBox * &sb, QString label, QGridLayout 
 
 //&###########################################################
 void DigiSettingsPanel::CleanUpGroupBox(QGroupBox * & gBox){
-
   printf("============== %s \n", __func__);
 
   QList<QLabel *> labelChildren1 = gBox->findChildren<QLabel *>();
@@ -555,7 +556,7 @@ void DigiSettingsPanel::CleanUpGroupBox(QGroupBox * & gBox){
 }
 
 void DigiSettingsPanel::SetUpGlobalTriggerMaskAndFrontPanelMask(QGridLayout * & gLayout){
-
+  DebugPrint("%s", "DigiSettingsPanel");;
   SetUpComboBoxBit(cbLEMOMode[ID], "LEMO Mode ", gLayout, 0, 0, DPP::Bit_FrontPanelIOControl::ListLEMOLevel, DPP::FrontPanelIOControl, DPP::Bit_FrontPanelIOControl::LEMOLevel, 1, 0);
 
   ///============================ Trig out mode
@@ -933,7 +934,7 @@ void DigiSettingsPanel::SetUpGlobalTriggerMaskAndFrontPanelMask(QGridLayout * & 
 }
 
 void DigiSettingsPanel::SetUpInquiryCopyTab(){
-
+  DebugPrint("%s", "DigiSettingsPanel");;
   //*##################################### Inquiry / Copy Tab
   QWidget * inquiryTab = new QWidget(this);
   tabWidget->addTab(inquiryTab, "Inquiry / Copy");
@@ -1315,7 +1316,7 @@ void DigiSettingsPanel::SetUpInquiryCopyTab(){
 
 //&###########################################################
 void DigiSettingsPanel::SetUpChannelMask(unsigned int digiID){
-
+  DebugPrint("%s", "DigiSettingsPanel");;
   QString lbStr = "Channel Mask :";
   if( digi[digiID]->GetDPPType() == DPPTypeCode::DPP_QDC_CODE ) lbStr = "Group Mask :";
 
@@ -1378,6 +1379,7 @@ void DigiSettingsPanel::SetUpChannelMask(unsigned int digiID){
 }
 
 void DigiSettingsPanel::SetUpACQReadOutTab(){
+  DebugPrint("%s", "DigiSettingsPanel");;
   SetUpSpinBox(sbAggNum[ID],    "Max Agg. Num. / read ", bdACQLayout[ID], 0, 0, DPP::MaxAggregatePerBlockTransfer, -1, true);
   SetUpComboBox(cbAggOrg[ID], "Aggregate Organization ", bdACQLayout[ID], 1, 0, DPP::AggregateOrganization, 0);
 
@@ -2485,7 +2487,7 @@ void DigiSettingsPanel::SetUpBoard_QDC(){
 }
 
 void DigiSettingsPanel::SetUpChannel_QDC(){
-
+  DebugPrint("%s", "DigiSettingsPanel");;
   QWidget * chAllSetting = new QWidget(this);
   //chAllSetting->setStyleSheet("background-color: #ECECEC;");
   chTab->addTab(chAllSetting, "Group Settings");
@@ -3108,7 +3110,7 @@ void DigiSettingsPanel::SetUpChannel_QDC(){
 
 //&###########################################################
 void DigiSettingsPanel::UpdateACQStatus(uint32_t status){
-
+  DebugPrint("%s", "DigiSettingsPanel");;
   leACQStatus[ID]->setText( "0x" + QString::number(status, 16).toUpper());
 
   for( int i = 0; i < 9; i++){
@@ -3126,7 +3128,7 @@ void DigiSettingsPanel::UpdateACQStatus(uint32_t status){
 }
 
 void DigiSettingsPanel::UpdateReadOutStatus(uint32_t status){
-
+  DebugPrint("%s", "DigiSettingsPanel");;
   leReadOutStatus[ID]->setText( "0x" + QString::number(status, 16).toUpper());
 
   for( int i = 0; i < 3; i++){
@@ -3435,7 +3437,7 @@ void DigiSettingsPanel::UpdatePanelFromMemory(){
 
 //&###########################################################
 void DigiSettingsPanel::UpdateSpinBox(RSpinBox * &sb, Reg para, int ch){
-
+  DebugPrint("%s", "DigiSettingsPanel");
   int tick2ns = digi[ID]->GetTick2ns();
   int pStep = para.GetPartialStep();
 
@@ -3464,7 +3466,7 @@ void DigiSettingsPanel::UpdateSpinBox(RSpinBox * &sb, Reg para, int ch){
 }
 
 void DigiSettingsPanel::UpdateComboBox(RComboBox * & cb, Reg para, int ch){
-
+  DebugPrint("%s", "DigiSettingsPanel");
   uint32_t value = digi[ID]->GetSettingFromMemory(para, ch);
 
   for( int i = 0; i < cb->count(); i ++){
@@ -3476,7 +3478,7 @@ void DigiSettingsPanel::UpdateComboBox(RComboBox * & cb, Reg para, int ch){
 }
 
 void DigiSettingsPanel::UpdateComboBoxBit(RComboBox * & cb, uint32_t fullBit, std::pair<unsigned short, unsigned short> bit){
-
+  DebugPrint("%s", "DigiSettingsPanel");
   int temp = Digitizer::ExtractBits(fullBit, bit);
   for( int i = 0; i < cb->count(); i++){
     if( cb->itemData(i).toInt() == temp) {
@@ -3488,6 +3490,7 @@ void DigiSettingsPanel::UpdateComboBoxBit(RComboBox * & cb, uint32_t fullBit, st
 }
 
 void DigiSettingsPanel::SyncSpinBox(RSpinBox *(&spb)[][MaxRegChannel+1]){
+  DebugPrint("%s", "DigiSettingsPanel");
   if( !enableSignalSlot ) return;
 
   const int nCh = digi[ID]->GetNumRegChannels();
@@ -3551,6 +3554,7 @@ void DigiSettingsPanel::SyncComboBox(RComboBox *(&cb)[][MaxRegChannel+1]){
 }
 
 void DigiSettingsPanel::SyncCheckBox(QCheckBox *(&chk)[][MaxRegChannel+1]){
+  DebugPrint("%s", "DigiSettingsPanel");
   if( !enableSignalSlot ) return;
 
   const int nCh = digi[ID]->GetNumRegChannels();
@@ -3580,7 +3584,7 @@ void DigiSettingsPanel::SyncCheckBox(QCheckBox *(&chk)[][MaxRegChannel+1]){
 }
 
 void DigiSettingsPanel::SyncAllChannelsTab_PHA(){
-
+  DebugPrint("%s", "DigiSettingsPanel");
   SyncSpinBox(sbRecordLength);
   SyncSpinBox(sbPreTrigger);
   SyncSpinBox(sbInputRiseTime);
@@ -3626,7 +3630,7 @@ void DigiSettingsPanel::SyncAllChannelsTab_PHA(){
 
 
 void DigiSettingsPanel::UpdateSettings_PHA(){
-
+  DebugPrint("%s", "DigiSettingsPanel");
   enableSignalSlot = false;
 
   //printf("------ %s \n", __func__);
@@ -3693,7 +3697,7 @@ void DigiSettingsPanel::UpdateSettings_PHA(){
 
 
 void DigiSettingsPanel::SyncAllChannelsTab_PSD(){
-
+  DebugPrint("%s", "DigiSettingsPanel");
   SyncSpinBox(sbRecordLength);
   SyncSpinBox(sbPreTrigger);
   SyncSpinBox(sbThreshold);
@@ -3753,7 +3757,7 @@ void DigiSettingsPanel::SyncAllChannelsTab_PSD(){
 
 }
 void DigiSettingsPanel::UpdateSettings_PSD(){
-
+  DebugPrint("%s", "DigiSettingsPanel");
   enableSignalSlot = false;
 
   // printf("------ %s \n", __func__);
@@ -3835,7 +3839,7 @@ void DigiSettingsPanel::UpdateSettings_PSD(){
 }
 
 void DigiSettingsPanel::SyncAllChannelsTab_QDC(){
-
+  DebugPrint("%s", "DigiSettingsPanel");
   if( !enableSignalSlot ) return;
 
   // SyncSpinBox(sbRecordLength);
@@ -3929,6 +3933,7 @@ void DigiSettingsPanel::SyncAllChannelsTab_QDC(){
 }
 
 void DigiSettingsPanel::UpdateSettings_QDC(){
+  DebugPrint("%s", "DigiSettingsPanel");
   enableSignalSlot = false;
 
   uint32_t haha = digi[ID]->ReadQDCRecordLength();
@@ -4014,7 +4019,7 @@ void DigiSettingsPanel::UpdateSettings_QDC(){
 }
 
 void DigiSettingsPanel::CheckRadioAndCheckedButtons(){
-
+  DebugPrint("%s", "DigiSettingsPanel");
   int id1 = cbFromBoard->currentIndex();
   int id2 = cbToBoard->currentIndex();
 
@@ -4069,7 +4074,7 @@ void DigiSettingsPanel::ReadSettingsFromBoard(){
 }
 
 void DigiSettingsPanel::SaveSetting(int opt){
-  
+  DebugPrint("%s", "DigiSettingsPanel");
   QDir dir(rawDataPath);
   if( !dir.exists() ) dir.mkpath(".");
 
@@ -4102,6 +4107,7 @@ void DigiSettingsPanel::SaveSetting(int opt){
 }
 
 void DigiSettingsPanel::LoadSetting(){
+  DebugPrint("%s", "DigiSettingsPanel");
   QFileDialog fileDialog(this);
   fileDialog.setDirectory(rawDataPath);
   fileDialog.setFileMode(QFileDialog::ExistingFile);

@@ -23,7 +23,7 @@
 std::vector<std::string> onlineAnalyzerList = {"Coincident","Splie-Pole", "Encore", "RAISOR"};
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
-
+  DebugPrint("%s", "FSUDAQ");
   setWindowTitle("FSU DAQ");
   setGeometry(500, 100, 1100, 600);
 
@@ -293,7 +293,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
 }
 
 MainWindow::~MainWindow(){
-
+  DebugPrint("%s", "FSUDAQ");
   if( scalar ) {
     scalarThread->Stop();
     scalarThread->quit();
@@ -332,7 +332,7 @@ MainWindow::~MainWindow(){
 //***************************************************************
 //***************************************************************
 void MainWindow::OpenDataPath(){
-
+  DebugPrint("%s", "FSUDAQ");
   QFileDialog fileDialog(this);
   fileDialog.setFileMode(QFileDialog::Directory);
   int result = fileDialog.exec();
@@ -356,7 +356,7 @@ void MainWindow::OpenDataPath(){
 }
 
 void MainWindow::OpenRecord(){
-
+  DebugPrint("%s", "FSUDAQ");
   QString filePath = leDataPath->text() + "/RunTimeStamp.dat";
 
   if( runRecord == nullptr ){
@@ -388,7 +388,7 @@ void MainWindow::OpenRecord(){
 }
 
 void MainWindow::UpdateRecord(){
-
+  DebugPrint("%s", "FSUDAQ");
   if( !runRecord ) return;
 
   QString filePath = leDataPath->text() + "/RunTimeStamp.dat";
@@ -419,7 +419,7 @@ void MainWindow::UpdateRecord(){
 }
 
 void MainWindow::LoadProgramSettings(){
-
+  DebugPrint("%s", "FSUDAQ");
   LogMsg("Loading <b>" + programSettingsFilePath + "</b> for Program Settings.");
   QFile file(programSettingsFilePath);
 
@@ -482,7 +482,7 @@ void MainWindow::LoadProgramSettings(){
 }
 
 void MainWindow::SaveProgramSettings(){
-
+  DebugPrint("%s", "FSUDAQ");
   rawDataPath = leDataPath->text();
 
   QFile file(programSettingsFilePath);
@@ -505,7 +505,7 @@ void MainWindow::SaveProgramSettings(){
 }
 
 void MainWindow::LoadLastRunFile(){
-
+  DebugPrint("%s", "FSUDAQ");
   QFile file(rawDataPath + "/lastRun.sh");
 
   if( !file.open(QIODevice::Text | QIODevice::ReadOnly) ) {
@@ -546,7 +546,7 @@ void MainWindow::LoadLastRunFile(){
 }
 
 void MainWindow::SaveLastRunFile(){
-
+  DebugPrint("%s", "FSUDAQ");
   QFile file(rawDataPath + "/lastRun.sh");
 
   prefix = lePrefix->text();
@@ -566,7 +566,7 @@ void MainWindow::SaveLastRunFile(){
 //***************************************************************
 //***************************************************************
 void MainWindow::OpenDigitizers(){
-
+  DebugPrint("%s", "FSUDAQ");
   if( cbOpenDigitizers->currentIndex() == 0 ) return;
 
   // placeholder for USB
@@ -710,7 +710,6 @@ void MainWindow::OpenDigitizers(){
 }
 
 void MainWindow::CloseDigitizers(){
-
   LogMsg("MainWindow::Closing Digitizer(s)....");
 
   if( scope ) {
@@ -785,7 +784,7 @@ void MainWindow::CloseDigitizers(){
 }
 
 void MainWindow::WaitForDigitizersOpen(bool onOff){
-
+  DebugPrint("%s", "FSUDAQ");
   // bnOpenDigitizers->setEnabled(onOff);
 
   cbOpenDigitizers->setEnabled(onOff);
@@ -810,7 +809,7 @@ void MainWindow::WaitForDigitizersOpen(bool onOff){
 //***************************************************************
 //***************************************************************
 void MainWindow::SetupScalar(){
-
+  DebugPrint("%s", "FSUDAQ");
   // printf("%s\n", __func__);
 
   scalar = new QMainWindow(this);
@@ -941,7 +940,7 @@ void MainWindow::SetupScalar(){
 }
 
 void MainWindow::CleanUpScalar(){
-
+  DebugPrint("%s", "FSUDAQ");
   if( scalar == nullptr) return;
 
   scalar->close();
@@ -970,10 +969,12 @@ void MainWindow::CleanUpScalar(){
 }
 
 void MainWindow::OpenScalar(){
+  DebugPrint("%s", "FSUDAQ");
   scalar->show();
 }
 
 void MainWindow::UpdateScalar(){
+  DebugPrint("%s", "FSUDAQ");
   if( digi == nullptr ) return;
   if( scalar == nullptr ) return;
   //if( !scalar->isVisible() ) return;
@@ -1041,6 +1042,7 @@ void MainWindow::UpdateScalar(){
 //***************************************************************
 //***************************************************************
 void MainWindow::StartACQ(){
+  DebugPrint("%s", "FSUDAQ");
   if( digi == nullptr ) return;
 
   bool commentResult = true;
@@ -1126,6 +1128,7 @@ void MainWindow::StartACQ(){
 }
 
 void MainWindow::StopACQ(){
+  DebugPrint("%s", "FSUDAQ");
   if( digi == nullptr ) return;
 
   bool commentResult = true;
@@ -1217,8 +1220,8 @@ void MainWindow::StopACQ(){
 
 }
 
-void MainWindow::AutoRun(){ //TODO
-
+void MainWindow::AutoRun(){
+  DebugPrint("%s", "FSUDAQ");
   runTimer->disconnect(runTimerConnection);
   if( chkSaveData->isChecked() == false){
     StartACQ();
@@ -1290,7 +1293,7 @@ void MainWindow::AutoRun(){ //TODO
 }
 
 void MainWindow::SetSyncMode(){
-
+  DebugPrint("%s", "FSUDAQ");
   QDialog dialog;
   dialog.setWindowTitle("Board Synchronization");
 
@@ -1386,6 +1389,7 @@ void MainWindow::SetSyncMode(){
 }
 
 void MainWindow::SetAndLockInfluxElog(){
+  DebugPrint("%s", "FSUDAQ");
   if( leInfluxIP->isReadOnly() ){
     bnLock->setText("Lock and Set");
 
@@ -1505,7 +1509,7 @@ void MainWindow::SetAndLockInfluxElog(){
 }
 
 bool MainWindow::CommentDialog(bool isStartRun){
-
+  DebugPrint("%s", "FSUDAQ");
   if( isStartRun ) runID ++;
   QString runIDStr = QString::number(runID).rightJustified(3, '0');
 
@@ -1586,7 +1590,7 @@ bool MainWindow::CommentDialog(bool isStartRun){
 }
 
 void MainWindow::WriteRunTimestamp(bool isStartRun){
-
+  DebugPrint("%s", "FSUDAQ");
   QFile file(rawDataPath + "/RunTimeStamp.dat");
   
   QString dateTime = QDateTime::currentDateTime().toString("yyyy.MM.dd hh:mm:ss");
@@ -1686,7 +1690,7 @@ void MainWindow::OpenScope(){
 //***************************************************************
 //***************************************************************
 void MainWindow::OpenDigiSettings(){
-
+  DebugPrint("%s", "FSUDAQ");
   if( digiSettings == nullptr ) {
     digiSettings = new DigiSettingsPanel(digi, nDigi, rawDataPath);
     //connect(scope, &Scope::SendLogMsg, this, &MainWindow::LogMsg);
@@ -1703,7 +1707,7 @@ void MainWindow::OpenDigiSettings(){
 //***************************************************************
 //***************************************************************
 void MainWindow::OpenCanvas(){
-
+  DebugPrint("%s", "FSUDAQ");
   if( canvas == nullptr ) {
     canvas = new SingleSpectra(digi, nDigi, rawDataPath);
     canvas->show();
@@ -1716,6 +1720,7 @@ void MainWindow::OpenCanvas(){
 //***************************************************************
 //***************************************************************
 void MainWindow::OpenAnalyzer(){
+  DebugPrint("%s", "FSUDAQ");
   int id = cbAnalyzer->currentData().toInt();
 
   if( id < 0 ) return;
@@ -1749,7 +1754,7 @@ void MainWindow::OpenAnalyzer(){
 //***************************************************************
 //***************************************************************
 void MainWindow::UpdateAllPanels(int panelID){
-
+  DebugPrint("%s", "FSUDAQ");
   //panelID is the source panel that call
   // scope = 1;
   // digiSetting = 2;
@@ -1810,7 +1815,7 @@ void MainWindow::UpdateAllPanels(int panelID){
 //***************************************************************
 //***************************************************************
 void MainWindow::SetUpInflux(){
-
+  DebugPrint("%s", "FSUDAQ");
   if( influxIP == "" ) {
     LogMsg("<font style=\"color : red;\">Influx missing inputs. skip.</font>");
     leInfluxIP->setEnabled(false);
@@ -1874,7 +1879,7 @@ void MainWindow::SetUpInflux(){
 }
 
 void MainWindow::CheckElog(){
-
+  DebugPrint("%s", "FSUDAQ");
   if( elogIP != "" && elogName != "" &&  elogUser != "" && elogPWD != "" ){
     WriteElog("Testing communication.", "Testing communication.", "Other", 0);
     AppendElog("test append elog.");
@@ -1903,7 +1908,7 @@ void MainWindow::CheckElog(){
 }
 
 void MainWindow::WriteElog(QString htmlText, QString subject, QString category, int runNumber){
-
+  DebugPrint("%s", "FSUDAQ");
   //if( elogID < 0 ) return;
   if( elogName == "" ) return;
   if( elogUser == "" ) return;
@@ -1932,6 +1937,7 @@ void MainWindow::WriteElog(QString htmlText, QString subject, QString category, 
 }
 
 void MainWindow::AppendElog(QString appendHtmlText){
+  DebugPrint("%s", "FSUDAQ");
   if( elogID < 1 ) return;
   if( elogName == "" ) return;
   
@@ -1968,6 +1974,7 @@ void MainWindow::AppendElog(QString appendHtmlText){
 //***************************************************************
 //***************************************************************
 void MainWindow::LogMsg(QString msg){
+  DebugPrint("%s", "FSUDAQ");
   QString outputStr = QStringLiteral("[%1] %2").arg(QDateTime::currentDateTime().toString("MM.dd hh:mm:ss"), msg);
   if( logMsgHTMLMode ){ 
     logInfo->appendHtml(outputStr);
