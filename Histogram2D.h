@@ -20,7 +20,7 @@ class Histogram2D : public QCustomPlot{
   
 public:
   Histogram2D(QString title, QString xLabel, QString yLabel, int xbin, double xmin, double xmax, int ybin, double ymin, double ymax, QWidget * parent = nullptr) : QCustomPlot(parent){
-    DebugPrint("%s", "Histogram2D");
+    // DebugPrint("%s", "Histogram2D");
     for( int i = 0; i < 3; i ++ ){
       for( int j = 0; j < 3; j ++ ){
         box[i][j] = nullptr;
@@ -297,7 +297,7 @@ inline void Histogram2D::Fill(double x, double y){
 }
 
 inline  void Histogram2D::Rebin(int xbin, double xmin, double xmax, int ybin, double ymin, double ymax){
-  DebugPrint("%s", "Histogram2D");
+  // DebugPrint("%s", "Histogram2D");
   xMin = xmin;
   xMax = xmax;
   yMin = ymin;

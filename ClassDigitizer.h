@@ -109,9 +109,10 @@ class Digitizer{
     Data * GetData()   const {return data;}
     uint32_t GetACQStatusFromMemory() const {return acqStatus;}
     void   ReadAndPrintACQStatue();
-    void   ReadACQStatus() { 
+    void   ReadACQStatus() { // Only use when ACQ is running;
       // printf("%s\n", __func__);
-      acqStatus = ReadRegister(DPP::AcquisitionStatus_R); 
+      //acqStatus = ReadRegister(DPP::AcquisitionStatus_R); 
+      CAEN_DGTZ_ReadRegister(handle, DPP::AcquisitionStatus_R, &acqStatus);
     }
 
     unsigned int CalByteForBuffer(bool verbose = false);

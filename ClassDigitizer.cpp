@@ -297,11 +297,9 @@ void Digitizer::SetRegChannelMask(uint32_t mask){
 }
 
 bool Digitizer::GetInputChannelOnOff(unsigned ch) {
-  DebugPrint("%s", "Digitizer");
+  // DebugPrint("%s", "Digitizer");
   if( softwareDisable ) return false;
-
-  regChannelMask = GetSettingFromMemory(DPP::RegChannelEnableMask); 
-
+  // regChannelMask = GetSettingFromMemory(DPP::RegChannelEnableMask);
   if( isInputChEqRegCh ) return (regChannelMask & ( 1 << ch) );
 
   int grpID = ch/8; //may change for not grouped in 8;
@@ -1324,7 +1322,8 @@ void Digitizer::SetBits(Reg address, unsigned int bitValue, unsigned int bitLeng
   uint32_t bitmask = (uint(pow(2, bitLength)-1) << bitSmallestPos);  
   int tempCh = ch;
   if (ch < 0 && address < 0x8000 ) tempCh = 0; /// take ch-0 
-  bit = ReadRegister(address, tempCh);
+  //bit = ReadRegister(address, tempCh);
+  bit = GetSettingFromMemory(address, tempCh);
   ///printf("bit : 0x%X, bitmask : 0x%X \n", bit, bitmask);
   bit = (bit & ~bitmask) | (bitValue << bitSmallestPos);
   ///printf("bit : 0x%X, ch : %d \n", bit, ch);

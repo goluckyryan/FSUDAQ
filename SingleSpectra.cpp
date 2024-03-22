@@ -202,7 +202,7 @@ void SingleSpectra::ChangeHistView(){
 }
 
 void SingleSpectra::FillHistograms(){
-  DebugPrint("%s", "SingleSpectra");
+  // DebugPrint("%s", "SingleSpectra");
   if( !fillHistograms ) return;
 
   unsigned short maxFillTimePerDigi = maxFillTimeinMilliSec/nDigi;

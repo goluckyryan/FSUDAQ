@@ -12,7 +12,7 @@ class Histogram1D : public QCustomPlot{
   Q_OBJECT
 public:
   Histogram1D(QString title, QString xLabel, int xbin, double xmin, double xmax, QWidget * parent = nullptr) : QCustomPlot(parent){
-    DebugPrint("%s", "Histogram1D");
+    // DebugPrint("%s", "Histogram1D");
     isLogY = false;
 
     for( int i = 0; i < 3; i ++) txt[i] = nullptr;
@@ -237,7 +237,7 @@ public:
   void SetXTitle(QString xTitle) { xAxis->setLabel(xTitle); }
 
   void Rebin(int xbin, double xmin, double xmax){
-    DebugPrint("%s", "Histogram1D");
+    // DebugPrint("%s", "Histogram1D");
     xMin = xmin;
     xMax = xmax;
     xBin = xbin;
