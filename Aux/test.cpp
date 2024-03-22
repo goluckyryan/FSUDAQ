@@ -18,6 +18,10 @@
 #include <vector>
 #include <regex>
 
+#include <CAENVMElib.h>
+
+#include <time.h>
+
 static struct termios g_old_kbd_mode;
 
 static void cooked(void);
@@ -227,15 +231,104 @@ void GetOneAgg(){
 
 }
 
+void TestVME(){
+
+  int ret = -1;
+  char SWRel[100];
+  ret = CAENVME_SWRelease(SWRel);
+  printf("ret = %d | Software release : %s\n", ret, SWRel);
+
+  short ConnetNode = 0;
+  uint32_t link = 0;
+  int32_t handle;
+
+  ret = CAENVME_Init2(cvPCIE_A5818_V3718, &link, ConnetNode, &handle);  
+  printf("ret = %d \n", ret);
+
+  // ret = CAENVME_DeviceReset(handle); // only for A2818, A2719, and V2718
+  // printf("ret = %d \n", ret);
+
+  char FWRel[100];
+  ret = CAENVME_BoardFWRelease(handle, FWRel);
+  printf("ret = %d | Firmware release : %s\n", ret, FWRel);
+
+  char DrRel[100];
+  ret = CAENVME_DriverRelease(handle, DrRel);
+  printf("ret = %d | Driver release : %s\n", ret, DrRel);
+
+  CVVMETimeouts timeoutValue = CVVMETimeouts::cvTimeout50us;
+  ret = CAENVME_SetTimeout(handle, timeoutValue); 
+  printf("ret = %d \n", ret);
+
+  ret = CAENVME_GetTimeout(handle, &timeoutValue);
+  printf("ret = %d | timeout : %d\n", ret, timeoutValue);
+
+
+  // ret = CAENVME_ReadRegister(
+
+
+  ret = CAENVME_End(handle);
+  printf("ret = %d \n", ret);
+
+}
+
+int TestDigitizerRaw(){
+
+  int handle;
+  int ret = CAEN_DGTZ_OpenDigitizer(CAEN_DGTZ_OpticalLink, 0, 0, 0, &handle);
+  if( ret != 0 ) { 
+    printf("==== open digitizer fail.\n");
+    printf("=========== close Digitizer \n");
+    CAEN_DGTZ_SWStopAcquisition(handle);
+    CAEN_DGTZ_CloseDigitizer(handle);
+    return 0;
+  }
+  
+  CAEN_DGTZ_BoardInfo_t BoardInfo;
+  ret = (int) CAEN_DGTZ_GetInfo(handle, &BoardInfo);
+
+  printf("Connected to Model %s with handle %d\n", BoardInfo.ModelName, handle);
+  printf("          Family Code : %d \n", BoardInfo.FamilyCode);
+  printf("No. of Input Channels : %d \n", BoardInfo.Channels);
+  printf("         SerialNumber : %d \n", BoardInfo.SerialNumber);
+  printf("              ADC bit : %d \n", BoardInfo.ADC_NBits);
+  printf("     ROC FPGA Release : %s \n", BoardInfo.ROC_FirmwareRel);
+  printf("     AMC FPGA Release : %s \n", BoardInfo.AMC_FirmwareRel);
+
+  timespec ta, tb; 
+  long long duration;
+  uint32_t value;
+  
+  clock_gettime(CLOCK_REALTIME, &ta);
+  ret = CAEN_DGTZ_WriteRegister(handle, 0x8034, 3);
+  clock_gettime(CLOCK_REALTIME, &tb);
+  printf("ret = %d \n", ret);
+  duration = tb.tv_nsec - ta.tv_nsec;
+  printf("duration = %lld ns\n", duration);
+
+  clock_gettime(CLOCK_REALTIME, &ta);
+  ret = CAEN_DGTZ_ReadRegister(handle, 0x1034, &value);
+  clock_gettime(CLOCK_REALTIME, &tb);
+  printf("ret = %d \n", ret);
+  duration = tb.tv_nsec - ta.tv_nsec;
+  printf("duration = %lld ns | value = %u\n", duration, value);
+
+
+  printf("=========== close Digitizer \n");
+  CAEN_DGTZ_SWStopAcquisition(handle);
+  CAEN_DGTZ_CloseDigitizer(handle);
+  return 0;
+
+}
 
 //^======================================
 int main(int argc, char* argv[]){
 
+  TestDigitizerRaw();
   
   // CheckBufferSize(5, 4);
 
   //GetOneAgg();
-
 
 
 
