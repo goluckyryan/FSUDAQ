@@ -49,10 +49,13 @@ public:
     colorScale->setType(QCPAxis::atRight); 
     colorMap->setColorScale(colorScale);
 
+  
     QCPColorGradient color;
+    color.setNanHandling(QCPColorGradient::NanHandling::nhNanColor);
+    color.setNanColor(QColor("white"));
     color.clearColorStops();
-    color.setColorStopAt( 0.0, QColor("white" ));
-    color.setColorStopAt( 0.000001, QColor("purple" ));
+    // color.setColorStopAt( 0.0, QColor("white" ));
+    color.setColorStopAt( 0.0, QColor("purple" ));
     color.setColorStopAt( 0.2, QColor("blue"));
     color.setColorStopAt( 0.4, QColor("cyan"));
     color.setColorStopAt( 0.6, QColor("green"));
@@ -191,16 +194,18 @@ public:
   void SetChannelMap(bool onOff, int tickStep = 1) { isChannelMap = onOff; this->tickStep = tickStep;}
 
   void UpdatePlot(){ 
-    QCPColorGradient color;
-    color.clearColorStops();
-    color.setColorStopAt( 0.0, QColor("white" ));
-    color.setColorStopAt( 1.0/entry[1][1], QColor("purple" ));
-    color.setColorStopAt( 0.2, QColor("blue"));
-    color.setColorStopAt( 0.4, QColor("cyan"));
-    color.setColorStopAt( 0.6, QColor("green"));
-    color.setColorStopAt( 0.8, QColor("yellow"));
-    color.setColorStopAt( 1.0, QColor("red"));
-    colorMap->setGradient(color);
+    // QCPColorGradient color;
+    // color.clearColorStops();
+    // color.setNanColor(QColor("white"));
+    // // color.setColorStopAt( 0.0, QColor("white" ));
+    // // color.setColorStopAt( 1.0/entry[1][1], QColor("purple" ));
+    // color.setColorStopAt( 0.0, QColor("purple" ));
+    // color.setColorStopAt( 0.2, QColor("blue"));
+    // color.setColorStopAt( 0.4, QColor("cyan"));
+    // color.setColorStopAt( 0.6, QColor("green"));
+    // color.setColorStopAt( 0.8, QColor("yellow"));
+    // color.setColorStopAt( 1.0, QColor("red"));
+    // colorMap->setGradient(color);
   
     colorMap->rescaleDataRange(); 
 
@@ -308,6 +313,12 @@ inline  void Histogram2D::Rebin(int xbin, double xmin, double xmax, int ybin, do
   colorMap->data()->clear();
   colorMap->data()->setSize(xBin, yBin);
   colorMap->data()->setRange(QCPRange(xMin, xMax), QCPRange(yMin, yMax));
+
+  for( int i = 0; i < xBin; i++){
+    for( int j = 0; j < yBin; j++){
+      colorMap->data()->setCell(i, j, NAN);
+    }
+  }
 
   if( isChannelMap ){
     QCPAxis * xAxis = colorMap->keyAxis();

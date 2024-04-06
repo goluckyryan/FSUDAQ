@@ -1,11 +1,9 @@
 #include "SingleSpectra.h"
 
 #include <QValueAxis>
-#include <QRandomGenerator>
 #include <QGroupBox>
 #include <QStandardItemModel>
 #include <QLabel>
-#include <QRandomGenerator>
 
 SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawDataPath, QMainWindow * parent) : QMainWindow(parent){
   DebugPrint("%s", "SingleSpectra");
@@ -13,7 +11,8 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
   this->nDigi = nDigi;
   this->rawDataPath = rawDataPath;
 
-  maxFillTimeinMilliSec = 500;
+  maxFillTimeinMilliSec = 1000;  
+  maxFillTimePerDigi = maxFillTimeinMilliSec/nDigi;
 
   isSignalSlotActive = true;
 
@@ -205,47 +204,52 @@ void SingleSpectra::FillHistograms(){
   // DebugPrint("%s", "SingleSpectra");
   if( !fillHistograms ) return;
 
-  unsigned short maxFillTimePerDigi = maxFillTimeinMilliSec/nDigi;
   timespec t0, t1;
 
-  for( int i = 0; i < nDigi; i++){
+  QVector<int> randomDigiList = generateNonRepeatedCombination(nDigi);
 
-    digiMTX[i].lock();
+  for( int i = 0; i < nDigi; i++){
+    int ID = randomDigiList[i];
+
+    QVector<int> randomChList = generateNonRepeatedCombination(digi[ID]->GetNumInputCh());
+
+    digiMTX[ID].lock();
     clock_gettime(CLOCK_REALTIME, &t0);
-    for( int ch = 0; ch < digi[i]->GetNumInputCh(); ch ++ ){
-      int lastIndex = digi[i]->GetData()->GetDataIndex(ch);
+    for( int k = 0; k < digi[ID]->GetNumInputCh(); k ++ ){
+      int ch = randomChList[k];
+      int lastIndex = digi[ID]->GetData()->GetDataIndex(ch);
       if( lastIndex < 0 ) continue;
 
-      int loopIndex = digi[i]->GetData()->GetLoopIndex(ch);
+      int loopIndex = digi[ID]->GetData()->GetLoopIndex(ch);
 
-      int temp1 = lastIndex + loopIndex * digi[i]->GetData()->GetDataSize();
-      int temp2 = lastFilledIndex[i][ch] + loopFilledIndex[i][ch] * digi[i]->GetData()->GetDataSize();
+      int temp1 = lastIndex + loopIndex * digi[ID]->GetData()->GetDataSize();
+      int temp2 = lastFilledIndex[ID][ch] + loopFilledIndex[ID][ch] * digi[ID]->GetData()->GetDataSize();
 
       // printf("%d |%d   %d \n", ch, temp2, temp1);
       if( temp1 <= temp2 ) continue;
 
-      if( temp1 - temp2 > digi[i]->GetData()->GetDataSize() ) { //DefaultDataSize = 10k
-        temp2 = temp1 - digi[i]->GetData()->GetDataSize();
-        lastFilledIndex[i][ch] = lastIndex;
-        lastFilledIndex[i][ch] = loopIndex - 1;
+      if( temp1 - temp2 > digi[ID]->GetData()->GetDataSize() ) { //DefaultDataSize = 10k
+        temp2 = temp1 - digi[ID]->GetData()->GetDataSize();
+        lastFilledIndex[ID][ch] = lastIndex;
+        lastFilledIndex[ID][ch] = loopIndex - 1;
       }
       
       for( int j = 0 ; j <= temp1 - temp2; j ++){
-        lastFilledIndex[i][ch] ++;
-        if( lastFilledIndex[i][ch] > digi[i]->GetData()->GetDataSize() ) {
-          lastFilledIndex[i][ch] = 0;
-          loopFilledIndex[i][ch] ++;
+        lastFilledIndex[ID][ch] ++;
+        if( lastFilledIndex[ID][ch] > digi[ID]->GetData()->GetDataSize() ) {
+          lastFilledIndex[ID][ch] = 0;
+          loopFilledIndex[ID][ch] ++;
         }
-        hist[i][ch]->Fill( digi[i]->GetData()->GetEnergy(ch, lastFilledIndex[i][ch]));
-        hist2D[i]->Fill(ch, digi[i]->GetData()->GetEnergy(ch, lastFilledIndex[i][ch]));
+        hist[ID][ch]->Fill( digi[ID]->GetData()->GetEnergy(ch, lastFilledIndex[ID][ch]));
+        hist2D[ID]->Fill(ch, digi[ID]->GetData()->GetEnergy(ch, lastFilledIndex[ID][ch]));
       }
-      if( histVisibility[i][ch]  ) hist[i][ch]->UpdatePlot();
-      if( hist2DVisibility[i] ) hist2D[i]->UpdatePlot();
+      if( histVisibility[ID][ch]  ) hist[ID][ch]->UpdatePlot();
+      if( hist2DVisibility[ID] ) hist2D[ID]->UpdatePlot();
 
       clock_gettime(CLOCK_REALTIME, &t1);
       if( t1.tv_nsec - t0.tv_nsec + (t1.tv_sec - t0.tv_sec)*1e9 > maxFillTimePerDigi * 1e6 ) break;  
     }
-    digiMTX[i].unlock();
+    digiMTX[ID].unlock();
 
   }
 }
@@ -339,4 +343,15 @@ void SingleSpectra::LoadSetting(){
 
   }
 
+}
+
+QVector<int> SingleSpectra::generateNonRepeatedCombination(int size) {
+  QVector<int> combination;
+  for (int i = 0; i < size; ++i) combination.append(i);
+
+  for (int i = 0; i < size - 1; ++i) {
+    int j = QRandomGenerator::global()->bounded(i, size);
+    combination.swapItemsAt(i, j);
+  }
+  return combination;
 }
