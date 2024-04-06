@@ -1,13 +1,28 @@
-#include "FSUDAQ.h"
-
 #include <QApplication>
 #include <QMessageBox>
 #include <QProcess>
 #include <QPushButton>
 #include <QFile>
 
+#include "FSUDAQ.h"
+
+#include <QObject>
+#include <QDebug>
+
+class CustomApplication : public QApplication{
+public:
+    CustomApplication(int &argc, char **argv) : QApplication(argc, argv) {}
+
+protected:
+    bool notify(QObject *receiver, QEvent *event) override{
+        qDebug() << "Event:" << event->type() << "Receiver:" << receiver;
+        return QApplication::notify(receiver, event);
+    }
+};
+
 int main(int argc, char *argv[]){
-    QApplication a(argc, argv);
+
+    CustomApplication a(argc, argv);
 
     bool isLock = false;
     int pid = 0;
