@@ -38,6 +38,10 @@ public:
     // ta = t0;
     t1 = t0;
 
+    digiMTX[ID].lock();
+    digi->ReadACQStatus();
+    digiMTX[ID].unlock();
+
     printf("ReadDataThread for digi-%d running.\n", digi->GetSerialNumber());
     do{
       
@@ -90,7 +94,6 @@ public:
       //     ta = tb;
       //   }
       // }
-    
     }while(!stop);
     printf("ReadDataThread for digi-%d stopped.\n", digi->GetSerialNumber());
   }
@@ -104,7 +107,6 @@ private:
   bool isSaveData;
   bool isScope;
   unsigned long readCount; 
-
 };
 
 //^#======================================================= Timing Thread

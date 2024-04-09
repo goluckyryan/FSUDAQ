@@ -1105,6 +1105,7 @@ void MainWindow::StartACQ(){
   bnStopACQ->setStyleSheet("background-color: red;");
   bnOpenScope->setEnabled(false);
   cbAutoRun->setEnabled(false);
+  bnSync->setEnabled(false);
 
   if( digiSettings ) digiSettings->setEnabled(false);
 
@@ -1134,6 +1135,9 @@ void MainWindow::StartACQ(){
 
 void MainWindow::StopACQ(){
   DebugPrint("%s", "FSUDAQ");
+
+  QCoreApplication::processEvents();
+
   if( digi == nullptr ) return;
 
   bool commentResult = true;
@@ -1183,6 +1187,7 @@ void MainWindow::StopACQ(){
   bnStopACQ->setStyleSheet("");
   bnOpenScope->setEnabled(true);
   cbAutoRun->setEnabled(true);
+  bnSync->setEnabled(true);
 
   if( scalar ){
     for( unsigned int iDigi = 0; iDigi < nDigi; iDigi ++){

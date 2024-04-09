@@ -106,7 +106,8 @@ private:
   QPushButton * bnProgramPreDefined;
   QPushButton * bnClearBuffer;
   
-  QPushButton * bnSendSoftwareTriggerSignal;
+  // QPushButton * bnSendSoftwareTriggerSignal;
+  QPushButton * bnSetNoTrace;
   QPushButton * bhAutoSetEventPulling;
   //QPushButton * bnSendSoftwareClockSyncSignal;
   QPushButton * bnSaveSettings;
@@ -134,6 +135,7 @@ private:
   RComboBox * cbDigiProbe2[MaxNDigitizer];
 
   QPushButton * bnChEnableMask[MaxNDigitizer][MaxRegChannel];
+  QCheckBox * cbDigiEnable[MaxNDigitizer];
   RComboBox * cbAggOrg[MaxNDigitizer];
   RSpinBox * sbAggNum[MaxNDigitizer];
   QCheckBox * chkEnableExternalTrigger[MaxNDigitizer];

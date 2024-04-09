@@ -90,6 +90,7 @@ class Digitizer{
     bool IsConnected()     {return isConnected;}
     
     void DisableBoard()    {softwareDisable = true;}
+    void EnableBoard()     {softwareDisable = false;}
     bool IsBoardDisabled() const {return softwareDisable;}
 
     void PrintBoard();    

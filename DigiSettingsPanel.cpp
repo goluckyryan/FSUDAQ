@@ -219,9 +219,17 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
       connect(bnLoadSettings, &QPushButton::clicked, this, &DigiSettingsPanel::LoadSetting);
 
       rowID ++; //---------------------------
-      bnSendSoftwareTriggerSignal = new QPushButton("Send SW Trigger Signal", this);
-      buttonLayout->addWidget(bnSendSoftwareTriggerSignal, rowID, 0);
-      connect(bnSendSoftwareTriggerSignal, &QPushButton::clicked, this, [=](){ digi[ID]->WriteRegister(DPP::SoftwareTrigger_W, 1); UpdateBoardAndChannelsStatus();});
+      // bnSendSoftwareTriggerSignal = new QPushButton("Send SW Trigger Signal", this);
+      // buttonLayout->addWidget(bnSendSoftwareTriggerSignal, rowID, 0);
+      // connect(bnSendSoftwareTriggerSignal, &QPushButton::clicked, this, [=](){ digi[ID]->WriteRegister(DPP::SoftwareTrigger_W, 1); UpdateBoardAndChannelsStatus();});
+
+      bnSetNoTrace = new QPushButton("Set No Trace", this);
+      buttonLayout->addWidget(bnSetNoTrace, rowID, 0);
+      connect(bnSetNoTrace, &QPushButton::clicked, this, [=](){
+        for( unsigned int i = 0; i < nDigi; i++){
+          chkTraceRecording[i]->setChecked(false);
+        }
+      });
 
       bhAutoSetEventPulling = new QPushButton("Autoset Reading Conf.", this);
       buttonLayout->addWidget(bhAutoSetEventPulling, rowID, 1);
@@ -330,7 +338,6 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
       ID = index;
       //if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) UpdatePanelFromMemory(); 
       UpdatePanelFromMemory(); 
-
     }
   });
 
@@ -1375,7 +1382,28 @@ void DigiSettingsPanel::SetUpChannelMask(unsigned int digiID){
       emit UpdateOtherPanels();
     });
   }
+
+  QLabel * blank = new QLabel("   ", this);
+  chLayout->addWidget(blank, 1, nChGrp );
+
+  cbDigiEnable[digiID] = new QCheckBox("Enable Digitizer",this);
+  cbDigiEnable[digiID]->setChecked(true);
   
+  chLayout->addWidget(cbDigiEnable[digiID], 1, nChGrp + 2 );
+
+  connect(cbDigiEnable[digiID], &QCheckBox::stateChanged, this, [=](int state){
+    if( state == Qt::Checked ){
+      digi[digiID]->EnableBoard();
+      cbDigiEnable[digiID]->setStyleSheet("");
+      tabWidget->setTabText(digiID, "Digi-" + QString::number(digi[digiID]->GetSerialNumber()));
+    }else{
+      digi[digiID]->DisableBoard();
+      cbDigiEnable[digiID]->setStyleSheet("color: red");
+      tabWidget->setTabText(digiID, "Digi-" + QString::number(digi[digiID]->GetSerialNumber()) + "(D)");
+    }
+    UpdateBoardAndChannelsStatus();
+  });
+
 }
 
 void DigiSettingsPanel::SetUpACQReadOutTab(){
