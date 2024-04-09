@@ -891,6 +891,10 @@ void MainWindow::SetupScalar(){
           lbAggCount[iDigi] = new QLabel("AggCount/ReadCount", scalar);
           lbAggCount[iDigi]->setAlignment(Qt::AlignLeft | Qt::AlignCenter);
           hBoxLayout->addWidget(lbAggCount[iDigi]);
+          
+          lbFileSize[iDigi] = new QLabel("File Size", scalar);
+          lbFileSize[iDigi]->setAlignment(Qt::AlignLeft | Qt::AlignCenter);
+          hBoxLayout->addWidget(lbFileSize[iDigi]);
 
           QLabel * lbDigi = new QLabel("Digi-" + QString::number(digi[iDigi]->GetSerialNumber()), scalar); 
           lbDigi->setAlignment(Qt::AlignRight | Qt::AlignCenter);
@@ -1003,6 +1007,7 @@ void MainWindow::UpdateScalar(){
     blockCountStr += "/" + QString::number(readDataThread[iDigi]->GetReadCount());
     readDataThread[iDigi]->SetReadCountZero();
     lbAggCount[iDigi]->setText(blockCountStr);
+    lbFileSize[iDigi]->setText(QString::number(digi[iDigi]->GetData()->GetTotalFileSize()/1024./1024., 'f', 3) + " MB");
 
     digi[iDigi]->GetData()->CalTriggerRate(); //this will reset NumEventDecode & AggCount
     if( chkSaveData->isChecked() ) totalFileSize += digi[iDigi]->GetData()->GetTotalFileSize();

@@ -35,7 +35,7 @@ public:
     stop = false;
     readCount = 0;
     clock_gettime(CLOCK_REALTIME, &t0);
-    ta = t0;
+    // ta = t0;
     t1 = t0;
 
     printf("ReadDataThread for digi-%d running.\n", digi->GetSerialNumber());
@@ -79,17 +79,17 @@ public:
         t2 = t1;
       }
 
-      if( isSaveData && !stop ) {
-        clock_gettime(CLOCK_REALTIME, &tb);
-        if( tb.tv_sec - ta.tv_sec > 2 ) {
-          digiMTX[ID].lock();
-          emit sendMsg("FileSize ("+ QString::number(digi->GetSerialNumber()) +"): " +  QString::number(digi->GetData()->GetTotalFileSize()/1024./1024., 'f', 4) + " MB [" + QString::number(tb.tv_sec-t0.tv_sec) + " sec]");
-          //emit sendMsg("FileSize ("+ QString::number(digi->GetSerialNumber()) +"): " +  QString::number(digi->GetData()->GetTotalFileSize()/1024./1024., 'f', 4) + " MB [" + QString::number(tb.tv_sec-t0.tv_sec) + " sec] (" + QString::number(readCount) + ")");
-          digiMTX[ID].unlock();
-          // readCount = 0;
-          ta = tb;
-        }
-      }
+      // if( isSaveData && !stop ) {
+      //   clock_gettime(CLOCK_REALTIME, &tb);
+      //   if( tb.tv_sec - ta.tv_sec > 2 ) {
+      //     digiMTX[ID].lock();
+      //     emit sendMsg("FileSize ("+ QString::number(digi->GetSerialNumber()) +"): " +  QString::number(digi->GetData()->GetTotalFileSize()/1024./1024., 'f', 4) + " MB [" + QString::number(tb.tv_sec-t0.tv_sec) + " sec]");
+      //     //emit sendMsg("FileSize ("+ QString::number(digi->GetSerialNumber()) +"): " +  QString::number(digi->GetData()->GetTotalFileSize()/1024./1024., 'f', 4) + " MB [" + QString::number(tb.tv_sec-t0.tv_sec) + " sec] (" + QString::number(readCount) + ")");
+      //     digiMTX[ID].unlock();
+      //     // readCount = 0;
+      //     ta = tb;
+      //   }
+      // }
     
     }while(!stop);
     printf("ReadDataThread for digi-%d stopped.\n", digi->GetSerialNumber());

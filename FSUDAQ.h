@@ -171,6 +171,8 @@ private:
   QLabel * lbLastUpdateTime;
   QLabel * lbScalarACQStatus;
   QLabel * lbAggCount[MaxNDigitizer];
+  QLabel * lbFileSize[MaxNDigitizer];
+
 
   //@----- Run Record
   QMainWindow * runRecord;

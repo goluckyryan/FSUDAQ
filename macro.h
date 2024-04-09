@@ -11,7 +11,7 @@
 #define MaxRecordLength 0x3fff * 8 
 #define MaxSaveFileSize  1024 * 1024 * 1024 * 2
 
-#define MaxDisplayTraceTimeLength 10000 //ns
+#define MaxDisplayTraceTimeLength 20000 //ns
 #define ScopeUpdateMiliSec  200 // msec
 #define MaxNumberOfTrace  5   // in an event
 

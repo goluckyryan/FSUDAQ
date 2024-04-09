@@ -9,20 +9,21 @@
 #include <QObject>
 #include <QDebug>
 
-class CustomApplication : public QApplication{
-public:
-    CustomApplication(int &argc, char **argv) : QApplication(argc, argv) {}
+// class CustomApplication : public QApplication{
+// public:
+//     CustomApplication(int &argc, char **argv) : QApplication(argc, argv) {}
 
-protected:
-    bool notify(QObject *receiver, QEvent *event) override{
-        qDebug() << "Event:" << event->type() << "Receiver:" << receiver;
-        return QApplication::notify(receiver, event);
-    }
-};
+// protected:
+//     bool notify(QObject *receiver, QEvent *event) override{
+//         qDebug() << event->type() << "Receiver:" << receiver;
+//         return QApplication::notify(receiver, event);
+//     }
+// };
 
 int main(int argc, char *argv[]){
 
-    CustomApplication a(argc, argv);
+    // CustomApplication a(argc, argv);
+    QApplication a(argc, argv);
 
     bool isLock = false;
     int pid = 0;
