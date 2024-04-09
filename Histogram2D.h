@@ -292,7 +292,11 @@ inline void Histogram2D::Fill(double x, double y){
 
   if( xk == 1 && yk == 1 ) {
     double value = colorMap->data()->cell(xIndex, yIndex);
-    colorMap->data()->setCell(xIndex, yIndex, value + 1);
+    if( std::isnan(value) ){
+      colorMap->data()->setCell(xIndex, yIndex, 1);
+    }else{
+      colorMap->data()->setCell(xIndex, yIndex, value + 1);
+    }
 
     for( int i = 0; i < cutList.count(); i++){
       if( cutList[i].isEmpty() ) continue;
@@ -346,6 +350,11 @@ inline void Histogram2D::Clear(){
   colorMap->data()->clear();
   colorMap->data()->setSize(xBin, yBin);
   colorMap->data()->setRange(QCPRange(xMin, xMax), QCPRange(yMin, yMax));
+  for( int i = 0; i < xBin; i++){
+    for( int j = 0; j < yBin; j++){
+      colorMap->data()->setCell(i, j, NAN);
+    }
+  }
 
   UpdatePlot();
 }
