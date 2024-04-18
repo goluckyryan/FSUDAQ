@@ -9,6 +9,8 @@
 #include <QObject>
 #include <QDebug>
 
+#include <sys/resource.h>
+
 // class CustomApplication : public QApplication{
 // public:
 //     CustomApplication(int &argc, char **argv) : QApplication(argc, argv) {}
@@ -24,6 +26,8 @@ int main(int argc, char *argv[]){
 
     // CustomApplication a(argc, argv);
     QApplication a(argc, argv);
+
+    setpriority(PRIO_PROCESS, 0, -20);
 
     bool isLock = false;
     int pid = 0;

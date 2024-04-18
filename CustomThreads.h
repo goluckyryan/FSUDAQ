@@ -5,6 +5,7 @@
 #include <QMutex>
 #include <QWaitCondition>
 #include <QMessageBox>
+#include <QCoreApplication>
 
 #include "macro.h"
 #include "ClassDigitizer.h"
@@ -81,6 +82,7 @@ public:
         digi->ReadACQStatus();
         digiMTX[ID].unlock();
         t2 = t1;
+        // QCoreApplication::processEvents();
       }
 
       // if( isSaveData && !stop ) {

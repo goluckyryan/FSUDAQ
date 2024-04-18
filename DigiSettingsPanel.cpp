@@ -97,8 +97,17 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
       SetUpInfo("Ch. Mem. Size ",  memStr.toStdString() , infoLayout[ID], 3, 2);
 
       uint32_t boardInfo = digi[ID]->GetSettingFromMemory(DPP::BoardInfo_R);
-      printf("----------- boardInfo : 0x%08X \n", boardInfo);
-      SetUpInfo("Board Type ", ((boardInfo >> 16) & 0xFF) == 0x10 ? "16-ch VME" : "8-ch Bd.", infoLayout[ID], 3, 4);
+      // printf("----------- boardInfo : 0x%08X \n", boardInfo);
+      std::string boardInfoStr;
+      unsigned short boardTypeNumber = (boardInfo & 0xFF);
+      switch (boardTypeNumber){
+        case 0x04 : boardInfoStr = "64-ch VME"; break;
+        case 0x0E : boardInfoStr = ((boardInfo >> 16) & 0xFF) == 0x10 ? "16-ch VME" : "8-ch Bd."; break;
+        case 0x0B : boardInfoStr = ((boardInfo >> 16) & 0xFF) == 0x10 ? "16-ch VME" : "8-ch Bd."; break;
+        default : boardInfoStr = "unknown";
+      }
+
+      SetUpInfo("Board Type ", boardInfoStr, infoLayout[ID], 3, 4);
 
     }
 

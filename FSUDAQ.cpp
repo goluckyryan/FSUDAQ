@@ -41,6 +41,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
   runRecord = nullptr;
   model = nullptr;
   influx = nullptr;
+  scalarCount = 0;
   
   QWidget * mainLayoutWidget = new QWidget(this);
   setCentralWidget(mainLayoutWidget);
@@ -896,7 +897,8 @@ void MainWindow::SetupScalar(){
           lbFileSize[iDigi]->setAlignment(Qt::AlignLeft | Qt::AlignCenter);
           hBoxLayout->addWidget(lbFileSize[iDigi]);
 
-          QLabel * lbDigi = new QLabel("Digi-" + QString::number(digi[iDigi]->GetSerialNumber()), scalar); 
+          // QLabel * lbDigi = new QLabel("Digi-" + QString::number(digi[iDigi]->GetSerialNumber()), scalar); 
+          QLabel * lbDigi = new QLabel(QString::number(digi[iDigi]->GetSerialNumber()), scalar); 
           lbDigi->setAlignment(Qt::AlignRight | Qt::AlignCenter);
           hBoxLayout->addWidget(lbDigi);
 
@@ -986,6 +988,7 @@ void MainWindow::UpdateScalar(){
   // digi[0]->GetData()->PrintAllData();
 
   lbLastUpdateTime->setText("Last update: " + QDateTime::currentDateTime().toString("MM.dd hh:mm:ss"));
+  scalarCount ++;
 
   uint64_t totalFileSize = 0;
   for( unsigned int iDigi = 0; iDigi < nDigi; iDigi++){
@@ -994,9 +997,9 @@ void MainWindow::UpdateScalar(){
     uint32_t acqStatus = digi[iDigi]->GetACQStatusFromMemory();
     //printf("Digi-%d : acq on/off ? : %d \n", digi[iDigi]->GetSerialNumber(), (acqStatus >> 2) & 0x1 );
     if( ( acqStatus >> 2 ) & 0x1 ){
-      runStatus[iDigi]->setStyleSheet("background-color : green;");
+      if( runStatus[iDigi]->styleSheet() == "") runStatus[iDigi]->setStyleSheet("background-color : green;");
     }else{
-      runStatus[iDigi]->setStyleSheet("");
+      if( runStatus[iDigi]->styleSheet() != "") runStatus[iDigi]->setStyleSheet("");
     }
 
     if(digiSettings && digiSettings->isVisible() && digiSettings->GetTabID() == iDigi) digiSettings->UpdateACQStatus(acqStatus);
@@ -1023,16 +1026,20 @@ void MainWindow::UpdateScalar(){
         leAccept[iDigi][i]->setText(b);
 
         if( influx && a != "inf" ){
-          influx->AddDataPoint("Rate,Bd="+std::to_string(digi[iDigi]->GetSerialNumber()) + ",Ch=" + QString::number(i).rightJustified(2, '0').toStdString() + " value=" +  a.toStdString());
+          influx->AddDataPoint("TrigRate,Bd="+std::to_string(digi[iDigi]->GetSerialNumber()) + ",Ch=" + QString::number(i).rightJustified(2, '0').toStdString() + " value=" +  a.toStdString());
         }
 
       }
     }
 
     digiMTX[iDigi].unlock();
+
   }
 
-  if( influx ){
+  repaint();
+  scalar->repaint();
+
+  if( influx && scalarCount >= 3){
     if( chkSaveData->isChecked() ) {
       influx->AddDataPoint("RunID value=" + std::to_string(runID));
       influx->AddDataPoint("FileSize value=" + std::to_string(totalFileSize));
@@ -1040,6 +1047,7 @@ void MainWindow::UpdateScalar(){
     //nflux->PrintDataPoints();
     influx->WriteData(dataBaseName.toStdString());
     influx->ClearDataPointsBuffer();
+    scalarCount = 0;
   }
 
 }
@@ -1227,6 +1235,9 @@ void MainWindow::StopACQ(){
 
   chkSaveData->setEnabled(true);
   bnDigiSettings->setEnabled(true);
+
+  repaint();
+  printf("================ end of %s \n", __func__);
 
 }
 
@@ -1638,7 +1649,8 @@ void MainWindow::WriteRunTimestamp(bool isStartRun){
 //***************************************************************
 //***************************************************************
 void MainWindow::OpenScope(){
-
+  DebugPrint("%s", "FSUDAQ");
+  QCoreApplication::processEvents();
   if( scope == nullptr ) {
     scope = new Scope(digi, nDigi, readDataThread);
     connect(scope, &Scope::SendLogMsg, this, &MainWindow::LogMsg);
@@ -1711,7 +1723,6 @@ void MainWindow::OpenDigiSettings(){
     digiSettings->show();
     digiSettings->activateWindow();
   }
-
 }
 
 //***************************************************************
@@ -1731,6 +1742,7 @@ void MainWindow::OpenCanvas(){
 //***************************************************************
 void MainWindow::OpenAnalyzer(){
   DebugPrint("%s", "FSUDAQ");
+
   int id = cbAnalyzer->currentData().toInt();
 
   if( id < 0 ) return;
@@ -1890,6 +1902,8 @@ void MainWindow::SetUpInflux(){
 
 void MainWindow::CheckElog(){
   DebugPrint("%s", "FSUDAQ");
+  LogMsg("---- Checking elog... please wait....");
+  printf("---- Checking elog... please wait....\n");
   if( elogIP != "" && elogName != "" &&  elogUser != "" && elogPWD != "" ){
     WriteElog("Testing communication.", "Testing communication.", "Other", 0);
     AppendElog("test append elog.");
@@ -1902,11 +1916,13 @@ void MainWindow::CheckElog(){
 
   if( elogID >= 0 ) {
     LogMsg("Elog testing OK.");
+    printf("Elog testing OK.\n");
     return;
   }
 
   //QMessageBox::information(nullptr, "Information", "Elog write Fail.\nPlease set the elog User and PWD in the programSettings.txt.\nline 6 = user.\nline 7 = pwd.");
   LogMsg("Elog testing Fail");
+  printf("Elog testing Fail\n");
   if( elogIP == "" ) LogMsg("no elog IP");
   if( elogName == "" ) LogMsg("no elog Name");
   if( elogUser == "" ) LogMsg("no elog User name. Please set it in the programSettings.txt, line 6.");

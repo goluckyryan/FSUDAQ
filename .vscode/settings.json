@@ -160,6 +160,7 @@
     "fstream": "cpp",
     "Analyzer.C": "cpp",
     "process_Run.C": "cpp",
-    "EncoreAnalyzer.C": "cpp"
+    "EncoreAnalyzer.C": "cpp",
+    "qfiledialog": "cpp"
   }
 }

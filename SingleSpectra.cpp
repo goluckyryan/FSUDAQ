@@ -204,8 +204,6 @@ void SingleSpectra::FillHistograms(){
   // DebugPrint("%s", "SingleSpectra");
   if( !fillHistograms ) return;
 
-  printf("=====================%s\n", __func__);
-
   timespec t0, t1;
 
   QVector<int> randomDigiList = generateNonRepeatedCombination(nDigi);

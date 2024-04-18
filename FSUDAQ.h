@@ -135,6 +135,7 @@ private:
   QLineEdit * leDatabaseName;
   QPushButton * bnLock;
   QString influxToken;
+  short scalarCount;
   
   //@----- Elog
   QString elogIP;
