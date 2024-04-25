@@ -16,7 +16,7 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
 
   isSignalSlotActive = true;
 
-  setWindowTitle("1-D Histograms");
+  setWindowTitle("Single Histograms");
   setGeometry(0, 0, 1000, 800);  
   //setWindowFlags( this->windowFlags() & ~Qt::WindowCloseButtonHint );
 
@@ -68,15 +68,103 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
       for( unsigned int i = 0; i < nDigi; i++){
         for( int j = 0; j < digi[i]->GetNumInputCh(); j++){
           if( hist[i][j] ) hist[i][j]->Clear();
-          // lastFilledIndex[i][j] = -1;
-          // loopFilledIndex[i][j] = 0;
         }
         if( hist2D[i] ) hist2D[i]->Clear();
       }
     });
 
+    QPushButton * bnRebinDigi = new QPushButton("Rebin Energy", this);
+    ctrlLayout->addWidget(bnRebinDigi, 0, 6, 1, 2);
+    connect(bnRebinDigi, &QPushButton::clicked, this, [=](){
+      int ID = cbDigi->currentIndex();
+      int ch = cbCh->currentIndex();
+
+      int a_Bin;
+      float a_Min, a_Max;
+
+      if( ch >= 0 ){
+        a_Bin = hist[ID][ch]->GetNBin();
+        a_Min = hist[ID][ch]->GetXMin();
+        a_Max = hist[ID][ch]->GetXMax();
+      }else{
+        a_Bin = hist2D[ID]->GetYNBin();
+        a_Min = hist2D[ID]->GetYMin();
+        a_Max = hist2D[ID]->GetYMax();
+      }
+
+      //pop up a dialog for nBin and ranhe
+
+      QDialog dialog(this);
+      dialog.setWindowTitle("Rebin histograms");
+
+      QFormLayout layout(&dialog);
+
+      QLabel * info = new QLabel(&dialog);
+      info->setStyleSheet("color:red;");
+      info->setText("This will also clear histogram!!");
+      layout.addRow(info);
+
+      QStringList nameList = {"Num. Bin", "x-Min", "x-Max"};
+      QLineEdit* lineEdit[3];
+
+      for (int i = 0; i < 3; ++i) {
+          lineEdit[i] = new QLineEdit(&dialog);
+          layout.addRow(nameList[i] + " : ", lineEdit[i]);
+      }
+      lineEdit[0]->setText(QString::number(a_Bin));
+      lineEdit[1]->setText(QString::number(a_Min));
+      lineEdit[2]->setText(QString::number(a_Max));
+
+      QLabel * msg = new QLabel(&dialog);
+      msg->setStyleSheet("color:red;");
+      layout.addRow(msg);
+
+      QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dialog);
+      layout.addRow(&buttonBox);
+
+      double number[3];
+
+      QObject::connect(&buttonBox, &QDialogButtonBox::accepted, [&]() {
+          int OKcount = 0;
+          bool conversionOk = true;
+          for( int i = 0; i < 3; i++ ){
+            number[i] = lineEdit[i]->text().toDouble(&conversionOk);
+            if( conversionOk ){
+              OKcount++;
+            }else{
+              msg->setText(nameList[i] + " is invalid.");
+              return;
+            }
+          }
+
+          if( OKcount == 3 ) {
+            if( number[2] > number[1] ) {
+              dialog.accept();
+            }else{
+              msg->setText(nameList[2] + " is smaller than " + nameList[1]);
+            }
+          }
+      });
+      QObject::connect(&buttonBox, &QDialogButtonBox::rejected, [&]() { dialog.reject();});
+
+      if( dialog.exec() == QDialog::Accepted ){       
+        if( hist2D[ID] ) {
+          hist2D[ID]->RebinY((int)number[0], number[1], number[2]);
+          hist2D[ID]->rescaleAxes();
+          hist2D[ID]->UpdatePlot();
+        }
+        for( int j = 0; j < digi[ID]->GetNumInputCh(); j++){
+          if( hist[ID][j] ) {
+            hist[ID][j]->Rebin((int)number[0], number[1], number[2]);
+            hist[ID][j]->UpdatePlot();
+          }
+        }
+      }
+
+    });
+
     QCheckBox * chkIsFillHistogram = new QCheckBox("Fill Histograms", this);
-    ctrlLayout->addWidget(chkIsFillHistogram, 0, 6);
+    ctrlLayout->addWidget(chkIsFillHistogram, 0, 8);
     connect(chkIsFillHistogram, &QCheckBox::stateChanged, this, [=](int state){ fillHistograms = state;});
     chkIsFillHistogram->setChecked(false);
     fillHistograms = false;
@@ -260,11 +348,12 @@ void SingleSpectra::FillHistograms(){
         hist2D[ID]->Fill(ch, data);
       }
       if( histVisibility[ID][ch]  ) hist[ID][ch]->UpdatePlot();
-      if( hist2DVisibility[ID] ) hist2D[ID]->UpdatePlot();
 
       clock_gettime(CLOCK_REALTIME, &t1);
       if( t1.tv_nsec - t0.tv_nsec + (t1.tv_sec - t0.tv_sec)*1e9 > maxFillTimePerDigi * 1e6 ) break;  
     }
+
+    if( hist2DVisibility[ID] ) hist2D[ID]->UpdatePlot();
     digiMTX[ID].unlock();
 
   }

@@ -190,6 +190,7 @@ public:
   void SetXTitle(QString xTitle) { xAxis->setLabel(xTitle); }
   void SetYTitle(QString yTitle) { yAxis->setLabel(yTitle); }
   void Rebin(int xbin, double xmin, double xmax, int ybin, double ymin, double ymax);
+  void RebinY(int ybin, double ymin, double ymax);
 
   void SetChannelMap(bool onOff, int tickStep = 1) { isChannelMap = onOff; this->tickStep = tickStep;}
 
@@ -337,6 +338,10 @@ inline  void Histogram2D::Rebin(int xbin, double xmin, double xmax, int ybin, do
     }
   }
 
+}
+
+inline  void Histogram2D::RebinY(int ybin, double ymin, double ymax){
+  Rebin(xBin-2, xMin, xMax, ybin, ymin, ymax);
 }
 
 inline void Histogram2D::Clear(){
