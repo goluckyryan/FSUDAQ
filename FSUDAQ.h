@@ -173,7 +173,7 @@ private:
   QLabel * lbScalarACQStatus;
   QLabel * lbAggCount[MaxNDigitizer];
   QLabel * lbFileSize[MaxNDigitizer];
-
+  QLabel * lbTotalFileSize;
 
   //@----- Run Record
   QMainWindow * runRecord;

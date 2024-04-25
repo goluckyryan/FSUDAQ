@@ -833,6 +833,7 @@ void MainWindow::SetupScalar(){
 
   lbLastUpdateTime = nullptr;
   lbScalarACQStatus = nullptr;
+  lbTotalFileSize = nullptr;
 
   scalarThread = new TimingThread(scalar);
   scalarThread->SetWaitTimeinSec(1.0);
@@ -843,11 +844,12 @@ void MainWindow::SetupScalar(){
     if( digi[k]->GetNumInputCh() > maxNChannel ) maxNChannel = digi[k]->GetNumInputCh();
   }
 
-  scalar->setGeometry(0, 0, 100 + nDigi * 200, 200 + maxNChannel * 20);
+  scalar->setGeometry(0, 0, 50 + nDigi * 240, 160 + maxNChannel * 25);
 
   if( lbLastUpdateTime == nullptr ){
     lbLastUpdateTime = new QLabel("Last update : NA", scalar);
     lbScalarACQStatus = new QLabel("ACQ status", scalar);
+    lbTotalFileSize = new QLabel("Total File Size", scalar);
   }
   
   lbLastUpdateTime->setAlignment(Qt::AlignRight);
@@ -858,13 +860,17 @@ void MainWindow::SetupScalar(){
   scalarLayout->removeWidget(lbScalarACQStatus);
   scalarLayout->addWidget(lbScalarACQStatus, 0, 1 + nDigi);
 
-  int rowID = 3;
-  ///==== create the header row
+  lbTotalFileSize->setAlignment(Qt::AlignCenter);
+  scalarLayout->removeWidget(lbTotalFileSize);
+  scalarLayout->addWidget(lbTotalFileSize, 1, 0, 1, 1 + 2*nDigi);
 
+  ///==== create the header row
+  int rowID = 4;
   for( int ch = 0; ch < maxNChannel; ch++){
 
     if( ch == 0 ){
       QLabel * lbCH_H = new QLabel("Ch", scalar); 
+      lbCH_H->setAlignment(Qt::AlignCenter);
       scalarLayout->addWidget(lbCH_H, rowID, 0);
     }  
 
@@ -879,54 +885,61 @@ void MainWindow::SetupScalar(){
   leAccept = new QLineEdit**[nDigi];
   for( unsigned int iDigi = 0; iDigi < nDigi; iDigi++){
     rowID = 2;
+    uint32_t chMask =  digi[iDigi]->GetRegChannelMask();
+
+    QWidget * hBox = new QWidget(scalar);
+    QHBoxLayout * hBoxLayout = new QHBoxLayout(hBox);
+    scalarLayout->addWidget(hBox, rowID, 2*iDigi+1, 1, 2);
+
+    QLabel * lbDigi = new QLabel("Digi-" + QString::number(digi[iDigi]->GetSerialNumber()), scalar); 
+    // QLabel * lbDigi = new QLabel(QString::number(digi[iDigi]->GetSerialNumber()), scalar); 
+    // lbDigi->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+    lbDigi->setAlignment(Qt::AlignCenter);
+    hBoxLayout->addWidget(lbDigi);
+
+    runStatus[iDigi] = new QPushButton("", scalar);
+    runStatus[iDigi]->setEnabled(false);
+    runStatus[iDigi]->setFixedSize(QSize(20,20));
+    runStatus[iDigi]->setToolTip("ACQ RUN On/OFF");
+    runStatus[iDigi]->setToolTipDuration(-1);
+    hBoxLayout->addWidget(runStatus[iDigi]);
+
+    rowID = 3;
+    QWidget * hBox2 = new QWidget(scalar);
+    QHBoxLayout * hBoxLayout2 = new QHBoxLayout(hBox2);
+    scalarLayout->addWidget(hBox2, rowID, 2*iDigi+1, 1, 2);
+
+    lbAggCount[iDigi] = new QLabel("AggCount/ReadCount", scalar);
+    lbAggCount[iDigi]->setAlignment(Qt::AlignLeft | Qt::AlignCenter);
+    hBoxLayout2->addWidget(lbAggCount[iDigi]);
+    
+    lbFileSize[iDigi] = new QLabel("File Size", scalar);
+    lbFileSize[iDigi]->setAlignment(Qt::AlignLeft | Qt::AlignCenter);
+    hBoxLayout2->addWidget(lbFileSize[iDigi]);
+
+    rowID = 4;
+    QLabel * lbA = new QLabel("Trig. [Hz]", scalar);
+    lbA->setAlignment(Qt::AlignCenter);
+    scalarLayout->addWidget(lbA, rowID, 2*iDigi+1);
+    QLabel * lbB = new QLabel("Accp. [Hz]", scalar);
+    lbB->setAlignment(Qt::AlignCenter);
+    scalarLayout->addWidget(lbB, rowID, 2*iDigi+2);
+
     leTrigger[iDigi] = new QLineEdit *[digi[iDigi]->GetNumInputCh()];
     leAccept[iDigi] = new QLineEdit *[digi[iDigi]->GetNumInputCh()];
-    uint32_t chMask =  digi[iDigi]->GetRegChannelMask();
+
     for( int ch = 0; ch < digi[iDigi]->GetNumInputCh(); ch++){
-
-      if( ch == 0 ){
-          QWidget * hBox = new QWidget(scalar);
-          QHBoxLayout * hBoxLayout = new QHBoxLayout(hBox);
-          scalarLayout->addWidget(hBox, rowID, 2*iDigi+1, 1, 2);
-
-          lbAggCount[iDigi] = new QLabel("AggCount/ReadCount", scalar);
-          lbAggCount[iDigi]->setAlignment(Qt::AlignLeft | Qt::AlignCenter);
-          hBoxLayout->addWidget(lbAggCount[iDigi]);
-          
-          lbFileSize[iDigi] = new QLabel("File Size", scalar);
-          lbFileSize[iDigi]->setAlignment(Qt::AlignLeft | Qt::AlignCenter);
-          hBoxLayout->addWidget(lbFileSize[iDigi]);
-
-          // QLabel * lbDigi = new QLabel("Digi-" + QString::number(digi[iDigi]->GetSerialNumber()), scalar); 
-          QLabel * lbDigi = new QLabel(QString::number(digi[iDigi]->GetSerialNumber()), scalar); 
-          lbDigi->setAlignment(Qt::AlignRight | Qt::AlignCenter);
-          hBoxLayout->addWidget(lbDigi);
-
-          runStatus[iDigi] = new QPushButton("", scalar);
-          runStatus[iDigi]->setEnabled(false);
-          runStatus[iDigi]->setFixedSize(QSize(20,20));
-          runStatus[iDigi]->setToolTip("ACQ RUN On/OFF");
-          runStatus[iDigi]->setToolTipDuration(-1);
-          hBoxLayout->addWidget(runStatus[iDigi]);
-
-          rowID ++;
-
-          QLabel * lbA = new QLabel("Trig. [Hz]", scalar);
-          lbA->setAlignment(Qt::AlignCenter);
-          scalarLayout->addWidget(lbA, rowID, 2*iDigi+1);
-          QLabel * lbB = new QLabel("Accp. [Hz]", scalar);
-          lbB->setAlignment(Qt::AlignCenter);
-          scalarLayout->addWidget(lbB, rowID, 2*iDigi+2);
-      }
     
       rowID ++;
       leTrigger[iDigi][ch] = new QLineEdit(scalar);
       leTrigger[iDigi][ch]->setReadOnly(true);
+      leTrigger[iDigi][ch]->setFixedSize(120, 25);
       leTrigger[iDigi][ch]->setAlignment(Qt::AlignRight);
       scalarLayout->addWidget(leTrigger[iDigi][ch], rowID, 2*iDigi+1);
 
       leAccept[iDigi][ch] = new QLineEdit(scalar);
       leAccept[iDigi][ch]->setReadOnly(true);
+      leAccept[iDigi][ch]->setFixedSize(120, 25);
       leAccept[iDigi][ch]->setAlignment(Qt::AlignRight);
       leAccept[iDigi][ch]->setStyleSheet("background-color: #F0F0F0;");
 
@@ -987,7 +1000,8 @@ void MainWindow::UpdateScalar(){
   
   // digi[0]->GetData()->PrintAllData();
 
-  lbLastUpdateTime->setText("Last update: " + QDateTime::currentDateTime().toString("MM.dd hh:mm:ss"));
+  // lbLastUpdateTime->setText("Last update: " + QDateTime::currentDateTime().toString("MM.dd hh:mm:ss"));
+  lbLastUpdateTime->setText(QDateTime::currentDateTime().toString("MM/dd hh:mm:ss"));
   scalarCount ++;
 
   uint64_t totalFileSize = 0;
@@ -1035,6 +1049,8 @@ void MainWindow::UpdateScalar(){
     digiMTX[iDigi].unlock();
 
   }
+
+  lbTotalFileSize->setText("Total Data Size : " + QString::number(totalFileSize/1024./1024., 'f', 3) + " MB");
 
   repaint();
   scalar->repaint();
