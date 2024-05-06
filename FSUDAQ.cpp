@@ -1943,7 +1943,7 @@ void MainWindow::CheckElog(){
   if( elogName == "" ) LogMsg("no elog Name");
   if( elogUser == "" ) LogMsg("no elog User name. Please set it in the programSettings.txt, line 6.");
   if( elogPWD == "" ) LogMsg("no elog User pwd. Please set it in the programSettings.txt, line 7.");
-  if( elogID < 0 ) LogMsg("Possible elog IP, Name, User name, or pwd incorrect");
+  if( elogID < 0 ) LogMsg("Possible elog IP, Name, User name, pwd incorrect, or elog not installed.");
   leElogIP->setEnabled(false);
   leElogName->setEnabled(false);
   

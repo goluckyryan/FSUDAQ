@@ -68,31 +68,6 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
     plot->addSeries(dataTrace[i]);
   }
 
-  // testing software trapezoid filter
-  // FILE * fileIn = fopen("wave.txt", "r");
-  // if( fileIn != nullptr ){
-
-  //   char buf[500];
-  //   int v1, v2;
-
-  //   QVector<QPointF> points;
-  //   QVector<QPointF> points1;
-  //   while( fgets(buf, sizeof(buf), fileIn) != nullptr ){
-      
-  //     if (sscanf(buf, "%d, %d", &v1, &v2) == 2) {
-  //       points.append(QPointF(v1, v2 + 7000));
-  //     }
-  //   }
-
-  //   fclose(fileIn);
-
-  //   points1 = TrapezoidFilter(points, 400/16, 100, 200, 1000);
-
-  //   dataTrace[0]->replace(points);
-  //   dataTrace[1]->replace(points1);
-
-  // }
-
   dataTrace[0]->setPen(QPen(Qt::red, 2));
   dataTrace[1]->setPen(QPen(Qt::blue, 2));
   dataTrace[2]->setPen(QPen(Qt::darkYellow, 1));
@@ -191,7 +166,6 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
 
   });
 
-
   bnReadSettingsFromBoard = new QPushButton("Refresh Settings", this);
   layout->addWidget(bnReadSettingsFromBoard, rowID, 2);
   connect(bnReadSettingsFromBoard, &QPushButton::clicked, this, &Scope::ReadSettingsFromBoard);
@@ -257,18 +231,21 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   layout->addWidget(bnScopeStart, rowID, 0);
   connect(bnScopeStart, &QPushButton::clicked, this, [=](){this->StartScope();});
 
+  chkSoleRun = new QCheckBox("Only this channel", this);
+  layout->addWidget(chkSoleRun, rowID, 1);
+
   bnScopeStop = new QPushButton("Stop", this);
-  layout->addWidget(bnScopeStop, rowID, 1);
+  layout->addWidget(bnScopeStop, rowID, 2);
   connect(bnScopeStop, &QPushButton::clicked, this, &Scope::StopScope);
 
   QLabel * lbTriggerRate = new QLabel("Trigger Rate [Hz] : ", this);
   lbTriggerRate->setAlignment(Qt::AlignCenter | Qt::AlignRight);
-  layout->addWidget(lbTriggerRate, rowID, 2);
+  layout->addWidget(lbTriggerRate, rowID, 3);
 
   leTriggerRate = new QLineEdit(this);
   leTriggerRate->setAlignment(Qt::AlignRight);
   leTriggerRate->setReadOnly(true);
-  layout->addWidget(leTriggerRate, rowID, 3);
+  layout->addWidget(leTriggerRate, rowID, 4);
 
   QPushButton * bnClose = new QPushButton("Close", this);
   layout->addWidget(bnClose, rowID, 6);
@@ -365,29 +342,79 @@ void Scope::StartScope(){
   //TODO set other channel to be no trace;
   emit UpdateOtherPanels();
 
-  for( int iDigi = (int)nDigi-1 ; iDigi >= 0; iDigi --){
+  if( chkSoleRun->isChecked() ){
 
-    traceOn[iDigi] = digi[iDigi]->IsRecordTrace(); //remember setting
-    SendLogMsg("Digi-" + QString::number(digi[iDigi]->GetSerialNumber()) + " is starting ACQ." );
-    digi[iDigi]->WriteRegister(DPP::SoftwareClear_W, 1);
-    digi[iDigi]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, 1, -1);
+    int ID = cbScopeDigi->currentIndex();
+    int ch = cbScopeCh->currentIndex();
 
-    //AggPerRead[iDigi] = digi[iDigi]->GetSettingFromMemory(DPP::MaxAggregatePerBlockTransfer);
-    //SendLogMsg("Set Agg/Read to 1 for scope, it was " + QString::number(AggPerRead[iDigi]) + ".");
-    //digi[iDigi]->WriteRegister(DPP::MaxAggregatePerBlockTransfer, 1);
+    //save present settings, channleMap, trigger condition
+    traceOn[ID] = digi[ID]->IsRecordTrace();
+    digi[ID]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, 1, -1);
 
-    readDataThread[iDigi]->SetScopeMode(true);
-    readDataThread[iDigi]->SetSaveData(false);
+    if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_PHA_CODE ){
+      dppAlg  = digi[ID]->GetSettingFromMemory(DPP::DPPAlgorithmControl, ch);
+      dppAlg2 = digi[ID]->GetSettingFromMemory(DPP::PHA::DPPAlgorithmControl2_G, ch);
+      chMask = digi[ID]->GetSettingFromMemory(DPP::RegChannelEnableMask);
 
-    digi[iDigi]->StartACQ();
+      digi[ID]->SetBits(DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PHA::TriggerMode, 0, ch);
+      digi[ID]->SetBits(DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PHA::DisableSelfTrigger, 0, ch);
 
-//    printf("----- readDataThread running ? %d.\n", readDataThread[iDigi]->isRunning());
-    // if( readDataThread[iDigi]->isRunning() ){
-    //   readDataThread[iDigi]->quit();
-    //   readDataThread[iDigi]->wait();
-    // }
-    readDataThread[iDigi]->start();
-//    printf("----- readDataThread running ? %d.\n", readDataThread[iDigi]->isRunning());
+      digi[ID]->SetBits(DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::LocalShapeTriggerMode, 0, ch);
+      digi[ID]->SetBits(DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::LocalTrigValidMode, 0, ch);
+
+    }
+
+    if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_PSD_CODE ){
+      dppAlg  = digi[ID]->GetSettingFromMemory(DPP::DPPAlgorithmControl, ch);
+      dppAlg2 = digi[ID]->GetSettingFromMemory(DPP::PSD::DPPAlgorithmControl2_G, ch);
+      chMask = digi[ID]->GetSettingFromMemory(DPP::RegChannelEnableMask);
+      //TODO ===============
+    }
+
+    if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_QDC_CODE ){
+      dppAlg  = digi[ID]->GetSettingFromMemory(DPP::QDC::DPPAlgorithmControl, ch);
+      chMask = digi[ID]->GetSettingFromMemory(DPP::RegChannelEnableMask);
+      //TODO ===============
+    }
+
+    digi[ID]->WriteRegister(DPP::RegChannelEnableMask, (1 << ch));
+
+    //=========== start 
+    digi[ID]->WriteRegister(DPP::SoftwareClear_W, 1);
+
+    readDataThread[ID]->SetScopeMode(true);
+    readDataThread[ID]->SetSaveData(false);
+
+    digi[ID]->StartACQ();
+    readDataThread[ID]->start();
+
+  }else{
+
+    for( int iDigi = (int)nDigi-1 ; iDigi >= 0; iDigi --){
+
+      traceOn[iDigi] = digi[iDigi]->IsRecordTrace(); //remember setting
+      SendLogMsg("Digi-" + QString::number(digi[iDigi]->GetSerialNumber()) + " is starting ACQ." );
+      digi[iDigi]->WriteRegister(DPP::SoftwareClear_W, 1);
+      digi[iDigi]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, 1, -1);
+
+      //AggPerRead[iDigi] = digi[iDigi]->GetSettingFromMemory(DPP::MaxAggregatePerBlockTransfer);
+      //SendLogMsg("Set Agg/Read to 1 for scope, it was " + QString::number(AggPerRead[iDigi]) + ".");
+      //digi[iDigi]->WriteRegister(DPP::MaxAggregatePerBlockTransfer, 1);
+
+      readDataThread[iDigi]->SetScopeMode(true);
+      readDataThread[iDigi]->SetSaveData(false);
+
+      digi[iDigi]->StartACQ();
+
+  //    printf("----- readDataThread running ? %d.\n", readDataThread[iDigi]->isRunning());
+      // if( readDataThread[iDigi]->isRunning() ){
+      //   readDataThread[iDigi]->quit();
+      //   readDataThread[iDigi]->wait();
+      // }
+      readDataThread[iDigi]->start();
+  //    printf("----- readDataThread running ? %d.\n", readDataThread[iDigi]->isRunning());
+    }
+
   }
 
   updateTraceThread->start();
@@ -397,6 +424,8 @@ void Scope::StartScope(){
   bnScopeStart->setStyleSheet("");
   bnScopeStop->setEnabled(true);
   bnScopeStop->setStyleSheet("background-color: red;");
+
+  chkSoleRun->setEnabled(false);
 
   EnableControl(false);
 
@@ -419,21 +448,47 @@ void Scope::StopScope(){
   updateScalarThread->quit();
   updateScalarThread->exit();
 
-  for( unsigned int iDigi = 0; iDigi < nDigi; iDigi ++){
+  if( chkSoleRun->isChecked() ){
 
-    if( readDataThread[iDigi]->isRunning() ){
-      readDataThread[iDigi]->Stop();
-      readDataThread[iDigi]->quit();
-      readDataThread[iDigi]->wait();
+    int ID = cbScopeDigi->currentIndex();
+
+    if( readDataThread[ID]->isRunning() ){
+      readDataThread[ID]->Stop();
+      readDataThread[ID]->quit();
+      readDataThread[ID]->wait();
+      readDataThread[ID]->SetScopeMode(false);
     }
-    digiMTX[iDigi].lock();
-    digi[iDigi]->StopACQ();
-    digi[iDigi]->ReadACQStatus();
-    //digi[iDigi]->GetData()->PrintAllData();
-    digiMTX[iDigi].unlock();
 
-    digi[iDigi]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, traceOn[iDigi], -1);
-    //digi[iDigi]->WriteRegister(DPP::MaxAggregatePerBlockTransfer, AggPerRead[iDigi]);
+    digiMTX[ID].lock();
+    digi[ID]->StopACQ();
+    digi[ID]->ReadACQStatus();
+    digiMTX[ID].unlock();
+
+    //restore setting
+    digi[ID]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, traceOn[ID], -1);
+    //TODO =============
+
+
+  }else{
+
+    for( unsigned int iDigi = 0; iDigi < nDigi; iDigi ++){
+
+      if( readDataThread[iDigi]->isRunning() ){
+        readDataThread[iDigi]->Stop();
+        readDataThread[iDigi]->quit();
+        readDataThread[iDigi]->wait();
+        readDataThread[iDigi]->SetScopeMode(false);
+      }
+      digiMTX[iDigi].lock();
+      digi[iDigi]->StopACQ();
+      digi[iDigi]->ReadACQStatus();
+      //digi[iDigi]->GetData()->PrintAllData();
+      digiMTX[iDigi].unlock();
+
+      digi[iDigi]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, traceOn[iDigi], -1);
+      //digi[iDigi]->WriteRegister(DPP::MaxAggregatePerBlockTransfer, AggPerRead[iDigi]);
+
+    }
 
   }
 
@@ -444,6 +499,7 @@ void Scope::StopScope(){
   bnScopeStop->setEnabled(false);
   bnScopeStop->setStyleSheet("");
 
+  chkSoleRun->setEnabled(true);
   runStatus->setStyleSheet("");
 
   EnableControl(true);
@@ -1230,7 +1286,7 @@ void Scope::UpdatePanel_QDC(){
   sbDCOffset->setValue((1.0 - haha * 1.0 / 0xFFFF) * 100 );
 
   //UpdateSpinBox(sbReordLength, DPP::QDC::RecordLength);
-  sbReordLength->setValue(digi[ID]->ReadQDCRecordLength());
+  sbReordLength->setValue(digi[ID]->ReadQDCRecordLength() * 8 * 16);
   UpdateSpinBox(sbPreTrigger, DPP::QDC::PreTrigger);
 
   UpdateSpinBox(sbShortGate, DPP::QDC::GateWidth);

@@ -80,8 +80,10 @@ private:
   bool isACQStarted;
   int tick2ns;
   int factor; // whether dual trace or not
-  bool traceOn[MaxNDigitizer];
   int AggPerRead[MaxNDigitizer];
+
+  bool traceOn[MaxNDigitizer];
+  uint32_t dppAlg, dppAlg2, chMask; //for single channel run
 
   ReadDataThread ** readDataThread;   
   TimingThread * updateTraceThread;
@@ -105,6 +107,7 @@ private:
   QGroupBox * settingGroup;
   QGridLayout * settingLayout;
 
+  QCheckBox * chkSoleRun;
   QPushButton * runStatus;
 
   /// common to PSD and PHA
