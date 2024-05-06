@@ -1339,6 +1339,7 @@ void Digitizer::SetOptimialAggOrg(){
   }
 
   uint32_t EventAgg = ReadRegister(DPP::QDC::NumberEventsPerAggregate, 0);
+  if( EventAgg == 0 ) WriteRegister(DPP::QDC::NumberEventsPerAggregate, 30);
   uint32_t chMask = ReadRegister(DPP::QDC::GroupEnableMask);
   uint32_t RecordLen = ReadRegister(DPP::QDC::RecordLength_R, 0);  
   if( RecordLen == 0 ) SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, 0, -1);
@@ -1362,6 +1363,7 @@ void Digitizer::SetOptimialAggOrg(){
 
 
   int eventSize = 6 + 2 * Ex + traceOn * RecordLen * 8; // sample
+  printf(" estimated event size : %d sample \n", eventSize);
   double maxAggOrg = log2( MemorySizekSample * 1024 / eventSize / EventAgg );
   printf(" max Agg. Org. should be less than %.2f\n", maxAggOrg);
   uint32_t aggOrg = std::floor(maxAggOrg) ;
