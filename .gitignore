@@ -6,6 +6,7 @@ FSUDAQ_Qt6
 test
 test_indep
 programSettings.txt
+a4818_list.txt
 EventBuilder
 EventBuilderNew
 EventBuilder2

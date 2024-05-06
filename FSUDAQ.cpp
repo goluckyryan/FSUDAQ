@@ -59,7 +59,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     // cbOpenDigitizers->addItem("Open Digitizers (default program)", 2);
     // cbOpenDigitizers->addItem("Open Digitizers + load Settings", 3);
     //cbOpenDigitizers->addItem("Open Digitizers via USB", 3);
-    cbOpenDigitizers->addItem("Open Digitizers via A4818", 4);
+    cbOpenDigitizers->addItem("Open Digitizers via A4818(s)", 4);
     layout->addWidget(cbOpenDigitizers, 0, 0);
     connect(cbOpenDigitizers, &RComboBox::currentIndexChanged, this, &MainWindow::OpenDigitizers);
     
@@ -353,7 +353,6 @@ void MainWindow::OpenDataPath(){
 
   LoadLastRunFile();
 
-
 }
 
 void MainWindow::OpenRecord(){
@@ -575,16 +574,38 @@ void MainWindow::OpenDigitizers(){
   //   return;
   // }
 
-  QString a4818PID = "26006";
+  QStringList a4818PIDs;
   if( cbOpenDigitizers->currentData().toInt() == 4 ) {
 
-    bool ok;
-    a4818PID = QInputDialog::getText(nullptr, "A4818 PID", "Can be found on the A4818:", QLineEdit::Normal, "", &ok);
+    QString a4818Path = QDir::current().absolutePath() + "/a4818_list.txt";
+    LogMsg("Looking <b>" + a4818Path + "</b>");
 
-    if ( !ok || a4818PID.isEmpty()) {
-      LogMsg("User cancel or fail to connect A4818 without PID");
+    QFile file(a4818Path);
+
+    if( !file.open(QIODevice::Text | QIODevice::ReadOnly) ) {
+      LogMsg("<b>" + a4818Path + "</b> not found.");
+      LogMsg("Please create such file and put the a4818 PIDs inseperate lines.");
+      return;
+    }else{
+      QTextStream in(&file);
+      QString line = in.readLine();
+
+      while( !line.isNull()){
+        a4818PIDs.push_back(line);
+        line = in.readLine();
+      }
+    }
+
+    if( a4818PIDs.isEmpty()){
+      LogMsg("<b>" + a4818Path + "</b> is empty.");
       cbOpenDigitizers->setCurrentIndex(0);
       return;
+    }else{
+
+      if( a4818PIDs.size() > 4){
+        LogMsg("There are more than 4 a4818, please edit the MaxNPorts in macro.h and recompile.");
+      }
+
     }
   }
 
@@ -597,20 +618,40 @@ void MainWindow::OpenDigitizers(){
   logMsgHTMLMode = false;
   nDigi = 0;
   std::vector<std::pair<int, int>> portList; //boardID, portID
-  for(int port = 0; port < MaxNPorts; port++){
-    if( cbOpenDigitizers->currentData().toInt() == 4 ) port = a4818PID.toInt();
-    for( int board = 0; board < MaxNBoards; board ++){ /// max number of diasy chain
-      Digitizer dig;
-      dig.OpenDigitizer(board, port);
-      if( dig.IsConnected() ){
-        nDigi++;
-        portList.push_back(std::pair(board, port));
-        LogMsg(QString("... Found at port: %1, board: %2. SN: %3 %4").arg(port).arg(board).arg(dig.GetSerialNumber(), 3, 10, QChar(' ')).arg(dig.GetDPPString().c_str()));
-      }//else{
-        //LogMsg(QString("... Nothing at port: %1, board: %2.").arg(port).arg(board));
-      //}
-      dig.CloseDigitizer();
-      QCoreApplication::processEvents(); //to prevent Qt said application not responding.
+
+  if( cbOpenDigitizers->currentData().toInt() == 4 ) { //for A4818
+    
+    for( int i = 0; i < std::min((int)a4818PIDs.size(), MaxNPorts); i++){
+      int port = a4818PIDs.at(i).toInt();
+      
+      for( int board = 0; board < MaxNBoards; board ++){ /// max number of diasy chain
+        Digitizer dig;
+        dig.OpenDigitizer(board, port);
+        if( dig.IsConnected() ){
+          nDigi++;
+          portList.push_back(std::pair(board, port));
+          LogMsg(QString("... Found at port: %1, board: %2. SN: %3 %4").arg(port).arg(board).arg(dig.GetSerialNumber(), 3, 10, QChar(' ')).arg(dig.GetDPPString().c_str()));
+        }
+        dig.CloseDigitizer();
+        QCoreApplication::processEvents(); //to prevent Qt said application not responding.
+      }
+    }
+
+  }else{ // optical fiber
+
+    for(int port = 0; port < MaxNPorts; port++){
+
+      for( int board = 0; board < MaxNBoards; board ++){ /// max number of diasy chain
+        Digitizer dig;
+        dig.OpenDigitizer(board, port);
+        if( dig.IsConnected() ){
+          nDigi++;
+          portList.push_back(std::pair(board, port));
+          LogMsg(QString("... Found at port: %1, board: %2. SN: %3 %4").arg(port).arg(board).arg(dig.GetSerialNumber(), 3, 10, QChar(' ')).arg(dig.GetDPPString().c_str()));
+        }
+        dig.CloseDigitizer();
+        QCoreApplication::processEvents(); //to prevent Qt said application not responding.
+      }
     }
   }
   logMsgHTMLMode = true;
