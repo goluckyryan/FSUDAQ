@@ -466,7 +466,24 @@ void Scope::StopScope(){
 
     //restore setting
     digi[ID]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, traceOn[ID], -1);
-    //TODO =============
+    int ch = cbScopeCh->currentIndex();
+
+    if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_PHA_CODE ){
+      digi[ID]->WriteRegister(DPP::DPPAlgorithmControl, dppAlg, ch);
+      digi[ID]->WriteRegister(DPP::PHA::DPPAlgorithmControl2_G, dppAlg2, ch);
+      digi[ID]->WriteRegister(DPP::RegChannelEnableMask, chMask);
+    }
+
+    if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_PSD_CODE ){
+      digi[ID]->WriteRegister(DPP::DPPAlgorithmControl, dppAlg, ch);
+      digi[ID]->WriteRegister(DPP::PSD::DPPAlgorithmControl2_G, dppAlg2, ch);
+      digi[ID]->WriteRegister(DPP::RegChannelEnableMask, chMask);
+    }
+
+    if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_QDC_CODE ){
+      digi[ID]->WriteRegister(DPP::QDC::DPPAlgorithmControl, dppAlg, ch);
+      digi[ID]->WriteRegister(DPP::RegChannelEnableMask, chMask);
+    }
 
 
   }else{

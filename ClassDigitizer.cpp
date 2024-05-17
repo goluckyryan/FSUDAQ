@@ -113,9 +113,9 @@ int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose
   }
 
   if( ret == 0 ){
-    if( LinkType == CAEN_DGTZ_USB ) printf("Open digitizer via USB, board : %d\n", boardID);
-    if( LinkType == CAEN_DGTZ_OpticalLink ) printf("Open digitizer via Optical Link, port : %d, board : %d\n", portID, boardID);
-    if( LinkType == CAEN_DGTZ_USB_A4818 ) printf("Open digitizer via A4818, port : %d, board : %d\n", portID, boardID);
+    if( LinkType == CAEN_DGTZ_USB )         printf("### Open digitizer via USB, board : %d\n", boardID);
+    if( LinkType == CAEN_DGTZ_OpticalLink ) printf("### Open digitizer via Optical Link, port : %d, board : %d\n", portID, boardID);
+    if( LinkType == CAEN_DGTZ_USB_A4818 )   printf("### Open digitizer via A4818, port : %d, board : %d\n", portID, boardID);
   }
   
   if (ret != 0) {
