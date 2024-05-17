@@ -291,6 +291,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
 
   CheckElog();
 
+
+  LogMsg("====== <font style=\"color: blue;\"><b>FSU DAQ is ready.</b></font> ======");
+
+
 }
 
 MainWindow::~MainWindow(){
@@ -731,7 +735,7 @@ void MainWindow::OpenDigitizers(){
     canvas->FillHistograms();
   });
 
-  LogMsg(QString("Done. Opened %1 digitizer(s).").arg(nDigi));
+  LogMsg("====== <font style=\"color: blue;\"><b>" + QString("Done. Opened %1 digitizer(s).").arg(nDigi) + "</b></font> =====");
 
   WaitForDigitizersOpen(false);
   bnStartACQ->setStyleSheet("background-color: green;");

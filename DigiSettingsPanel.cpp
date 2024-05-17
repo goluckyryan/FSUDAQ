@@ -2317,7 +2317,7 @@ void DigiSettingsPanel::SetUpChannel_PSD(){
           SetUpSpinBox(sbThreshold[ID][ch],                                 "", tabLayout, ch + 1, 2, DPP::PSD::TriggerThreshold, ch);
           SetUpComboBoxBit(cbTrigMode[ID][ch],                              "", tabLayout, ch + 1, 4, DPP::Bit_DPPAlgorithmControl_PHA::ListTrigMode, DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PHA::TriggerMode, 1, ch);
           SetUpSpinBox(sbTriggerHoldOff[ID][ch],                            "", tabLayout, ch + 1, 6, DPP::PSD::TriggerHoldOffWidth, ch);
-          SetUpComboBoxBit(cbLocalTriggerValid[ID][ch],                     "", tabLayout, ch + 1, 8, DPP::PSD::Bit_DPPAlgorithmControl2::ListLocalTrigValidMode, DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::LocalTrigValidMode, 1, ch);
+          SetUpComboBoxBit(cbLocalTriggerValid[ID][ch],                     "", tabLayout, ch + 1, 8, DPP::PSD::Bit_DPPAlgorithmControl2::ListLocalTrigValidMode, DPP::PSD::DPPAlgorithmControl2_G, DPP::PSD::Bit_DPPAlgorithmControl2::LocalTrigValidMode, 1, ch);
         }
 
         if( i == 1 ){
@@ -2327,8 +2327,8 @@ void DigiSettingsPanel::SetUpChannel_PSD(){
             QLabel * lb1 = new QLabel("Trig. Counter Flag [G]", this); lb1->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb1, 0, 6);
           }
           SetUpSpinBox(sbShapedTrigWidth[ID][ch],        "", tabLayout, ch + 1, 1, DPP::PSD::ShapedTriggerWidth, ch);
-          SetUpComboBoxBit(cbLocalShapedTrigger[ID][ch], "", tabLayout, ch + 1, 3, DPP::PSD::Bit_DPPAlgorithmControl2::ListLocalShapeTrigMode, DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::LocalShapeTriggerMode, 1, ch);
-          SetUpComboBoxBit(cbTrigCount[ID][ch],          "", tabLayout, ch + 1, 5, DPP::PSD::Bit_DPPAlgorithmControl2::ListTrigCounter, DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::TriggerCounterFlag, 1, ch);
+          SetUpComboBoxBit(cbLocalShapedTrigger[ID][ch], "", tabLayout, ch + 1, 3, DPP::PSD::Bit_DPPAlgorithmControl2::ListLocalShapeTrigMode, DPP::PSD::DPPAlgorithmControl2_G, DPP::PSD::Bit_DPPAlgorithmControl2::LocalShapeTriggerMode, 1, ch);
+          SetUpComboBoxBit(cbTrigCount[ID][ch],          "", tabLayout, ch + 1, 5, DPP::PSD::Bit_DPPAlgorithmControl2::ListTrigCounter, DPP::PSD::DPPAlgorithmControl2_G, DPP::PSD::Bit_DPPAlgorithmControl2::TriggerCounterFlag, 1, ch);
         }
 
         if( i == 2 ){

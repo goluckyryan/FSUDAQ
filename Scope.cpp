@@ -346,15 +346,17 @@ void Scope::StartScope(){
 
     int ID = cbScopeDigi->currentIndex();
     int ch = cbScopeCh->currentIndex();
+    oldDigi = ID;
+    oldCh = ch;
 
     //save present settings, channleMap, trigger condition
     traceOn[ID] = digi[ID]->IsRecordTrace();
     digi[ID]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, 1, -1);
+    chMask = digi[ID]->GetSettingFromMemory(DPP::RegChannelEnableMask);
 
     if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_PHA_CODE ){
       dppAlg  = digi[ID]->GetSettingFromMemory(DPP::DPPAlgorithmControl, ch);
       dppAlg2 = digi[ID]->GetSettingFromMemory(DPP::PHA::DPPAlgorithmControl2_G, ch);
-      chMask = digi[ID]->GetSettingFromMemory(DPP::RegChannelEnableMask);
 
       digi[ID]->SetBits(DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PHA::TriggerMode, 0, ch);
       digi[ID]->SetBits(DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PHA::DisableSelfTrigger, 0, ch);
@@ -367,14 +369,17 @@ void Scope::StartScope(){
     if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_PSD_CODE ){
       dppAlg  = digi[ID]->GetSettingFromMemory(DPP::DPPAlgorithmControl, ch);
       dppAlg2 = digi[ID]->GetSettingFromMemory(DPP::PSD::DPPAlgorithmControl2_G, ch);
-      chMask = digi[ID]->GetSettingFromMemory(DPP::RegChannelEnableMask);
-      //TODO ===============
+      
+      digi[ID]->SetBits(DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PHA::TriggerMode, 0, ch);
+      digi[ID]->SetBits(DPP::DPPAlgorithmControl, DPP::Bit_DPPAlgorithmControl_PHA::DisableSelfTrigger, 0, ch);
+
+      digi[ID]->SetBits(DPP::PSD::DPPAlgorithmControl2_G, DPP::PSD::Bit_DPPAlgorithmControl2::LocalShapeTriggerMode, 0, ch);
+      digi[ID]->SetBits(DPP::PSD::DPPAlgorithmControl2_G, DPP::PSD::Bit_DPPAlgorithmControl2::LocalTrigValidMode, 0, ch);
     }
 
     if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_QDC_CODE ){
       dppAlg  = digi[ID]->GetSettingFromMemory(DPP::QDC::DPPAlgorithmControl, ch);
-      chMask = digi[ID]->GetSettingFromMemory(DPP::RegChannelEnableMask);
-      //TODO ===============
+      digi[ID]->SetBits(DPP::QDC::DPPAlgorithmControl, DPP::QDC::Bit_DPPAlgorithmControl::TriggerMode, 0, ch); //set self-triiger
     }
 
     digi[ID]->WriteRegister(DPP::RegChannelEnableMask, (1 << ch));
@@ -450,7 +455,8 @@ void Scope::StopScope(){
 
   if( chkSoleRun->isChecked() ){
 
-    int ID = cbScopeDigi->currentIndex();
+    //int ID = cbScopeDigi->currentIndex();
+    int ID = oldDigi;
 
     if( readDataThread[ID]->isRunning() ){
       readDataThread[ID]->Stop();
@@ -466,25 +472,21 @@ void Scope::StopScope(){
 
     //restore setting
     digi[ID]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, traceOn[ID], -1);
-    int ch = cbScopeCh->currentIndex();
+    digi[ID]->WriteRegister(DPP::RegChannelEnableMask, chMask);
 
     if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_PHA_CODE ){
-      digi[ID]->WriteRegister(DPP::DPPAlgorithmControl, dppAlg, ch);
-      digi[ID]->WriteRegister(DPP::PHA::DPPAlgorithmControl2_G, dppAlg2, ch);
-      digi[ID]->WriteRegister(DPP::RegChannelEnableMask, chMask);
+      digi[ID]->WriteRegister(DPP::DPPAlgorithmControl, dppAlg, oldCh);
+      digi[ID]->WriteRegister(DPP::PHA::DPPAlgorithmControl2_G, dppAlg2, oldCh);
     }
 
     if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_PSD_CODE ){
-      digi[ID]->WriteRegister(DPP::DPPAlgorithmControl, dppAlg, ch);
-      digi[ID]->WriteRegister(DPP::PSD::DPPAlgorithmControl2_G, dppAlg2, ch);
-      digi[ID]->WriteRegister(DPP::RegChannelEnableMask, chMask);
+      digi[ID]->WriteRegister(DPP::DPPAlgorithmControl, dppAlg, oldCh);
+      digi[ID]->WriteRegister(DPP::PSD::DPPAlgorithmControl2_G, dppAlg2, oldCh);
     }
 
     if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_QDC_CODE ){
-      digi[ID]->WriteRegister(DPP::QDC::DPPAlgorithmControl, dppAlg, ch);
-      digi[ID]->WriteRegister(DPP::RegChannelEnableMask, chMask);
+      digi[ID]->WriteRegister(DPP::QDC::DPPAlgorithmControl, dppAlg, oldCh);
     }
-
 
   }else{
 

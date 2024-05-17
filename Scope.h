@@ -84,6 +84,7 @@ private:
 
   bool traceOn[MaxNDigitizer];
   uint32_t dppAlg, dppAlg2, chMask; //for single channel run
+  unsigned short oldCh, oldDigi;
 
   ReadDataThread ** readDataThread;   
   TimingThread * updateTraceThread;
