@@ -79,13 +79,14 @@ class FSUReader{
       }
     }
 
-    static void PrintHitListInfo(std::vector<Hit> hitList, std::string name){
-      size_t n = hitList.size();
+    static void PrintHitListInfo(std::vector<Hit> * hitList, std::string name){
+      size_t n = hitList->size();
       size_t s = sizeof(Hit);
       printf("============== %s, size : %zu | %.2f MByte\n", name.c_str(), n, n*s/1024./1024.);
       if( n > 0 ){
-        printf("t0 : %15llu \n", hitList.at(0).timestamp);
-        printf("t1 : %15llu \n", hitList.back().timestamp);
+        printf("t0 : %15llu ns\n", hitList->front().timestamp);
+        printf("t1 : %15llu ns\n", hitList->back().timestamp);
+        printf("dt : %15.3f ms\n", (hitList->back().timestamp - hitList->front().timestamp)/1e6);
       }
     }
 
@@ -94,8 +95,9 @@ class FSUReader{
       size_t s = sizeof(Hit);
       printf("============== reader.hit, size : %zu | %.2f MByte\n", n, n*s/1024./1024.);
       if( n > 0 ){
-        printf("t0 : %15llu \n", hit.at(0).timestamp);
-        printf("t1 : %15llu \n", hit.back().timestamp);
+        printf("t0 : %15llu ns\n", hit.at(0).timestamp);
+        printf("t1 : %15llu ns\n", hit.back().timestamp);
+        printf("dt : %15.3f ms\n", (hit.back().timestamp - hit.front().timestamp)/1e6);
       }
     }
 
@@ -472,8 +474,9 @@ inline std::vector<Hit> FSUReader::ReadBatch(unsigned int batchSize, bool verbos
     uLong t1_B = hit.back().timestamp;
     if( verbose ) {
       printf(" hit in memeory : %7zu | %u | %lu \n", hit.size(), filePos, inFileSize);
-      printf("t0 : %15lu\n", t0_B);
-      printf("t1 : %15lu\n", t1_B);
+      printf("t0 : %15lu ns\n", t0_B);
+      printf("t1 : %15lu ns\n", t1_B);
+      printf("dt : %15.3f ms\n", (t1_B - t0_B)/1e6);
     }
 
     hitList_A = hit;
@@ -500,6 +503,7 @@ inline std::vector<Hit> FSUReader::ReadBatch(unsigned int batchSize, bool verbos
     printf(" hit in memeory : %7zu | %u | %lu \n", hit.size(), filePos, inFileSize);
     printf("t0 : %15lu\n", t0_B);
     printf("t1 : %15lu\n", t1_B);
+    printf("dt : %15.3f ms\n", (t1_B - t0_B)/1e6);
   }
 
   uLong t0_A = hitList_A.at(0).timestamp;
@@ -552,8 +556,8 @@ inline std::vector<Hit> FSUReader::ReadBatch(unsigned int batchSize, bool verbos
     if( verbose ) {
       printf("----------------- ID_A : %lu, Drop\n", ID_A);
       printf("----------------- ID_B : %lu, Drop\n", ID_B);
-      PrintHitListInfo(hitList_A, "hitList_A");
-      PrintHitListInfo(hitTemp, "hitTemp");
+      PrintHitListInfo(&hitList_A, "hitList_A");
+      PrintHitListInfo(&hitTemp, "hitTemp");
       PrintHitListInfo();
       printf("=========== sume of A + B + Temp : %zu \n", hitList_A.size() + hit.size()  + hitTemp.size());
       printf("----------------- refill hitList_A \n");
@@ -565,7 +569,7 @@ inline std::vector<Hit> FSUReader::ReadBatch(unsigned int batchSize, bool verbos
     hitTemp.clear();
     
     if( verbose ) {
-      PrintHitListInfo(hitList_A, "hitList_A");
+      PrintHitListInfo(&hitList_A, "hitList_A");
       PrintHitListInfo();
       printf("=========== sume of A + B : %zu \n", hitList_A.size() + hit.size());
     }

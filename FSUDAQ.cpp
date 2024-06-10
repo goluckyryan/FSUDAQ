@@ -55,7 +55,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
 
     cbOpenDigitizers = new RComboBox(this);
     cbOpenDigitizers->addItem("Open Digitizers ... ", 0);
-    cbOpenDigitizers->addItem("Open Digitizers via Optical", 1);
+    cbOpenDigitizers->addItem("Open Digitizers via Optical/USB", 1);
     // cbOpenDigitizers->addItem("Open Digitizers (default program)", 2);
     // cbOpenDigitizers->addItem("Open Digitizers + load Settings", 3);
     //cbOpenDigitizers->addItem("Open Digitizers via USB", 3);
@@ -1679,9 +1679,9 @@ void MainWindow::WriteRunTimestamp(bool isStartRun){
   if( file.open(QIODevice::Text | QIODevice::WriteOnly | QIODevice::Append) ){
 
     if( isStartRun ){
-      file.write(("Start Run | " + QString::number(runID) + " | " + dateTime + " | " + startComment + "\n").toStdString().c_str());
+      file.write(("Start Run | " + QString::number(runID) + " | " + dateTime + " | " + lePrefix->text() + " | " + startComment + "\n").toStdString().c_str());
     }else{
-      file.write((" Stop Run | " + QString::number(runID) + " | " + dateTime + " | " + stopComment + "\n").toStdString().c_str());
+      file.write((" Stop Run | " + QString::number(runID) + " | " + dateTime + " | " + lePrefix->text() + " | " + stopComment + "\n").toStdString().c_str());
     }
     
     file.close();

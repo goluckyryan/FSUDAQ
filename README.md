@@ -77,6 +77,7 @@ Ubuntu 22.04
 - CAENCOmm v1.5.3 +
 - CAENDigitizer v2.17.1 +
 - CAEN A3818 Driver v1.6.8 +
+- CAENUSBdrv v1.5.5 + (for V57XX digitizer with USB connection)
 
 - qt6-base-dev
 - libqt6charts6-dec
