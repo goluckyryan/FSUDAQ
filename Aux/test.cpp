@@ -324,13 +324,15 @@ int TestDigitizerRaw(){
 //^======================================
 int main(int argc, char* argv[]){
 
-  TestDigitizerRaw();
+  //TestDigitizerRaw();
   
   // CheckBufferSize(5, 4);
 
   //GetOneAgg();
 
+  Digitizer * digi = new Digitizer(0, 49093, 0, true);
 
+  delete digi;
 
   // digi->WriteRegister(DPP::QDC::PreTrigger, 60, -1);
 

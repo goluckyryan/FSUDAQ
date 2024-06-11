@@ -589,6 +589,7 @@ void MainWindow::OpenDigitizers(){
     if( !file.open(QIODevice::Text | QIODevice::ReadOnly) ) {
       LogMsg("<b>" + a4818Path + "</b> not found.");
       LogMsg("Please create such file and put the a4818 PIDs inseperate lines.");
+      cbOpenDigitizers->setCurrentIndex(0);
       return;
     }else{
       QTextStream in(&file);
@@ -606,8 +607,8 @@ void MainWindow::OpenDigitizers(){
       return;
     }else{
 
-      if( a4818PIDs.size() > 4){
-        LogMsg("There are more than 4 a4818, please edit the MaxNPorts in macro.h and recompile.");
+      if( a4818PIDs.size() > MaxNPorts){
+        LogMsg("There are more than "+ QString::number(MaxNPorts) + " a4818, please edit the MaxNPorts in macro.h and recompile.");
       }
 
     }
