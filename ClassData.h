@@ -330,6 +330,8 @@ inline void Data::ClearData(){
   tempDigiWaveform3.clear();
   tempDigiWaveform4.clear();
 
+  outFileIndex = 0;
+
   ClearNumEventsDecoded();
   ClearTriggerRate();
 

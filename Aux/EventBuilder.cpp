@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
   totalHitCount += readerA->GetHitCount();
 
   for( int i = 1; i < nFile; i++){
-    FSUReader * readerB = new FSUReader(inFileName[i].Data(), 1, 0);
+    FSUReader * readerB = new FSUReader(inFileName[i].Data(), 1, 1);
     readerB->ScanNumBlock(0,0);
     totalHitCount += readerB->GetHitCount();
     fileInfo = {inFileName[i].Data(), readerB->GetSN() * 1000 +  readerB->GetFileOrder(), readerB->GetHitCount()};
