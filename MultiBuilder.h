@@ -14,16 +14,16 @@ public:
   MultiBuilder(Data * singleData, int type, int sn);
   ~MultiBuilder();
 
-  void SetTimeWindow(unsigned short ticks) {timeWindow = ticks; leftOverTime = ticks;}
+  void SetTimeWindow(unsigned short nanosec) {timeWindow = nanosec; leftOverTime = nanosec;}
   unsigned short GetTimeWindow() const{return timeWindow;}
 
   void SetTimeJump(unsigned long long TimeJumpInNanoSec) {timeJump = TimeJumpInNanoSec;}
   unsigned long long GetTimeJump() const {return timeJump;}
 
-  void SetLeftOverTime(unsigned long long ticks) {leftOverTime = ticks;}
+  void SetLeftOverTime(unsigned long long nanosec) {leftOverTime = nanosec;}
   unsigned long long GetLeftOverTime() const{return leftOverTime;}
 
-  void SetBreakTime(unsigned long long ticks) {breakTime = ticks;}
+  void SetBreakTime(unsigned long long nanosec) {breakTime = nanosec;}
   unsigned long long GetBreakTime() const{return breakTime;}
 
   unsigned int GetNumOfDigitizer() const {return nData;}

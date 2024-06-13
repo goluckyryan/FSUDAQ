@@ -31,7 +31,7 @@ public:
     tick2ns = digi[0]->GetTick2ns();
     SetBackwardBuild(false, 100); // using normal building (acceding in time) or backward building, int the case of backward building, default events to be build is 100. 
     evtbder = GetEventBuilder();
-    evtbder->SetTimeWindow(500);
+    evtbder->SetTimeWindow(1000);
     
     //========== use the influx from the Analyzer
     influx = new InfluxDB("https://fsunuc.physics.fsu.edu/influx/");
@@ -87,6 +87,7 @@ private:
   RSpinBox * sbEnergy;
   RSpinBox * sbAngle;
 
+  RSpinBox * sbEventWin;
   QCheckBox * chkRunAnalyzer;
 
   QLineEdit * leMassTablePath;
@@ -212,9 +213,22 @@ inline void SplitPole::SetUpCanvas(){
       FillConstants();
     });
 
-    chkRunAnalyzer = new QCheckBox("Run Analyzer", this);
-    boxLayout->addWidget(chkRunAnalyzer, 4, 1);
 
+    QLabel * lbEventWindow = new QLabel("Event Window [ns] ", box);
+    lbEventWindow->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+    boxLayout->addWidget(lbEventWindow, 4, 0);
+    sbEventWin = new RSpinBox(this);
+    sbEventWin->setDecimals(0);
+    sbEventWin->setSingleStep(100);
+    sbEventWin->setMaximum(1000000);
+    boxLayout->addWidget(sbEventWin, 4, 1);
+    sbEventWin->setValue(1000);
+    connect(sbEventWin, &RSpinBox::returnPressed, this, [=](){
+      evtbder->SetTimeWindow(sbEventWin->value());
+    });
+
+    chkRunAnalyzer = new QCheckBox("Run Analyzer", this);
+    boxLayout->addWidget(chkRunAnalyzer, 4, 3);
 
     QFrame *separator = new QFrame(box);
     separator->setFrameShape(QFrame::HLine);

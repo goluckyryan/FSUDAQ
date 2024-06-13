@@ -42,7 +42,7 @@ namespace SPS{
     const short dBR = 10;
     const short dBL = 11;
     const short Cathode = 7;
-    const short AnodeF = 13;
+    const short AnodeF = 12;
     const short AnodeB = 15;
 
   };
