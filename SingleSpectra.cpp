@@ -9,7 +9,7 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
   DebugPrint("%s", "SingleSpectra");
   this->digi = digi;
   this->nDigi = nDigi;
-  this->rawDataPath = rawDataPath;
+  this->settingPath = rawDataPath + "/HistogramSettings.txt";
 
   maxFillTimeinMilliSec = 1000;  
   maxFillTimePerDigi = maxFillTimeinMilliSec/nDigi;
@@ -168,6 +168,9 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
     connect(chkIsFillHistogram, &QCheckBox::stateChanged, this, [=](int state){ fillHistograms = state;});
     chkIsFillHistogram->setChecked(false);
     fillHistograms = false;
+
+    QLabel * lbSettingPath = new QLabel( settingPath , this);
+    ctrlLayout->addWidget(lbSettingPath, 1, 0, 1, 8);
 
   }
 
@@ -361,37 +364,53 @@ void SingleSpectra::FillHistograms(){
 
 void SingleSpectra::SaveSetting(){
   DebugPrint("%s", "SingleSpectra");
-  QFile file(rawDataPath + "/singleSpectraSetting.txt");
 
-  file.open(QIODevice::Text | QIODevice::WriteOnly);
+  QFile file(settingPath );
 
-  for( unsigned int i = 0; i < nDigi; i++){
-    file.write(("======= " + QString::number(digi[i]->GetSerialNumber()) + "\n").toStdString().c_str());
-    for( int ch = 0; ch < digi[i]->GetNumInputCh() ; ch++){
-      QString a = QString::number(ch).rightJustified(2, ' ');
-      QString b = QString::number(hist[i][ch]->GetNBin()).rightJustified(6, ' ');
-      QString c = QString::number(hist[i][ch]->GetXMin()).rightJustified(6, ' ');
-      QString d = QString::number(hist[i][ch]->GetXMax()).rightJustified(6, ' ');
-      file.write( QString("%1 %2 %3 %4\n").arg(a).arg(b).arg(c).arg(d).toStdString().c_str() );
+  if (!file.exists()) {
+    // If the file does not exist, create it
+    if (!file.open(QIODevice::WriteOnly)) {
+      qWarning() << "Could not create file" << settingPath;
+    } else {
+      qDebug() << "File" << settingPath  << "created successfully";
+      file.close();
     }
-
-    QString a = QString::number(digi[i]->GetNumInputCh()).rightJustified(2, ' ');
-    QString b = QString::number(hist2D[i]->GetXNBin()).rightJustified(6, ' ');
-    QString c = QString::number(hist2D[i]->GetXMin()).rightJustified(6, ' ');
-    QString d = QString::number(hist2D[i]->GetXMax()).rightJustified(6, ' ');
-    QString e = QString::number(hist2D[i]->GetYNBin()).rightJustified(6, ' ');
-    QString f = QString::number(hist2D[i]->GetYMin()).rightJustified(6, ' ');
-    QString g = QString::number(hist2D[i]->GetYMax()).rightJustified(6, ' ');
-    file.write( QString("%1 %2 %3 %4 %5 %6 %7\n").arg(a).arg(b).arg(c).arg(d).arg(e).arg(f).arg(g).toStdString().c_str() );
   }
 
-  file.write("//========== End of file\n");
-  file.close();
+  if( file.open(QIODevice::Text | QIODevice::WriteOnly) ){
+
+    for( unsigned int i = 0; i < nDigi; i++){
+      file.write(("======= " + QString::number(digi[i]->GetSerialNumber()) + "\n").toStdString().c_str());
+      for( int ch = 0; ch < digi[i]->GetNumInputCh() ; ch++){
+        QString a = QString::number(ch).rightJustified(2, ' ');
+        QString b = QString::number(hist[i][ch]->GetNBin()).rightJustified(6, ' ');
+        QString c = QString::number(hist[i][ch]->GetXMin()).rightJustified(6, ' ');
+        QString d = QString::number(hist[i][ch]->GetXMax()).rightJustified(6, ' ');
+        file.write( QString("%1 %2 %3 %4\n").arg(a).arg(b).arg(c).arg(d).toStdString().c_str() );
+      }
+
+      QString a = QString::number(digi[i]->GetNumInputCh()).rightJustified(2, ' ');
+      QString b = QString::number(hist2D[i]->GetXNBin()-2).rightJustified(6, ' ');
+      QString c = QString::number(hist2D[i]->GetXMin()).rightJustified(6, ' ');
+      QString d = QString::number(hist2D[i]->GetXMax()).rightJustified(6, ' ');
+      QString e = QString::number(hist2D[i]->GetYNBin()-2).rightJustified(6, ' ');
+      QString f = QString::number(hist2D[i]->GetYMin()).rightJustified(6, ' ');
+      QString g = QString::number(hist2D[i]->GetYMax()).rightJustified(6, ' ');
+      file.write( QString("%1 %2 %3 %4 %5 %6 %7\n").arg(a).arg(b).arg(c).arg(d).arg(e).arg(f).arg(g).toStdString().c_str() );
+    }
+
+    file.write("##========== End of file\n");
+    file.close();
+
+  }else{
+    printf("%s|cannot open HistogramSettings.txt\n", __func__);
+  }
 }
 
 void SingleSpectra::LoadSetting(){
   DebugPrint("%s", "SingleSpectra");
-  QFile file(rawDataPath + "/singleSpectraSetting.txt");
+
+  QFile file(settingPath);
 
   if( file.open(QIODevice::Text | QIODevice::ReadOnly) ){
 
@@ -402,7 +421,7 @@ void SingleSpectra::LoadSetting(){
     int digiID = -1;
 
     while ( !line.isNull() ){
-      if( line.contains("//========== ") ) break;
+      if( line.contains("##========== ") ) break;
       if( line.contains("//") ) continue;
       if( line.contains("======= ") ){
         digiSN = line.mid(7).toInt();
@@ -422,21 +441,21 @@ void SingleSpectra::LoadSetting(){
 
         QStringList list = line.split(QRegularExpression("\\s+"));
         list.removeAll("");
-        if( list.count() != 4 ) {
-          line = in.readLine();
-          continue;
-        }
-        QVector<int> data;
+        // if( list.count() != 4 ) {
+        //   line = in.readLine();
+        //   continue;
+        // }
+        QVector<float> data;
         for( int i = 0; i < list.count(); i++){   
-          data.push_back(list[i].toInt());
+          data.push_back(list[i].toFloat());
         }
         
         if( 0 <= data[0] && data[0] < digi[digiID]->GetNumInputCh() ){
-          hist[digiID][data[0]]->Rebin(data[1], data[2], data[3]);
+          hist[digiID][int(data[0])]->Rebin(data[1], data[2], data[3]);
         }
 
-        if( data[0] == digi[digiID]->GetNumInputCh() && data.size() == 7 ){
-          hist2D[digiID]->Rebin(data[1], data[2], data[3], data[4], data[5], data[6]);
+        if( int(data[0]) == digi[digiID]->GetNumInputCh() && data.size() == 7 ){
+          hist2D[digiID]->Rebin(int(data[1]), data[2], data[3], int(data[4]), data[5], data[6]);
         }
 
       }
@@ -445,6 +464,8 @@ void SingleSpectra::LoadSetting(){
     }
 
   }else{
+
+    printf("%s|cannot open HistogramSettings.txt\n", __func__);
 
   }
 

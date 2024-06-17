@@ -338,6 +338,9 @@ inline  void Histogram2D::Rebin(int xbin, double xmin, double xmax, int ybin, do
     }
   }
 
+  rescaleAxes();
+  UpdatePlot();
+
 }
 
 inline  void Histogram2D::RebinY(int ybin, double ymin, double ymax){
@@ -593,7 +596,7 @@ inline void Histogram2D::rightMouseClickRebin(){
       lineEditX[i] = new QLineEdit(&dialog);
       layout.addRow(nameListX[i] + " : ", lineEditX[i]);
   }
-  lineEditX[0]->setText(QString::number(xBin));
+  lineEditX[0]->setText(QString::number(xBin-2));
   lineEditX[1]->setText(QString::number(xMin));
   lineEditX[2]->setText(QString::number(xMax));
 
@@ -603,7 +606,7 @@ inline void Histogram2D::rightMouseClickRebin(){
       lineEditY[i] = new QLineEdit(&dialog);
       layout.addRow(nameListY[i] + " : ", lineEditY[i]);
   }
-  lineEditY[0]->setText(QString::number(yBin));
+  lineEditY[0]->setText(QString::number(yBin-2));
   lineEditY[1]->setText(QString::number(yMin));
   lineEditY[2]->setText(QString::number(yMax));
 
@@ -666,8 +669,6 @@ inline void Histogram2D::rightMouseClickRebin(){
   if( dialog.exec() == QDialog::Accepted ){
     isBusy = true;
     Rebin((int)number[0][0], number[1][0], number[2][0], (int)number[0][1], number[1][1], number[2][1]);
-    rescaleAxes();
-    UpdatePlot();
     isBusy = false;
   }
 

@@ -71,7 +71,7 @@ private:
 
   bool fillHistograms;
 
-  QString rawDataPath;
+  QString settingPath;
 
   unsigned short maxFillTimeinMilliSec;
   unsigned short maxFillTimePerDigi;
