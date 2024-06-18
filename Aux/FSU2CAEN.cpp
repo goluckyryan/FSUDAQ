@@ -177,6 +177,7 @@ int main(int argc, char **argv) {
     unsigned psTimestamp = hitList[g0][evID[g0]].timestamp * 1000 + hitList[g0][evID[g0]].fineTime;
     fwrite(&(psTimestamp), 8, 1, outFile);
     fwrite(&(hitList[g0][evID[g0]].energy), 2, 1, outFile);
+    if( hitList[g0][evID[g0]].energy2 > 0 ) fwrite(&(hitList[g0][evID[g0]].energy2), 2, 1, outFile);
     fwrite(&(flags), 4, 1, outFile);
     if( hitList[g0][evID[g0]].traceLength > 0 ){
       char waveCode = 1;
