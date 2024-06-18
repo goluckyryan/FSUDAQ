@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
   pos = outFileName.Index("_", pos+1); // find next "_"
   if( nFile == 1 ) pos = outFileName.Index("_", pos+1); // find next "_", S/N
   outFileName.Remove(pos); // remove the rest
-  outFileName += "_" + std::to_string(timeWindow);
+  outFileName += "_" + ( timeWindow >= 0 ? std::to_string(timeWindow) : "single");
   outFileName += ".root";
   printf("-------> Out file name : %s \n", outFileName.Data());
   printf("========================================= Number of Files : %d \n", nFile);
