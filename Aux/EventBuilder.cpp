@@ -7,9 +7,10 @@
 #include "TFile.h"
 #include "TTree.h"
 #include "TMacro.h"
+#include "TMath.h"
 
-
-#define MAX_MULTI  2000
+#define MAX_TRACE_LENGTH 2000
+#define MAX_MULTI  100
 
 struct FileInfo{
 
@@ -143,14 +144,19 @@ int main(int argc, char **argv) {
   tree->Branch("e_f",              e_f, "e_fineTime[multi]/s");
   tree->Branch("traceLength", traceLength, "traceLength[multi]/s");
   
-  TClonesArray * arrayTrace = nullptr;
-  TGraph * trace = nullptr;
+  // TClonesArray * arrayTrace = nullptr;
+  // TGraph * trace = nullptr;
 
+  short trace[MAX_MULTI][1024];
   if( traceOn ) {
-    arrayTrace = new TClonesArray("TGraph");
-    tree->Branch("trace",       arrayTrace, 2560000);
-    arrayTrace->BypassStreamer();
+  //   arrayTrace = new TClonesArray("TGraph");
+  //   tree->Branch("trace", arrayTrace, 2560000);
+  //   arrayTrace->BypassStreamer();
+
+    tree->Branch("trace", trace,"trace[multi][1024]/S");
+    tree->GetBranch("trace")->SetCompressionSettings(205);
   }
+
 
   //*======================================= Open files
   printf("========================================= Open files & Build Events.\n"); 
@@ -260,15 +266,15 @@ int main(int argc, char **argv) {
     tEnd = events.back().timestamp;
 
     hitProcessed += events.size();    
-    if( hitProcessed % 10000 == 0 ) printf("hit Porcessed %llu/%llu hit....%.2f%%\n\033[A\r", hitProcessed, totalHitCount, hitProcessed*100./totalHitCount);
-    
+    if( hitProcessed % (traceOn ? 100 : 10000) == 0 ) printf("hit Porcessed %llu/%llu hit....%.2f%%\n\033[A\r", hitProcessed, totalHitCount, hitProcessed*100./totalHitCount);
 
     multi = events.size() ;
     if( events.size() >= MAX_MULTI ) {
-      printf("event %lld has size = %d > MAX_MULTI = %d\n", evID, multi, MAX_MULTI);
+      printf("\033[31m event %lld has size = %d > MAX_MULTI = %d \033[0m\n", evID, multi, MAX_MULTI);
       multi = MAX_MULTI;
     }
     if( debug ) printf("=================================== filling data | %u \n", multi);
+
     for( size_t p = 0; p < multi ; p ++ ) {
       if( debug ) {printf("%4zu | ", p); events[p].Print();}
 
@@ -281,11 +287,22 @@ int main(int argc, char **argv) {
       
       traceLength[p] = events[p].traceLength;
       if( traceOn ){
-        trace = (TGraph *) arrayTrace->ConstructedAt(multi, "C");
-        trace->Clear();
-        for( int hh = 0; hh < traceLength[multi]; hh++){
-          trace->SetPoint(hh, hh, events[p].trace[hh]);
+        // trace = (TGraph *) arrayTrace->ConstructedAt(p, "C");
+        // trace->Clear();
+        // for( int hh = 0; hh < traceLength[multi]; hh++){
+        //   trace->SetPoint(hh, hh, events[p].trace[hh]);
+        // }
+
+        if( traceLength[p] > MAX_TRACE_LENGTH ) {
+          printf("\033[31m event %lld has trace length = %d > MAX_TRACE_LENGTH = %d \033[0m\n", evID, traceLength[p], MAX_TRACE_LENGTH);
+          traceLength[p] = MAX_TRACE_LENGTH;
         }
+
+        for( int hh = 0; hh < traceLength[p]; hh++){
+          trace[p][hh] = events[p].trace[hh];
+        }
+
+
       }
     }
 

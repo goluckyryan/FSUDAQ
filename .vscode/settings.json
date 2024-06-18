@@ -161,6 +161,7 @@
     "Analyzer.C": "cpp",
     "process_Run.C": "cpp",
     "EncoreAnalyzer.C": "cpp",
-    "qfiledialog": "cpp"
+    "qfiledialog": "cpp",
+    "script.C": "cpp"
   }
 }
