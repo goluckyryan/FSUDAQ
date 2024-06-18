@@ -14,7 +14,7 @@ ROOTLIBS = `root-config --cflags --glibs`
 
 OBJS = ClassDigitizer.o MultiBuilder.o ClassInfluxDB.o
 
-ALL = test EventBuilder DataReader DumpFSU2ROOT SettingsExplorer 
+ALL = test EventBuilder DataReader DumpFSU2ROOT SettingsExplorer FSU2CAEN
 
 #########################################################################
 
@@ -44,17 +44,13 @@ DataReader : DataReaderScript.cpp ../ClassData.h MultiBuilder.o
 		@echo "--------- making DataReader"
 		$(CC) $(COPTS) -o DataReader DataReaderScript.cpp ../ClassData.h MultiBuilder.o
 
-# EventBuilder_old : EventBuilder_old.cpp ../ClassData.h MultiBuilder.o fsuReader.h
-# 		@echo "--------- making EventBuilder"
-# 		$(CC) $(COPTS) -o EventBuilder_old EventBuilder_old.cpp MultiBuilder.o $(ROOTLIBS) 
-
 EventBuilder : EventBuilder.cpp ../ClassData.h fsuReader.h ../Hit.h
 		@echo "--------- making EventBuilder"
 		$(CC) $(COPTS) -o EventBuilder EventBuilder.cpp $(ROOTLIBS) 
 
-# EventBuilderNoTrace : EventBuilderNoTrace.cpp ../ClassData.h fsuReader.h ../Hit.h 
-# 		@echo "--------- making EventBuilderNoTrace"
-# 		$(CC) $(COPTS) -o EventBuilderNoTrace EventBuilderNoTrace.cpp  $(ROOTLIBS) 
+FSU2CAEN : FSU2CAEN.cpp ../ClassData.h fsuReader.h ../Hit.h
+		@echo "--------- making FSU2CAEN"
+		$(CC) $(COPTS) -o FSU2CAEN FSU2CAEN.cpp 
 
 DumpFSU2ROOT : DumpFSU2ROOT.cpp ../ClassData.h MultiBuilder.o
 		@echo "--------- making DumpFSU2ROOT"
