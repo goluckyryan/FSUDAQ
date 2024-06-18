@@ -6,8 +6,8 @@ struct FileInfo{
   unsigned long hitCount;
 };
 
-const unsigned short header = 0xCAE1;
-const unsigned int flags = 0;
+unsigned short header = 0xCAE1;
+unsigned int flags = 0;
 
 #define minNARG  4
 
@@ -54,7 +54,6 @@ int main(int argc, char **argv) {
   printf("========================================= Number of Files : %d \n", nFile);
   for( int i = 0; i < nFile; i++) printf("%2d | %s \n", i, inFileName[i].c_str());
   printf("=========================================\n"); 
-  printf("  Include Trace = %s\n", "No");
   printf("     Batch size = %d events/file\n", batchSize);
   printf("  Out file name = %s \n", outFileName.c_str());
   printf("  Is tar output = %s \n", tarFlag ? "Yes" : "No");
@@ -167,12 +166,27 @@ int main(int argc, char **argv) {
       
     }
 
+    if( hitList[g0][evID[g0]].energy2 > 0 ) header += 4;
+    if( hitList[g0][evID[g0]].traceLength > 0 ) header += 8;
+    if( hitList[g0][evID[g0]].pileUp ) flags += 0x8000;
+    if( hitList[g0][evID[g0]].fineTime > 0 ) flags += 0x4000;
+
     fwrite(&(header), 2, 1, outFile);
     fwrite(&(hitList[g0][evID[g0]].sn), 2, 1, outFile);
     fwrite(&(hitList[g0][evID[g0]].ch), 2, 1, outFile);
-    fwrite(&(hitList[g0][evID[g0]].timestamp), 8, 1, outFile);
+    unsigned psTimestamp = hitList[g0][evID[g0]].timestamp * 1000 + hitList[g0][evID[g0]].fineTime;
+    fwrite(&(psTimestamp), 8, 1, outFile);
     fwrite(&(hitList[g0][evID[g0]].energy), 2, 1, outFile);
     fwrite(&(flags), 4, 1, outFile);
+    if( hitList[g0][evID[g0]].traceLength > 0 ){
+      char waveCode = 1;
+      fwrite(&(waveCode), 1, 1, outFile);
+      fwrite(&(hitList[g0][evID[g0]].traceLength), 4, 1, outFile);
+
+      for( int i = 0; i < hitList[g0][evID[g0]].traceLength; i++ ){
+        fwrite(&(hitList[g0][evID[g0]].trace[i]), 2, 1, outFile);
+      }
+    }
 
     evID[g0]++;
     if( hitProcessed == 0) tStart = hitList[g0][evID[g0]].timestamp;
@@ -227,7 +241,7 @@ int main(int argc, char **argv) {
       printf("Error creating archive\n");
     }
   }
-  
+
   printf("============================================== end of program\n");
 
   return 0;

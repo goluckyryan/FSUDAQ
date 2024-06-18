@@ -884,7 +884,7 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
 
       Energy[channel][DataIndex[channel]] = energy;
       Timestamp[channel][DataIndex[channel]] = timeStamp * tick2ns;
-      if(extra2Option == 2 ) fineTime[channel][DataIndex[channel]] = (extra2 & 0x03FF );
+      if(extra2Option == 2 ) fineTime[channel][DataIndex[channel]] = (extra2 & 0x03FF ) * tick2ns; // in ps, the tick2ns is a conversion factor
       PileUp[channel][DataIndex[channel]] = pileUp;
       NumEventsDecoded[channel] ++; 
 
@@ -1087,7 +1087,7 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
       Energy2[channel][DataIndex[channel]] = Qshort;
       Energy[channel][DataIndex[channel]] = Qlong;
       Timestamp[channel][DataIndex[channel]] = timeStamp * tick2ns;
-      if( extraOption == 2 ) fineTime[channel][DataIndex[channel]] = extra & 0x3FF;
+      if( extraOption == 2 ) fineTime[channel][DataIndex[channel]] = (extra & 0x3FF) * tick2ns; //in ps, tick2ns is justa conversion factor
 
       NumEventsDecoded[channel] ++; 
       if( !pileup){
