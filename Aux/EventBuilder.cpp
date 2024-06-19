@@ -37,7 +37,8 @@ int main(int argc, char **argv) {
     printf("       verbose : > 0 for debug  \n");   
     printf("    Output file name is contructed from inFile1 \n");   
     printf("\n");
-    printf(" Example: %s 0 0 0 10000 '\\ls -1 *001*.fsu'\n", argv[0]);
+    printf(" Example: %s -1 0 0 '\\ls -1 *001*.fsu' (no event build, no trace, no verbose)\n", argv[0]);
+    printf("          %s 100 0 0 '\\ls -1 *001*.fsu' (event build with 100 ns, no trace, no verbose)\n", argv[0]);
     printf("\n\n");
 
     return 1;

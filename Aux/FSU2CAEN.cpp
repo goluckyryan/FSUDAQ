@@ -6,10 +6,7 @@ struct FileInfo{
   unsigned long hitCount;
 };
 
-unsigned short header = 0xCAE1;
-unsigned int flags = 0;
-
-#define minNARG  4
+#define minNARG  3
 
 //^#############################################################
 //^#############################################################
@@ -21,24 +18,25 @@ int main(int argc, char **argv) {
   printf("=========================================\n");  
   if (argc < minNARG)    {
     printf("Incorrect number of arguments:\n");
-    printf("%s [tar] [batchSize] [inFile1] [inFile2] .... \n", argv[0]);
+    printf("%s [tar] [inFile1] [inFile2] .... \n", argv[0]);
     printf("           tar : output tar, 0 = no, 1 = yes \n");   
-    printf("     batchSize : the size of hit in a batch \n");   
     printf("\n");
-    printf(" Example: %s 100000 '\\ls -1 *001*.fsu'\n", argv[0]);
+    printf(" Example: %s '\\ls 0 *001*.fsu'\n", argv[0]);
     printf("\n\n");
 
     return 1;
   }
-  unsigned int debug = false;
 
+  unsigned int debug = false;
   uInt runStartTime = getTime_us();
+  unsigned short header = 0xCAE1;
+  unsigned int flags = 0;
 
   ///============= read input
   // long timeWindow = atoi(argv[1]);
   // bool traceOn = atoi(argv[2]);
   bool tarFlag = atoi(argv[1]);
-  unsigned int batchSize = atoi(argv[2]);
+  unsigned int batchSize = 2* DEFAULT_HALFBUFFERSIZE;
   int nFile = argc - minNARG + 1;
   std::string inFileName[nFile];
   for( int i = 0 ; i < nFile ; i++){ inFileName[i] = argv[i+ minNARG - 1];}
@@ -66,6 +64,7 @@ int main(int argc, char **argv) {
 
   FSUReader * readerA = new FSUReader(inFileName[0], 1, 1);
   readerA->ScanNumBlock(0,0);
+  if( readerA->GetOptimumBatchSize() > batchSize ) batchSize = readerA->GetOptimumBatchSize();
   FileInfo fileInfo = {inFileName[0], readerA->GetSN() * 1000 +  readerA->GetFileOrder(), readerA->GetTotalHitCount()};
   fileList.push_back(fileInfo);
   totalHitCount += readerA->GetTotalHitCount();
@@ -73,6 +72,8 @@ int main(int argc, char **argv) {
   for( int i = 1; i < nFile; i++){
     FSUReader * readerB = new FSUReader(inFileName[i], 1, 1);
     readerB->ScanNumBlock(0,0);
+    if( readerB->GetOptimumBatchSize() > batchSize ) batchSize = readerB->GetOptimumBatchSize();
+    
     totalHitCount += readerB->GetTotalHitCount();
     fileInfo = {inFileName[i], readerB->GetSN() * 1000 +  readerB->GetFileOrder(), readerB->GetTotalHitCount()};
     
