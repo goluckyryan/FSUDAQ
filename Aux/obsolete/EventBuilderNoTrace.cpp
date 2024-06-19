@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
     tempInfo.fileName = inFileName[i];
     tempInfo.readerID = i;
     tempInfo.SN = reader[i]->GetSN();
-    tempInfo.hitCount = reader[i]->GetHitCount();
+    tempInfo.hitCount = reader[i]->GetTotalHitCount();
     tempInfo.fileSize = reader[i]->GetFileByteSize();
     tempInfo.tick2ns = reader[i]->GetTick2ns();
     tempInfo.DPPType = reader[i]->GetDPPType();
@@ -208,7 +208,7 @@ int main(int argc, char **argv) {
         }else{
           group[gpID].hitID = 0;
           uShort rID = group[gpID].readerIDList[group[gpID].currentID];
-          group[gpID].hitCount = reader[rID]->GetHitCount();
+          group[gpID].hitCount = reader[rID]->GetTotalHitCount();
           printf("-----> go to the next file, %s \n", fileInfo[rID].fileName.c_str() );
         }
       }

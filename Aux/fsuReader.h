@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <filesystem>
 
-// #include "AggSeparator.h"
+#define DEFAULT_HALFBUFFERSIZE 500000
 
 class FSUReader{
 
@@ -60,21 +60,13 @@ class FSUReader{
       return hit[id];
     }
 
-    void ClearHitCount() {hitCount = 0;}
-    ulong GetHitCount() const{return hitCount;}
+    void ClearTotalHitCount() {totalHitCount = 0;}
+    ulong GetTotalHitCount() const{return totalHitCount;}
 
     std::vector<Hit> ReadBatch(unsigned int batchSize = 1000000, bool verbose = false); // output the sorted Hit
 
-    // std::string SaveHit(std::vector<Hit> hitList, bool isAppend = false);
-    // std::string SaveHit2NewFile(std::string saveFolder = "./", std::string indexStr = "");
-    // void SortAndSaveTS(unsigned int batchSize = 1000000, bool verbose = false);
-    // off_t GetTSFileSize() const {return tsFileSize;}
-
-    //TODO 
-    //void SplitFile(unsigned long hitSizePreFile);
-
     void PrintHit(ulong numHit = -1, ulong startIndex = 0) {
-      for( ulong i = startIndex; i < std::min(numHit, hitCount); i++){
+      for( ulong i = startIndex; i < std::min(numHit, totalHitCount); i++){
         printf("%10zu ", i); hit[i].Print();
       }
     }
@@ -101,8 +93,7 @@ class FSUReader{
       }
     }
 
-
-    //void SaveAsCAENCoMPASSFormat();
+    unsigned long GetOptimumBatchSize() const {return optBufferSize;}
 
   private:
 
@@ -129,7 +120,7 @@ class FSUReader{
     std::vector<unsigned int> blockPos;
     std::vector<unsigned int > blockTimeStamp;
 
-    unsigned long hitCount;
+    unsigned long totalHitCount;
 
     std::vector<Hit> hit;
 
@@ -139,8 +130,15 @@ class FSUReader{
 
     off_t  tsFileSize;
 
+    //checking the t0 and tmin for every 1 million hit
+    unsigned short nMillion;
+    std::vector<unsigned long> tmin;
+
+    unsigned long optBufferSize;
+
 };
 
+//^==============================================================
 inline FSUReader::~FSUReader(){
   delete data;
 
@@ -148,6 +146,7 @@ inline FSUReader::~FSUReader(){
 
 }
 
+//^==============================================================
 inline FSUReader::FSUReader(){
   inFile = nullptr;
   data = nullptr;
@@ -161,6 +160,7 @@ inline FSUReader::FSUReader(){
 
 }
 
+//^==============================================================
 inline FSUReader::FSUReader(std::string fileName, uInt dataSize, int verbose){
   inFile = nullptr;
   data = nullptr;
@@ -174,6 +174,7 @@ inline FSUReader::FSUReader(std::string fileName, uInt dataSize, int verbose){
   OpenFile(fileName, dataSize, verbose);
 }
 
+//^==============================================================
 inline FSUReader::FSUReader(std::vector<std::string> fileList, uInt dataSize, int verbose){
   inFile = nullptr;
   data = nullptr;
@@ -188,6 +189,7 @@ inline FSUReader::FSUReader(std::vector<std::string> fileList, uInt dataSize, in
 
 }
 
+//^==============================================================
 inline void FSUReader::OpenFile(std::string fileName, uInt dataSize, int verbose){
 
   /// File format must be YYY...Y_runXXX_AAA_BBB_TT_CCC.fsu
@@ -223,8 +225,13 @@ inline void FSUReader::OpenFile(std::string fileName, uInt dataSize, int verbose
   blockPos.clear();
   blockTimeStamp.clear();
 
-  hitCount = 0;
+  totalHitCount = 0;
   hit.clear();
+
+  nMillion = 0;
+  tmin.clear();
+  tmin.push_back(-1);
+  optBufferSize = 2*DEFAULT_HALFBUFFERSIZE;
 
   //check is the file is *.fsu or *.fsu.X
   size_t found = fileName.find_last_of('.');
@@ -279,6 +286,7 @@ inline void FSUReader::OpenFile(std::string fileName, uInt dataSize, int verbose
 
 }
 
+//^==============================================================
 inline int FSUReader::ReadNextBlock(bool traceON, int verbose, uShort saveData){
   if( inFile == NULL ) return -1;
   if( feof(inFile) || filePos >= inFileSize) {
@@ -334,13 +342,22 @@ inline int FSUReader::ReadNextBlock(bool traceON, int verbose, uShort saveData){
     return -20;
   }
 
-  unsigned int eventCout  = 0;
-
   for( int ch = 0; ch < data->GetNChannel(); ch++){
     if( data->NumEventsDecoded[ch] == 0 ) continue;
 
-    hitCount += data->NumEventsDecoded[ch];
-    eventCout += data->NumEventsDecoded[ch];
+    totalHitCount += data->NumEventsDecoded[ch];
+
+    if( totalHitCount / DEFAULT_HALFBUFFERSIZE > nMillion ) {
+      nMillion ++;
+      tmin.push_back(-1);
+    }
+
+    int start = data->GetDataIndex(ch) - data->NumEventsDecoded[ch] + 1;
+    if( start < 0 ) start = start + data->GetDataSize();
+    for( int i = start; i < start + data->NumEventsDecoded[ch]; i++ ){
+      int k  = i % data->GetDataSize();
+      if( data->GetTimestamp(ch, k) < tmin[nMillion] ) tmin[nMillion] = data->GetTimestamp(ch, k);
+    }
 
     if( saveData ){
       int start = data->GetDataIndex(ch) - data->NumEventsDecoded[ch] + 1;
@@ -375,6 +392,7 @@ inline int FSUReader::ReadNextBlock(bool traceON, int verbose, uShort saveData){
   return 0;
 }
 
+//^==============================================================
 inline int FSUReader::ReadBlock(unsigned int ID, int verbose){
   if( totNumBlock == 0 )return -1;
   if( ID >= totNumBlock )return -1;
@@ -392,6 +410,7 @@ inline int FSUReader::ReadBlock(unsigned int ID, int verbose){
 
 }
 
+//^==============================================================
 inline void FSUReader::SortHit(int verbose){
   if( verbose) printf("\nQuick Sort hit array according to time...");
   std::sort(hit.begin(), hit.end(), [](const Hit& a, const Hit& b) {
@@ -400,6 +419,7 @@ inline void FSUReader::SortHit(int verbose){
   if( verbose) printf(".......done.\n");
 }
 
+//^==============================================================
 inline void FSUReader::ScanNumBlock(int verbose, uShort saveData){
   if( inFile == nullptr ) return;
   if( feof(inFile) ) return;
@@ -423,8 +443,8 @@ inline void FSUReader::ScanNumBlock(int verbose, uShort saveData){
   totNumBlock = blockID;
   if(verbose) {
     printf("\nScan complete: number of data Block : %lu\n", totNumBlock);
-    printf(  "                      number of hit : %lu", hitCount);
-    if( hitCount > 1e6 ) printf(" = %.3f million", hitCount/1e6); 
+    printf(  "                      number of hit : %lu", totalHitCount);
+    if( totalHitCount > 1e6 ) printf(" = %.3f million", totalHitCount/1e6); 
     printf("\n");
     if( saveData )printf(  "              size of the hit array : %lu\n", hit.size());
 
@@ -445,14 +465,32 @@ inline void FSUReader::ScanNumBlock(int verbose, uShort saveData){
 
   //check is the hitCount == hit.size();
   if( saveData ){
-    if( hitCount != hit.size()){
+    if( totalHitCount != hit.size()){
       printf("!!!!!! the Data::dataSize is not big enough. !!!!!!!!!!!!!!!\n");
     }else{
       SortHit(verbose+1);
     }
   }
+
+  //print time structre
+  if( nMillion > 0 ){
+    // printf("------------ time structure\n");
+    // printf("%5s | %15s\n", "mil.", "t-min");
+    for( int i = 0; i < nMillion; i++){
+      // printf("%5d | %15lu", i, tmin[i]);
+      if( i > 0  && tmin[i] < tmin[i-1] ) {
+        // printf("<----");
+        if( i > 1 &&  tmin[i] < tmin[i-2]) optBufferSize += 2*DEFAULT_HALFBUFFERSIZE;
+      }
+      // printf("\n");
+    }
+  }
+
+  // printf(" recommanded batch size : %lu\n", optBufferSize);
+
 }
 
+//^==============================================================
 inline std::vector<Hit> FSUReader::ReadBatch(unsigned int batchSize, bool verbose){
 
   // printf("%s sn:%d. filePos : %lu\n", __func__, sn, ftell(inFile));
@@ -513,6 +551,8 @@ inline std::vector<Hit> FSUReader::ReadBatch(unsigned int batchSize, bool verbos
 
   if( t0_A >= t0_B) {
     printf("\033[0;31m!!!!!!!!!!!!!!!!! %s | Need to increase the batch size. \033[0m\n", __func__);
+    printf("t0_A : %15lu\n", t0_A);
+    printf("t0_B : %15lu\n", t0_B);
     return std::vector<Hit> ();
   }
 
@@ -579,217 +619,4 @@ inline std::vector<Hit> FSUReader::ReadBatch(unsigned int batchSize, bool verbos
   return hitList_A;
 
 }
-
-/*
-inline void FSUReader::SortAndSaveTS(unsigned int batchSize, bool verbose){
-
-  int count = 0;
-  std::vector<Hit> hitList_A ;
-
-  do{
-
-    if( verbose ) printf("***************************************************\n");
-
-    int res = 0;
-    do{
-      res = ReadNextBlock(true, 0, 3);
-    }while ( hit.size() < batchSize && res == 0);
-
-    SortHit();
-    uLong t0_B = hit.at(0).timestamp;
-    uLong t1_B = hit.back().timestamp;
-
-    if( verbose ) {
-      printf(" hit in memeory : %7zu | %u | %lu \n", hit.size(), filePos, inFileSize);
-      printf("t0 : %15lu\n", t0_B);
-      printf("t1 : %15lu\n", t1_B);
-    }
-
-    if( count == 0 ) {
-      hitList_A = hit; // copy hit
-    }else{
-
-      uLong t0_A = hitList_A.at(0).timestamp;
-      uLong t1_A = hitList_A.back().timestamp;
-      ulong ID_A = 0;
-      ulong ID_B = 0;
-
-      if( t0_A > t0_B) {
-        printf("Need to increase the batch size. \n");
-        return;
-      }
-
-      if( t1_A > t0_B) { // need to sort between two hitList
-
-        if( verbose ) {
-          printf("############# need to sort \n");
-          printf("=========== sume of A + B : %zu \n", hitList_A.size() + hit.size());
-        }
-
-        std::vector<Hit> hitTemp;
-
-        for( size_t j = 0; j < hitList_A.size() ; j++){
-          if( hitList_A[j].timestamp < t0_B ) continue;
-          if( ID_A == 0 ) ID_A = j;
-          hitTemp.push_back(hitList_A[j]);
-        }
-
-        hitList_A.erase(hitList_A.begin() + ID_A, hitList_A.end() );
-        if( verbose ) {
-          printf("----------------- ID_A : %lu, Drop\n", ID_A);
-          PrintHitListInfo(hitList_A, "hitList_A");
-        }
-  
-      
-        for( size_t j = 0; j < hit.size(); j++){
-          if( hit[j].timestamp > t1_A ) {
-            ID_B = j;
-            break;
-          }
-          hitTemp.push_back(hit[j]);
-        }
-
-        std::sort(hitTemp.begin(), hitTemp.end(), [](const Hit& a, const Hit& b) {
-          return a.timestamp < b.timestamp;
-        });
-
-        hit.erase(hit.begin(), hit.begin() + ID_B  );
-
-        if( verbose ) {
-          PrintHitListInfo(hitTemp, "hitTemp");
-          printf("----------------- ID_B : %lu, Drop\n", ID_B);
-          PrintHitListInfo(hit, "hit");
-          printf("=========== sume of A + B + Temp : %zu \n", hitList_A.size() + hit.size()  + hitTemp.size());
-          printf("----------------- refill hitList_A \n");
-        }
-        ulong ID_Temp = 0;
-        for( size_t j = 0; j < hitTemp.size(); j++){
-          hitList_A.push_back(hitTemp[j]);
-          if( hitList_A.size() >= batchSize ) {
-            ID_Temp = j+1;
-            break;
-          }
-        }
-
-        hitTemp.erase(hitTemp.begin(), hitTemp.begin() + ID_Temp );
-        for( size_t j = 0 ; j < hit.size(); j ++){
-          hitTemp.push_back(hit[j]);
-        }
-        SaveHit(hitList_A, count <= 1 ? false : true);
-
-        if( verbose ) {
-          PrintHitListInfo(hitList_A, "hitList_A");
-          PrintHitListInfo(hitTemp, "hitTemp");
-          printf("----------------- replace hitList_A by hitTemp \n");
-        }
-
-        hitList_A.clear();
-        hitList_A = hitTemp;
-        hit.clear();
-
-        if( verbose ) {
-          PrintHitListInfo(hitList_A, "hitList_A");
-          printf("===========================================\n");
-        }
-
-      }else{ // save hitList_A, replace hitList_A 
-        
-        SaveHit(hitList_A, count <= 1? false : true);
-        hitList_A.clear();
-        hitList_A = hit;
-        if( verbose ) PrintHitListInfo(hitList_A, "hitList_A");
-
-      }
-    }
-
-    ClearHitList();
-    count ++;
-  }while(filePos < inFileSize);  
-
-  SaveHit(hitList_A, count <= 1 ? false : true);
-
-  printf("================= finished.\n");
-}
-*/
-
-/*
-inline std::string FSUReader::SaveHit(std::vector<Hit> hitList, bool isAppend){
-
-  std::string outFileName;
-  if( fileList.empty() ) {
-    outFileName =  fileName + ".ts" ;
-  }else{
-    outFileName =  fileList[0] + ".ts" ;
-  }
-  uint64_t hitSize = hitList.size();
-
-  FILE * outFile ;
-  if( isAppend ) {
-    outFile = fopen(outFileName.c_str(), "rb+"); //read/write bineary
-
-    rewind(outFile);
-    fseek( outFile, 4, SEEK_CUR);
-    uint64_t org_hitSize;
-    fread(&org_hitSize, 8, 1, outFile);
-
-    rewind(outFile);
-    fseek( outFile, 4, SEEK_CUR);
-
-    org_hitSize += hitSize;
-
-    fwrite(&org_hitSize, 8, 1, outFile);
-    fseek(outFile, 0, SEEK_END);
-
-  }else{
-    outFile = fopen(outFileName.c_str(), "wb"); //overwrite binary
-    uint32_t header = 0xAA000000;
-    header += sn;
-    fwrite( &header, 4, 1, outFile );
-    fwrite( &hitSize, 8, 1, outFile);
-  }
-
-
-  for( ulong i = 0; i < hitSize; i++){
-
-    if( i% 10000 == 0 ) printf("Saving %lu/%lu Hit (%.2f%%)\n\033[A\r", i, hitSize, i*100./hitSize);
-
-    uint16_t flag = hitList[i].ch + (hitList[i].pileUp << 8) ;
-
-    if( DPPType == DPPTypeCode::DPP_PSD_CODE ) flag += ( 1 << 15);
-    if( hitList[i].traceLength > 0 ) flag += (1 << 14);
-
-    // fwrite( &(hit[i].ch), 1, 1, outFile);
-    fwrite( &flag, 2, 1, outFile);
-    fwrite( &(hitList[i].energy), 2, 1, outFile);
-    if( DPPType == DPPTypeCode::DPP_PSD_CODE ) fwrite( &(hitList[i].energy2), 2, 1, outFile);
-    fwrite( &(hitList[i].timestamp), 6, 1, outFile);
-    fwrite( &(hitList[i].fineTime), 2, 1, outFile);
-    if( hitList[i].traceLength > 0 ) fwrite( &(hitList[i].traceLength), 2, 1, outFile);
-    
-    for( uShort j = 0; j < hitList[i].traceLength; j++){
-      fwrite( &(hitList[i].trace[j]), 2, 1, outFile);
-    }
-    
-  }
-
-  off_t tsFileSize = ftello(outFile);  // unsigned int =  Max ~4GB
-  fclose(outFile);
-
-  printf("Saved to %s, size: ", outFileName.c_str());
-  if( tsFileSize < 1024 ) {
-    printf(" %ld Byte", tsFileSize);
-  }else if( tsFileSize < 1024*1024 ) {
-    printf(" %.2f kB", tsFileSize/1024.);
-  }else if( tsFileSize < 1024*1024*1024){
-    printf(" %.2f MB", tsFileSize/1024./1024.);
-  }else{
-    printf(" %.2f GB", tsFileSize/1024./1024./1024.);
-  }
-  printf("\n");
-
-  return outFileName;
-
-}
-*/
-
 

@@ -66,15 +66,15 @@ int main(int argc, char **argv) {
 
   FSUReader * readerA = new FSUReader(inFileName[0], 1, 1);
   readerA->ScanNumBlock(0,0);
-  FileInfo fileInfo = {inFileName[0], readerA->GetSN() * 1000 +  readerA->GetFileOrder(), readerA->GetHitCount()};
+  FileInfo fileInfo = {inFileName[0], readerA->GetSN() * 1000 +  readerA->GetFileOrder(), readerA->GetTotalHitCount()};
   fileList.push_back(fileInfo);
-  totalHitCount += readerA->GetHitCount();
+  totalHitCount += readerA->GetTotalHitCount();
 
   for( int i = 1; i < nFile; i++){
     FSUReader * readerB = new FSUReader(inFileName[i], 1, 1);
     readerB->ScanNumBlock(0,0);
-    totalHitCount += readerB->GetHitCount();
-    fileInfo = {inFileName[i], readerB->GetSN() * 1000 +  readerB->GetFileOrder(), readerB->GetHitCount()};
+    totalHitCount += readerB->GetTotalHitCount();
+    fileInfo = {inFileName[i], readerB->GetSN() * 1000 +  readerB->GetFileOrder(), readerB->GetTotalHitCount()};
     
     if( readerA->GetSN() == readerB->GetSN() ){
       fileList.push_back(fileInfo);

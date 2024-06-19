@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
       tempInfo.fileName = outFileName;
       tempInfo.readerID = i;
       tempInfo.SN = reader[i]->GetSN();
-      tempInfo.hitCount = reader[i]->GetHitCount();
+      tempInfo.hitCount = reader[i]->GetTotalHitCount();
       tempInfo.fileSize = reader[i]->GetTSFileSize();
       tempInfo.tick2ns = reader[i]->GetTick2ns();
       tempInfo.DPPType = reader[i]->GetDPPType();

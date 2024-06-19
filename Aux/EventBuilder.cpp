@@ -20,6 +20,8 @@ struct FileInfo{
 
 };
 
+#define NMINARG 5 
+
 //^#############################################################
 //^#############################################################
 int main(int argc, char **argv) {
@@ -27,13 +29,12 @@ int main(int argc, char **argv) {
   printf("=========================================\n");
   printf("===      *.fsu Events Builder         ===\n");
   printf("=========================================\n");  
-  if (argc < 6)    {
+  if (argc < NMINARG)    {
     printf("Incorrect number of arguments:\n");
-    printf("%s [timeWindow] [withTrace] [verbose] [batchSize] [inFile1]  [inFile2] .... \n", argv[0]);
+    printf("%s [timeWindow] [withTrace] [verbose] [inFile1]  [inFile2] .... \n", argv[0]);
     printf("    timeWindow : in ns, -1 = no event building \n");   
     printf("     withTrace : 0 for no trace, 1 for trace \n");   
     printf("       verbose : > 0 for debug  \n");   
-    printf("     batchSize : the size of hit in a batch \n");   
     printf("    Output file name is contructed from inFile1 \n");   
     printf("\n");
     printf(" Example: %s 0 0 0 10000 '\\ls -1 *001*.fsu'\n", argv[0]);
@@ -48,10 +49,10 @@ int main(int argc, char **argv) {
   long timeWindow = atoi(argv[1]);
   bool traceOn = atoi(argv[2]);
   unsigned int debug = atoi(argv[3]);
-  unsigned int batchSize = atoi(argv[4]);
-  int nFile = argc - 5;
+  unsigned int batchSize = 2* DEFAULT_HALFBUFFERSIZE;
+  int nFile = argc - NMINARG + 1;
   TString inFileName[nFile];
-  for( int i = 0 ; i < nFile ; i++){ inFileName[i] = argv[i+5];}
+  for( int i = 0 ; i < nFile ; i++){ inFileName[i] = argv[i + NMINARG -1];}
   
   /// Form outFileName;
   TString outFileName = inFileName[0];
@@ -69,7 +70,6 @@ int main(int argc, char **argv) {
   printf("    Time Window = %ld ns = %.1f us\n", timeWindow, timeWindow/1000.);
   printf("  Include Trace = %s\n", traceOn ? "Yes" : "No");
   printf("    Debug level = %d\n", debug);
-  printf("     Batch size = %d events/file\n", batchSize);
   printf(" Max multiplity = %d hits/event (hard coded)\n", MAX_MULTI);
   printf("========================================= Grouping files\n");  
 
@@ -80,15 +80,18 @@ int main(int argc, char **argv) {
 
   FSUReader * readerA = new FSUReader(inFileName[0].Data(), 1, 1);
   readerA->ScanNumBlock(0,0);
-  FileInfo fileInfo = {inFileName[0].Data(), readerA->GetSN() * 1000 +  readerA->GetFileOrder(), readerA->GetHitCount()};
+  if( readerA->GetOptimumBatchSize() > batchSize ) batchSize = readerA->GetOptimumBatchSize();
+  FileInfo fileInfo = {inFileName[0].Data(), readerA->GetSN() * 1000 +  readerA->GetFileOrder(), readerA->GetTotalHitCount()};
   fileList.push_back(fileInfo);
-  totalHitCount += readerA->GetHitCount();
+  totalHitCount += readerA->GetTotalHitCount();
 
   for( int i = 1; i < nFile; i++){
     FSUReader * readerB = new FSUReader(inFileName[i].Data(), 1, 1);
     readerB->ScanNumBlock(0,0);
-    totalHitCount += readerB->GetHitCount();
-    fileInfo = {inFileName[i].Data(), readerB->GetSN() * 1000 +  readerB->GetFileOrder(), readerB->GetHitCount()};
+    if( readerB->GetOptimumBatchSize() > batchSize ) batchSize = readerB->GetOptimumBatchSize();
+
+    totalHitCount += readerB->GetTotalHitCount();
+    fileInfo = {inFileName[i].Data(), readerB->GetSN() * 1000 +  readerB->GetFileOrder(), readerB->GetTotalHitCount()};
     
     if( readerA->GetSN() == readerB->GetSN() ){
       fileList.push_back(fileInfo);
@@ -105,6 +108,7 @@ int main(int argc, char **argv) {
   delete readerA;
 
   printf("======================= total Hit Count : %llu\n", totalHitCount);
+  printf(">>>>>>>>>>>>>>>>>>>>>>>>>>   Batch size : %d events/file\n", batchSize);
 
   for( size_t i = 0; i < fileGroupList.size(); i++){
     printf("group ----- %ld \n", i);
@@ -171,7 +175,7 @@ int main(int argc, char **argv) {
     for( size_t j = 0; j < fileGroupList[i].size(); j++){
       fList.push_back( fileGroupList[i][j].fileName );
     }
-    reader[i] = new FSUReader(fList, 600, debug);
+    reader[i] = new FSUReader(fList, 1024, debug); // 1024 is the maximum event / agg.
     hitList[i] = reader[i]->ReadBatch(batchSize, debug );
     reader[i]->PrintHitListInfo(&hitList[i], "hitList-" + std::to_string(reader[i]->GetSN()));
     ID[i] = 0;
@@ -266,7 +270,7 @@ int main(int argc, char **argv) {
     tEnd = events.back().timestamp;
 
     hitProcessed += events.size();    
-    if( hitProcessed % (traceOn ? 100 : 10000) == 0 ) printf("hit Porcessed %llu/%llu hit....%.2f%%\n\033[A\r", hitProcessed, totalHitCount, hitProcessed*100./totalHitCount);
+    if( hitProcessed % (traceOn ? 10000 : 10000) == 0 ) printf("hit Porcessed %llu/%llu hit....%.2f%%\n\033[A\r", hitProcessed, totalHitCount, hitProcessed*100./totalHitCount);
 
     multi = events.size() ;
     if( events.size() >= MAX_MULTI ) {
@@ -354,7 +358,7 @@ int main(int argc, char **argv) {
   printf("     first timestamp = %20llu ns\n", tStart);
   printf("      last timestamp = %20llu ns\n", tEnd);
   printf(" total data duration = %.2f sec = %.2f min\n", tDuration_sec, tDuration_sec/60.);
-  printf("==============> saved to %s \n", outFileName.Data());
+  printf("========================================> saved to %s \n", outFileName.Data());
 
   TMacro info;
   info.AddLine(Form("tStart= %20llu ns",tStart));
@@ -365,6 +369,8 @@ int main(int argc, char **argv) {
   
   for( int i = 0; i < nGroup; i++) delete reader[i];
   delete [] reader;
+
+  printf("####################################### end of %s\n", argv[0]);
 
   return 0;
 
