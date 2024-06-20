@@ -229,6 +229,17 @@ inline void SplitPole::SetUpCanvas(){
 
     chkRunAnalyzer = new QCheckBox("Run Analyzer", this);
     boxLayout->addWidget(chkRunAnalyzer, 4, 3);
+    connect(chkRunAnalyzer, &QCheckBox::stateChanged, this, [=](int state){
+
+      sbBfield->setEnabled(state != Qt::Checked);
+      leTarget->setEnabled(state != Qt::Checked);
+      leBeam->setEnabled(state != Qt::Checked);
+      leRecoil->setEnabled(state != Qt::Checked);
+      sbEnergy->setEnabled(state != Qt::Checked);
+      sbAngle->setEnabled(state != Qt::Checked);
+      sbEventWin->setEnabled(state != Qt::Checked);
+
+    });
 
     QFrame *separator = new QFrame(box);
     separator->setFrameShape(QFrame::HLine);
