@@ -70,7 +70,7 @@ int main(int argc, char *argv[]){
     pidFile.write(  QString::number(QCoreApplication::applicationPid() ).toStdString().c_str() );
     pidFile.close();
 
-    MainWindow w;
+    FSUDAQ w;
     w.show();
     return a.exec();
 }

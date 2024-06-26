@@ -22,7 +22,7 @@
 
 std::vector<std::string> onlineAnalyzerList = {"Coincident","Splie-Pole", "Encore", "RAISOR"};
 
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
+FSUDAQ::FSUDAQ(QWidget *parent) : QMainWindow(parent){
   DebugPrint("%s", "FSUDAQ");
   setWindowTitle("FSU DAQ");
   setGeometry(500, 100, 1100, 600);
@@ -34,6 +34,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
   scope = nullptr;
   digiSettings = nullptr;
   canvas = nullptr;
+  histThread = nullptr;
   onlineAnalyzer = nullptr;
   runTimer = new QTimer();
   breakAutoRepeat = true;
@@ -61,7 +62,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     //cbOpenDigitizers->addItem("Open Digitizers via USB", 3);
     cbOpenDigitizers->addItem("Open Digitizers via A4818(s)", 4);
     layout->addWidget(cbOpenDigitizers, 0, 0);
-    connect(cbOpenDigitizers, &RComboBox::currentIndexChanged, this, &MainWindow::OpenDigitizers);
+    connect(cbOpenDigitizers, &RComboBox::currentIndexChanged, this, &FSUDAQ::OpenDigitizers);
     
     cbOpenMethod = new RComboBox(this);
     cbOpenMethod->addItem("w/o settings", 0);
@@ -71,29 +72,29 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
 
     bnCloseDigitizers = new QPushButton("Close Digitizers", this);
     layout->addWidget(bnCloseDigitizers, 2, 0);
-    connect(bnCloseDigitizers, &QPushButton::clicked, this, &MainWindow::CloseDigitizers);
+    connect(bnCloseDigitizers, &QPushButton::clicked, this, &FSUDAQ::CloseDigitizers);
 
     bnDigiSettings = new QPushButton("Digitizers Settings", this);
     layout->addWidget(bnDigiSettings, 0, 1);
-    connect(bnDigiSettings, &QPushButton::clicked, this, &MainWindow::OpenDigiSettings);
+    connect(bnDigiSettings, &QPushButton::clicked, this, &FSUDAQ::OpenDigiSettings);
 
     bnOpenScope = new QPushButton("Open Scope", this);
     layout->addWidget(bnOpenScope, 1, 1);
-    connect(bnOpenScope, &QPushButton::clicked, this, &MainWindow::OpenScope);
+    connect(bnOpenScope, &QPushButton::clicked, this, &FSUDAQ::OpenScope);
 
     cbAnalyzer = new RComboBox(this);
     layout->addWidget(cbAnalyzer, 0, 2);
     cbAnalyzer->addItem("Choose Online Analyzer", -1);
     for( int i = 0; i < (int) onlineAnalyzerList.size() ; i++) cbAnalyzer->addItem(onlineAnalyzerList[i].c_str(), i);
-    connect(cbAnalyzer, &RComboBox::currentIndexChanged, this, &MainWindow::OpenAnalyzer);
+    connect(cbAnalyzer, &RComboBox::currentIndexChanged, this, &FSUDAQ::OpenAnalyzer);
 
     bnCanvas = new QPushButton("Online 1D Histograms", this);
     layout->addWidget(bnCanvas, 1, 2);
-    connect(bnCanvas, &QPushButton::clicked, this, &MainWindow::OpenCanvas);
+    connect(bnCanvas, &QPushButton::clicked, this, &FSUDAQ::OpenCanvas);
 
     bnSync = new QPushButton("Sync Boards", this);
     layout->addWidget(bnSync,  2, 1);
-    connect(bnSync, &QPushButton::clicked, this, &MainWindow::SetSyncMode);
+    connect(bnSync, &QPushButton::clicked, this, &FSUDAQ::SetSyncMode);
 
   }
 
@@ -141,7 +142,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     leElogName->setReadOnly(true);
     layout->addWidget(leElogName, rowID, 4);
 
-    connect(bnLock, &QPushButton::clicked, this, &MainWindow::SetAndLockInfluxElog);
+    connect(bnLock, &QPushButton::clicked, this, &FSUDAQ::SetAndLockInfluxElog);
 
   }
 
@@ -157,10 +158,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     leDataPath = new QLineEdit(this);
     leDataPath->setReadOnly(true);
     QPushButton * bnSetDataPath = new QPushButton("Set Path", this);
-    connect(bnSetDataPath, &QPushButton::clicked, this, &MainWindow::OpenDataPath);
+    connect(bnSetDataPath, &QPushButton::clicked, this, &FSUDAQ::OpenDataPath);
 
     QPushButton * bnOpenRecord = new QPushButton("Open Record", this);
-    connect(bnOpenRecord, &QPushButton::clicked, this, &MainWindow::OpenRecord);
+    connect(bnOpenRecord, &QPushButton::clicked, this, &FSUDAQ::OpenRecord);
 
     layout->addWidget(lbDataPath, rowID, 0);
     layout->addWidget(leDataPath, rowID, 1, 1, 5);
@@ -176,7 +177,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     connect(lePrefix, &QLineEdit::textChanged, this, [=](){
       lePrefix->setStyleSheet("color:blue;");
     });
-    connect(lePrefix, &QLineEdit::returnPressed, this, &MainWindow::SaveLastRunFile);
+    connect(lePrefix, &QLineEdit::returnPressed, this, &FSUDAQ::SaveLastRunFile);
 
     QLabel * lbRunID = new QLabel("Run No. :", this);
     lbRunID->setAlignment(Qt::AlignRight | Qt::AlignCenter);
@@ -202,7 +203,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     cbAutoRun->setEnabled(false);
 
     bnStartACQ = new QPushButton("Start ACQ", this);
-    connect( bnStartACQ, &QPushButton::clicked, this, &MainWindow::AutoRun);
+    connect( bnStartACQ, &QPushButton::clicked, this, &FSUDAQ::AutoRun);
     bnStopACQ = new QPushButton("Stop ACQ", this);
     connect( bnStopACQ, &QPushButton::clicked, this, [=](){
         if( runTimer->isActive() ){
@@ -234,7 +235,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
     leComment->setReadOnly(true);
 
     bnOpenScaler = new QPushButton("Scalar", this);
-    connect(bnOpenScaler, &QPushButton::clicked, this, &MainWindow::OpenScalar);
+    connect(bnOpenScaler, &QPushButton::clicked, this, &FSUDAQ::OpenScalar);
 
     layout->addWidget(lbComment, rowID, 0);
     layout->addWidget(leComment, rowID, 1, 1, 6);
@@ -297,7 +298,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent){
 
 }
 
-MainWindow::~MainWindow(){
+FSUDAQ::~FSUDAQ(){
   DebugPrint("%s", "FSUDAQ");
   if( scalar ) {
     scalarThread->Stop();
@@ -312,10 +313,13 @@ MainWindow::~MainWindow(){
 
   if( scope ) delete scope;
 
-  if( histThread){
-    histThread->Stop();
-    histThread->quit();
-    histThread->wait();
+  if( histThread ){
+
+    if( !histThread->isStopped() ){
+      histThread->Stop();
+      histThread->quit();
+      histThread->wait();
+    }
 
     delete histThread;
   }
@@ -336,7 +340,7 @@ MainWindow::~MainWindow(){
 
 //***************************************************************
 //***************************************************************
-void MainWindow::OpenDataPath(){
+void FSUDAQ::OpenDataPath(){
   DebugPrint("%s", "FSUDAQ");
   QFileDialog fileDialog(this);
   fileDialog.setFileMode(QFileDialog::Directory);
@@ -359,7 +363,7 @@ void MainWindow::OpenDataPath(){
 
 }
 
-void MainWindow::OpenRecord(){
+void FSUDAQ::OpenRecord(){
   DebugPrint("%s", "FSUDAQ");
   QString filePath = leDataPath->text() + "/RunTimeStamp.dat";
 
@@ -391,7 +395,7 @@ void MainWindow::OpenRecord(){
 
 }
 
-void MainWindow::UpdateRecord(){
+void FSUDAQ::UpdateRecord(){
   DebugPrint("%s", "FSUDAQ");
   if( !runRecord ) return;
 
@@ -422,7 +426,7 @@ void MainWindow::UpdateRecord(){
   tableView->scrollToBottom();
 }
 
-void MainWindow::LoadProgramSettings(){
+void FSUDAQ::LoadProgramSettings(){
   DebugPrint("%s", "FSUDAQ");
   LogMsg("Loading <b>" + programSettingsFilePath + "</b> for Program Settings.");
   QFile file(programSettingsFilePath);
@@ -485,7 +489,7 @@ void MainWindow::LoadProgramSettings(){
 
 }
 
-void MainWindow::SaveProgramSettings(){
+void FSUDAQ::SaveProgramSettings(){
   DebugPrint("%s", "FSUDAQ");
   rawDataPath = leDataPath->text();
 
@@ -508,7 +512,7 @@ void MainWindow::SaveProgramSettings(){
 
 }
 
-void MainWindow::LoadLastRunFile(){
+void FSUDAQ::LoadLastRunFile(){
   DebugPrint("%s", "FSUDAQ");
   QFile file(rawDataPath + "/lastRun.sh");
 
@@ -549,7 +553,7 @@ void MainWindow::LoadLastRunFile(){
 
 }
 
-void MainWindow::SaveLastRunFile(){
+void FSUDAQ::SaveLastRunFile(){
   DebugPrint("%s", "FSUDAQ");
   QFile file(rawDataPath + "/lastRun.sh");
 
@@ -569,7 +573,7 @@ void MainWindow::SaveLastRunFile(){
 
 //***************************************************************
 //***************************************************************
-void MainWindow::OpenDigitizers(){
+void FSUDAQ::OpenDigitizers(){
   DebugPrint("%s", "FSUDAQ");
   if( cbOpenDigitizers->currentIndex() == 0 ) return;
 
@@ -723,7 +727,7 @@ void MainWindow::OpenDigitizers(){
     digi[i]->ReadAllSettingsFromBoard(true);
 
     readDataThread[i] = new ReadDataThread(digi[i], i);
-    connect(readDataThread[i], &ReadDataThread::sendMsg, this, &MainWindow::LogMsg);
+    connect(readDataThread[i], &ReadDataThread::sendMsg, this, &FSUDAQ::LogMsg);
     
     QCoreApplication::processEvents(); //to prevent Qt said application not responding.
   }
@@ -756,8 +760,8 @@ void MainWindow::OpenDigitizers(){
 
 }
 
-void MainWindow::CloseDigitizers(){
-  LogMsg("MainWindow::Closing Digitizer(s)....");
+void FSUDAQ::CloseDigitizers(){
+  LogMsg("FSUDAQ::Closing Digitizer(s)....");
 
   if( scope ) {
     scope->close();
@@ -826,11 +830,11 @@ void MainWindow::CloseDigitizers(){
   bnStartACQ->setStyleSheet("");
   bnStopACQ->setStyleSheet("");
 
-  printf("End of MainWindow::%s\n", __func__);
+  printf("End of FSUDAQ::%s\n", __func__);
 
 }
 
-void MainWindow::WaitForDigitizersOpen(bool onOff){
+void FSUDAQ::WaitForDigitizersOpen(bool onOff){
   DebugPrint("%s", "FSUDAQ");
   // bnOpenDigitizers->setEnabled(onOff);
 
@@ -855,7 +859,7 @@ void MainWindow::WaitForDigitizersOpen(bool onOff){
 
 //***************************************************************
 //***************************************************************
-void MainWindow::SetupScalar(){
+void FSUDAQ::SetupScalar(){
   DebugPrint("%s", "FSUDAQ");
   // printf("%s\n", __func__);
 
@@ -883,7 +887,7 @@ void MainWindow::SetupScalar(){
 
   scalarThread = new TimingThread(scalar);
   scalarThread->SetWaitTimeinSec(1.0);
-  connect(scalarThread, &TimingThread::timeUp, this, &MainWindow::UpdateScalar);
+  connect(scalarThread, &TimingThread::timeUp, this, &FSUDAQ::UpdateScalar);
 
   unsigned short maxNChannel = 0;
   for( unsigned int k = 0; k < nDigi; k ++ ){
@@ -1004,7 +1008,7 @@ void MainWindow::SetupScalar(){
 
 }
 
-void MainWindow::CleanUpScalar(){
+void FSUDAQ::CleanUpScalar(){
   DebugPrint("%s", "FSUDAQ");
   if( scalar == nullptr) return;
 
@@ -1033,12 +1037,12 @@ void MainWindow::CleanUpScalar(){
 
 }
 
-void MainWindow::OpenScalar(){
+void FSUDAQ::OpenScalar(){
   DebugPrint("%s", "FSUDAQ");
   scalar->show();
 }
 
-void MainWindow::UpdateScalar(){
+void FSUDAQ::UpdateScalar(){
   DebugPrint("%s", "FSUDAQ");
   if( digi == nullptr ) return;
   if( scalar == nullptr ) return;
@@ -1116,7 +1120,7 @@ void MainWindow::UpdateScalar(){
 
 //***************************************************************
 //***************************************************************
-void MainWindow::StartACQ(){
+void FSUDAQ::StartACQ(){
   DebugPrint("%s", "FSUDAQ");
   if( digi == nullptr ) return;
 
@@ -1203,7 +1207,7 @@ void MainWindow::StartACQ(){
 
 }
 
-void MainWindow::StopACQ(){
+void FSUDAQ::StopACQ(){
   DebugPrint("%s", "FSUDAQ");
 
   QCoreApplication::processEvents();
@@ -1303,7 +1307,7 @@ void MainWindow::StopACQ(){
 
 }
 
-void MainWindow::AutoRun(){
+void FSUDAQ::AutoRun(){
   DebugPrint("%s", "FSUDAQ");
   runTimer->disconnect(runTimerConnection);
   if( chkSaveData->isChecked() == false){
@@ -1375,7 +1379,7 @@ void MainWindow::AutoRun(){
 
 }
 
-void MainWindow::SetSyncMode(){
+void FSUDAQ::SetSyncMode(){
   DebugPrint("%s", "FSUDAQ");
   QDialog dialog;
   dialog.setWindowTitle("Board Synchronization");
@@ -1471,7 +1475,7 @@ void MainWindow::SetSyncMode(){
 
 }
 
-void MainWindow::SetAndLockInfluxElog(){
+void FSUDAQ::SetAndLockInfluxElog(){
   DebugPrint("%s", "FSUDAQ");
   if( leInfluxIP->isReadOnly() ){
     bnLock->setText("Lock and Set");
@@ -1591,7 +1595,7 @@ void MainWindow::SetAndLockInfluxElog(){
   }
 }
 
-bool MainWindow::CommentDialog(bool isStartRun){
+bool FSUDAQ::CommentDialog(bool isStartRun){
   DebugPrint("%s", "FSUDAQ");
   if( isStartRun ) runID ++;
   QString runIDStr = QString::number(runID).rightJustified(3, '0');
@@ -1672,7 +1676,7 @@ bool MainWindow::CommentDialog(bool isStartRun){
 
 }
 
-void MainWindow::WriteRunTimestamp(bool isStartRun){
+void FSUDAQ::WriteRunTimestamp(bool isStartRun){
   DebugPrint("%s", "FSUDAQ");
   QFile file(rawDataPath + "/RunTimeStamp.dat");
   
@@ -1710,12 +1714,12 @@ void MainWindow::WriteRunTimestamp(bool isStartRun){
 
 //***************************************************************
 //***************************************************************
-void MainWindow::OpenScope(){
+void FSUDAQ::OpenScope(){
   DebugPrint("%s", "FSUDAQ");
   QCoreApplication::processEvents();
   if( scope == nullptr ) {
     scope = new Scope(digi, nDigi, readDataThread);
-    connect(scope, &Scope::SendLogMsg, this, &MainWindow::LogMsg);
+    connect(scope, &Scope::SendLogMsg, this, &FSUDAQ::LogMsg);
     connect(scope, &Scope::CloseWindow, this, [=](){
       bnStartACQ->setEnabled(true);
       bnStartACQ->setStyleSheet("background-color: green;");
@@ -1753,7 +1757,7 @@ void MainWindow::OpenScope(){
       }
     });
 
-    connect(scope, &Scope::UpdateScaler, this, &MainWindow::UpdateScalar);
+    connect(scope, &Scope::UpdateScaler, this, &FSUDAQ::UpdateScalar);
 
     connect(scope, &Scope::UpdateOtherPanels, this, [=](){ UpdateAllPanels(1); });
 
@@ -1773,11 +1777,11 @@ void MainWindow::OpenScope(){
 
 //***************************************************************
 //***************************************************************
-void MainWindow::OpenDigiSettings(){
+void FSUDAQ::OpenDigiSettings(){
   DebugPrint("%s", "FSUDAQ");
   if( digiSettings == nullptr ) {
     digiSettings = new DigiSettingsPanel(digi, nDigi, rawDataPath);
-    //connect(scope, &Scope::SendLogMsg, this, &MainWindow::LogMsg);
+    //connect(scope, &Scope::SendLogMsg, this, &FSUDAQ::LogMsg);
     connect(digiSettings, &DigiSettingsPanel::UpdateOtherPanels, this, [=](){ UpdateAllPanels(2); });
 
     digiSettings->show();
@@ -1789,7 +1793,7 @@ void MainWindow::OpenDigiSettings(){
 
 //***************************************************************
 //***************************************************************
-void MainWindow::OpenCanvas(){
+void FSUDAQ::OpenCanvas(){
   DebugPrint("%s", "FSUDAQ");
   if( canvas == nullptr ) {
     canvas = new SingleSpectra(digi, nDigi, rawDataPath);
@@ -1802,7 +1806,7 @@ void MainWindow::OpenCanvas(){
 }
 //***************************************************************
 //***************************************************************
-void MainWindow::OpenAnalyzer(){
+void FSUDAQ::OpenAnalyzer(){
   DebugPrint("%s", "FSUDAQ");
 
   int id = cbAnalyzer->currentData().toInt();
@@ -1837,7 +1841,7 @@ void MainWindow::OpenAnalyzer(){
 
 //***************************************************************
 //***************************************************************
-void MainWindow::UpdateAllPanels(int panelID){
+void FSUDAQ::UpdateAllPanels(int panelID){
   DebugPrint("%s", "FSUDAQ");
   //panelID is the source panel that call
   // scope = 1;
@@ -1898,7 +1902,7 @@ void MainWindow::UpdateAllPanels(int panelID){
 
 //***************************************************************
 //***************************************************************
-void MainWindow::SetUpInflux(){
+void FSUDAQ::SetUpInflux(){
   DebugPrint("%s", "FSUDAQ");
   if( influxIP == "" ) {
     LogMsg("<font style=\"color : red;\">Influx missing inputs. skip.</font>");
@@ -1962,7 +1966,7 @@ void MainWindow::SetUpInflux(){
 
 }
 
-void MainWindow::CheckElog(){
+void FSUDAQ::CheckElog(){
   DebugPrint("%s", "FSUDAQ");
   LogMsg("---- Checking elog... please wait....");
   printf("---- Checking elog... please wait....\n");
@@ -1995,7 +1999,7 @@ void MainWindow::CheckElog(){
   
 }
 
-void MainWindow::WriteElog(QString htmlText, QString subject, QString category, int runNumber){
+void FSUDAQ::WriteElog(QString htmlText, QString subject, QString category, int runNumber){
   DebugPrint("%s", "FSUDAQ");
   //if( elogID < 0 ) return;
   if( elogName == "" ) return;
@@ -2024,7 +2028,7 @@ void MainWindow::WriteElog(QString htmlText, QString subject, QString category, 
 
 }
 
-void MainWindow::AppendElog(QString appendHtmlText){
+void FSUDAQ::AppendElog(QString appendHtmlText){
   DebugPrint("%s", "FSUDAQ");
   if( elogID < 1 ) return;
   if( elogName == "" ) return;
@@ -2061,7 +2065,7 @@ void MainWindow::AppendElog(QString appendHtmlText){
 
 //***************************************************************
 //***************************************************************
-void MainWindow::LogMsg(QString msg){
+void FSUDAQ::LogMsg(QString msg){
   DebugPrint("%s", "FSUDAQ");
   QString outputStr = QStringLiteral("[%1] %2").arg(QDateTime::currentDateTime().toString("MM.dd hh:mm:ss"), msg);
   if( logMsgHTMLMode ){ 

@@ -1,5 +1,5 @@
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#ifndef FSUDAQ_H
+#define FSUDAQ_H
 
 #include <QMainWindow>
 #include <QWidget>
@@ -20,12 +20,12 @@
 #include "ClassInfluxDB.h"
 #include "analyzers/Analyser.h"
 
-//^#===================================================== MainWindow
-class MainWindow : public QMainWindow{
+//^#===================================================== FSUDAQ
+class FSUDAQ : public QMainWindow{
   Q_OBJECT
 public:
-  MainWindow(QWidget *parent = nullptr);
-  ~MainWindow();
+  FSUDAQ(QWidget *parent = nullptr);
+  ~FSUDAQ();
 
   void closeEvent(QCloseEvent * event){
     if( scope ) {

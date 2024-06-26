@@ -119,6 +119,7 @@ public:
     waitTime = 20; // multiple of 100 mili sec
     stop = false;
   }
+  bool isStopped() const {return stop;}
   void Stop() { this->stop = true;}
   void SetWaitTimeinSec(float sec) {waitTime = sec * 10 ;}
   float GetWaitTimeinSec() const {return waitTime/10.;}

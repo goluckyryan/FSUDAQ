@@ -64,13 +64,14 @@ void keyPressCommand(){
       if( RegList[i].GetRWType() == RW::ReadONLY  ) typeStr = "R  ";
       if( RegList[i].GetRWType() == RW::WriteONLY ) typeStr = "  W";
       
+      unsigned int value = digi->GetSettingFromMemory(RegList[i], 0);
 
-      printf("%2d | 0x%04X %30s  %s 0x%08X = %u\n", i, 
+      printf("%2d | 0x%04X %30s  %s 0x%08X = %10u\n", i, 
                                                RegList[i].GetAddress(), 
                                                RegList[i].GetNameChar(), 
                                                typeStr.c_str(),
-                                               digi->GetSettingFromMemory(RegList[i], 0), 
-                                               digi->GetSettingFromMemory(RegList[i], 0));
+                                               value, 
+                                               value);
     }
 
     std::string input = "-1";
@@ -143,12 +144,15 @@ void keyPressCommand(){
       
       RegList[i].ActualAddress(ch);
 
-      printf("%2d | 0x%04X %30s  %s 0x%08X = %u\n", i, 
+      unsigned int value = digi->GetSettingFromMemory(RegList[i], ch);
+
+      printf("%2d | 0x%04X %30s  %s 0x%08X = %10u : %d\n", i, 
                                                RegList[i].GetAddress(), 
                                                RegList[i].GetNameChar(), 
                                                typeStr.c_str(),
-                                               digi->GetSettingFromMemory(RegList[i], ch), 
-                                               digi->GetSettingFromMemory(RegList[i], ch));
+                                               value, 
+                                               value,
+                                               value * abs(RegList[i].GetPartialStep()));
     }
 
     do{

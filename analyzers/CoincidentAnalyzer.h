@@ -25,9 +25,12 @@ public:
     dataBaseName = "testing"; 
 
     allowSignalSlot = false;
+    printf("------------------- dasjkdsaldj\n");
     SetUpCanvas();
 
+    printf("------------------- dasjkdsaldj###########\n");
     LoadHistRange();
+    printf("------------------- dasjkdsaldj##&&&&&&&&&#\n");
 
   }
 
@@ -251,7 +254,7 @@ inline void CoincidentAnalyzer::SetUpCanvas(){
       boxLayout->addWidget(lbaDigi, 7, 0);
       aDigi = new RComboBox(this);
       for(unsigned int i = 0; i < nDigi; i ++ ){
-        aDigi->addItem("Digi-" +  QString::number(digi[i]->GetSerialNumber()), digi[i]->GetSerialNumber());
+        aDigi->addItem("Digi-" +  QString::number(digi[i]->GetSerialNumber()), i);
       }
       boxLayout->addWidget(aDigi, 7, 1);
 
@@ -307,7 +310,6 @@ inline void CoincidentAnalyzer::SetUpCanvas(){
 
     }
 
-
   }
 
   //============ histograms
@@ -327,12 +329,12 @@ inline void CoincidentAnalyzer::SetUpCanvas(){
   h2D->SetYTitle("Digi-" + QString::number(digi[bd]->GetSerialNumber()) + ", Ch-" + QString::number(ch));
   h2D->UpdatePlot();
 
-
   h1 = new Histogram1D("1D Plot", "XXX", 300, 0, 5000, this);
   h1->SetColor(Qt::darkGreen);
   h1->AddDataList("Test", Qt::red); // add another histogram in h1, Max Data List is 10
   bd = aDigi->currentData().toInt();
   ch = aCh->currentData().toInt();
+  printf("%d\n", digi[bd]->GetSerialNumber());
   h1->SetXTitle("Digi-" + QString::number(digi[bd]->GetSerialNumber()) + ", Ch-" + QString::number(ch));
   h1->UpdatePlot();
   layout->addWidget(h1, 1, 1);
