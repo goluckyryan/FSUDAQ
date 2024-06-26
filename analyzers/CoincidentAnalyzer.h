@@ -25,12 +25,9 @@ public:
     dataBaseName = "testing"; 
 
     allowSignalSlot = false;
-    printf("------------------- dasjkdsaldj\n");
     SetUpCanvas();
 
-    printf("------------------- dasjkdsaldj###########\n");
     LoadHistRange();
-    printf("------------------- dasjkdsaldj##&&&&&&&&&#\n");
 
   }
 
@@ -84,6 +81,7 @@ private:
 
 inline void CoincidentAnalyzer::SetUpCanvas(){
 
+  setWindowTitle("Online Coincident Analyzer");
   setGeometry(0, 0, 1600, 1000);  
 
   {//^====== magnet and reaction setting
@@ -143,12 +141,13 @@ inline void CoincidentAnalyzer::SetUpCanvas(){
         SetBackwardBuild(true, sbBackwardCount->value());
       });
 
-      QLabel * lbBuildWindow = new QLabel("Event Window [tick]", this);
+      QLabel * lbBuildWindow = new QLabel("Event Window [ns]", this);
       lbBuildWindow->setAlignment(Qt::AlignRight | Qt::AlignCenter);
       boxLayout->addWidget(lbBuildWindow, 2, 1);
       sbBuildWindow = new RSpinBox(this, 0);
       sbBuildWindow->setMinimum(1);
       sbBuildWindow->setMaximum(9999999999);
+      sbBuildWindow->setValue(1000);
       boxLayout->addWidget(sbBuildWindow, 2, 2);
 
       connect(sbBuildWindow, &RSpinBox::valueChanged, this, [=](){
@@ -313,11 +312,11 @@ inline void CoincidentAnalyzer::SetUpCanvas(){
   }
 
   //============ histograms
-  hMulti = new Histogram1D("Multiplicity", "", 10, 0, 10, this);
+  hMulti = new Histogram1D("Multiplicity", "", 16, 0, 16, this);
   layout->addWidget(hMulti, 0, 1);  
 
   // the "this" make the histogram a child of the SplitPole class. When SplitPole destory, all childs destory as well.
-  h2D = new Histogram2D("Coincident Plot", "XXX", "YYY", 100, 0, 5000, 100, 0, 5000, this);
+  h2D = new Histogram2D("Coincident Plot", "XXX", "YYY", 200, 0, 30000, 200, 0, 30000, this);
   //layout is inheriatge from Analyzer
   layout->addWidget(h2D, 1, 0, 2, 1);
 
@@ -329,23 +328,24 @@ inline void CoincidentAnalyzer::SetUpCanvas(){
   h2D->SetYTitle("Digi-" + QString::number(digi[bd]->GetSerialNumber()) + ", Ch-" + QString::number(ch));
   h2D->UpdatePlot();
 
-  h1 = new Histogram1D("1D Plot", "XXX", 300, 0, 5000, this);
+  h1 = new Histogram1D("1D Plot", "XXX", 300, 0, 30000, this);
   h1->SetColor(Qt::darkGreen);
-  h1->AddDataList("Test", Qt::red); // add another histogram in h1, Max Data List is 10
+  // h1->AddDataList("Test", Qt::red); // add another histogram in h1, Max Data List is 10
   bd = aDigi->currentData().toInt();
   ch = aCh->currentData().toInt();
-  printf("%d\n", digi[bd]->GetSerialNumber());
   h1->SetXTitle("Digi-" + QString::number(digi[bd]->GetSerialNumber()) + ", Ch-" + QString::number(ch));
   h1->UpdatePlot();
   layout->addWidget(h1, 1, 1);
   
-  h1g = new Histogram1D("1D Plot (PID gated)", "XXX", 300, 0, 5000, this);
+  h1g = new Histogram1D("1D Plot (PID gated)", "XXX", 300, 0, 30000, this);
   h1g->SetXTitle("Digi-" + QString::number(digi[bd]->GetSerialNumber()) + ", Ch-" + QString::number(ch));
   h1g->UpdatePlot();
   layout->addWidget(h1g, 2, 1);
 
   layout->setColumnStretch(0, 1);
   layout->setColumnStretch(1, 1);
+
+  allowSignalSlot = true;
 
 }
 
@@ -376,6 +376,10 @@ inline void CoincidentAnalyzer::UpdateHistograms(){
   int y_bd = yDigi->currentData().toInt();
   int y_ch = yCh->currentData().toInt();
 
+  int a_sn = digi[a_bd]->GetSerialNumber();
+  int x_sn = digi[x_bd]->GetSerialNumber();
+  int y_sn = digi[y_bd]->GetSerialNumber();
+
   //============ Processing data and fill histograms
   long eventIndex = evtbder->eventIndex;
   long eventStart = eventIndex - eventBuilt + 1;
@@ -392,16 +396,16 @@ inline void CoincidentAnalyzer::UpdateHistograms(){
     unsigned long long xT = 0;
     for( int k = 0; k < (int) event.size(); k++ ){
       //event[k].Print();
-      if( event[k].sn == a_bd && event[k].ch == a_ch) {
+      if( event[k].sn == a_sn && event[k].ch == a_ch) {
         h1->Fill(event[k].energy);
         aE = event[k].energy;
       }
 
-      if( event[k].sn == x_bd && event[k].ch == x_ch) {
+      if( event[k].sn == x_sn && event[k].ch == x_ch) {
         xE = event[k].energy;
         xT = event[k].timestamp;
       }
-      if( event[k].sn == y_bd && event[k].ch == y_ch) yE = event[k].energy; 
+      if( event[k].sn == y_sn && event[k].ch == y_ch) yE = event[k].energy; 
     }
 
     if( xE >= 0 && yE >= 0 ) h2D->Fill(xE, yE);

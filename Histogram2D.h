@@ -187,8 +187,8 @@ public:
 
   //^===================================
 
-  void SetXTitle(QString xTitle) { xAxis->setLabel(xTitle); }
-  void SetYTitle(QString yTitle) { yAxis->setLabel(yTitle); }
+  void SetXTitle(QString xTitle) { xAxis->setLabel(xTitle);}
+  void SetYTitle(QString yTitle) { yAxis->setLabel(yTitle);}
   void Rebin(int xbin, double xmin, double xmax, int ybin, double ymin, double ymax);
   void RebinY(int ybin, double ymin, double ymax);
 

@@ -234,7 +234,7 @@ public:
     UpdatePlot();
   }
   
-  void SetXTitle(QString xTitle) { xAxis->setLabel(xTitle); }
+  void SetXTitle(QString xTitle) { xAxis->setLabel(xTitle);}
 
   void Rebin(int xbin, double xmin, double xmax){
     // DebugPrint("%s", "Histogram1D");
