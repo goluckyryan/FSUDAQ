@@ -124,6 +124,10 @@ FSUDAQ::FSUDAQ(QWidget *parent) : QMainWindow(parent){
     leDatabaseName = new QLineEdit(this);
     leDatabaseName->setReadOnly(true);
     layout->addWidget(leDatabaseName, rowID, 4);
+
+    chkInflux = new QCheckBox("Enable", this);
+    chkInflux->setChecked(false);
+    layout->addWidget(chkInflux, rowID, 5);
     
     rowID ++;
     QLabel * lbElogIP = new QLabel("Elog IP : ", this);
@@ -141,6 +145,10 @@ FSUDAQ::FSUDAQ(QWidget *parent) : QMainWindow(parent){
     leElogName = new QLineEdit(this);
     leElogName->setReadOnly(true);
     layout->addWidget(leElogName, rowID, 4);
+
+    chkElog = new QCheckBox("Enable", this);
+    chkElog->setChecked(false);
+    layout->addWidget(chkElog, rowID, 5);
 
     connect(bnLock, &QPushButton::clicked, this, &FSUDAQ::SetAndLockInfluxElog);
 
@@ -1089,7 +1097,7 @@ void FSUDAQ::UpdateScalar(){
         leTrigger[iDigi][i]->setText(a);
         leAccept[iDigi][i]->setText(b);
 
-        if( influx && a != "inf" ){
+        if( influx && chkInflux->isChecked() && a != "inf" ){
           influx->AddDataPoint("TrigRate,Bd="+std::to_string(digi[iDigi]->GetSerialNumber()) + ",Ch=" + QString::number(i).rightJustified(2, '0').toStdString() + " value=" +  a.toStdString());
         }
 
@@ -1105,7 +1113,7 @@ void FSUDAQ::UpdateScalar(){
   repaint();
   scalar->repaint();
 
-  if( influx && scalarCount >= 3){
+  if( influx && chkInflux->isChecked() && scalarCount >= 3){
     if( chkSaveData->isChecked() ) {
       influx->AddDataPoint("RunID value=" + std::to_string(runID));
       influx->AddDataPoint("FileSize value=" + std::to_string(totalFileSize));
@@ -1186,14 +1194,14 @@ void FSUDAQ::StartACQ(){
   if( onlineAnalyzer ) onlineAnalyzer->StartThread();
 
   {//^=== elog and database
-    if( influx ){
+    if( influx && chkInflux->isChecked() ){
       influx->AddDataPoint("RunID value=" + std::to_string(runID));
       if( !elogName.isEmpty() ) influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=1");
       influx->WriteData(dataBaseName.toStdString());
       influx->ClearDataPointsBuffer();
     }
 
-    if( elogID > 0 && chkSaveData->isChecked() ){
+    if( elogID > 0 && !chkElog->isChecked() && chkSaveData->isChecked() ){
       QString msg = "================================= Run-" + QString::number(runID).rightJustified(3, '0') + "<p>" 
                     + QDateTime::currentDateTime().toString("MM.dd hh:mm:ss") + "<p>"
                     + startComment + "<p>"
@@ -1278,13 +1286,13 @@ void FSUDAQ::StopACQ(){
   if( digiSettings ) digiSettings->setEnabled(true);
 
   {//^=== elog and database
-    if( influx && elogName != "" ) {
+    if( influx && chkInflux->isChecked() && elogName != "" ) {
       if( !elogName.isEmpty() ) influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=0");
       influx->WriteData(dataBaseName.toStdString());
       influx->ClearDataPointsBuffer();
     }
 
-    if( elogID > 0 && chkSaveData->isChecked()){
+    if( elogID > 0 && !chkElog->isChecked() && chkSaveData->isChecked()){
       QString msg = QDateTime::currentDateTime().toString("MM.dd hh:mm:ss") + "<p>" + stopComment + "<p>";
       uint64_t totalFileSize = 0;
       for(unsigned int i = 0 ; i < nDigi; i++){
@@ -1730,12 +1738,12 @@ void FSUDAQ::OpenScope(){
       if( scope  ) {
         if( onOff ) {
           lbScalarACQStatus->setText("<font style=\"color: green;\"><b>ACQ On</b></font>");
-          if( influx && !elogName.isEmpty()) influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=1");
+          if( influx && chkInflux->isChecked() && !elogName.isEmpty()) influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=1");
         }else{
           lbScalarACQStatus->setText("<font style=\"color: red;\"><b>ACQ Off</b></font>");
-          if( influx && !elogName.isEmpty()) influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=0");
+          if( influx && chkInflux->isChecked() && !elogName.isEmpty()) influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=0");
         }
-        if( influx ){
+        if( influx && chkInflux->isChecked()){
           influx->WriteData(dataBaseName.toStdString());
           influx->ClearDataPointsBuffer();
         }
@@ -1967,9 +1975,17 @@ void FSUDAQ::SetUpInflux(){
 }
 
 void FSUDAQ::CheckElog(){
+  elogID = -1;
   DebugPrint("%s", "FSUDAQ");
+  if( !chkElog->isChecked() ) {
+    LogMsg("Elog is disabled. Please chick the checkbox and lock again to check elog connectivity.");
+    leElogIP->setEnabled(false);
+    leElogName->setEnabled(false);
+    return;
+  }
+
   LogMsg("---- Checking elog... please wait....");
-  printf("---- Checking elog... please wait....\n");
+  // printf("---- Checking elog... please wait....\n");
   if( elogIP != "" && elogName != "" &&  elogUser != "" && elogPWD != "" ){
     WriteElog("Testing communication.", "Testing communication.", "Other", 0);
     AppendElog("test append elog.");
@@ -1982,13 +1998,13 @@ void FSUDAQ::CheckElog(){
 
   if( elogID >= 0 ) {
     LogMsg("Elog testing OK.");
-    printf("Elog testing OK.\n");
+    // printf("Elog testing OK.\n");
     return;
   }
 
   //QMessageBox::information(nullptr, "Information", "Elog write Fail.\nPlease set the elog User and PWD in the programSettings.txt.\nline 6 = user.\nline 7 = pwd.");
   LogMsg("Elog testing Fail");
-  printf("Elog testing Fail\n");
+  // printf("Elog testing Fail\n");
   if( elogIP == "" ) LogMsg("no elog IP");
   if( elogName == "" ) LogMsg("no elog Name");
   if( elogUser == "" ) LogMsg("no elog User name. Please set it in the programSettings.txt, line 6.");
@@ -2002,6 +2018,7 @@ void FSUDAQ::CheckElog(){
 void FSUDAQ::WriteElog(QString htmlText, QString subject, QString category, int runNumber){
   DebugPrint("%s", "FSUDAQ");
   //if( elogID < 0 ) return;
+  if( !chkElog->isChecked() ) return;
   if( elogName == "" ) return;
   if( elogUser == "" ) return;
   if( elogPWD == "" ) return;
@@ -2030,6 +2047,7 @@ void FSUDAQ::WriteElog(QString htmlText, QString subject, QString category, int 
 
 void FSUDAQ::AppendElog(QString appendHtmlText){
   DebugPrint("%s", "FSUDAQ");
+  if( !chkElog->isChecked() )return;
   if( elogID < 1 ) return;
   if( elogName == "" ) return;
   

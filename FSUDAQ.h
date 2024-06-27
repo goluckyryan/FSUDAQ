@@ -145,6 +145,9 @@ private:
   QLineEdit * leElogIP;
   QLineEdit * leElogName;
 
+  QCheckBox * chkInflux;
+  QCheckBox * chkElog;
+
   //@----- log msg
   QPlainTextEdit * logInfo;
   void LogMsg(QString msg);
