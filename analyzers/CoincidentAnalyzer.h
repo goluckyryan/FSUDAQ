@@ -2,15 +2,17 @@
 #define COINCIDENTANLAYZER_H
 
 #include "Analyser.h"
+#include "FSUDAQ.h"
 
 //^===========================================
 class CoincidentAnalyzer : public Analyzer{
   Q_OBJECT
 public:
-  CoincidentAnalyzer(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent = nullptr): Analyzer(digi, nDigi, parent){
+  CoincidentAnalyzer(Digitizer ** digi, unsigned int nDigi, QString rawDataPath, QMainWindow * parent = nullptr): Analyzer(digi, nDigi, parent){
 
     this->digi = digi;
     this->nDigi = nDigi;
+    this->rawDataPath = rawDataPath;
 
     SetUpdateTimeInSec(1.0);
 
@@ -21,18 +23,15 @@ public:
     evtbder->SetTimeWindow(500);
     
     //========== use the influx from the Analyzer
-    influx = new InfluxDB("https://fsunuc.physics.fsu.edu/influx/");
+    // influx = new InfluxDB("https://fsunuc.physics.fsu.edu/influx/");
     dataBaseName = "testing"; 
 
     allowSignalSlot = false;
     SetUpCanvas();
 
-    LoadHistRange();
-
   }
 
   ~CoincidentAnalyzer(){
-    SaveHistRange();
   }
 
   void SetUpCanvas();
@@ -73,6 +72,7 @@ private:
   RComboBox * aDigi;
   RComboBox * aCh;
 
+  QString rawDataPath;
   void SaveHistRange();
   void LoadHistRange();
 
@@ -84,7 +84,7 @@ inline void CoincidentAnalyzer::SetUpCanvas(){
   setWindowTitle("Online Coincident Analyzer");
   setGeometry(0, 0, 1600, 1000);  
 
-  {//^====== magnet and reaction setting
+  {//^====== channel settings
     QGroupBox * box = new QGroupBox("Configuration", this);
     layout->addWidget(box, 0, 0);
     QGridLayout * boxLayout = new QGridLayout(box);
@@ -297,7 +297,7 @@ inline void CoincidentAnalyzer::SetUpCanvas(){
       separator1->setFrameShadow(QFrame::Sunken);
       boxLayout->addWidget(separator1, 8, 0, 1, 4);
 
-      QPushButton * bnClearHist = new QPushButton("Clear All Hist.");
+      QPushButton * bnClearHist = new QPushButton("Clear All Hist.", this);
       boxLayout->addWidget(bnClearHist, 9, 1);
 
       connect(bnClearHist, &QPushButton::clicked, this, [=](){
@@ -306,6 +306,16 @@ inline void CoincidentAnalyzer::SetUpCanvas(){
         h1g->Clear();
         hMulti->Clear();
       });
+
+      QPushButton * bnSaveSettings = new QPushButton("Save Settings", this);
+      boxLayout->addWidget(bnSaveSettings, 9, 2);
+
+      connect(bnSaveSettings, &QPushButton::clicked, this, &CoincidentAnalyzer::SaveHistRange);
+
+      QPushButton * bnLoadSettings = new QPushButton("Load Settings", this);
+      boxLayout->addWidget(bnLoadSettings, 9, 3);
+
+      connect(bnLoadSettings, &QPushButton::clicked, this, &CoincidentAnalyzer::LoadHistRange);
 
     }
 
@@ -316,7 +326,7 @@ inline void CoincidentAnalyzer::SetUpCanvas(){
   layout->addWidget(hMulti, 0, 1);  
 
   // the "this" make the histogram a child of the SplitPole class. When SplitPole destory, all childs destory as well.
-  h2D = new Histogram2D("Coincident Plot", "XXX", "YYY", 200, 0, 30000, 200, 0, 30000, this);
+  h2D = new Histogram2D("Coincident Plot", "XXX", "YYY", 200, 0, 30000, 200, 0, 30000, this, rawDataPath);
   //layout is inheriatge from Analyzer
   layout->addWidget(h2D, 1, 0, 2, 1);
 
@@ -354,7 +364,10 @@ inline void CoincidentAnalyzer::UpdateHistograms(){
   if( this->isVisible() == false ) return;
   if( chkRunAnalyzer->isChecked() == false ) return;
 
+  unsigned long long t0 = getTime_ns();
   BuildEvents(); // call the event builder to build events
+  // unsigned long long t1 = getTime_ns();
+  // printf("Event Build time : %llu ns = %.f msec\n", t1 - t0, (t1-t0)/1e6);
 
   //============ Get events, and do analysis
   long eventBuilt = evtbder->eventBuilt;
@@ -421,6 +434,10 @@ inline void CoincidentAnalyzer::UpdateHistograms(){
         if( p == 0 && aE >= 0 ) h1g->Fill(aE); // only for the 1st gate
       }
     }
+
+    unsigned long long ta = getTime_ns();
+    if( ta - t0 > sbUpdateTime->value() * 0.9 * 1e9 ) break;
+
   }
 
   h2D->UpdatePlot();
@@ -444,9 +461,145 @@ inline void CoincidentAnalyzer::UpdateHistograms(){
 }
 
 inline void CoincidentAnalyzer::SaveHistRange(){
+  QString filePath = QFileDialog::getSaveFileName(this, 
+                                                  "Save Settings to File", 
+                                                  QDir::toNativeSeparators(rawDataPath + "/CoinAnaSettings.txt" ), 
+                                                  "Text file (*.txt)");
 
+  if (!filePath.isEmpty()){
+  
+    QFile file(filePath);
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+      QTextStream out(&file);
+
+      // Define the text to write
+      QStringList lines;
+
+      lines << QString::number(digi[aDigi->currentData().toInt()]->GetSerialNumber());
+      lines << QString::number(aCh->currentData().toInt());
+      lines << QString::number(h1->GetNBin());
+      lines << QString::number(h1->GetXMin());
+      lines << QString::number(h1->GetXMax());
+
+      lines << QString::number(digi[xDigi->currentData().toInt()]->GetSerialNumber());
+      lines << QString::number(xCh->currentData().toInt());
+      lines << QString::number(h2D->GetXNBin());
+      lines << QString::number(h2D->GetXMin());
+      lines << QString::number(h2D->GetXMax());
+
+      lines << QString::number(digi[yDigi->currentData().toInt()]->GetSerialNumber());
+      lines << QString::number(yCh->currentData().toInt());
+      lines << QString::number(h2D->GetYNBin());
+      lines << QString::number(h2D->GetYMin());
+      lines << QString::number(h2D->GetYMax());
+      
+      
+      lines << QString::number(sbUpdateTime->value());
+      lines << QString::number(chkBackWardBuilding->isChecked());
+      lines << QString::number(sbBackwardCount->value());
+
+      lines << "#===== End of File";
+
+      // Write each line to the file
+      for (const QString &line : lines) out << line << "\n";
+
+      // Close the file
+      file.close();
+      qDebug() << "File written successfully to" << filePath;
+    }else{
+      qWarning() << "Unable to open file" << filePath;
+    }
+
+  }
 }
 inline void CoincidentAnalyzer::LoadHistRange(){
+
+  QString filePath = QFileDialog::getOpenFileName(this, 
+                                                  "Load Settings to File", 
+                                                  rawDataPath, 
+                                                  "Text file (*.txt)");
+
+  int a_sn, a_ch, a_bin;
+  float a_min, a_max;
+  int x_sn, x_ch, x_bin;
+  float x_min, x_max;
+  int y_sn, y_ch, y_bin;
+  float y_min, y_max;
+
+  float updateTime;
+  int bkCount;
+  bool isBkEvtBuild;
+
+  if (!filePath.isEmpty()) {
+
+    QFile file(filePath);
+
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+      QTextStream in(&file);
+
+      short count = 0;
+      while (!in.atEnd()) {
+        QString line = in.readLine();
+
+        if( count == 0 ) a_sn  = line.toInt();
+        if( count == 1 ) a_ch  = line.toInt();
+        if( count == 2 ) a_bin = line.toInt();
+        if( count == 3 ) a_min = line.toFloat();
+        if( count == 4 ) a_max = line.toFloat();
+
+        if( count == 5 ) x_sn  = line.toFloat();
+        if( count == 6 ) x_ch  = line.toFloat();
+        if( count == 7 ) x_bin = line.toFloat();
+        if( count == 8 ) x_min = line.toFloat();
+        if( count == 9 ) x_max = line.toFloat();
+
+        if( count == 10 ) y_sn  = line.toFloat();
+        if( count == 11 ) y_ch  = line.toFloat();
+        if( count == 12 ) y_bin = line.toFloat();
+        if( count == 13 ) y_min = line.toFloat();
+        if( count == 14 ) y_max = line.toFloat();
+
+        if( count == 15 ) updateTime = line.toFloat();
+        if( count == 16 ) isBkEvtBuild = line.toInt();
+        if( count == 17 ) bkCount = line.toInt();
+
+        count ++;
+      }
+
+      file.close();
+      qDebug() << "File read successfully from" << filePath;
+
+      if( count >= 18 ){
+        
+        sbUpdateTime->setValue(updateTime);
+        chkBackWardBuilding->setChecked(isBkEvtBuild);
+        sbBackwardCount->setValue(bkCount);
+
+        int x_index  = xDigi->findText("Digi-" + QString::number(x_sn));
+        int y_index  = yDigi->findText("Digi-" + QString::number(y_sn));
+        int a_index  = aDigi->findText("Digi-" + QString::number(a_sn));
+        if( x_index == -1 ) qWarning() << " Cannot find digitizer " << x_sn;
+        if( y_index == -1 ) qWarning() << " Cannot find digitizer " << y_sn;
+        if( a_index == -1 ) qWarning() << " Cannot find digitizer " << a_sn;
+
+        xDigi->setCurrentIndex(x_index);
+        yDigi->setCurrentIndex(y_index);
+        aDigi->setCurrentIndex(a_index);
+
+        xCh->setCurrentIndex(x_ch);
+        yCh->setCurrentIndex(y_ch);
+        aCh->setCurrentIndex(a_ch);
+
+        h1->Rebin(a_bin, a_min, a_max);
+        h1g->Rebin(a_bin, a_min, a_max);
+        h2D->Rebin(x_bin, x_min, x_max, y_bin, y_min, y_max);
+
+      }
+
+    }else {
+      qWarning() << "Unable to open file" << filePath;
+    }
+  }
 
 }
 

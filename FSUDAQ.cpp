@@ -1823,7 +1823,7 @@ void FSUDAQ::OpenAnalyzer(){
 
   if( onlineAnalyzer == nullptr ) {
     //onlineAnalyzer = new Analyzer(digi, nDigi);
-    if( id == 0 ) onlineAnalyzer = new CoincidentAnalyzer(digi, nDigi);
+    if( id == 0 ) onlineAnalyzer = new CoincidentAnalyzer(digi, nDigi, rawDataPath);
     if( id == 1 ) onlineAnalyzer = new SplitPole(digi, nDigi);
     if( id == 2 ) onlineAnalyzer = new Encore(digi, nDigi);
     if( id == 3 ) onlineAnalyzer = new RAISOR(digi, nDigi);
@@ -1832,7 +1832,7 @@ void FSUDAQ::OpenAnalyzer(){
 
     delete onlineAnalyzer;
   
-    if( id == 0 ) onlineAnalyzer = new CoincidentAnalyzer(digi, nDigi);
+    if( id == 0 ) onlineAnalyzer = new CoincidentAnalyzer(digi, nDigi, rawDataPath);
     if( id == 1 ) onlineAnalyzer = new SplitPole(digi, nDigi);
     if( id == 2 ) onlineAnalyzer = new Encore(digi, nDigi);
     if( id == 3 ) onlineAnalyzer = new RAISOR(digi, nDigi);

@@ -19,7 +19,11 @@ const QList<QPair<QColor, QString>> colorCycle = { {QColor(Qt::red), "Red"},
 class Histogram2D : public QCustomPlot{
   
 public:
-  Histogram2D(QString title, QString xLabel, QString yLabel, int xbin, double xmin, double xmax, int ybin, double ymin, double ymax, QWidget * parent = nullptr);
+  Histogram2D(QString title, QString xLabel, QString yLabel, 
+              int xbin, double xmin, double xmax, 
+              int ybin, double ymin, double ymax, 
+              QWidget * parent = nullptr,
+              QString defaultPath = QDir::homePath());
 
   void SetXTitle(QString xTitle) { xAxis->setLabel(xTitle);}
   void SetYTitle(QString yTitle) { yAxis->setLabel(yTitle);}
@@ -89,13 +93,17 @@ private:
   void rightMouseClickMenu(QMouseEvent * event);
   void rightMouseClickRebin();
 
+  QString settingPath;
+
 };
 
 //^###############################################
 //^###############################################
 
-inline Histogram2D::Histogram2D(QString title, QString xLabel, QString yLabel, int xbin, double xmin, double xmax, int ybin, double ymin, double ymax, QWidget * parent) : QCustomPlot(parent){
+inline Histogram2D::Histogram2D(QString title, QString xLabel, QString yLabel, int xbin, double xmin, double xmax, int ybin, double ymin, double ymax, QWidget * parent, QString defaultPath) : QCustomPlot(parent){
   // DebugPrint("%s", "Histogram2D");
+
+  settingPath = defaultPath;
   for( int i = 0; i < 3; i ++ ){
     for( int j = 0; j < 3; j ++ ){
       box[i][j] = nullptr;
@@ -568,7 +576,7 @@ inline void Histogram2D::rightMouseClickMenu(QMouseEvent * event){
   if( selectedAction == a8 ){ // load Cuts
     QString filePath = QFileDialog::getOpenFileName(this, 
                                                 "Load Cuts from File", 
-                                                QDir::homePath(), 
+                                                settingPath, 
                                                 "Text file (*.txt)");
 
     if (!filePath.isEmpty()) LoadCuts(filePath);      
@@ -579,7 +587,7 @@ inline void Histogram2D::rightMouseClickMenu(QMouseEvent * event){
     
     QString filePath = QFileDialog::getSaveFileName(this, 
                                                     "Save Cuts to File", 
-                                                    QDir::homePath(), 
+                                                    settingPath, 
                                                     "Text file (*.txt)");
 
     if (!filePath.isEmpty()) SaveCuts(filePath);
@@ -773,8 +781,10 @@ inline void Histogram2D::LoadCuts(QString cutFileName){
         }else{
           QStringList haha = line.split(",");
           // qDebug() << haha;
-          tempCut.push_back(QPointF(haha[0].toFloat(), haha[1].toFloat()));
-          DrawCut();
+          if( haha.size() == 2 ){
+            tempCut.push_back(QPointF(haha[0].toFloat(), haha[1].toFloat()));
+            DrawCut();
+          }
         }
 
       }
