@@ -7,7 +7,6 @@
 #include <TCanvas.h>
 #include <TMath.h>
 
-
 #include "../analyzers/SplitPoleHit.h"
 
 namespace ChMap{

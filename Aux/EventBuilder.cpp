@@ -159,8 +159,8 @@ int main(int argc, char **argv) {
     tree->Branch("ch",                ch, "ch[multi]/s");
     tree->Branch("e",                  e, "e[multi]/s");
     tree->Branch("e2",                e2, "e2[multi]/s");
-    tree->Branch("e_t",              e_t, "e_timestamp[multi]/l");
-    tree->Branch("e_f",              e_f, "e_fineTime[multi]/s");
+    tree->Branch("e_t",              e_t, "e_t[multi]/l");
+    tree->Branch("e_f",              e_f, "e_f[multi]/s");
     tree->Branch("traceLength", traceLength, "traceLength[multi]/s");
   
     if( traceOn ) {
