@@ -24,9 +24,6 @@ FSU2CAEN
 
 data
 
-splitpole.C
-splitpole.h
-
 *.d
 *.pcm
 
