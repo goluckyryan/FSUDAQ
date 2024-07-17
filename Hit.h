@@ -6,7 +6,7 @@
 class Hit{
 public:
   unsigned short sn;
-  uint8_t ch;
+  unsigned short ch;
   unsigned short energy;
   unsigned short energy2;
   unsigned long long timestamp;
@@ -45,6 +45,44 @@ public:
   // Define operator< for sorting
   bool operator<(const Hit& other) const {
     return timestamp < other.timestamp;
+  }  
+
+
+  void WriteHitsToCAENBinary(FILE * file, bool withTrace){
+    if( file == nullptr ) return;
+
+    uint16_t header = 0xCAE1; // default to have the energy only
+    uint32_t flag = 0;
+    uint8_t  waveFormCode = 1; // input
+
+    size_t dummy;
+
+    if( energy2 > 0 ) header += 0x4;
+    if( traceLength > 0 && withTrace ) header += 0x8;
+
+    dummy = fwrite(&header, 2, 1, file);
+    dummy = fwrite(&sn, 2, 1, file);
+    dummy = fwrite(&ch, 2, 1, file);
+
+    uint64_t timestampPS = timestamp * 1000 + fineTime;
+    dummy = fwrite(&timestampPS, 8, 1, file);
+
+    dummy = fwrite(&energy, 2, 1, file);
+
+    if( energy2 > 0 ) dummy = fwrite(&energy2, 2, 1, file);
+
+    dummy = fwrite(&flag, 4, 1, file);
+
+    if( traceLength > 0 && withTrace ){
+      dummy = fwrite(&waveFormCode, 1, 1, file);
+      dummy = fwrite(&traceLength, 4, 1, file);
+      for( int j = 0; j < traceLength; j++ ){
+        dummy = fwrite(&(trace[j]), 2, 1, file);
+      }
+    }
+
+    if( dummy != 1 ) printf("write file error.\n");
+
   }
 
 };

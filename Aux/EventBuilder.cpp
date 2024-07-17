@@ -21,6 +21,7 @@ struct FileInfo{
 };
 
 #define NMINARG 5 
+#define debug 0
 
 //^#############################################################
 //^#############################################################
@@ -31,10 +32,10 @@ int main(int argc, char **argv) {
   printf("=========================================\n");  
   if (argc < NMINARG)    {
     printf("Incorrect number of arguments:\n");
-    printf("%s [timeWindow] [withTrace] [verbose] [inFile1]  [inFile2] .... \n", argv[0]);
+    printf("%s [timeWindow] [withTrace] [format] [inFile1]  [inFile2] .... \n", argv[0]);
     printf("    timeWindow : in ns, -1 = no event building \n");   
     printf("     withTrace : 0 for no trace, 1 for trace \n");   
-    printf("       verbose : > 0 for debug  \n");   
+    printf("        format : 0 for root, 1 for CoMPASS binary  \n");   
     printf("    Output file name is contructed from inFile1 \n");   
     printf("\n");
     printf(" Example: %s -1 0 0 '\\ls -1 *001*.fsu' (no event build, no trace, no verbose)\n", argv[0]);
@@ -49,7 +50,8 @@ int main(int argc, char **argv) {
   ///============= read input
   long timeWindow = atoi(argv[1]);
   bool traceOn = atoi(argv[2]);
-  unsigned int debug = atoi(argv[3]);
+  // unsigned int debug = atoi(argv[3]);
+  unsigned short format = atoi(argv[3]);
   unsigned int batchSize = 2* DEFAULT_HALFBUFFERSIZE;
   int nFile = argc - NMINARG + 1;
   TString inFileName[nFile];
@@ -63,8 +65,15 @@ int main(int argc, char **argv) {
   if( nFile == 1 ) pos = outFileName.Index("_", pos+1); // find next "_", S/N
   outFileName.Remove(pos); // remove the rest
   outFileName += "_" + ( timeWindow >= 0 ? std::to_string(timeWindow) : "single");
-  outFileName += ".root";
-  printf("-------> Out file name : %s \n", outFileName.Data());
+
+  TString outFileFullName;
+  if( format == 0 ){
+    outFileFullName = outFileName + ".root";
+  }else{
+    outFileFullName = outFileName + ".bin";
+  }
+
+  printf("-------> Out file name : %s \n", outFileFullName.Data());
   printf("========================================= Number of Files : %d \n", nFile);
   for( int i = 0; i < nFile; i++) printf("%2d | %s \n", i, inFileName[i].Data());
   printf("=========================================\n"); 
@@ -113,22 +122,17 @@ int main(int argc, char **argv) {
 
   for( size_t i = 0; i < fileGroupList.size(); i++){
     printf("group ----- %ld \n", i);
-
     //sort by ID
     std::sort(fileGroupList[i].begin(), fileGroupList[i].end(), [](const FileInfo & a, const FileInfo & b) {
       return a.fileID < b.fileID;
     });
-
     for( size_t j = 0; j < fileGroupList[i].size(); j++){
       printf("%3ld | %8d | %9lu| %s \n", j, fileGroupList[i][j].fileID, fileGroupList[i][j].hitCount, fileGroupList[i][j].fileName.c_str() );
     }
-
   }
 
-  // //*====================================== create tree
-  TFile * outRootFile = new TFile(outFileName, "recreate");
-  TTree * tree = new TTree("tree", outFileName);
-
+  TFile * outRootFile = nullptr;
+  TTree * tree = nullptr;
   unsigned long long                evID = 0;
   unsigned int                     multi = 0;
   unsigned short           sn[MAX_MULTI] = {0}; /// board SN
@@ -138,30 +142,38 @@ int main(int argc, char **argv) {
   unsigned long long      e_t[MAX_MULTI] = {0}; /// timestamp 47 bit
   unsigned short          e_f[MAX_MULTI] = {0}; /// fine time 10 bit 
   unsigned short  traceLength[MAX_MULTI];
+  short trace[MAX_MULTI][MAX_TRACE_LENGTH];
 
-  tree->Branch("evID",           &evID, "event_ID/l"); 
-  tree->Branch("multi",         &multi, "multi/i"); 
-  tree->Branch("sn",                sn, "sn[multi]/s");
-  tree->Branch("ch",                ch, "ch[multi]/s");
-  tree->Branch("e",                  e, "e[multi]/s");
-  tree->Branch("e2",                e2, "e2[multi]/s");
-  tree->Branch("e_t",              e_t, "e_timestamp[multi]/l");
-  tree->Branch("e_f",              e_f, "e_fineTime[multi]/s");
-  tree->Branch("traceLength", traceLength, "traceLength[multi]/s");
+  FILE * caen = nullptr;
+
+  if( format == 0 ){
+    // //*====================================== create tree
+    outRootFile = new TFile(outFileFullName, "recreate");
+    tree = new TTree("tree", outFileFullName);
   
-  // TClonesArray * arrayTrace = nullptr;
-  // TGraph * trace = nullptr;
+    tree->Branch("evID",           &evID, "event_ID/l"); 
+    tree->Branch("multi",         &multi, "multi/i"); 
+    tree->Branch("sn",                sn, "sn[multi]/s");
+    tree->Branch("ch",                ch, "ch[multi]/s");
+    tree->Branch("e",                  e, "e[multi]/s");
+    tree->Branch("e2",                e2, "e2[multi]/s");
+    tree->Branch("e_t",              e_t, "e_timestamp[multi]/l");
+    tree->Branch("e_f",              e_f, "e_fineTime[multi]/s");
+    tree->Branch("traceLength", traceLength, "traceLength[multi]/s");
+  
+    if( traceOn ) {
+      tree->Branch("trace", trace,"trace[multi][MAX_TRACE_LENGTH]/S");
+      tree->GetBranch("trace")->SetCompressionSettings(205);
+    }
+  }else{
 
-  short trace[MAX_MULTI][1024];
-  if( traceOn ) {
-  //   arrayTrace = new TClonesArray("TGraph");
-  //   tree->Branch("trace", arrayTrace, 2560000);
-  //   arrayTrace->BypassStreamer();
+    caen = fopen(outFileFullName.Data(), "wb");
+    if( caen == nullptr ){
+      perror("Failed to open file");
+      return -1;
+    }
 
-    tree->Branch("trace", trace,"trace[multi][1024]/S");
-    tree->GetBranch("trace")->SetCompressionSettings(205);
   }
-
 
   //*======================================= Open files
   printf("========================================= Open files & Build Events.\n"); 
@@ -292,12 +304,6 @@ int main(int argc, char **argv) {
       
       traceLength[p] = events[p].traceLength;
       if( traceOn ){
-        // trace = (TGraph *) arrayTrace->ConstructedAt(p, "C");
-        // trace->Clear();
-        // for( int hh = 0; hh < traceLength[multi]; hh++){
-        //   trace->SetPoint(hh, hh, events[p].trace[hh]);
-        // }
-
         if( traceLength[p] > MAX_TRACE_LENGTH ) {
           printf("\033[31m event %lld has trace length = %d > MAX_TRACE_LENGTH = %d \033[0m\n", evID, traceLength[p], MAX_TRACE_LENGTH);
           traceLength[p] = MAX_TRACE_LENGTH;
@@ -306,14 +312,21 @@ int main(int argc, char **argv) {
         for( int hh = 0; hh < traceLength[p]; hh++){
           trace[p][hh] = events[p].trace[hh];
         }
-
-
       }
     }
 
-    outRootFile->cd();
-    tree->Fill();
-    // tree->Write();
+    if( format == 0 ){
+      outRootFile->cd();
+      tree->Fill();
+      // tree->Write();
+    }else{
+      if( caen ) {
+        for( size_t gg = 0; gg < events.size(); gg++ ){
+          events[gg].WriteHitsToCAENBinary(caen, traceOn);
+        }
+      }
+    }
+
     multi = 0;
     evID ++;
 
@@ -348,25 +361,29 @@ int main(int argc, char **argv) {
 
   }while( nFileFinished < nGroup);
 
-  tree->Write();
+  if( format == 0 ) tree->Write();
 
   uInt runEndTime = getTime_us();
   double runTime = (runEndTime - runStartTime) * 1e-6;
   printf("========================================= finished.\n");
   printf(" event building time = %.2f sec = %.2f min\n", runTime, runTime/60.);
-  printf("  total events built = %llu by event builder (%llu in tree)\n", evID, tree->GetEntriesFast());
+  // printf("  total events built = %llu by event builder (%llu in tree)\n", evID, tree->GetEntriesFast());
+  printf("  total events built = %llu by event builder\n", evID);
   double tDuration_sec = (tEnd - tStart) * 1e-9;
   printf("     first timestamp = %20llu ns\n", tStart);
   printf("      last timestamp = %20llu ns\n", tEnd);
   printf(" total data duration = %.2f sec = %.2f min\n", tDuration_sec, tDuration_sec/60.);
-  printf("========================================> saved to %s \n", outFileName.Data());
+  printf("========================================> saved to %s \n", outFileFullName.Data());
 
-  TMacro info;
-  info.AddLine(Form("tStart= %20llu ns",tStart));
-  info.AddLine(Form("  tEnd= %20llu ns",tEnd));
-  info.Write("info");
-
-  outRootFile->Close();
+  if( format == 0 ){
+    TMacro info;
+    info.AddLine(Form("tStart= %20llu ns",tStart));
+    info.AddLine(Form("  tEnd= %20llu ns",tEnd));
+    info.Write("info");
+    outRootFile->Close();
+  }else{
+    fclose(caen);
+  }
   
   for( int i = 0; i < nGroup; i++) delete reader[i];
   delete [] reader;
