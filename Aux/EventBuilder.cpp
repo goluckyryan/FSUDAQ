@@ -73,6 +73,8 @@ int main(int argc, char **argv) {
     outFileFullName = outFileName + ".bin";
   }
 
+  uint16_t header = 0; // for caen bin
+
   printf("-------> Out file name : %s \n", outFileFullName.Data());
   printf("========================================= Number of Files : %d \n", nFile);
   for( int i = 0; i < nFile; i++) printf("%2d | %s \n", i, inFileName[i].Data());
@@ -321,8 +323,17 @@ int main(int argc, char **argv) {
       // tree->Write();
     }else{
       if( caen ) {
+        
+        if( header == 0 ){
+          header = 0xCAE1; // default to have the energy only
+          if( events[0].energy2 > 0 ) header += 0x4;
+          if( events[0].traceLength > 0 && traceOn ) header += 0x8;
+          size_t dummy = fwrite(&header, 2, 1, caen);
+          if( dummy != 1 ) printf("file write error.\n");
+        }
+
         for( size_t gg = 0; gg < events.size(); gg++ ){
-          events[gg].WriteHitsToCAENBinary(caen, traceOn);
+          events[gg].WriteHitsToCAENBinary(caen, header);
         }
       }
     }

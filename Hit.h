@@ -48,19 +48,17 @@ public:
   }  
 
 
-  void WriteHitsToCAENBinary(FILE * file, bool withTrace){
+  void WriteHitsToCAENBinary(FILE * file, uint32_t header){
     if( file == nullptr ) return;
 
-    uint16_t header = 0xCAE1; // default to have the energy only
     uint32_t flag = 0;
     uint8_t  waveFormCode = 1; // input
 
+    // uint16_t header = 0xCAE1; // default to have the energy only
+    // if( energy2 > 0 ) header += 0x4;
+    // if( traceLength > 0 && withTrace ) header += 0x8;
+
     size_t dummy;
-
-    if( energy2 > 0 ) header += 0x4;
-    if( traceLength > 0 && withTrace ) header += 0x8;
-
-    dummy = fwrite(&header, 2, 1, file);
     dummy = fwrite(&sn, 2, 1, file);
     dummy = fwrite(&ch, 2, 1, file);
 
@@ -69,11 +67,11 @@ public:
 
     dummy = fwrite(&energy, 2, 1, file);
 
-    if( energy2 > 0 ) dummy = fwrite(&energy2, 2, 1, file);
+    if( (header & 0x4) ) dummy = fwrite(&energy2, 2, 1, file);
 
     dummy = fwrite(&flag, 4, 1, file);
 
-    if( traceLength > 0 && withTrace ){
+    if( traceLength > 0 && (header & 0x8) ){
       dummy = fwrite(&waveFormCode, 1, 1, file);
       dummy = fwrite(&traceLength, 4, 1, file);
       for( int j = 0; j < traceLength; j++ ){
