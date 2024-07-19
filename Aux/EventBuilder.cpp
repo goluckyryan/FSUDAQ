@@ -79,10 +79,11 @@ int main(int argc, char **argv) {
   printf("========================================= Number of Files : %d \n", nFile);
   for( int i = 0; i < nFile; i++) printf("%2d | %s \n", i, inFileName[i].Data());
   printf("=========================================\n"); 
-  printf("    Time Window = %ld ns = %.1f us\n", timeWindow, timeWindow/1000.);
-  printf("  Include Trace = %s\n", traceOn ? "Yes" : "No");
-  printf("    Debug level = %d\n", debug);
-  printf(" Max multiplity = %d hits/event (hard coded)\n", MAX_MULTI);
+  printf("      Time Window = %ld ns = %.1f us\n", timeWindow, timeWindow/1000.);
+  printf("    Include Trace = %s\n", traceOn ? "Yes" : "No");
+  printf("      Debug level = %d\n", debug);
+  printf("   Max multiplity = %d hits/event (hard coded)\n", MAX_MULTI);
+  if( traceOn ) printf(" Max Trace Length = %d (hard coded)\n", MAX_TRACE_LENGTH);
   printf("========================================= Grouping files\n");  
 
   std::vector<std::vector<FileInfo>> fileGroupList; // fileName and ID = SN * 1000 + index

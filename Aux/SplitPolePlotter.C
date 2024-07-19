@@ -47,7 +47,8 @@ TH1F * hXavg;
 
 TH2F * hFocal;
 
-TH2F * hXavgVQ;
+TH2F * hXavg_Q;
+TH2F * hXavg_Theta;
 
 TH2F * haha;
 
@@ -56,7 +57,7 @@ TH1F * hEx;
 ULong64_t t1, t2;
 
 #define XMIN -20
-#define XMAX  100
+#define XMAX  150
 
 //^###########################################
 
@@ -82,7 +83,7 @@ void SplitPolePlotter(TChain *tree){
 
   //*====================================================== histograms
 
-  PID = new TH2F("hPID", "PID; Scin_X ; AnodeB", 200, 0, 30000, 100, 0, 70000);
+  PID = new TH2F("hPID", "PID; Scin_X ; AnodeB", 200, 0, 2000, 100, 0, 4000);
   coin = new TH2F("hCoin", "Coincident ", 16, 0, 16, 16, 0, 16);
 
   hMulti = new TH1F("hMulti", "Multiplicity", 16, 0, 16); 
@@ -92,14 +93,15 @@ void SplitPolePlotter(TChain *tree){
   hXavg = new TH1F("hAvg", "Xavg", 600, XMIN, XMAX);
 
   hFocal = new TH2F("hFocal", "Front vs Back ", 200, XMIN, XMAX, 200, XMIN, XMAX);
-  hXavgVQ = new TH2F("hXavgVQ", "Xavg vs Q ", 200, XMIN, XMAX, 200, 0, 40000);
+  hXavg_Q = new TH2F("hXavg_Q", "Xavg vs Q ", 200, XMIN, XMAX, 200, 0, 5000);
+  hXavg_Theta = new TH2F("hXavg_Theta", "Xavg vs Theta ", 200, XMIN, XMAX, 200, 2.5, 3);
 
   haha = new TH2F("haha", "", 400, XMIN, XMAX, 400, -50, 50);
 
   hEx = new TH1F("hEx", "Ex; Ex [MeV]; count/100 keV", 250, -5, 20);
 
   hit.SetMassTablePath("../analyzers/mass20.txt");
-  hit.CalConstants("12C", "12C", "4He", 80, 5); // 80MeV, 5 deg
+  hit.CalConstants("36S", "d", "p", 80, 12); // 80MeV, 5 deg
   hit.CalZoffset(1.41); // 1.41 T
 
   t1 = 0;
@@ -142,21 +144,23 @@ void SplitPolePlotter(TChain *tree){
     hit.ClearData();
     hMulti->Fill(sn.GetSize());
 
+    // if( multi.Get()[0] != 9 ) continue;
+
     for( int i = 0; i < sn.GetSize(); i++){
 
       t2 = e_t[i];
       if( t2 < t1 ) printf("entry %lld-%d, timestamp is not in order. %llu, %llu\n", processedEntries, i, t2, t1);
       if( i == 0 ) t1 = e_t[i];
 
-      if( ch[i] == ChMap::ScinR )    {hit.eSR   = e[i]; hit.tSR   = e_t[i]/4 + e_f[i]/1000.;}
-      if( ch[i] == ChMap::ScinL )    {hit.eSL   = e[i]; hit.tSL   = e_t[i]/4 + e_f[i]/1000.;}
-      if( ch[i] == ChMap::dFR )      {hit.eFR   = e[i]; hit.tFR   = e_t[i]/4 + e_f[i]/1000.;}
-      if( ch[i] == ChMap::dFL )      {hit.eFL   = e[i]; hit.tFL   = e_t[i]/4 + e_f[i]/1000.;}
-      if( ch[i] == ChMap::dBR )      {hit.eBR   = e[i]; hit.tBR   = e_t[i]/4 + e_f[i]/1000.;}
-      if( ch[i] == ChMap::dBL )      {hit.eBL   = e[i]; hit.tBL   = e_t[i]/4 + e_f[i]/1000.;}
-      if( ch[i] == ChMap::Cathode )  {hit.eCath = e[i]; hit.tCath = e_t[i]/4 + e_f[i]/1000.;}
-      if( ch[i] == ChMap::AnodeF )   {hit.eAF   = e[i]; hit.tAF   = e_t[i]/4 + e_f[i]/1000.;}
-      if( ch[i] == ChMap::AnodeB )   {hit.eAB   = e[i]; hit.tAB   = e_t[i]/4 + e_f[i]/1000.;}
+      if( ch[i] == ChMap::ScinR )    {hit.eSR   = e[i]; hit.tSR   = e_t[i] + e_f[i]/1000.*4;}
+      if( ch[i] == ChMap::ScinL )    {hit.eSL   = e[i]; hit.tSL   = e_t[i] + e_f[i]/1000.*4;}
+      if( ch[i] == ChMap::dFR )      {hit.eFR   = e[i]; hit.tFR   = e_t[i] + e_f[i]/1000.*4;}
+      if( ch[i] == ChMap::dFL )      {hit.eFL   = e[i]; hit.tFL   = e_t[i] + e_f[i]/1000.*4;}
+      if( ch[i] == ChMap::dBR )      {hit.eBR   = e[i]; hit.tBR   = e_t[i] + e_f[i]/1000.*4;}
+      if( ch[i] == ChMap::dBL )      {hit.eBL   = e[i]; hit.tBL   = e_t[i] + e_f[i]/1000.*4;}
+      if( ch[i] == ChMap::Cathode )  {hit.eCath = e[i]; hit.tCath = e_t[i] + e_f[i]/1000.*4;}
+      if( ch[i] == ChMap::AnodeF )   {hit.eAF   = e[i]; hit.tAF   = e_t[i] + e_f[i]/1000.*4;}
+      if( ch[i] == ChMap::AnodeB )   {hit.eAB   = e[i]; hit.tAB   = e_t[i] + e_f[i]/1000.*4;}
 
       for( int j = i+1; j < sn.GetSize(); j++){
           coin->Fill(ch[i], ch[j]);
@@ -174,7 +178,7 @@ void SplitPolePlotter(TChain *tree){
     // if( hit.eCath == 0 ) return kTRUE;
     // if( hit.eCath > 13000 ) return kTRUE;
 
-    hit.CalData();
+    hit.CalData(4);
 
     if( !TMath::IsNaN(hit.x1) || !TMath::IsNaN(hit.x2) ) {
       hFocal->Fill(hit.x1, hit.x2);
@@ -182,7 +186,8 @@ void SplitPolePlotter(TChain *tree){
       hB->Fill(hit.x2);
       hXavg->Fill(hit.xAvg);
 
-      hXavgVQ->Fill(hit.xAvg, dQ);
+      hXavg_Q->Fill(hit.xAvg, dQ);
+      hXavg_Theta->Fill( hit.xAvg, hit.theta);
 
       for( int i = 0; i < 400; i++){
         double y = -50 + 100/400.*i;
@@ -215,11 +220,11 @@ void SplitPolePlotter(TChain *tree){
   //^###########################################################
   //^ * Plot
   //^###########################################################
-  TCanvas * canvas = new TCanvas("cc", "Split-Pole", 1800, 1200);
+  TCanvas * canvas = new TCanvas("cc", "Split-Pole", 1600, 1200);
 
   gStyle->SetOptStat("neiou");
 
-  canvas->Divide(3, 3);
+  canvas->Divide(4, 3);
 
   canvas->cd(1); PID->Draw("colz");
   //canvas->cd(2); coin->Draw("colz");
@@ -228,7 +233,7 @@ void SplitPolePlotter(TChain *tree){
   canvas->cd(3); hF->Draw();
   canvas->cd(4); hB->Draw();
 
-  canvas->cd(5); hXavgVQ->Draw("colz");
+  canvas->cd(5); hXavg_Q->Draw("colz");
 
   canvas->cd(6); hXavg->Draw("colz");
 
@@ -237,5 +242,7 @@ void SplitPolePlotter(TChain *tree){
   canvas->cd(8); coin->Draw("colz");
 
   canvas->cd(9); canvas->cd(9)->SetLogy(); hMulti->Draw();
+
+  canvas->cd(10); hXavg_Theta->Draw("colz");
 
 }

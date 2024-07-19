@@ -194,14 +194,14 @@ public:
     isConstantCal = false;
   }
 
-  void CalData(){
+  void CalData(float scale = 2.){
 
     if( eSR  > 0 && eSL  > 0 ) eSAvg = (eSR + eSL)/2;
     if( eSR  > 0 && eSL == 0 ) eSAvg = eSR;
     if( eSR == 0 && eSL  > 0 ) eSAvg = eSL;
 
-    if( tFR > 0 && tFL > 0 ) x1 = (tFL - tFR)/2./2.1;
-    if( tBR > 0 && tBL > 0 ) x2 = (tBL - tBR)/2./1.98;
+    if( tFR > 0 && tFL > 0 ) x1 = (tFL - tFR)/scale/2.1;
+    if( tBR > 0 && tBL > 0 ) x2 = (tBL - tBR)/scale/1.98;
 
     if( !std::isnan(x1)  && !std::isnan(x2)) {
 

@@ -7,7 +7,8 @@ void script(){
 
   TChain * chain = new TChain("tree");
 
-  chain->Add("data/temp_002_336_1000.root");
+  // chain->Add("data/temp_002_336_1000.root");
+  chain->Add("run123_100000.root");
 
   SplitPolePlotter(chain);
 
