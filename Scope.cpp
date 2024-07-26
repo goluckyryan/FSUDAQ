@@ -6,6 +6,7 @@
 #include <QGroupBox>
 #include <QStandardItemModel>
 #include <QLabel>
+#include <QScreen>
 
 QVector<QPointF> Scope::TrapezoidFilter(QVector<QPointF> data, int baseLineEndS, int riseTimeS, int flatTopS, float decayTime_ns){
   DebugPrint("%s", "Scope");
@@ -55,6 +56,11 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   setWindowTitle("Scope");
   setGeometry(0, 0, 1000, 800);  
   setWindowFlags( this->windowFlags() & ~Qt::WindowCloseButtonHint );
+
+  //====== resize window if screen too small
+  QScreen * screen = QGuiApplication::primaryScreen();
+  QRect screenGeo = screen->geometry();
+  if( screenGeo.width() < 1000 || screenGeo.height() < 800) this->showMaximized(); 
 
   enableSignalSlot = false;
 

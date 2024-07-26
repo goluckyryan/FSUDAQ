@@ -526,9 +526,9 @@ inline void CoincidentAnalyzer::LoadHistRange(){
   int y_sn, y_ch, y_bin;
   float y_min, y_max;
 
-  float updateTime;
-  int bkCount;
-  bool isBkEvtBuild;
+  float updateTime = 1.0;
+  int bkCount = 100;
+  bool isBkEvtBuild = false;
 
   if (!filePath.isEmpty()) {
 

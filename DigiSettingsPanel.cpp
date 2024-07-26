@@ -7,6 +7,8 @@
 #include <QDir>
 #include <QFileDialog>
 #include <QSortFilterProxyModel>
+#include <QApplication>
+#include <QScreen>
 
 #define ComBoxMixed "Mixed"
                                                                                   // bit = 0, bit = 1
@@ -39,6 +41,12 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
 
   setWindowTitle("Digitizer Settings");
   setGeometry(0, 0, 1700, 850);  
+
+  //====== resize window if screen too small
+  QScreen * screen = QGuiApplication::primaryScreen();
+  QRect screenGeo = screen->geometry();
+  if( screenGeo.width() < 1700 || screenGeo.height() < 850) this->showMaximized(); 
+
 
   tabWidget = new QTabWidget(this);
   setCentralWidget(tabWidget);
