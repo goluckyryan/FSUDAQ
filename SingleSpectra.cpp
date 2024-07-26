@@ -18,13 +18,17 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
   isSignalSlotActive = true;
 
   setWindowTitle("Single Histograms");
-  setGeometry(0, 0, 1000, 800);  
+  
   //setWindowFlags( this->windowFlags() & ~Qt::WindowCloseButtonHint );
 
   //====== resize window if screen too small
   QScreen * screen = QGuiApplication::primaryScreen();
   QRect screenGeo = screen->geometry();
-  if( screenGeo.width() < 1000 || screenGeo.height() < 800) this->showMaximized(); 
+  if( screenGeo.width() < 1000 || screenGeo.height() < 800) {
+    setGeometry(0, 0, screenGeo.width() - 100, screenGeo.height() - 100);
+  }else{
+    setGeometry(0, 0, 1000, 800);
+  }
 
   QWidget * layoutWidget = new QWidget(this);
   setCentralWidget(layoutWidget);

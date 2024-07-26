@@ -40,13 +40,15 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
   enableSignalSlot = false;
 
   setWindowTitle("Digitizer Settings");
-  setGeometry(0, 0, 1700, 850);  
 
   //====== resize window if screen too small
   QScreen * screen = QGuiApplication::primaryScreen();
   QRect screenGeo = screen->geometry();
-  if( screenGeo.width() < 1700 || screenGeo.height() < 850) this->showMaximized(); 
-
+  if( screenGeo.width() < 1700 || screenGeo.height() < 850) {
+    setGeometry(0, 0, screenGeo.width() - 100, screenGeo.height() - 100);  
+  }else{
+    setGeometry(0, 0, 1700, 850);  
+  }
 
   tabWidget = new QTabWidget(this);
   setCentralWidget(tabWidget);
