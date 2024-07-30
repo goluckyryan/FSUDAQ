@@ -49,6 +49,7 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
   }else{
     setGeometry(0, 0, 1700, 850);  
   }
+  // setGeometry(0, 0, 1700, 850);  
 
   tabWidget = new QTabWidget(this);
   setCentralWidget(tabWidget);

@@ -18,9 +18,10 @@
 #include "analyzers/CoincidentAnalyzer.h"
 #include "analyzers/SplitPoleAnalyzer.h"
 #include "analyzers/EncoreAnalyzer.h"
+#include "analyzers/MUSICAnalyzer.h"
 #include "analyzers/RAISOR.h"
 
-std::vector<std::string> onlineAnalyzerList = {"Coincident","Splie-Pole", "Encore", "RAISOR"};
+std::vector<std::string> onlineAnalyzerList = {"Coincident","Splie-Pole", "Encore", "RAISOR", "MUSICS"};
 
 FSUDAQ::FSUDAQ(QWidget *parent) : QMainWindow(parent){
   DebugPrint("%s", "FSUDAQ");
@@ -1827,6 +1828,7 @@ void FSUDAQ::OpenAnalyzer(){
     if( id == 1 ) onlineAnalyzer = new SplitPole(digi, nDigi);
     if( id == 2 ) onlineAnalyzer = new Encore(digi, nDigi);
     if( id == 3 ) onlineAnalyzer = new RAISOR(digi, nDigi);
+    if( id == 4 ) onlineAnalyzer = new MUSIC(digi, nDigi);
     if( id >=  0 ) onlineAnalyzer->show();
   }else{
 
@@ -1836,6 +1838,7 @@ void FSUDAQ::OpenAnalyzer(){
     if( id == 1 ) onlineAnalyzer = new SplitPole(digi, nDigi);
     if( id == 2 ) onlineAnalyzer = new Encore(digi, nDigi);
     if( id == 3 ) onlineAnalyzer = new RAISOR(digi, nDigi);
+    if( id == 4 ) onlineAnalyzer = new MUSIC(digi, nDigi);
 
     if( id >= 0 ){
       onlineAnalyzer->show();

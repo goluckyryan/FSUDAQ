@@ -64,6 +64,7 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   }else{
     setGeometry(0, 0, 1000, 800);
   }
+  // setGeometry(0, 0, 1000, 800);
 
   enableSignalSlot = false;
 

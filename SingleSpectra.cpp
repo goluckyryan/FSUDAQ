@@ -29,6 +29,7 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
   }else{
     setGeometry(0, 0, 1000, 800);
   }
+  // setGeometry(0, 0, 1000, 800);
 
   QWidget * layoutWidget = new QWidget(this);
   setCentralWidget(layoutWidget);
