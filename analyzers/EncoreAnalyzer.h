@@ -6,7 +6,7 @@
 
 #include <map>
 #include <QApplication>
-#include <QScreen>
+// #include <QScreen>
 
 namespace EncoreChMap{
 
@@ -87,11 +87,12 @@ inline void Encore::SetUpCanvas(){
   //====== resize window if screen too small
   QScreen * screen = QGuiApplication::primaryScreen();
   QRect screenGeo = screen->geometry();
-  if( screenGeo.width() < 1600 || screenGeo.height() < 1600) {
+  if( screenGeo.width() < 1000 || screenGeo.height() < 1000) {
     setGeometry(0, 0, screenGeo.width() - 100, screenGeo.height() -100);
   }else{
-    setGeometry(0, 0, 1600, 1600);
+    setGeometry(0, 0, 1000, 1000);
   }
+  // setGeometry(0, 0, 1600, 1600);
   chkRunAnalyzer = new QCheckBox("Run Analyzer", this);
   layout->addWidget(chkRunAnalyzer, 0, 0);
 

@@ -269,7 +269,7 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
       // connect(bnSaveSettingsToText, &QPushButton::clicked, this, [=](){ SaveSetting(1);});
 
       //checkBox, to coupled or decouple the setting file.
-      chkCoupledSettingFile = new QCheckBox("Update Setting", this);
+      chkCoupledSettingFile = new QCheckBox("Live Setting Update", this);
       buttonLayout->addWidget(chkCoupledSettingFile, rowID, 2);
       chkCoupledSettingFile->setCheckState(Qt::CheckState::Unchecked);
       connect(chkCoupledSettingFile, &QCheckBox::stateChanged, this, [=](int state){

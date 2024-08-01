@@ -4,7 +4,7 @@
 #include <QGroupBox>
 #include <QStandardItemModel>
 #include <QLabel>
-#include <QScreen>
+// #include <QScreen>
 
 SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawDataPath, QMainWindow * parent) : QMainWindow(parent){
   DebugPrint("%s", "SingleSpectra");

@@ -6,7 +6,7 @@
 
 #include <map>
 #include <QApplication>
-#include <QScreen>
+// #include <QScreen>
 
 namespace MUSICChMap{
 
@@ -60,7 +60,7 @@ public:
 
     SetUpdateTimeInSec(1.0);
 
-    SetBackwardBuild(false, 100); // using normal building (acceding in time) or backward building, int the case of backward building, default events to be build is 100. 
+    SetBackwardBuild(true, 100); // using normal building (acceding in time) or backward building, int the case of backward building, default events to be build is 100. 
     evtbder = GetEventBuilder();
     evtbder->SetTimeWindow(10000);
 
@@ -94,19 +94,20 @@ inline void MUSIC::SetUpCanvas(){
   //====== resize window if screen too small
   QScreen * screen = QGuiApplication::primaryScreen();
   QRect screenGeo = screen->geometry();
-  if( screenGeo.width() < 1600 || screenGeo.height() < 1600) {
+  if( screenGeo.width() < 1000 || screenGeo.height() < 1000) {
     setGeometry(0, 0, screenGeo.width() - 100, screenGeo.height() -100);
   }else{
-    setGeometry(0, 0, 1600, 1600);
+    setGeometry(0, 0, 1000, 1000);
   }
+  // setGeometry(0, 0, 1600, 1600);
   chkRunAnalyzer = new QCheckBox("Run Analyzer", this);
   layout->addWidget(chkRunAnalyzer, 0, 0);
 
-  hLeft  = new Histogram2D("Left", "Ch", "Energy", 17, 0, 16, 200, 0, 20000, this);
+  hLeft  = new Histogram2D("Left", "Ch", "Energy", 16, 0, 16, 200, 0, 200, this);
   layout->addWidget(hLeft, 1, 0);
-  hRight = new Histogram2D("Right", "Ch", "Energy", 17, 0, 16, 200, 0, 20000, this);
+  hRight = new Histogram2D("Right", "Ch", "Energy", 16, 0, 16, 200, 0, 200, this);
   layout->addWidget(hRight, 1, 1);
-  hLR    = new Histogram2D("Left + Right", "Ch", "Energy", 17, 0, 16, 200, 0, 20000, this);
+  hLR    = new Histogram2D("Left + Right", "Ch", "Energy", 17, 0, 16, 200, 0, 200, this);
   layout->addWidget(hLR, 2, 0);
   hMulti = new Histogram1D("Multi", "multiplicity", 40, 0, 40);
   layout->addWidget(hMulti, 2, 1);
@@ -118,9 +119,7 @@ inline void MUSIC::UpdateHistograms(){
   if( this->isVisible() == false ) return;
   if( chkRunAnalyzer->isChecked() == false ) return;
 
-  BuildEvents(); // call the event builder to build events
-
-  printf("MUSIC::%s----------- 1\n", __func__);
+  BuildEvents(false); // call the event builder to build events
 
   //============ Get events, and do analysis
   long eventBuilt = evtbder->eventBuilt;
@@ -131,21 +130,19 @@ inline void MUSIC::UpdateHistograms(){
   long eventStart = eventIndex - eventBuilt + 1;
   if(eventStart < 0 ) eventStart += MaxNEvent;
   
-  printf("MUSIC::%s----------- 2\n", __func__);
+  // printf("MUSIC::%s----------- 2 : %ld %ld \n", __func__, eventStart, eventIndex);
   for( long i = eventStart ; i <= eventIndex; i ++ ){
     std::vector<Hit> event = evtbder->events[i];
-    //printf("-------------- %ld\n", i);
+    // printf("MUSIC::%s----------- %ld,  %zu\n", __func__, i, event.size());
 
     hMulti->Fill((int) event.size());
-    //if( event.size() < 9 ) return;
     if( event.size() == 0 ) return;
 
     double sum[17] = {0};
     for( int k = 0; k < (int) event.size(); k++ ){
-
-      printf("MUSIC::%s----------- i, k %d, %d\n", __func__, i, k);
+        
+      // printf("---  %d\n", k);
       int bd = MUSICChMap::SN2Bd.at(event[k].sn);
-
       int ch = event[k].ch;
 
       int ID = MUSICChMap::mapping[bd][ch];
@@ -153,23 +150,22 @@ inline void MUSIC::UpdateHistograms(){
       if( ID < 0 ) continue;
 
       double eC = event[k].energy;
-      if(   0 <= ID && ID < 100 ) {
+      if(   0 <= ID && ID < 16 ) {
          eC *=  MUSICChMap::corr[ch][bd];
          hLeft->Fill(ID, eC);
          sum[ID] += eC;
       }
-      if( 100 <= ID && ID < 200 ) {
+      if( 16 <= ID && ID < 32 ) {
          eC *=  MUSICChMap::corr[ch][bd];
-         hRight->Fill(ID-100, eC );
-         sum[ID-100] += eC ;
+         hRight->Fill(ID-16, eC );
+         sum[ID-16] += eC ;
       }
     }
 
     for( int ch = 0; ch < 17; ch++){
-     if( sum[ch] > 0 ) hLR->Fill(ch, sum[ch]);
-     //printf("%d | sum %d\n", ch, sum[ch]);
-     }
-
+      if( sum[ch] > 0 ) hLR->Fill(ch, sum[ch]);
+      //printf("%d | sum %d\n", ch, sum[ch]);
+    }
   }
 
   hLeft->UpdatePlot();

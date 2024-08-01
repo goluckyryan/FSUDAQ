@@ -6,7 +6,7 @@
 #include <QGroupBox>
 #include <QStandardItemModel>
 #include <QLabel>
-#include <QScreen>
+// #include <QScreen>
 
 QVector<QPointF> Scope::TrapezoidFilter(QVector<QPointF> data, int baseLineEndS, int riseTimeS, int flatTopS, float decayTime_ns){
   DebugPrint("%s", "Scope");
