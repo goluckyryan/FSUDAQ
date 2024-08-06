@@ -11,9 +11,9 @@ QT += core widgets charts printsupport
 LIBS += -lCAENDigitizer -lcurl
 
 #==== for enable GDB debug
-#QMAKE_CXXFLAGS += -g
-#QMAKE_CXXFLAGS_RELEASE = -O0
-#QMAKE_CFLAGS_RELEASE = -O0
+QMAKE_CXXFLAGS += -g
+QMAKE_CXXFLAGS_RELEASE = -O0
+QMAKE_CFLAGS_RELEASE = -O0
 
 # You can make your code fail to compile if you use deprecated APIs.
 # In order to do so, uncomment the following line.
@@ -44,6 +44,7 @@ HEADERS += ClassData.h \
            analyzers/CoincidentAnalyzer.h \
            analyzers/SplitPoleAnalyzer.h \
            analyzers/EncoreAnalyzer.h \
+           analyzers/MUSICAnalyzer.h \
            analyzers/RAISOR.h 
 SOURCES += ClassDigitizer.cpp \
            DigiSettingsPanel.cpp \

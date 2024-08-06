@@ -82,6 +82,7 @@
     }
   ],
   "files.associations": {
-    "*.C": "cpp"
+    "*.C": "cpp",
+    "*.pro": "makefile"
   }
 }
