@@ -279,6 +279,8 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
       if( timeWindow <= 0 ) break;
     }
 
+    if( events[eventIndex].size() == 0 ) continue;
+
     if( events[eventIndex].size() > 1) {
       std::sort(events[eventIndex].begin(), events[eventIndex].end(), [](const Hit& a, const Hit& b) {
         return a.timestamp < b.timestamp;

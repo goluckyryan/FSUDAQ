@@ -40,13 +40,16 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
   enableSignalSlot = false;
 
   setWindowTitle("Digitizer Settings");
-  setGeometry(0, 0, 1700, 850);  
 
   //====== resize window if screen too small
   QScreen * screen = QGuiApplication::primaryScreen();
   QRect screenGeo = screen->geometry();
-  if( screenGeo.width() < 1700 || screenGeo.height() < 850) this->showMaximized(); 
-
+  if( screenGeo.width() < 1700 || screenGeo.height() < 850) {
+    setGeometry(0, 0, screenGeo.width() - 100, screenGeo.height() - 100);  
+  }else{
+    setGeometry(0, 0, 1700, 850);  
+  }
+  // setGeometry(0, 0, 1700, 850);  
 
   tabWidget = new QTabWidget(this);
   setCentralWidget(tabWidget);
@@ -266,7 +269,7 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
       // connect(bnSaveSettingsToText, &QPushButton::clicked, this, [=](){ SaveSetting(1);});
 
       //checkBox, to coupled or decouple the setting file.
-      chkCoupledSettingFile = new QCheckBox("Update Setting", this);
+      chkCoupledSettingFile = new QCheckBox("Live Setting Update", this);
       buttonLayout->addWidget(chkCoupledSettingFile, rowID, 2);
       chkCoupledSettingFile->setCheckState(Qt::CheckState::Unchecked);
       connect(chkCoupledSettingFile, &QCheckBox::stateChanged, this, [=](int state){

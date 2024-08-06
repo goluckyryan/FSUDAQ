@@ -98,7 +98,7 @@ void Analyzer::BuildEvents(bool verbose){
   if( isBuildBackward ){
     mb->BuildEventsBackWard(maxNumEventBuilt, verbose);
   }else{
-    mb->BuildEvents(0, 0, verbose);
+    mb->BuildEvents(0, true, verbose);
   }
   for( unsigned int i = 0; i < nData; i++ ) digiMTX[idList[i]].unlock();
 
