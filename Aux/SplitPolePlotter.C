@@ -190,11 +190,11 @@ void SplitPolePlotter(TChain *tree){
       hXavg_Theta->Fill( hit.xAvg, hit.theta);
 
       for( int i = 0; i < 400; i++){
-        double y = -50 + 100/400.*i;
+        double z = -50 + 100/400.*i;
 
-        double x = (y/42.8625 + 0.5)* ( hit.x2-hit.x1) + hit.x1;
+        double x = (z/42.8625 + 0.5)* ( hit.x2-hit.x1) + hit.x1;
 
-        haha->Fill(x,y);
+        haha->Fill(x,z);
       }
 
       double ex = hit.Rho2Ex( (hit.xAvg/100 + 0.363)   );

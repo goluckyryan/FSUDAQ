@@ -105,7 +105,7 @@ void MultiBuilder::FindEarlistTimeAndCh(bool verbose){
     for(unsigned int ch = 0; ch < data[i]->GetNChannel(); ch ++){
 
       int index =  data[i]->GetDataIndex(ch);
-      if( ch >= data[i]->GetNChannel() || index < 0 ) {
+      if( index < 0 ) {
         nExhaushedCh ++;
         chExhaused[i][ch] = true;
         continue;
@@ -145,9 +145,9 @@ void MultiBuilder::FindLatestTimeAndCh(bool verbose){
 
     for( int j = 0; j < data[i]->GetNChannel(); j++ ) chExhaused[i][j] = false;
 
-    for(unsigned int ch = 0; ch < MaxNChannels; ch ++){
+    for(unsigned int ch = 0; ch < data[i]->GetNChannel(); ch ++){
       
-      if( nextIndex[i][ch] < 0  || ch >= data[i]->GetNChannel() || data[i]->GetDataIndex(ch) < 0 ) {
+      if( nextIndex[i][ch] < 0  || data[i]->GetDataIndex(ch) < 0 ) {
         nExhaushedCh ++;
         chExhaused[i][ch] = true;
         // printf(", exhanshed. %d \n", nExhaushedCh);
@@ -211,7 +211,7 @@ void MultiBuilder::FindLatestTimeOfData(bool verbose){
 
 void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
   DebugPrint("%s", "MultiBuilder");
-  FindEarlistTimeAmongLastData(verbose); // give lastest Time, Ch, and Digi
+  FindEarlistTimeAmongLastData(verbose); // give lastest Time, Ch, and Digi for event building
 
   FindEarlistTimeAndCh(verbose); //Give the earliest time, ch, digi
   if( earlistCh == -1 || nExhaushedCh == nData * MaxNChannels) return; /// no data
@@ -224,9 +224,6 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
     eventIndex ++;
     if( eventIndex >= MaxNEvent ) eventIndex = 0;
     events[eventIndex].clear();
-
-    eventBuilt ++;
-    totalEventBuilt ++;
 
     em.Clear();
     
@@ -295,13 +292,16 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
     // //if there is a time jump, say, bigger than TimeJump. break
     if( earlistTime - lastEventTime > timeJump ) {
       if( verbose ){
-        printf("%6lu, %16llu\n", eventIndex, earlistTime);
-        printf("%5s - %16llu \n", "", lastEventTime);
-        printf("%5s > %16llu \n", "", timeJump);
-        printf("!!!!!!!! Time Jump detected stop event building. stop event buinding and get more data.\n"); 
+        printf("!!!!!!!! Time Jump detected stop event building and get more data.\n"); 
+        printf("event index : %6lu,    earlist time : %16llu\n", eventIndex, earlistTime);
+        printf("              %6s  last event time : %16llu \n", "", lastEventTime);
+        printf("              %6s        time jump > %16llu \n", "", timeJump);
       }
       return;
     }
+
+    eventBuilt ++;
+    totalEventBuilt ++;
 
     if( verbose ){
       printf(">>>>>>>>>>>>>>>>> Event ID : %ld, total built: %ld, multiplicity : %ld\n", eventIndex, totalEventBuilt, events[eventIndex].size());
