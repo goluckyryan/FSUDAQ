@@ -20,10 +20,10 @@ namespace ChMap{
 
   const short ScinR = 0;
   const short ScinL = 1;
-  const short dFR = 8;
-  const short dFL = 9;
-  const short dBR = 10;
-  const short dBL = 11;
+  const short dFR = 9;
+  const short dFL = 8;
+  const short dBR = 11;
+  const short dBL = 10;
   const short Cathode = 7;
   const short AnodeF = 13;
   const short AnodeB = 15;
@@ -56,8 +56,8 @@ TH1F * hEx;
 
 ULong64_t t1, t2;
 
-#define XMIN -20
-#define XMAX  150
+#define XMIN -200
+#define XMAX  200
 
 //^###########################################
 
@@ -83,7 +83,7 @@ void SplitPolePlotter(TChain *tree){
 
   //*====================================================== histograms
 
-  PID = new TH2F("hPID", "PID; Scin_X ; AnodeB", 200, 0, 2000, 100, 0, 4000);
+  PID = new TH2F("hPID", "PID; Scin_X ; AnodeB", 200, 0, 20000, 100, 0, 40000);
   coin = new TH2F("hCoin", "Coincident ", 16, 0, 16, 16, 0, 16);
 
   hMulti = new TH1F("hMulti", "Multiplicity", 16, 0, 16); 
@@ -93,16 +93,16 @@ void SplitPolePlotter(TChain *tree){
   hXavg = new TH1F("hAvg", "Xavg", 600, XMIN, XMAX);
 
   hFocal = new TH2F("hFocal", "Front vs Back ", 200, XMIN, XMAX, 200, XMIN, XMAX);
-  hXavg_Q = new TH2F("hXavg_Q", "Xavg vs Q ", 200, XMIN, XMAX, 200, 0, 5000);
-  hXavg_Theta = new TH2F("hXavg_Theta", "Xavg vs Theta ", 200, XMIN, XMAX, 200, 2.5, 3);
+  hXavg_Q = new TH2F("hXavg_Q", "Xavg vs Q ", 200, XMIN, XMAX, 200, 0, 40000);
+  hXavg_Theta = new TH2F("hXavg_Theta", "Xavg vs Theta ", 200, XMIN, XMAX, 200, 0.5, 2);
 
   haha = new TH2F("haha", "", 400, XMIN, XMAX, 400, -50, 50);
 
-  hEx = new TH1F("hEx", "Ex; Ex [MeV]; count/100 keV", 250, -5, 20);
+  hEx = new TH1F("hEx", "Ex; Ex [MeV]; count/100 keV", 250, -5, 5);
 
   hit.SetMassTablePath("../analyzers/mass20.txt");
-  hit.CalConstants("36S", "d", "p", 80, 12); // 80MeV, 5 deg
-  hit.CalZoffset(1.41); // 1.41 T
+  hit.CalConstants("12C", "d", "p", 16, 20); // 80MeV, 5 deg
+  hit.CalZoffset(0.751); // 1.41 T
 
   t1 = 0;
   t2 = 0;
@@ -152,6 +152,8 @@ void SplitPolePlotter(TChain *tree){
       if( t2 < t1 ) printf("entry %lld-%d, timestamp is not in order. %llu, %llu\n", processedEntries, i, t2, t1);
       if( i == 0 ) t1 = e_t[i];
 
+      // if( e[i] == 65535 ) continue;
+
       if( ch[i] == ChMap::ScinR )    {hit.eSR   = e[i]; hit.tSR   = e_t[i] + e_f[i]/1000;}
       if( ch[i] == ChMap::ScinL )    {hit.eSL   = e[i]; hit.tSL   = e_t[i] + e_f[i]/1000;}
       if( ch[i] == ChMap::dFR )      {hit.eFR   = e[i]; hit.tFR   = e_t[i] + e_f[i]/1000;}
@@ -168,7 +170,7 @@ void SplitPolePlotter(TChain *tree){
     }
 
     unsigned int dQ = hit.eAB; // delta Q
-    unsigned int Qt = hit.eSR; // total Q
+    unsigned int Qt = hit.eSL; // total Q
 
     if( Qt > 0 && dQ > 0 ) {
       PID->Fill(Qt, dQ);
@@ -178,9 +180,9 @@ void SplitPolePlotter(TChain *tree){
     // if( hit.eCath == 0 ) return kTRUE;
     // if( hit.eCath > 13000 ) return kTRUE;
 
-    hit.CalData(4);
+    hit.CalData(2);
 
-    if( !TMath::IsNaN(hit.x1) || !TMath::IsNaN(hit.x2) ) {
+    if( (!TMath::IsNaN(hit.x1) || !TMath::IsNaN(hit.x2)) && 1000 < dQ && dQ < 9000) {
       hFocal->Fill(hit.x1, hit.x2);
       hF->Fill(hit.x1);
       hB->Fill(hit.x2);

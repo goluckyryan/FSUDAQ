@@ -127,7 +127,7 @@ FSUDAQ::FSUDAQ(QWidget *parent) : QMainWindow(parent){
     layout->addWidget(leDatabaseName, rowID, 4);
 
     chkInflux = new QCheckBox("Enable", this);
-    chkInflux->setChecked(false);
+    chkInflux->setChecked(true);
     layout->addWidget(chkInflux, rowID, 5);
     
     rowID ++;
@@ -148,7 +148,7 @@ FSUDAQ::FSUDAQ(QWidget *parent) : QMainWindow(parent){
     layout->addWidget(leElogName, rowID, 4);
 
     chkElog = new QCheckBox("Enable", this);
-    chkElog->setChecked(false);
+    chkElog->setChecked(true);
     layout->addWidget(chkElog, rowID, 5);
 
     connect(bnLock, &QPushButton::clicked, this, &FSUDAQ::SetAndLockInfluxElog);

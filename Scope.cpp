@@ -746,7 +746,7 @@ void Scope::SetUpSpinBox(RSpinBox * &sb, QString str, int row, int col, const Re
       value = uint16_t((1.0 - sb->value()/100.) * 0xFFFF);
     }
 
-    if( para == DPP::PHA::TriggerThreshold ){
+    if( para == DPP::PHA::TriggerThreshold || para == DPP::PSD::TriggerThreshold){
       value = sb->value();
     }
 
@@ -755,7 +755,7 @@ void Scope::SetUpSpinBox(RSpinBox * &sb, QString str, int row, int col, const Re
     if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_QDC_CODE ){
       int grp = ch/8; // convert ch to grp 
       digiMTX[ID].lock();
-        digi[ID]->WriteRegister(para, value, grp);
+      digi[ID]->WriteRegister(para, value, grp);
       digiMTX[ID].unlock();
     }else{
       digiMTX[ID].lock();
@@ -1264,6 +1264,7 @@ void Scope::UpdatePanel_PSD(){
   UpdateSpinBox(sbShortGate, DPP::PSD::ShortGateWidth);
   UpdateSpinBox(sbLongGate,  DPP::PSD::LongGateWidth);
   UpdateSpinBox(sbGateOffset, DPP::PSD::GateOffset);
+  UpdateSpinBox(sbThreshold, DPP::PSD::TriggerThreshold);
 
   uint32_t BdCfg = digi[ID]->GetSettingFromMemory(DPP::BoardConfiguration, ch);
 

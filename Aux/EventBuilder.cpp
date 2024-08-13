@@ -101,7 +101,8 @@ int main(int argc, char **argv) {
   for( int i = 1; i < nFile; i++){
     FSUReader * readerB = new FSUReader(inFileName[i].Data(), 1, 1);
     readerB->ScanNumBlock(0,0);
-    if( readerB->GetOptimumBatchSize() > batchSize ) batchSize = readerB->GetOptimumBatchSize();
+    // if( readerB->GetOptimumBatchSize() > batchSize ) batchSize = readerB->GetOptimumBatchSize();
+    batchSize = readerB->GetOptimumBatchSize();
 
     totalHitCount += readerB->GetTotalHitCount();
     fileInfo = {inFileName[i].Data(), readerB->GetSN() * 1000 +  readerB->GetFileOrder(), readerB->GetTotalHitCount()};
@@ -251,8 +252,8 @@ int main(int argc, char **argv) {
       
         do{
 
-          if( (long int)(hitList[ig].at(ID[ig]).timestamp  - t0) <= timeWindow ){
-            events.push_back(hitList[ig].at(ID[ig]));
+          if( (long int)(hitList[ig][ID[ig]].timestamp  - t0) <= timeWindow ){
+            events.push_back(hitList[ig][ID[ig]]);
             ID[ig] ++;
           }else{
             break;
@@ -291,6 +292,9 @@ int main(int argc, char **argv) {
     multi = events.size() ;
     if( events.size() >= MAX_MULTI ) {
       printf("\033[31m event %lld has size = %d > MAX_MULTI = %d \033[0m\n", evID, multi, MAX_MULTI);
+      for( int po = 0 ; po < 10 ; po ++){
+        events[po].Print();
+      }
       multi = MAX_MULTI;
     }
     if( debug ) printf("=================================== filling data | %u \n", multi);

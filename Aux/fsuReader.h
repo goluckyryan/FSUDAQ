@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <filesystem>
 
-#define DEFAULT_HALFBUFFERSIZE 500000
+#define DEFAULT_HALFBUFFERSIZE 5000000
 
 class FSUReader{
 
@@ -262,14 +262,16 @@ inline void FSUReader::OpenFile(std::string fileName, uInt dataSize, int verbose
   std::string token;
 
   while (std::getline(iss, token, '_')) { tokens.push_back(token); }
-  sn = atoi(tokens[2].c_str());
-  tick2ns = atoi(tokens[4].c_str());
-  order = atoi(tokens[5].c_str());
+  short token_size = tokens.size();
+  // for( short i = 0; i < token_size; i ++ ) printf("%d | %s\n", i, tokens[i].c_str());
+  sn = atoi(tokens[token_size-4].c_str());
+  tick2ns = atoi(tokens[token_size-2].c_str());
+  order = atoi(tokens[token_size-1].c_str());
 
   DPPType = 0;
-  if( fileName.find("PHA") != std::string::npos ) DPPType = DPPTypeCode::DPP_PHA_CODE;
-  if( fileName.find("PSD") != std::string::npos ) DPPType = DPPTypeCode::DPP_PSD_CODE;
-  if( fileName.find("QDC") != std::string::npos ) DPPType = DPPTypeCode::DPP_QDC_CODE;
+  if( fileName.find("PHA") != std::string::npos ) { printf("Using PHA decode.\n"); DPPType = DPPTypeCode::DPP_PHA_CODE;}
+  if( fileName.find("PSD") != std::string::npos ) { printf("Using PSD decode.\n"); DPPType = DPPTypeCode::DPP_PSD_CODE;}
+  if( fileName.find("QDC") != std::string::npos ) { printf("Using QDC decode.\n"); DPPType = DPPTypeCode::DPP_QDC_CODE;}
   if( DPPType == 0 ){
     fclose(inFile);
     inFile = nullptr;
@@ -365,7 +367,7 @@ inline int FSUReader::ReadNextBlock(bool traceON, int verbose, uShort saveData){
 
       for( int i = start; i < start + data->NumEventsDecoded[ch]; i++ ){
         int k  = i % data->GetDataSize();
-        
+
         temp.sn = sn;
         temp.ch = ch;
         temp.energy    = data->GetEnergy(ch, k);
@@ -380,6 +382,8 @@ inline int FSUReader::ReadNextBlock(bool traceON, int verbose, uShort saveData){
           temp.traceLength = 0;
           if( temp.trace.size() > 0 ) temp.trace.clear();
         }
+
+        // temp.Print();
 
         hit.push_back(temp);
       }

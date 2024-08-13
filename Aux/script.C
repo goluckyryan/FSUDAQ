@@ -1,27 +1,31 @@
-// #include "fsuReader.h"
+#include "fsuReader.h"
 // #include "../MultiBuilder.cpp"
 
 #include "SplitPolePlotter.C"
 
 void script(){
 
-  TChain * chain = new TChain("tree");
+ TChain * chain = new TChain("tree");
 
-  // chain->Add("data/temp_002_336_1000.root");
-  chain->Add("run123_100000.root");
+ chain->Add("data/12C_dp_009_3000.root");
+//  chain->Add("run13._3000.root");
 
-  SplitPolePlotter(chain);
+ SplitPolePlotter(chain);
 
 
   //^=====================================================
 
-  // FSUReader * reader = new FSUReader("~/ExpData/testing/.fsu", 16);
-  // Data * data = reader->GetData();
-  // data->tick2ns = 4;
+  // FSUReader * reader = new FSUReader("data/12C_dp_002_19555_PSD_4_000.fsu", 10000, 2);
 
-  // reader->ScanNumBlock();
+  // reader->ScanNumBlock(1, 0);
 
-  // // for( int i = 0; i < 500 ; i++ ) reader->ReadNextBlock(0, 0);
+  // reader->ReadNextBlock(0, 9);
+
+  // for( int i = 0; i < 10 ; i++ ) reader->ReadNextBlock(0, 9);
+
+  // std::vector<Hit> hitList = reader->ReadBatch(10, true);
+
+  // for ( int i = 0; i < 10 ; i ++) hitList[i].Print();
 
   // // int ch = 5;
   // // std::vector<unsigned long long > tList;

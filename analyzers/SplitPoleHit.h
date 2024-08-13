@@ -39,10 +39,10 @@ namespace SPS{
     const short ScinL = 1;
     const short dFR = 9;
     const short dFL = 8;
-    const short dBR = 10;
-    const short dBL = 11;
+    const short dBR = 11;
+    const short dBL = 10;
     const short Cathode = 7;
-    const short AnodeF = 12;
+    const short AnodeF = 13;
     const short AnodeB = 15;
 
   };
@@ -64,19 +64,19 @@ public:
     ClearData();
   }
 
-  unsigned int eSR; unsigned long long tSR;
-  unsigned int eSL; unsigned long long tSL;
-  unsigned int eFR; unsigned long long tFR;
-  unsigned int eFL; unsigned long long tFL;
-  unsigned int eBR; unsigned long long tBR;
-  unsigned int eBL; unsigned long long tBL;
+  unsigned int eSR;   unsigned long long tSR;
+  unsigned int eSL;   unsigned long long tSL;
+  unsigned int eFR;   unsigned long long tFR;
+  unsigned int eFL;   unsigned long long tFL;
+  unsigned int eBR;   unsigned long long tBR;
+  unsigned int eBL;   unsigned long long tBL;
   unsigned int eCath; unsigned long long tCath;
-  unsigned int eAF; unsigned long long tAF;
-  unsigned int eAB; unsigned long long tAB;
+  unsigned int eAF;   unsigned long long tAF;
+  unsigned int eAB;   unsigned long long tAB;
 
   float eSAvg;
   float x1, x2, theta;
-  float xAvg;
+  double xAvg;
 
   double GetQ0() const {return Q0;}
   double GetRho0() const {return rho0;}
@@ -200,8 +200,16 @@ public:
     if( eSR  > 0 && eSL == 0 ) eSAvg = eSR;
     if( eSR == 0 && eSL  > 0 ) eSAvg = eSL;
 
-    if( tFR > 0 && tFL > 0 ) x1 = (tFL - tFR)/scale/2.1;
-    if( tBR > 0 && tBL > 0 ) x2 = (tBL - tBR)/scale/1.98;
+    if( tFR > 0 && tFL > 0 ) {
+      if( tFL > tFR) x1 = (tFL - tFR)/scale/2.1;
+      if( tFL < tFR) x1 = (tFR - tFL)/scale/-2.1;
+    }
+    if( tBR > 0 && tBL > 0 ) {
+      if( tBL > tBR) x2 = (tBL - tBR)/scale/1.98;
+      if( tBR > tBL) x2 = (tBR - tBL)/scale/-1.98;
+    }
+
+    // printf("x1: %f, x2 : %f \n", x1, x2);
 
     if( !std::isnan(x1)  && !std::isnan(x2)) {
 
