@@ -7,11 +7,17 @@ void script(){
 
  TChain * chain = new TChain("tree");
 
- chain->Add("data/12C_dp_009_3000.root");
-//  chain->Add("run13._3000.root");
+ chain->Add("raw_binary/run_13/run013_3000.root");
+//  chain->Add("data/12C_dp_009_3000.root");
 
- SplitPolePlotter(chain);
+ TFile * pidCutFile = new TFile("cut_proton.root");
+//  TFile * pidCutFile = new TFile("cut_proton_FSU.root");
+ TCutG * pidCut = (TCutG *) pidCutFile->Get("protons");
+ 
+ SplitPolePlotter(chain, pidCut, 123.307, 2.75, false);
 
+
+//  SplitPolePlotter(chain, pidCut, 123.307, 2.75, true);
 
   //^=====================================================
 

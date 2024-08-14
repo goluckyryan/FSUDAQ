@@ -6,6 +6,7 @@
 #include "TTreeReaderArray.h"
 #include "TClonesArray.h"
 #include "TGraph.h"
+#include "TCutG.h"
 #include "TH2.h"
 #include "TCanvas.h"
 #include "TStyle.h"
@@ -50,9 +51,10 @@ TH2F * hFocal;
 TH2F * hXavg_Q;
 TH2F * hXavg_Theta;
 
-TH2F * haha;
-
+TH2F * hRay;
 TH1F * hEx;
+
+TH2F * hEx_Multi;
 
 ULong64_t t1, t2;
 
@@ -61,7 +63,7 @@ ULong64_t t1, t2;
 
 //^###########################################
 
-void SplitPolePlotter(TChain *tree){
+void SplitPolePlotter(TChain *tree, TCutG * pidCut = nullptr, double rhoOffset = 0, double rhoScaling = 1, bool isFSUDAQ = true){
 
   printf("#####################################################################\n");
   printf("#################        SplitPolePlotter.C      ####################\n");
@@ -83,26 +85,34 @@ void SplitPolePlotter(TChain *tree){
 
   //*====================================================== histograms
 
-  PID = new TH2F("hPID", "PID; Scin_X ; AnodeB", 200, 0, 20000, 100, 0, 40000);
   coin = new TH2F("hCoin", "Coincident ", 16, 0, 16, 16, 0, 16);
-
   hMulti = new TH1F("hMulti", "Multiplicity", 16, 0, 16); 
+
+  if( isFSUDAQ ){
+    PID = new TH2F("hPID", "PID; Scin_X ; AnodeB", 200, 0, 20000, 100, 0, 40000);
+    hXavg_Q = new TH2F("hXavg_Q", "Xavg vs Q ", 200, XMIN, XMAX, 200, 0, 40000);
+  }else{
+    PID = new TH2F("hPID", "PID; Scin_X ; AnodeB", 200, 0, 4000, 100, 0, 5000);
+    hXavg_Q = new TH2F("hXavg_Q", "Xavg vs Q ", 200, XMIN, XMAX, 200, 0, 5000);
+  }
+
 
   hF = new TH1F("hF", "Front delay line position", 600, XMIN, XMAX);
   hB = new TH1F("hB", "Back delay line position", 600, XMIN, XMAX);
   hXavg = new TH1F("hAvg", "Xavg", 600, XMIN, XMAX);
 
   hFocal = new TH2F("hFocal", "Front vs Back ", 200, XMIN, XMAX, 200, XMIN, XMAX);
-  hXavg_Q = new TH2F("hXavg_Q", "Xavg vs Q ", 200, XMIN, XMAX, 200, 0, 40000);
-  hXavg_Theta = new TH2F("hXavg_Theta", "Xavg vs Theta ", 200, XMIN, XMAX, 200, 0.5, 2);
+  hXavg_Theta = new TH2F("hXavg_Theta", "Xavg vs Theta ", 200, XMIN, XMAX, 200, 0.5, 1.4);
 
-  haha = new TH2F("haha", "", 400, XMIN, XMAX, 400, -50, 50);
+  hRay = new TH2F("hRay", "Ray plot", 400, XMIN, XMAX, 400, -50, 50);
 
-  hEx = new TH1F("hEx", "Ex; Ex [MeV]; count/100 keV", 250, -5, 5);
+  hEx = new TH1F("hEx", "Ex; Ex [MeV]; count/10 keV", 600, -1, 5);
+
+  hEx_Multi = new TH2F("hEx_Multi", "Ex vs Multi; Ex; Multi", 600, -1, 5, 16, 0, 16);
 
   hit.SetMassTablePath("../analyzers/mass20.txt");
-  hit.CalConstants("12C", "d", "p", 16, 20); // 80MeV, 5 deg
-  hit.CalZoffset(0.751); // 1.41 T
+  hit.CalConstants("12C", "d", "p", 16, 18); // 80MeV, 5 deg
+  hit.CalZoffset(0.750); // 1.41 T
 
   t1 = 0;
   t2 = 0;
@@ -142,11 +152,11 @@ void SplitPolePlotter(TChain *tree){
     // }
 
     hit.ClearData();
-    hMulti->Fill(sn.GetSize());
+    hMulti->Fill(*multi);
 
-    // if( multi.Get()[0] != 9 ) continue;
+    // if( *multi != 9 ) continue;
 
-    for( int i = 0; i < sn.GetSize(); i++){
+    for( int i = 0; i < *multi; i++){
 
       t2 = e_t[i];
       if( t2 < t1 ) printf("entry %lld-%d, timestamp is not in order. %llu, %llu\n", processedEntries, i, t2, t1);
@@ -176,13 +186,16 @@ void SplitPolePlotter(TChain *tree){
       PID->Fill(Qt, dQ);
     }
 
-    //  if( hit.eAF < 50000 ) return kTRUE;
-    // if( hit.eCath == 0 ) return kTRUE;
-    // if( hit.eCath > 13000 ) return kTRUE;
+    //=============== PID gate cut
+    if( pidCut  ){
+      if( !pidCut->IsInside(Qt, dQ) ) continue;
+    }
 
     hit.CalData(2);
 
-    if( (!TMath::IsNaN(hit.x1) || !TMath::IsNaN(hit.x2)) && 1000 < dQ && dQ < 9000) {
+    if( hit.theta > 1.2 || 0.5 > hit.theta ) continue;
+
+    if( (!TMath::IsNaN(hit.x1) || !TMath::IsNaN(hit.x2)) ) {
       hFocal->Fill(hit.x1, hit.x2);
       hF->Fill(hit.x1);
       hB->Fill(hit.x2);
@@ -196,12 +209,14 @@ void SplitPolePlotter(TChain *tree){
 
         double x = (z/42.8625 + 0.5)* ( hit.x2-hit.x1) + hit.x1;
 
-        haha->Fill(x,z);
+        hRay->Fill(x,z);
       }
 
-      double ex = hit.Rho2Ex( (hit.xAvg/100 + 0.363)   );
+      double ex = hit.Rho2Ex( ((hit.xAvg - rhoOffset)/1000/rhoScaling + hit.GetRho0() )   );
       //if( XMIN < hit.xAvg && hit.xAvg < XMAX) printf("x1 : %6.2f, x2 : %6.2f, xAvg %6.2f cm , ex : %f \n", hit.x1, hit.x2, hit.xAvg, ex);
       hEx->Fill(ex);
+
+      hEx_Multi->Fill(ex, *multi);
     }
 
     //*============================================ Progress Bar
@@ -222,15 +237,18 @@ void SplitPolePlotter(TChain *tree){
   //^###########################################################
   //^ * Plot
   //^###########################################################
-  TCanvas * canvas = new TCanvas("cc", "Split-Pole", 1600, 1200);
+  TCanvas * canvas = new TCanvas("cc", "Split-Pole", 2500, 1000);
 
   gStyle->SetOptStat("neiou");
 
-  canvas->Divide(4, 3);
+  canvas->Divide(5, 2);
 
-  canvas->cd(1); PID->Draw("colz");
-  //canvas->cd(2); coin->Draw("colz");
-  canvas->cd(2); haha->Draw("colz");
+  canvas->cd(1); {
+    PID->Draw("colz");
+    if( pidCut ) pidCut->Draw("same");
+  }
+
+  canvas->cd(2); hRay->Draw("colz");
 
   canvas->cd(3); hF->Draw();
   canvas->cd(4); hB->Draw();
@@ -241,7 +259,8 @@ void SplitPolePlotter(TChain *tree){
 
   canvas->cd(7); hEx->Draw();
 
-  canvas->cd(8); coin->Draw("colz");
+  //canvas->cd(8); coin->Draw("colz");
+  canvas->cd(8); hEx_Multi->Draw("colz");
 
   canvas->cd(9); canvas->cd(9)->SetLogy(); hMulti->Draw();
 

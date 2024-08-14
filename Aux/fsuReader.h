@@ -49,6 +49,7 @@ class FSUReader{
     int GetNumCh()     const{return numCh;}
     int GetFileOrder() const{return order;}  
     int GetChMask()    const{return chMask;}
+    int GetRunNum()    const{return runNum;}
     unsigned long GetFileByteSize() const {return inFileSize;}
 
     void ClearHitList() { hit.clear();}
@@ -116,6 +117,7 @@ class FSUReader{
     uShort order;
     uShort chMask;
     uShort numCh;
+    uShort runNum;
 
     std::vector<unsigned int> blockPos;
     std::vector<unsigned int > blockTimeStamp;
@@ -264,6 +266,7 @@ inline void FSUReader::OpenFile(std::string fileName, uInt dataSize, int verbose
   while (std::getline(iss, token, '_')) { tokens.push_back(token); }
   short token_size = tokens.size();
   // for( short i = 0; i < token_size; i ++ ) printf("%d | %s\n", i, tokens[i].c_str());
+  runNum = atoi(tokens[token_size-5].c_str());
   sn = atoi(tokens[token_size-4].c_str());
   tick2ns = atoi(tokens[token_size-2].c_str());
   order = atoi(tokens[token_size-1].c_str());

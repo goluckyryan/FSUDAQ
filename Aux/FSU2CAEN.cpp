@@ -4,6 +4,9 @@ struct FileInfo{
   std::string fileName;
   int fileevID;
   unsigned long hitCount;
+  int sn;
+  int numCh;
+  int runNum;
 };
 
 #define minNARG  3
@@ -14,14 +17,13 @@ int main(int argc, char **argv) {
   
   printf("=========================================\n");
   printf("===      *.fsu to CoMPASS bin         ===\n");
-  printf("===      no trace, no flags           ===\n");
   printf("=========================================\n");  
   if (argc < minNARG)    {
     printf("Incorrect number of arguments:\n");
     printf("%s [tar] [inFile1] [inFile2] .... \n", argv[0]);
     printf("           tar : output tar, 0 = no, 1 = yes \n");   
     printf("\n");
-    printf(" Example: %s '\\ls 0 *001*.fsu'\n", argv[0]);
+    printf(" Example: %s 0 '\\ls -1 *001*.fsu'\n", argv[0]);
     printf("\n\n");
 
     return 1;
@@ -29,8 +31,6 @@ int main(int argc, char **argv) {
 
   unsigned int debug = false;
   uInt runStartTime = getTime_us();
-  unsigned short header = 0xCAE1;
-  unsigned int flags = 0;
 
   ///============= read input
   // long timeWindow = atoi(argv[1]);
@@ -41,19 +41,11 @@ int main(int argc, char **argv) {
   std::string inFileName[nFile];
   for( int i = 0 ; i < nFile ; i++){ inFileName[i] = argv[i+ minNARG - 1];}
 
-
-  std::string temp = inFileName[0];
-  size_t pos = temp.find('_');
-  pos = temp.find('_', pos + 1);
-  std::string outFile_prefix = temp.substr(0, pos);
-  std::string outFileName = outFile_prefix + ".BIN";
-
-  
   printf("========================================= Number of Files : %d \n", nFile);
   for( int i = 0; i < nFile; i++) printf("%2d | %s \n", i, inFileName[i].c_str());
   printf("=========================================\n"); 
   printf("     Batch size = %d events/file\n", batchSize);
-  printf("  Out file name = %s \n", outFileName.c_str());
+  // printf("  Out file name = %s \n", outFileName.c_str());
   printf("  Is tar output = %s \n", tarFlag ? "Yes" : "No");
   printf("========================================= Grouping files\n");  
 
@@ -65,7 +57,7 @@ int main(int argc, char **argv) {
   FSUReader * readerA = new FSUReader(inFileName[0], 1, 1);
   readerA->ScanNumBlock(0,0);
   if( readerA->GetOptimumBatchSize() > batchSize ) batchSize = readerA->GetOptimumBatchSize();
-  FileInfo fileInfo = {inFileName[0], readerA->GetSN() * 1000 +  readerA->GetFileOrder(), readerA->GetTotalHitCount()};
+  FileInfo fileInfo = {inFileName[0], readerA->GetSN() * 1000 +  readerA->GetFileOrder(), readerA->GetTotalHitCount(), readerA->GetSN(), readerA->GetNumCh(), readerA->GetRunNum()};
   fileList.push_back(fileInfo);
   totalHitCount += readerA->GetTotalHitCount();
 
@@ -75,7 +67,7 @@ int main(int argc, char **argv) {
     if( readerB->GetOptimumBatchSize() > batchSize ) batchSize = readerB->GetOptimumBatchSize();
     
     totalHitCount += readerB->GetTotalHitCount();
-    fileInfo = {inFileName[i], readerB->GetSN() * 1000 +  readerB->GetFileOrder(), readerB->GetTotalHitCount()};
+    fileInfo = {inFileName[i], readerB->GetSN() * 1000 +  readerB->GetFileOrder(), readerB->GetTotalHitCount(), readerB->GetSN(), readerB->GetNumCh(), readerB->GetRunNum()};
     
     if( readerA->GetSN() == readerB->GetSN() ){
       fileList.push_back(fileInfo);
@@ -106,6 +98,34 @@ int main(int argc, char **argv) {
     }
 
   }
+
+  //*====================================== format output files
+
+  const short numFileGroup = fileGroupList.size();
+  
+  FILE ** outFile[numFileGroup];
+
+  std::vector<std::string> outFileName[numFileGroup];
+  std::vector<uint16_t> header[numFileGroup];
+  std::vector<unsigned int> flags[numFileGroup];
+
+  for( int i = 0; i < numFileGroup; i++ ){
+    outFile[i] = new FILE * [fileGroupList[i][0].numCh];
+    for( int ch = 0; ch < fileGroupList[i][0].numCh; ch++ ){
+      std::string dudu = "Data_CH" + std::to_string(ch) + "@DIGI_" + std::to_string(fileGroupList[i][0].sn) + "_run_" + std::to_string(fileGroupList[i][0].runNum) + ".BIN";
+      // printf("|%s| \n", dudu.c_str());
+      outFile[i][ch] = fopen(dudu.c_str(), "wb");
+      outFileName[i].push_back(dudu);
+      header[i].push_back(0);
+      flags[i].push_back(0);
+    }
+  }
+
+  // std::string temp = inFileName[0];
+  // size_t pos = temp.find('_');
+  // pos = temp.find('_', pos + 1);
+  // std::string outFile_prefix = temp.substr(0, pos);
+  // std::string outFileName = outFile_prefix + ".BIN";
 
   //*======================================= Open files
   printf("========================================= Open files & Build Events.\n"); 
@@ -142,8 +162,6 @@ int main(int argc, char **argv) {
   int nFileFinished = 0;
   unsigned long long hitProcessed = 0;
 
-  FILE * outFile = fopen(outFileName.c_str(), "wb");
-
   do{
 
     // find the earlist time
@@ -167,28 +185,37 @@ int main(int argc, char **argv) {
       
     }
 
-    if( hitList[g0][evID[g0]].energy2 > 0 ) header += 4;
-    if( hitList[g0][evID[g0]].traceLength > 0 ) header += 8;
-    if( hitList[g0][evID[g0]].pileUp ) flags += 0x8000;
-    if( hitList[g0][evID[g0]].fineTime > 0 ) flags += 0x4000;
+    //  Set file header
+    int p_ch = hitList[g0][evID[g0]].ch; // present ch
 
-    fwrite(&(header), 2, 1, outFile);
-    fwrite(&(hitList[g0][evID[g0]].sn), 2, 1, outFile);
-    fwrite(&(hitList[g0][evID[g0]].ch), 2, 1, outFile);
-    unsigned psTimestamp = hitList[g0][evID[g0]].timestamp * 1000 + hitList[g0][evID[g0]].fineTime;
-    fwrite(&(psTimestamp), 8, 1, outFile);
-    fwrite(&(hitList[g0][evID[g0]].energy), 2, 1, outFile);
-    if( hitList[g0][evID[g0]].energy2 > 0 ) fwrite(&(hitList[g0][evID[g0]].energy2), 2, 1, outFile);
-    fwrite(&(flags), 4, 1, outFile);
-    if( hitList[g0][evID[g0]].traceLength > 0 ){
-      char waveCode = 1;
-      fwrite(&(waveCode), 1, 1, outFile);
-      fwrite(&(hitList[g0][evID[g0]].traceLength), 4, 1, outFile);
+    if( header[g0][p_ch] == 0 ) {
+      header[g0][p_ch] = 0xCAE1;
+      if( hitList[g0][evID[g0]].energy2 > 0 ) header[g0][p_ch] += 4;
+      if( hitList[g0][evID[g0]].traceLength > 0 ) header[g0][p_ch] += 8;
+      if( hitList[g0][evID[g0]].pileUp ) flags[g0][p_ch] += 0x8000;
+      if( hitList[g0][evID[g0]].fineTime > 0 ) flags[g0][p_ch] += 0x4000;
 
-      for( int i = 0; i < hitList[g0][evID[g0]].traceLength; i++ ){
-        fwrite(&(hitList[g0][evID[g0]].trace[i]), 2, 1, outFile);
-      }
+      fwrite(&(header[g0][p_ch]), 2, 1, outFile[g0][p_ch]);
     }
+
+    hitList[g0][evID[g0]].WriteHitsToCAENBinary(outFile[g0][p_ch], header[g0][p_ch]);
+  
+    // fwrite(&(hitList[g0][evID[g0]].sn), 2, 1, outFile);
+    // fwrite(&(hitList[g0][evID[g0]].ch), 2, 1, outFile);
+    // unsigned psTimestamp = hitList[g0][evID[g0]].timestamp * 1000 + hitList[g0][evID[g0]].fineTime;
+    // fwrite(&(psTimestamp), 8, 1, outFile);
+    // fwrite(&(hitList[g0][evID[g0]].energy), 2, 1, outFile);
+    // if( hitList[g0][evID[g0]].energy2 > 0 ) fwrite(&(hitList[g0][evID[g0]].energy2), 2, 1, outFile);
+    // fwrite(&(flags), 4, 1, outFile);
+    // if( hitList[g0][evID[g0]].traceLength > 0 ){
+    //   char waveCode = 1;
+    //   fwrite(&(waveCode), 1, 1, outFile);
+    //   fwrite(&(hitList[g0][evID[g0]].traceLength), 4, 1, outFile);
+
+    //   for( int i = 0; i < hitList[g0][evID[g0]].traceLength; i++ ){
+    //     fwrite(&(hitList[g0][evID[g0]].trace[i]), 2, 1, outFile);
+    //   }
+    // }
 
     evID[g0]++;
     if( hitProcessed == 0) tStart = hitList[g0][evID[g0]].timestamp;
@@ -224,21 +251,47 @@ int main(int argc, char **argv) {
   printf("     first timestamp = %20llu ns\n", tStart);
   printf("      last timestamp = %20llu ns\n", tEnd);
   printf(" total data duration = %.2f sec = %.2f min\n", tDuration_sec, tDuration_sec/60.);
-  printf("==============> saved to %s \n", outFileName.c_str());
   
   for( int i = 0; i < nGroup; i++) delete reader[i];
   delete [] reader;
 
-  if( tarFlag ){
-    std::string tarFileName = outFile_prefix + ".tar";
+  //============================== delete empty files and close FILE 
+  std::vector<std::string> nonEmptyFileList;
 
-    std::string command = "tar -cvf " + tarFileName + " " + outFileName;
+  printf("================= Removing Empty Files ....\n");
+  printf("============================> saved to ....");
+
+  if( tarFlag == false ) printf("\n");
+
+  for( int i = 0; i < numFileGroup; i++ ){
+    for( int ch = 0; ch < fileGroupList[i][0].numCh; ch++){
+      if( ftell(outFile[i][ch]) == 0 ){
+        int dummy = std::system(("rm -f " + outFileName[i][ch]).c_str());
+        // printf("Remove %s.\n", outFileName[i][ch].c_str());
+      }else{
+        nonEmptyFileList.push_back(outFileName[i][ch]);
+        if( tarFlag == false ) printf("%s\n", outFileName[i][ch].c_str());
+      }
+    }
+  }
+
+  if( tarFlag ){
+    std::string tarFileName = "run_" + std::to_string(fileGroupList[0][0].runNum) + ".tar.gz";
+
+    printf("%s\n", tarFileName.c_str());
+    printf("============================> tar.gz the BIN\n");
+    std::string command = "tar -czf " + tarFileName + " ";
+    for( size_t i = 0; i < nonEmptyFileList.size(); i++ ){
+      command += nonEmptyFileList[i] + " ";
+    }
     int result = std::system(command.c_str());
 
     if (result == 0) {
       printf("Archive created successfully: %s\n", tarFileName.c_str());
-      std::system(("rm -f " + outFileName).c_str());
-      printf("Remove %s.\n", outFileName.c_str());
+      for( size_t i = 0; i < nonEmptyFileList.size(); i++ ){
+        int dummy = std::system(("rm -f " + nonEmptyFileList[i]).c_str());
+        // printf("Remove %s.\n", nonEmptyFileList[i].c_str());
+      }
     } else {
       printf("Error creating archive\n");
     }

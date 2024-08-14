@@ -21,14 +21,19 @@ DumpFSU2ROOT
 SettingsExplorer
 AggSeparator
 FSU2CAEN
+Bin2Root
 
 data
 Data
+raw_binary
 
 *.d
 *.pcm
 
 *.txt
+*.tar
+*.tar.gz
+*.BIN
 
 *~
 *.autosave

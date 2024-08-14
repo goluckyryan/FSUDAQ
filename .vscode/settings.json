@@ -83,6 +83,7 @@
   ],
   "files.associations": {
     "*.C": "cpp",
-    "*.pro": "makefile"
+    "*.pro": "makefile",
+    "regex": "cpp"
   }
 }
