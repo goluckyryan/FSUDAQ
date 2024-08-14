@@ -37,18 +37,16 @@ With this approach, it is guaranteed that the output hitList_A is always time-so
 This defines the EventBuilder. The arguments are
 
 ```sh
-./EventBuilder [timeWindow] [withTrace] [verbose] [batchSize] [inFile1]  [inFile2] .... 
+./EventBuilder [timeWindow] [withTrace] [inFile1]  [inFile2] .... 
     timeWindow : in ns, -1 = no event building 
      withTrace : 0 for no trace, 1 for trace 
-       verbose : > 0 for debug  
-     batchSize : the size of hit in a batch 
     Output file name is contructed from inFile1 
 ```
 
 as an example, 
 
 ```sh
-/EventBuilder 0 0 0 1000000 '\ls -1 test_001*.fsu'
+/EventBuilder 0 0'\ls -1 test_001*.fsu'
 ```
 
 setting the timeWindow to be -1, will split out a timesorted Hit.
@@ -113,6 +111,16 @@ Evenbuilder output is standard information, an example structure is
 *Entries :  2017231 : Total  Size=   12146944 bytes  File Size  =    4640404 *
 *Baskets :      407 : Basket Size=   25600000 bytes  Compression=   2.62     *
 *............................................................................*
+```
+
+# FSU2CAEN.cpp
+
+This convert the *.fsu to Data_CHXX@DIGI_YYYYY_run_ZZ.BIN. the BIN is CoMPASS format and could be useful for couple with existing analysis routine.
+
+
+```sh
+./FSU2CAEN [tarFlag] [inFile1]  [inFile2] .... 
+    targFlag : if 1, tar ball all output files. 
 ```
 
 
