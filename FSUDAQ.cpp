@@ -1077,7 +1077,7 @@ void FSUDAQ::UpdateScalar(){
 
     if(digiSettings && digiSettings->isVisible() && digiSettings->GetTabID() == iDigi) digiSettings->UpdateACQStatus(acqStatus);
 
-    digiMTX[iDigi].lock();
+    // digiMTX[iDigi].lock();
 
     QString blockCountStr = QString::number(digi[iDigi]->GetData()->AggCount);
     blockCountStr += "/" + QString::number(readDataThread[iDigi]->GetReadCount());
@@ -1105,7 +1105,7 @@ void FSUDAQ::UpdateScalar(){
       }
     }
 
-    digiMTX[iDigi].unlock();
+    // digiMTX[iDigi].unlock();
 
   }
 
@@ -1810,6 +1810,7 @@ void FSUDAQ::OpenCanvas(){
   }else{
     canvas->show();
     canvas->activateWindow();
+    canvas->LoadSetting();
   }
 
 }

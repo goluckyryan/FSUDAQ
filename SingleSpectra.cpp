@@ -181,7 +181,11 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
     fillHistograms = false;
 
     QLabel * lbSettingPath = new QLabel( settingPath , this);
-    ctrlLayout->addWidget(lbSettingPath, 1, 0, 1, 8);
+    ctrlLayout->addWidget(lbSettingPath, 1, 0, 1, 6);
+
+    QPushButton * bnSaveButton = new QPushButton("Save Hist. Settings", this);
+    ctrlLayout->addWidget(bnSaveButton, 1, 6, 1, 2);
+    connect(bnSaveButton, &QPushButton::click, this, &SingleSpectra::SaveSetting);
 
   }
 
@@ -207,6 +211,9 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
       for( int j = 0; j < digi[i]->GetNumInputCh(); j++){
         if( i < nDigi ) {
           hist[i][j] = new Histogram1D("Digi-" + QString::number(digi[i]->GetSerialNumber()) +", Ch-" +  QString::number(j), "Raw Energy [ch]", nBin, eMin, eMax);
+          if( digi[i]->GetDPPType() == DPPTypeCode::DPP_PSD_CODE ){
+            hist[i][j]->AddDataList("Long Energy", Qt::green);
+          }
         }else{
           hist[i][j] = nullptr;
         }
@@ -359,6 +366,9 @@ void SingleSpectra::FillHistograms(){
         // printf(" ch: %d, last fill idx : %d | %d \n", ch, lastFilledIndex[ID][ch], data);
 
         hist[ID][ch]->Fill( data );
+        if( digi[i]->GetDPPType() == DPPTypeCode::DPP_PSD_CODE ){
+          hist[ID][ch]->Fill( digi[ID]->GetData()->GetEnergy2(ch, lastFilledIndex[ID][ch]));
+        }
         hist2D[ID]->Fill(ch, data);
       }
       if( histVisibility[ID][ch]  ) hist[ID][ch]->UpdatePlot();

@@ -1,3 +1,6 @@
+#ifndef SPLITPOLEPLOTTER
+#define SPLITPOLEPLOTTER
+
 #include "TFile.h"
 #include "TChain.h"
 #include "TH1F.h"
@@ -267,3 +270,5 @@ void SplitPolePlotter(TChain *tree, TCutG * pidCut = nullptr, double rhoOffset =
   canvas->cd(10); hXavg_Theta->Draw("colz");
 
 }
+
+#endif

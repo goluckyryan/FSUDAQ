@@ -2,22 +2,24 @@
 // #include "../MultiBuilder.cpp"
 
 #include "SplitPolePlotter.C"
+#include "SplitPolePlotter_MT.C"
 
 void script(){
 
- TChain * chain = new TChain("tree");
+  TChain * chain = new TChain("tree");
+  //  chain->Add("raw_binary/run_13/run013_3000.root");
+  // chain->Add("data/run*_3000.root");
+  chain->Add("data/12C_dp_*_3000.root");
 
- chain->Add("raw_binary/run_13/run013_3000.root");
-//  chain->Add("data/12C_dp_009_3000.root");
-
- TFile * pidCutFile = new TFile("cut_proton.root");
-//  TFile * pidCutFile = new TFile("cut_proton_FSU.root");
- TCutG * pidCut = (TCutG *) pidCutFile->Get("protons");
+  //  TFile * pidCutFile = new TFile("cut_proton.root");
+  TFile * pidCutFile = new TFile("cut_proton_FSU.root");
+  TCutG * pidCut = (TCutG *) pidCutFile->Get("protons");
  
- SplitPolePlotter(chain, pidCut, 123.307, 2.75, false);
+  //  SplitPolePlotter(chain, pidCut, 123.307, 2.75, false); // for CoMPASS data
+  // SplitPolePlotter(chain, pidCut, 123.307, 2.75, true); // faster then MT?
 
+  SplotPolePlotter_MT(chain, 5, pidCut, 123.307, 2.75, true);
 
-//  SplitPolePlotter(chain, pidCut, 123.307, 2.75, true);
 
   //^=====================================================
 
