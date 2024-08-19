@@ -319,7 +319,7 @@ void SingleSpectra::FillHistograms(){
 
     // qDebug() << randomChList;
 
-    digiMTX[ID].lock();
+    // digiMTX[ID].lock();
 
     // digi[ID]->GetData()->PrintAllData();
 
@@ -368,7 +368,7 @@ void SingleSpectra::FillHistograms(){
     }
 
     if( hist2DVisibility[ID] ) hist2D[ID]->UpdatePlot();
-    digiMTX[ID].unlock();
+    // digiMTX[ID].unlock();
 
   }
 }

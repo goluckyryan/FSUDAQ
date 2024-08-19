@@ -94,13 +94,13 @@ void Analyzer::BuildEvents(bool verbose){
   
   unsigned int nData = mb->GetNumOfDigitizer();
   std::vector<int> idList = mb->GetDigiIDList();
-  for( unsigned int i = 0; i < nData; i++ ) digiMTX[idList[i]].lock();
+  // for( unsigned int i = 0; i < nData; i++ ) digiMTX[idList[i]].lock();
   if( isBuildBackward ){
     mb->BuildEventsBackWard(maxNumEventBuilt, verbose);
   }else{
     mb->BuildEvents(0, true, verbose);
   }
-  for( unsigned int i = 0; i < nData; i++ ) digiMTX[idList[i]].unlock();
+  // for( unsigned int i = 0; i < nData; i++ ) digiMTX[idList[i]].unlock();
 
 }
 
