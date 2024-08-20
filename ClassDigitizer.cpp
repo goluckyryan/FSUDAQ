@@ -437,6 +437,10 @@ int Digitizer::ProgramBoard_PSD(){
     ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xF, 0xAAAA);
   }
 
+  // ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::DPPAlgorithmControl) + 0x7000 , 0x001 ); // baseline 16 sample
+
+  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PSD::TriggerThreshold) + 0x7000 , 100 );
+
   ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PreTrigger) + 0x7000 , 20 );
   ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::RecordLength_G) + 0x7000 , 80 );
   

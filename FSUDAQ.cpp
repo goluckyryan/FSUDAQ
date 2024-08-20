@@ -20,8 +20,9 @@
 #include "analyzers/EncoreAnalyzer.h"
 #include "analyzers/MUSICAnalyzer.h"
 #include "analyzers/RAISOR.h"
+#include "analyzers/NeutronGamma.h"
 
-std::vector<std::string> onlineAnalyzerList = {"Coincident","Splie-Pole", "Encore", "RAISOR", "MUSICS"};
+std::vector<std::string> onlineAnalyzerList = {"Coincident","Splie-Pole", "Encore", "RAISOR", "MUSICS", "Neutron-Gamma"};
 
 FSUDAQ::FSUDAQ(QWidget *parent) : QMainWindow(parent){
   DebugPrint("%s", "FSUDAQ");
@@ -34,7 +35,7 @@ FSUDAQ::FSUDAQ(QWidget *parent) : QMainWindow(parent){
   scalar = nullptr;
   scope = nullptr;
   digiSettings = nullptr;
-  canvas = nullptr;
+  singleHistograms = nullptr;
   histThread = nullptr;
   onlineAnalyzer = nullptr;
   runTimer = new QTimer();
@@ -91,7 +92,7 @@ FSUDAQ::FSUDAQ(QWidget *parent) : QMainWindow(parent){
 
     bnCanvas = new QPushButton("Online Histograms", this);
     layout->addWidget(bnCanvas, 1, 2);
-    connect(bnCanvas, &QPushButton::clicked, this, &FSUDAQ::OpenCanvas);
+    connect(bnCanvas, &QPushButton::clicked, this, &FSUDAQ::OpenSingleHistograms);
 
     bnSync = new QPushButton("Sync Boards", this);
     layout->addWidget(bnSync,  2, 1);
@@ -333,7 +334,7 @@ FSUDAQ::~FSUDAQ(){
     delete histThread;
   }
 
-  if( canvas ) delete canvas;
+  if( singleHistograms ) delete singleHistograms;
 
   if( onlineAnalyzer ) delete onlineAnalyzer;
 
@@ -741,12 +742,12 @@ void FSUDAQ::OpenDigitizers(){
     QCoreApplication::processEvents(); //to prevent Qt said application not responding.
   }
 
-  canvas = new SingleSpectra(digi, nDigi, rawDataPath);
+  singleHistograms = new SingleSpectra(digi, nDigi, rawDataPath);
   histThread = new TimingThread(this);
-  histThread->SetWaitTimeinSec(canvas->GetMaxFillTime()/1000.);
+  histThread->SetWaitTimeinSec(singleHistograms->GetMaxFillTime()/1000.);
   connect(histThread, &TimingThread::timeUp, this, [=](){
-    if( canvas == nullptr &&   !canvas->IsFillHistograms()) return; 
-    canvas->FillHistograms();
+    if( singleHistograms == nullptr &&   !singleHistograms->IsFillHistograms()) return; 
+    singleHistograms->FillHistograms();
   });
 
   LogMsg("====== <font style=\"color: blue;\"><b>" + QString("Done. Opened %1 digitizer(s).").arg(nDigi) + "</b></font> =====");
@@ -799,10 +800,10 @@ void FSUDAQ::CloseDigitizers(){
   }
 
 
-  if( canvas ){
-    canvas->close();
-    delete canvas;
-    canvas = nullptr;
+  if( singleHistograms ){
+    singleHistograms->close();
+    delete singleHistograms;
+    singleHistograms = nullptr;
   }
 
   if( digiSettings ){
@@ -1180,7 +1181,7 @@ void FSUDAQ::StartACQ(){
   }
   lbScalarACQStatus->setText("<font style=\"color: green;\"><b>ACQ On</b></font>");
 
-  if( canvas != nullptr ) histThread->start();
+  if( singleHistograms != nullptr ) histThread->start();
 
   bnStartACQ->setEnabled(false);
   bnStartACQ->setStyleSheet("");
@@ -1256,11 +1257,11 @@ void FSUDAQ::StopACQ(){
 
   if( onlineAnalyzer ) onlineAnalyzer->StopThread();
 
-  if( canvas && histThread->isRunning()){
+  if( singleHistograms && histThread->isRunning()){
     histThread->Stop();
     histThread->quit();
     histThread->wait();
-    canvas->ClearInternalDataCount();
+    singleHistograms->ClearInternalDataCount();
   }
   lbScalarACQStatus->setText("<font style=\"color: red;\"><b>ACQ Off</b></font>");
 
@@ -1752,7 +1753,7 @@ void FSUDAQ::OpenScope(){
 
       if( digiSettings ) digiSettings->setEnabled(!onOff);
 
-      if( canvas ){
+      if( singleHistograms ){
         if( onOff) {
           histThread->start();
         }else{
@@ -1760,7 +1761,7 @@ void FSUDAQ::OpenScope(){
             histThread->Stop();
             histThread->quit();
             histThread->wait();
-            canvas->ClearInternalDataCount();
+            singleHistograms->ClearInternalDataCount();
           }
         }
       }
@@ -1802,15 +1803,15 @@ void FSUDAQ::OpenDigiSettings(){
 
 //***************************************************************
 //***************************************************************
-void FSUDAQ::OpenCanvas(){
+void FSUDAQ::OpenSingleHistograms(){
   DebugPrint("%s", "FSUDAQ");
-  if( canvas == nullptr ) {
-    canvas = new SingleSpectra(digi, nDigi, rawDataPath);
-    canvas->show();
+  if( singleHistograms == nullptr ) {
+    singleHistograms = new SingleSpectra(digi, nDigi, rawDataPath);
+    singleHistograms->show();
   }else{
-    canvas->show();
-    canvas->activateWindow();
-    canvas->LoadSetting();
+    singleHistograms->show();
+    singleHistograms->activateWindow();
+    singleHistograms->LoadSetting();
   }
 
 }
@@ -1830,6 +1831,7 @@ void FSUDAQ::OpenAnalyzer(){
     if( id == 2 ) onlineAnalyzer = new Encore(digi, nDigi);
     if( id == 3 ) onlineAnalyzer = new RAISOR(digi, nDigi);
     if( id == 4 ) onlineAnalyzer = new MUSIC(digi, nDigi);
+    if( id == 5 ) onlineAnalyzer = new NeutronGamma(digi, nDigi, rawDataPath);
     if( id >=  0 ) onlineAnalyzer->show();
   }else{
 
@@ -1840,6 +1842,7 @@ void FSUDAQ::OpenAnalyzer(){
     if( id == 2 ) onlineAnalyzer = new Encore(digi, nDigi);
     if( id == 3 ) onlineAnalyzer = new RAISOR(digi, nDigi);
     if( id == 4 ) onlineAnalyzer = new MUSIC(digi, nDigi);
+    if( id == 4 ) onlineAnalyzer = new NeutronGamma(digi, nDigi, rawDataPath);
 
     if( id >= 0 ){
       onlineAnalyzer->show();

@@ -3847,16 +3847,16 @@ void DigiSettingsPanel::UpdateSettings_PSD(){
     chkRejOverRange[ID][ch]->setChecked(    Digitizer::ExtractBits(dpp, DPP::Bit_DPPAlgorithmControl_PSD::RejectOverRange));
     chkTestPule[ID][ch]->setChecked(        Digitizer::ExtractBits(dpp, DPP::Bit_DPPAlgorithmControl_PSD::InternalTestPulse));
 
+    chkDisableOppositePulse[ID][ch]->setChecked(     Digitizer::ExtractBits(dpp, DPP::Bit_DPPAlgorithmControl_PSD::DisableOppositePolarityInhibitZeroCrossingOnCFD));
+    chkDisableSelfTrigger[ID][ch]->setChecked(       Digitizer::ExtractBits(dpp, DPP::Bit_DPPAlgorithmControl_PSD::DisableSelfTrigger));
+    chkRejPileUp[ID][ch]->setChecked(                Digitizer::ExtractBits(dpp, DPP::Bit_DPPAlgorithmControl_PSD::RejectPileup));
+    chkPileUpInGate[ID][ch]->setChecked(             Digitizer::ExtractBits(dpp, DPP::Bit_DPPAlgorithmControl_PSD::PileupWithinGate));
+    chkDisableTriggerHysteresis[ID][ch]->setChecked( Digitizer::ExtractBits(dpp, DPP::Bit_DPPAlgorithmControl_PSD::DisableTriggerHysteresis));
+    
     uint32_t dpp2 = digi[ID]->GetSettingFromMemory(DPP::PSD::DPPAlgorithmControl2_G, ch);
 
-    chkDisableOppositePulse[ID][ch]->setChecked(     Digitizer::ExtractBits(dpp2, DPP::Bit_DPPAlgorithmControl_PSD::DisableOppositePolarityInhibitZeroCrossingOnCFD));
-    chkDisableSelfTrigger[ID][ch]->setChecked(       Digitizer::ExtractBits(dpp2, DPP::Bit_DPPAlgorithmControl_PSD::DisableSelfTrigger));
-    chkRejPileUp[ID][ch]->setChecked(                Digitizer::ExtractBits(dpp2, DPP::Bit_DPPAlgorithmControl_PSD::RejectPileup));
-    chkPileUpInGate[ID][ch]->setChecked(             Digitizer::ExtractBits(dpp2, DPP::Bit_DPPAlgorithmControl_PSD::PileupWithinGate));
-    chkDisableTriggerHysteresis[ID][ch]->setChecked( Digitizer::ExtractBits(dpp2, DPP::Bit_DPPAlgorithmControl_PSD::DisableTriggerHysteresis));
-    chkMarkSaturation[ID][ch]->setChecked(           Digitizer::ExtractBits(dpp2, DPP::PSD::Bit_DPPAlgorithmControl2::MarkSaturation));
-    chkResetTimestampByTRGIN[ID][ch]->setChecked(    Digitizer::ExtractBits(dpp2, DPP::PSD::Bit_DPPAlgorithmControl2::ResetTimestampByTRGIN));
-
+    chkMarkSaturation[ID][ch]->setChecked(           Digitizer::ExtractBits(dpp, DPP::PSD::Bit_DPPAlgorithmControl2::MarkSaturation));
+    chkResetTimestampByTRGIN[ID][ch]->setChecked(    Digitizer::ExtractBits(dpp, DPP::PSD::Bit_DPPAlgorithmControl2::ResetTimestampByTRGIN));
 
     UpdateComboBoxBit(cbLocalTriggerValid[ID][ch],          dpp2, DPP::PSD::Bit_DPPAlgorithmControl2::LocalTrigValidMode);
     UpdateComboBoxBit(cbAdditionLocalTrigValid[ID][ch],     dpp2, DPP::PSD::Bit_DPPAlgorithmControl2::AdditionLocalTrigValid);

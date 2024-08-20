@@ -36,9 +36,9 @@ public:
       delete digiSettings;
       digiSettings = nullptr;
     }
-    if( canvas ) {
-      delete canvas;
-      canvas = nullptr;
+    if( singleHistograms ) {
+      delete singleHistograms;
+      singleHistograms = nullptr;
     }
     if( onlineAnalyzer ) {
       delete onlineAnalyzer;
@@ -76,7 +76,7 @@ private slots:
 
   void OpenDigiSettings();
 
-  void OpenCanvas();
+  void OpenSingleHistograms();
 
   void OpenAnalyzer();
 
@@ -193,7 +193,7 @@ private:
   DigiSettingsPanel * digiSettings;
 
   //@----- SingleSpectra
-  SingleSpectra * canvas;
+  SingleSpectra * singleHistograms;
   TimingThread * histThread;
 
   //@----- Analyzer

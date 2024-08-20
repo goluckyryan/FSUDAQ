@@ -45,7 +45,8 @@ HEADERS += ClassData.h \
            analyzers/SplitPoleAnalyzer.h \
            analyzers/EncoreAnalyzer.h \
            analyzers/MUSICAnalyzer.h \
-           analyzers/RAISOR.h 
+           analyzers/NeutronGamma.h \
+           analyzers/RAISOR.h
 SOURCES += ClassDigitizer.cpp \
            DigiSettingsPanel.cpp \
            FSUDAQ.cpp \
