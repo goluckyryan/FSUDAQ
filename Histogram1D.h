@@ -333,7 +333,7 @@ public:
     if( 0 <= index1 && index1 <= 2*xBin) yList[ID][index1] += 1;
     if( 0 <= index1 && index2 <= 2*xBin) yList[ID][index2] += 1;
 
-    if( yList[ID][index1] > yMax ) yMax = yList[ID][index1];
+    if( showHist[ID] && yList[ID][index1] > yMax ) yMax = yList[ID][index1];
   }
 
   void Print(unsigned int ID = 0){
