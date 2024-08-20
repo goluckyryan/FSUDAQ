@@ -212,7 +212,7 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
         if( i < nDigi ) {
           hist[i][j] = new Histogram1D("Digi-" + QString::number(digi[i]->GetSerialNumber()) +", Ch-" +  QString::number(j), "Raw Energy [ch]", nBin, eMin, eMax);
           if( digi[i]->GetDPPType() == DPPTypeCode::DPP_PSD_CODE ){
-            hist[i][j]->AddDataList("Long Energy", Qt::green);
+            hist[i][j]->AddDataList("Short Energy", Qt::green);
           }
         }else{
           hist[i][j] = nullptr;
@@ -367,7 +367,9 @@ void SingleSpectra::FillHistograms(){
 
         hist[ID][ch]->Fill( data );
         if( digi[i]->GetDPPType() == DPPTypeCode::DPP_PSD_CODE ){
-          hist[ID][ch]->Fill( digi[ID]->GetData()->GetEnergy2(ch, lastFilledIndex[ID][ch]), 1);
+          uShort e2 = digi[ID]->GetData()->GetEnergy2(ch, lastFilledIndex[ID][ch]);
+          // printf("%u \n", e2);
+          hist[ID][ch]->Fill( e2, 1);
         }
         hist2D[ID]->Fill(ch, data);
       }

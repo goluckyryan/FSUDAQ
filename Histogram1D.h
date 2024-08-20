@@ -15,6 +15,8 @@ public:
     // DebugPrint("%s", "Histogram1D");
     isLogY = false;
 
+    for( int i = 0; i < MaxNHist; i++ ) showHist[i] = true;
+
     for( int i = 0; i < 3; i ++) txt[i] = nullptr;
     nData = 1;
     Rebin(xbin, xmin, xmax);
@@ -86,12 +88,15 @@ public:
 
         QAction * a1 = menu.addAction("UnZoom");
         QAction * a5 = menu.addAction("Set/UnSet Log-y");
+        QAction * a6 = nullptr;
+        if( nData > 1 )  a6 = menu.addAction("Toggle lines display");
         QAction * a2 = menu.addAction("Clear hist.");
         QAction * a3 = menu.addAction("Toggle Stat.");
         QAction * a4 = menu.addAction("Rebin (clear histogram)");
         //TODO fitGuass
 
         QAction *selectedAction = menu.exec(event->globalPosition().toPoint());
+        //*========================================== UnZoom
         if( selectedAction == a1 ){
           xAxis->setRangeLower(xMin);
           xAxis->setRangeUpper(xMax);
@@ -101,11 +106,13 @@ public:
           usingMenu = false;
         }
 
+        //*========================================== Clear Hist
         if( selectedAction == a2 ){
           Clear();
           usingMenu = false;
         }
 
+        //*========================================== Toggle Stat.
         if( selectedAction == a3 ){
           for( int i = 0; i < 3; i++){
             txt[i]->setVisible( !txt[i]->visible());
@@ -113,6 +120,7 @@ public:
           replot();
           usingMenu = false;
         }
+        //*========================================== Rebin
         if( selectedAction == a4 ){
           QDialog dialog(this);
           dialog.setWindowTitle("Rebin histogram");
@@ -145,25 +153,25 @@ public:
           double number[3];
 
           QObject::connect(&buttonBox, &QDialogButtonBox::accepted, [&]() {
-              int OKcount = 0;
-              bool conversionOk = true;
-              for( int i = 0; i < 3; i++ ){
-                number[i] = lineEdit[i]->text().toDouble(&conversionOk);
-                if( conversionOk ){
-                  OKcount++;
-                }else{
-                  msg->setText(nameList[i] + " is invalid.");
-                  return;
-                }
+            int OKcount = 0;
+            bool conversionOk = true;
+            for( int i = 0; i < 3; i++ ){
+              number[i] = lineEdit[i]->text().toDouble(&conversionOk);
+              if( conversionOk ){
+                OKcount++;
+              }else{
+                msg->setText(nameList[i] + " is invalid.");
+                return;
               }
+            }
 
-              if( OKcount == 3 ) {
-                if( number[2] > number[1] ) {
-                  dialog.accept();
-                }else{
-                  msg->setText(nameList[2] + " is smaller than " + nameList[1]);
-                }
+            if( OKcount == 3 ) {
+              if( number[2] > number[1] ) {
+                dialog.accept();
+              }else{
+                msg->setText(nameList[2] + " is smaller than " + nameList[1]);
               }
+            }
           });
           QObject::connect(&buttonBox, &QDialogButtonBox::rejected, [&]() { dialog.reject();});
 
@@ -174,8 +182,38 @@ public:
           }
 
         }
-        if( selectedAction == a5 ){
 
+        //*========================================== Toggle line Display
+        if( selectedAction == a6 ){
+          QDialog dialog(this);
+          dialog.setWindowTitle("Toggle lines Display");
+
+          QFormLayout layout(&dialog);
+
+          QCheckBox ** cbline = new QCheckBox *[nData];
+          for( int i = 0; i < nData; i++ ){
+            cbline[i] = new QCheckBox(graph(i)->name(), &dialog);
+            layout.addRow(cbline[i]);
+            if( showHist[i] ) cbline[i]->setChecked(true);
+          }
+
+          QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dialog);
+          layout.addRow(&buttonBox);
+
+          QObject::connect(&buttonBox, &QDialogButtonBox::accepted, [&]() {
+            for( int i = 0; i < nData; i++ ){
+              showHist[i] = cbline[i]->isChecked();
+            }
+            dialog.accept();
+          });
+          QObject::connect(&buttonBox, &QDialogButtonBox::rejected, [&]() { dialog.reject();});
+
+          if( dialog.exec() == QDialog::Accepted ){
+            UpdatePlot();
+          }
+        }
+        //*========================================== Set Log y
+        if( selectedAction == a5 ){
           if( !isLogY ){
             this->yAxis->setScaleType(QCPAxis::stLogarithmic);
             isLogY = true;
@@ -211,7 +249,10 @@ public:
 
   void UpdatePlot(){
     DebugPrint("%s", "Histogram1D");
-    for( int ID = 0 ; ID < nData; ID ++) graph(ID)->setData(xList, yList[ID]);
+    for( int ID = 0 ; ID < nData; ID ++) {
+      graph(ID)->setVisible(showHist[ID]);
+      graph(ID)->setData(xList, yList[ID]);
+    }
     xAxis->setRangeLower(xMin);
     xAxis->setRangeUpper(xMax);
     yAxis->setRangeLower(0);
@@ -323,6 +364,8 @@ private:
   QCPItemText * txt[3];
 
   bool usingMenu;
+
+  bool showHist[MaxNHist];
 
 
 };
