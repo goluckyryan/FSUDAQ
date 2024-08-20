@@ -185,7 +185,7 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
 
     QPushButton * bnSaveButton = new QPushButton("Save Hist. Settings", this);
     ctrlLayout->addWidget(bnSaveButton, 1, 6, 1, 2);
-    connect(bnSaveButton, &QPushButton::click, this, &SingleSpectra::SaveSetting);
+    connect(bnSaveButton, &QPushButton::clicked, this, &SingleSpectra::SaveSetting);
 
   }
 
@@ -367,7 +367,7 @@ void SingleSpectra::FillHistograms(){
 
         hist[ID][ch]->Fill( data );
         if( digi[i]->GetDPPType() == DPPTypeCode::DPP_PSD_CODE ){
-          hist[ID][ch]->Fill( digi[ID]->GetData()->GetEnergy2(ch, lastFilledIndex[ID][ch]));
+          hist[ID][ch]->Fill( digi[ID]->GetData()->GetEnergy2(ch, lastFilledIndex[ID][ch]), 1);
         }
         hist2D[ID]->Fill(ch, data);
       }
@@ -423,9 +423,11 @@ void SingleSpectra::SaveSetting(){
     file.write("##========== End of file\n");
     file.close();
 
+    printf("Saved Histogram Settings to %s\n", settingPath.toStdString().c_str());
   }else{
     printf("%s|cannot open HistogramSettings.txt\n", __func__);
   }
+
 }
 
 void SingleSpectra::LoadSetting(){

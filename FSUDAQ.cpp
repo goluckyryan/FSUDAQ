@@ -89,7 +89,7 @@ FSUDAQ::FSUDAQ(QWidget *parent) : QMainWindow(parent){
     for( int i = 0; i < (int) onlineAnalyzerList.size() ; i++) cbAnalyzer->addItem(onlineAnalyzerList[i].c_str(), i);
     connect(cbAnalyzer, &RComboBox::currentIndexChanged, this, &FSUDAQ::OpenAnalyzer);
 
-    bnCanvas = new QPushButton("Online 1D Histograms", this);
+    bnCanvas = new QPushButton("Online Histograms", this);
     layout->addWidget(bnCanvas, 1, 2);
     connect(bnCanvas, &QPushButton::clicked, this, &FSUDAQ::OpenCanvas);
 
