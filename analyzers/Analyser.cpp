@@ -43,6 +43,16 @@ Analyzer::Analyzer(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent )
 }
 
 Analyzer::~Analyzer(){
+
+  if( buildTimerThread ){
+    if( !buildTimerThread->isStopped() ){
+      buildTimerThread->Stop();
+      buildTimerThread->quit();
+      buildTimerThread->wait();
+    }
+    delete buildTimerThread;
+  }
+
   delete influx;
   delete mb;
   delete [] dataList;

@@ -167,7 +167,7 @@ inline void NeutronGamma::SetUpCanvas(){
     // }
     // histLayout->addWidget(hist2D[0][0], 0, 0);
     
-    hist2D = new Histogram2D("Neutron-Gamma", "PSD = (l-s)/l", "Short Energy [ch]", nBin, eMin, eMax, nBin, 0, 1);
+    hist2D = new Histogram2D("Neutron-Gamma", "Long Energy [ch]", "PSD = (l-s)/l",  nBin, eMin, eMax, nBin, 0, 1);
 
     histLayout->addWidget(hist2D, 0, 0);
 
