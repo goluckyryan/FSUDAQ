@@ -6,19 +6,19 @@ https://discord.gg/xVsRhNZF8G
 
 This is a DAQ for 1st gen CAEN digitizer for 
 
-- V1725, V17255S, V1230 with PHA and PSD firmware.
+- x725, x725S, x730 with PHA and PSD firmware.
 - V1740 with QDC firmware
 
 It has scope (updated every half-sec), allow full control of the digitizer (except LVDS), and allow saving waveform.
 
 It can be connected to InfluxDB v1.8+ and Elog.
 
-Each channel has it own 1D histogram. It will not be filled by default, but can enable it in the "Online 1D histgram" panel. The binning of each histogram will be saved under the raw data path as singleSpectaSetting.txt
+Each channel has it own 1D histogram. It will not be filled by default, but can enable it in the "Online Histgrams" panel. The binning of each histogram will be saved under the raw data path as singleSpectaSetting.txt
 
 ## Wiki
 https://fsunuc.physics.fsu.edu/wiki/index.php/CAEN_digitizer
 
-## Online analyzer
+# Online analyzer
 A Multi-builder (event builder that can build event across multiple digitizer) is made. It has normal event building code and also a backward event building code that build events from the latest data up to certain amont of event.
 
 A 1-D and 2-D histogram is avalible. In the 2-D histogram, graphical cuts can be created and rename.
@@ -26,6 +26,25 @@ A 1-D and 2-D histogram is avalible. In the 2-D histogram, graphical cuts can be
 An online analyzer class is created as a template for online analysis. An example is the SplitPoleAnalyzer.h. It demo a 2-D histogram and a 1-D histogram, and the way to output the rates of cuts to influxDB.
 
 <span style="color:red;">Notice that, when the FSUDAQ is started, the online analyzer is not created, no event will be built. Once the online anlyzer is created and opened, event will be built, even the window is closed. </span>
+
+## Create a custom online analyzer
+
+Under the analyzer folder, there are few examples can be followed. Teh idea is create a derivative class based on the Analyzer.h. To implement the new online analyzer, user need to modify a few things:
+- add the code file into FSUDAQ_At.pro
+- add the header to the top of FSUDAQ.cpp
+- edit the vector onlienAnalyzerList at th etop of FSUDAQ.cpp
+- edit the FSUDAQ::OpenAnalyzer()
+
+after that, we need to update the makefile by
+
+```sh
+>qmake6 FSUDAQ_Qt6.pro
+```
+
+and then recompile by
+```sh
+>make 
+```
 
 # Operation
 
@@ -65,8 +84,7 @@ User must setup the data path for data take. Without the data path, user still c
 
 # ToDo
 
-- Gaussians fitting for 1D Histogram
-- Improve the color scheme for 2D histogram
+- Gaussians fitting for 1D Histogra
 - Save Histogram?
 
 # Required / Development enviroment
@@ -136,13 +154,11 @@ if you want to use GDB debugger, in the *.pro file add
 
 ` QMAKE_CXXFLAGS += -g`
 
+
 # Auxillary programs (e.g. Event Builder)
 
 There is a folder Aux, this folder contains many auxillary programs, such as EventBuilder. User can `make` under the folder to compile the programs.
 
-# Tested Trigger Rate
-
-* V1725, 1 MHz to 3 ch (decay = 500 ns), no trace. need to set Agg/Read = 100 and Evt/Agg = 511.
 
 # Known Issues
 
@@ -151,10 +167,10 @@ There is a folder Aux, this folder contains many auxillary programs, such as Eve
 * When using the scope, the Agg/Read must be smaller than 512.
 * Although the Events/Agg used the CAEN API to recalculate before ACQ start, for PHA firmware, when the trigger rate changed, the Events per Agg need to be changed.
 * The Agg Organization, Event per Agg, Record Length are strongly correlated. Some settings are invalid and will cause the digitizer goes crazy.
-* load digitizer setting would not load everything, only load the channel settings and some board settings.
+* Load digitizer setting would not load everything, only load the channel settings and some board settings.
 * Sometimes, the buffer is not in time order, and make the trigger/Accept rate to be nagative. This is nothing to do with the program but the digitizer settings. Recommand reporgram the digitizer.
-* for 1740 QDC, RecordLenght is board setting, but readout is indivuial group.
-* FOr PHA, the trapezoid scaling and fine-gain register are calculated before ACQ start.
+* For 1740 QDC, RecordLenght is board setting, but readout is indivuial group.
+* For PHA, the trapezoid scaling and fine-gain register are calculated before ACQ start.
 
 # Known Bugs
 

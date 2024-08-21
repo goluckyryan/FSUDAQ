@@ -28,6 +28,12 @@ This is the mother of all other derivative analysis class.
 
 derivative class should define the SetUpCanvas() and UpdateHistogram();
 
+After creating a new class based on the Analyzer class, 
+users need to add the class files to the FSUDAQ_Qt6.pro project file, 
+include the header file in FSUDAQ.cpp, 
+modify the MainWindow::OpenAnalyzer() method, 
+and recompile FSUDAQ to incorporate the changes and activate the custom analyzer.
+
 ***************************************/
 #include "Histogram1D.h"
 #include "Histogram2D.h"
