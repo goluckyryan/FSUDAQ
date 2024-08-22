@@ -118,7 +118,6 @@ inline void NeutronGamma::SetUpCanvas(){
     connect( cbDigi, &RComboBox::currentIndexChanged, this, [=](int index){
       isSignalSlotActive = false;
       cbCh->clear();
-      cbCh->addItem("All Ch", digi[index]->GetNumInputCh() );
       for( int i = 0; i < digi[index]->GetNumInputCh(); i++) cbCh->addItem("ch-" + QString::number( i ), i);
 
       hist2D->Clear();
@@ -185,6 +184,7 @@ inline void NeutronGamma::ClearInternalDataCount(){
 }
 
 inline void NeutronGamma::UpdateHistograms(){
+  printf("%s | %d \n", __func__, fillHistograms);
   if( !fillHistograms ) return;
   if( this->isVisible() == false ) return;
 

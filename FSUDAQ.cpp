@@ -1833,6 +1833,9 @@ void FSUDAQ::OpenAnalyzer(){
     if( id == 4 ) onlineAnalyzer = new MUSIC(digi, nDigi);
     if( id == 5 ) onlineAnalyzer = new NeutronGamma(digi, nDigi, rawDataPath);
     if( id >=  0 ) onlineAnalyzer->show();
+
+    if( scalarThread->isRunning() ) onlineAnalyzer->StartThread();
+
   }else{
 
     delete onlineAnalyzer;
@@ -1842,11 +1845,12 @@ void FSUDAQ::OpenAnalyzer(){
     if( id == 2 ) onlineAnalyzer = new Encore(digi, nDigi);
     if( id == 3 ) onlineAnalyzer = new RAISOR(digi, nDigi);
     if( id == 4 ) onlineAnalyzer = new MUSIC(digi, nDigi);
-    if( id == 4 ) onlineAnalyzer = new NeutronGamma(digi, nDigi, rawDataPath);
+    if( id == 5 ) onlineAnalyzer = new NeutronGamma(digi, nDigi, rawDataPath);
 
     if( id >= 0 ){
       onlineAnalyzer->show();
       onlineAnalyzer->activateWindow();
+      if( scalarThread->isRunning() ) onlineAnalyzer->StartThread();
     }
   }
 
