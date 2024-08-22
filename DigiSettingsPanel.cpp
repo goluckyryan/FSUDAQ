@@ -1377,6 +1377,7 @@ void DigiSettingsPanel::SetUpChannelMask(unsigned int digiID){
 
     connect(bnChEnableMask[digiID][i], &QPushButton::clicked, this, [=](){
       if( !enableSignalSlot) return;
+      if( digi[digiID]->IsRunning() ) return;
 
       if( bnChEnableMask[digiID][i]->styleSheet() == "" ){
          bnChEnableMask[digiID][i]->setStyleSheet("background-color : green;");

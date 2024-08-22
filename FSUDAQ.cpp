@@ -1191,7 +1191,7 @@ void FSUDAQ::StartACQ(){
   cbAutoRun->setEnabled(false);
   bnSync->setEnabled(false);
 
-  if( digiSettings ) digiSettings->setEnabled(false);
+  // if( digiSettings ) digiSettings->setEnabled(false);
 
   if( onlineAnalyzer ) onlineAnalyzer->StartThread();
 
@@ -1285,7 +1285,7 @@ void FSUDAQ::StopACQ(){
     }
   }
 
-  if( digiSettings ) digiSettings->setEnabled(true);
+  if( digiSettings ) digiSettings->ReadSettingsFromBoard();
 
   {//^=== elog and database
     if( influx && chkInflux->isChecked() && elogName != "" ) {
