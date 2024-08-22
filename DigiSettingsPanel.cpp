@@ -367,12 +367,12 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
   enableSignalSlot = true;
 
   //If any digitizer is running ACQ, disable the panel.
-  for( unsigned int iDigi = 0; iDigi < nDigi; iDigi ++){
-    if( digi[iDigi]->IsRunning() ) {
-      this->setEnabled(false);
-      break;
-    }
-  }
+  // for( unsigned int iDigi = 0; iDigi < nDigi; iDigi ++){
+  //   if( digi[iDigi]->IsRunning() ) {
+  //     this->setEnabled(false);
+  //     break;
+  //   }
+  // }
 
 }
 

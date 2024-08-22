@@ -1213,7 +1213,7 @@ void FSUDAQ::StartACQ(){
   }
 
   chkSaveData->setEnabled(false);
-  bnDigiSettings->setEnabled(false);
+  // bnDigiSettings->setEnabled(false);
 
 }
 
@@ -1310,7 +1310,7 @@ void FSUDAQ::StopACQ(){
   }
 
   chkSaveData->setEnabled(true);
-  bnDigiSettings->setEnabled(true);
+  // bnDigiSettings->setEnabled(true);
 
   repaint();
   printf("================ end of %s \n", __func__);
