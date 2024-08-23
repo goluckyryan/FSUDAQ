@@ -244,7 +244,8 @@ public:
     addGraph();
     graph(nData - 1)->setName(title);
     SetColor(color, nData-1);
-    yList[nData-1] = yList[0];
+    yList[nData-1].clear();
+    for( int i = 0; i < xList.count(); i++) yList[nData-1].append(0);
   }
 
   void UpdatePlot(){
@@ -263,7 +264,7 @@ public:
   void Clear(){
     DebugPrint("%s", "Histogram1D");
     for( int ID = 0 ; ID < nData; ID ++) {
-      for( int i = 0; i <= yList[ID].count(); i++) yList[ID][i] = 0;
+      for( int i = 0; i < xList.count(); i++) yList[ID][i] = 0;
     }
     yMax = 0;
     txt[0]->setText("Under Flow : 0");
@@ -324,10 +325,12 @@ public:
         txt[2]->setText("Over Flow : "+ QString::number(overFlow));
         return;
       }
+    }else{
+      if( value < xMin || value > xMax ) return;
     }
 
-    double bin = (value - xMin)/dX;
-    int index1 = 2*qFloor(bin) + 1;
+    int bin = qFloor((value - xMin)/dX);
+    int index1 = 2*bin + 1;
     int index2 = index1 + 1;
 
     if( 0 <= index1 && index1 <= 2*xBin) yList[ID][index1] += 1;
