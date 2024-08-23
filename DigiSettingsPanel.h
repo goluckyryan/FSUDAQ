@@ -33,6 +33,8 @@ public slots:
   void SaveSetting(int opt);
   void LoadSetting();
 
+  void EnableButtons(bool enable);
+
 signals:
   void SendLogMsg(const QString &msg);
   void UpdateOtherPanels();
@@ -69,7 +71,6 @@ private:
   void SyncComboBox(RComboBox *(&cb)[][MaxRegChannel+1]);
   void SyncCheckBox(QCheckBox *(&chk)[][MaxRegChannel+1]);
 
-
   void SyncAllChannelsTab_PHA();
   void UpdateSettings_PHA();
   void SyncAllChannelsTab_PSD();
@@ -101,6 +102,8 @@ private:
   QGridLayout * infoLayout[MaxNDigitizer];
 
   QLineEdit * leSaveFilePath[MaxNDigitizer];
+
+  QWidget * buttonsWidget[MaxNDigitizer]; 
 
   QPushButton * bnRefreshSetting; // read setting from board
   QPushButton * bnProgramPreDefined;

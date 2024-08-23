@@ -572,14 +572,13 @@ void Digitizer::StartACQ(){
 
   }
 
-  AcqRun = true;
   data->ClearTriggerRate();
   data->ClearData();
-
   if( DPPType == DPPTypeCode::DPP_QDC_CODE ) SetOptimialAggOrg();
 
   printf("    ACQ mode : %s (%d), TRG-OUT mode : %s (%d) \n", acqStr.c_str(), acqID, trgOutStr.c_str(), trgOutID);
 
+  AcqRun = true;
   usleep(1000); // wait for 1 msec to start/Arm ACQ;
 
   ret = CAEN_DGTZ_SWStartAcquisition(handle);
@@ -1371,7 +1370,6 @@ void Digitizer::SetOptimialAggOrg(){
   printf("                  Event / Agg : %u \n", EventAgg );
   printf("          Record Length (bit) : %u = %u sample = %u ns\n", RecordLen, RecordLen*8, RecordLen*8*16);
   printf("==============================================================\n");
-
 
   int eventSize = 6 + 2 * Ex + traceOn * RecordLen * 8; // sample
   printf(" estimated event size : %d sample \n", eventSize);

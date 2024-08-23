@@ -196,9 +196,9 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
 
     {//^======================= Buttons
 
-      QWidget * buttonsWidget = new QWidget(tab);
-      tabLayout_V1->addWidget(buttonsWidget);
-      QGridLayout * buttonLayout = new QGridLayout(buttonsWidget);
+      buttonsWidget[iDigi] = new QWidget(tab);
+      tabLayout_V1->addWidget(buttonsWidget[iDigi]);
+      QGridLayout * buttonLayout = new QGridLayout(buttonsWidget[iDigi]);
       buttonLayout->setSpacing(2);
 
       int rowID = 0 ;
@@ -367,12 +367,13 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
   enableSignalSlot = true;
 
   //If any digitizer is running ACQ, disable the panel.
-  // for( unsigned int iDigi = 0; iDigi < nDigi; iDigi ++){
-  //   if( digi[iDigi]->IsRunning() ) {
-  //     this->setEnabled(false);
-  //     break;
-  //   }
-  // }
+  for( unsigned int iDigi = 0; iDigi < nDigi; iDigi ++){
+    if( digi[iDigi]->IsRunning() ) {
+      // this->setEnabled(false);
+      EnableButtons(false);
+      break;
+    }
+  }
 
 }
 
@@ -3629,6 +3630,20 @@ void DigiSettingsPanel::SyncCheckBox(QCheckBox *(&chk)[][MaxRegChannel+1]){
        chk[ID][nCh]->setCheckState(state);
     }
     enableSignalSlot = true;
+  }
+}
+
+void DigiSettingsPanel::EnableButtons(bool enable){
+  for( int i = 0; i < nDigi; i++ ){
+    if( !enable ) {
+      leSaveFilePath[i]->setText("changing setting is disabled due to ACQ is running.");
+      leSaveFilePath[i]->setStyleSheet("color:red;");
+    }else{
+      leSaveFilePath[i]->setText((QString::fromStdString(digi[i]->GetSettingFileName())));
+      leSaveFilePath[i]->setStyleSheet("");
+
+    }
+    buttonsWidget[i]->setEnabled(enable);
   }
 }
 
