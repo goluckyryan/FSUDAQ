@@ -184,7 +184,6 @@ inline void NeutronGamma::ClearInternalDataCount(){
 }
 
 inline void NeutronGamma::UpdateHistograms(){
-  printf("%s | %d \n", __func__, fillHistograms);
   if( !fillHistograms ) return;
   if( this->isVisible() == false ) return;
 
