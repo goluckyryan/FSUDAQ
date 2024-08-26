@@ -102,6 +102,7 @@ void Analyzer::SetDatabase(QString IP, QString Name, QString Token){
     bool foundDatabase = false;
     for( int i = 0; i < (int) databaseList.size(); i++){
       if( databaseList[i] == dataBaseName.toStdString() ) foundDatabase = true;
+      // printf("%d | %s\n", i, databaseList[i].c_str());
     }
     if( foundDatabase ){
       influx->AddDataPoint("test value=1");
@@ -216,7 +217,7 @@ void Analyzer::SetDatabaseButton(){
 
   // Show the dialog and get the result
   if (dialog.exec() == QDialog::Accepted) {
-    SetDatabase(ipLineEdit.text(), nameLineEdit.text(),tokenLineEdit.text());
+    SetDatabase(ipLineEdit.text().trimmed(), nameLineEdit.text().trimmed(),tokenLineEdit.text().trimmed());
   }
 
 }

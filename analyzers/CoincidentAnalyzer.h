@@ -44,6 +44,9 @@ private:
 
   bool allowSignalSlot;
 
+  QLineEdit * leInfluxIP;
+  QLineEdit * leDBName;
+
   // declaie histograms
   Histogram2D * h2D;
   Histogram1D * h1;
@@ -307,22 +310,28 @@ inline void CoincidentAnalyzer::SetUpCanvas(){
       QLabel * lbIP = new QLabel("Database IP :", box);
       lbIP->setAlignment(Qt::AlignRight | Qt::AlignCenter);
       boxLayout->addWidget(lbIP, rowID, 0);
-      QLineEdit * leInfluxIP =  new QLineEdit(box);
+      leInfluxIP =  new QLineEdit(box);
       leInfluxIP->setReadOnly(true);
       boxLayout->addWidget(leInfluxIP, rowID, 1, 1, 3);
 
       QPushButton * bnInflux = new QPushButton("Set Influx", box);
-      boxLayout->addWidget(bnInflux, rowID, 1, 1, 3);
+      boxLayout->addWidget(bnInflux, rowID, 4);
 
       rowID ++;
       QLabel * lbDBName = new QLabel("Database name :", box);
       lbDBName->setAlignment(Qt::AlignRight | Qt::AlignCenter);
       boxLayout->addWidget(lbDBName, rowID, 0);
-      QLineEdit * leDBName=  new QLineEdit(box);
+      leDBName =  new QLineEdit(box);
       leDBName->setReadOnly(true);
       boxLayout->addWidget(leDBName, rowID, 1);
 
-      connect(bnInflux, &QPushButton::clicked, this, &Analyzer::SetDatabaseButton);
+      connect(bnInflux, &QPushButton::clicked, this, [=](){
+        SetDatabaseButton();
+        if( influx ) {
+          leDBName->setText(dataBaseName);
+          leInfluxIP->setText(dataBaseIP);
+        }
+      });
 
       // rowID ++;
       // QFrame *separator3 = new QFrame(box);
@@ -638,6 +647,10 @@ inline void CoincidentAnalyzer::LoadSettings(){
         h2D->Rebin(x_bin, x_min, x_max, y_bin, y_min, y_max);
 
         SetDatabase(dataBaseIP, dataBaseName, dataBaseToken);
+        if( influx ){
+          leDBName->setText(dataBaseName);
+          leInfluxIP->setText(dataBaseIP);
+        }
 
       }
 
