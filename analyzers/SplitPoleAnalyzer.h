@@ -438,7 +438,7 @@ inline void SplitPole::UpdateHistograms(){
     //printf("%10s | %d | %f Hz \n", cutNameList[p].toStdString().c_str(), count[p], rate);  
     
     influx->AddDataPoint("Cut,name=" + cutNameList[p].toStdString()+ " value=" + std::to_string(rate));
-    influx->WriteData(dataBaseName);
+    influx->WriteData(dataBaseName.toStdString());
     influx->ClearDataPointsBuffer();
   }
 

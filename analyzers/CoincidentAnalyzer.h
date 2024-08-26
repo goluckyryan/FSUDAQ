@@ -21,10 +21,6 @@ public:
 
     evtbder = GetEventBuilder();
     evtbder->SetTimeWindow(500);
-    
-    //========== use the influx from the Analyzer
-    // influx = new InfluxDB("https://fsunuc.physics.fsu.edu/influx/");
-    dataBaseName = "testing"; 
 
     allowSignalSlot = false;
     SetUpCanvas();
@@ -73,8 +69,8 @@ private:
   RComboBox * aCh;
 
   QString rawDataPath;
-  void SaveHistRange();
-  void LoadHistRange();
+  void SaveSettings();
+  void LoadSettings();
 
 };
 
@@ -91,18 +87,20 @@ inline void CoincidentAnalyzer::SetUpCanvas(){
     boxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     box->setLayout(boxLayout);
 
+    int rowID = 0;
+
     {
       chkRunAnalyzer = new QCheckBox("Run Analyzer", this);
-      boxLayout->addWidget(chkRunAnalyzer, 0, 0);
+      boxLayout->addWidget(chkRunAnalyzer, rowID, 0);
 
       QLabel * lbUpdateTime = new QLabel("Update Period [s]", this);
       lbUpdateTime->setAlignment(Qt::AlignRight | Qt::AlignCenter);
-      boxLayout->addWidget(lbUpdateTime, 0, 1);
+      boxLayout->addWidget(lbUpdateTime, rowID, 1);
       sbUpdateTime = new RSpinBox(this, 1);
       sbUpdateTime->setMinimum(0.1);
       sbUpdateTime->setMaximum(5);
       sbUpdateTime->setValue(1);
-      boxLayout->addWidget(sbUpdateTime, 0, 2);
+      boxLayout->addWidget(sbUpdateTime, rowID, 2);
 
       connect(sbUpdateTime, &RSpinBox::valueChanged, this, [=](){ sbUpdateTime->setStyleSheet("color : blue"); });
 
@@ -111,17 +109,36 @@ inline void CoincidentAnalyzer::SetUpCanvas(){
         SetUpdateTimeInSec(sbUpdateTime->value()); 
       });
 
+      QLabel * lbBuildWindow = new QLabel("Event Window [ns]", this);
+      lbBuildWindow->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+      boxLayout->addWidget(lbBuildWindow, rowID, 3);
+      sbBuildWindow = new RSpinBox(this, 0);
+      sbBuildWindow->setMinimum(1);
+      sbBuildWindow->setMaximum(9999999999);
+      sbBuildWindow->setValue(1000);
+      boxLayout->addWidget(sbBuildWindow, rowID, 4);
+
+      connect(sbBuildWindow, &RSpinBox::valueChanged, this, [=](){
+        sbBuildWindow->setStyleSheet("color : blue;");
+      });
+
+      connect(sbBuildWindow, &RSpinBox::returnPressed, this, [=](){
+        sbBuildWindow->setStyleSheet("");
+        evtbder->SetTimeWindow((int)sbBuildWindow->value());
+      });
+
+      rowID ++;
       chkBackWardBuilding = new QCheckBox("Use Backward builder", this);
-      boxLayout->addWidget(chkBackWardBuilding, 1, 0);
+      boxLayout->addWidget(chkBackWardBuilding, rowID, 0);
 
       QLabel * lbBKWindow = new QLabel("Max No. Backward Event", this);
       lbBKWindow->setAlignment(Qt::AlignRight | Qt::AlignCenter);
-      boxLayout->addWidget(lbBKWindow, 1, 1);
+      boxLayout->addWidget(lbBKWindow, rowID, 1);
       sbBackwardCount = new RSpinBox(this, 0);
       sbBackwardCount->setMinimum(1);
       sbBackwardCount->setMaximum(9999);
       sbBackwardCount->setValue(100);
-      boxLayout->addWidget(sbBackwardCount, 1, 2);
+      boxLayout->addWidget(sbBackwardCount, rowID, 2);
 
       chkBackWardBuilding->setChecked(false);
       sbBackwardCount->setEnabled(false);
@@ -141,62 +158,48 @@ inline void CoincidentAnalyzer::SetUpCanvas(){
         SetBackwardBuild(true, sbBackwardCount->value());
       });
 
-      QLabel * lbBuildWindow = new QLabel("Event Window [ns]", this);
-      lbBuildWindow->setAlignment(Qt::AlignRight | Qt::AlignCenter);
-      boxLayout->addWidget(lbBuildWindow, 2, 1);
-      sbBuildWindow = new RSpinBox(this, 0);
-      sbBuildWindow->setMinimum(1);
-      sbBuildWindow->setMaximum(9999999999);
-      sbBuildWindow->setValue(1000);
-      boxLayout->addWidget(sbBuildWindow, 2, 2);
-
-      connect(sbBuildWindow, &RSpinBox::valueChanged, this, [=](){
-        sbBuildWindow->setStyleSheet("color : blue;");
-      });
-
-      connect(sbBuildWindow, &RSpinBox::returnPressed, this, [=](){
-        sbBuildWindow->setStyleSheet("");
-        evtbder->SetTimeWindow((int)sbBuildWindow->value());
-      });
     }
 
     {
-      QFrame *separator = new QFrame(box);
-      separator->setFrameShape(QFrame::HLine);
-      separator->setFrameShadow(QFrame::Sunken);
-      boxLayout->addWidget(separator, 3, 0, 1, 4);
+      rowID ++;
+      QFrame *separator0 = new QFrame(box);
+      separator0->setFrameShape(QFrame::HLine);
+      separator0->setFrameShadow(QFrame::Sunken);
+      boxLayout->addWidget(separator0, rowID, 0, 1, 4);
 
+      rowID ++;
       QLabel * lbXDigi = new QLabel("X-Digi", this);
       lbXDigi->setAlignment(Qt::AlignRight | Qt::AlignCenter);
-      boxLayout->addWidget(lbXDigi, 4, 0);
+      boxLayout->addWidget(lbXDigi, rowID, 0);
       xDigi = new RComboBox(this);
       for(unsigned int i = 0; i < nDigi; i ++ ){
         xDigi->addItem("Digi-" +  QString::number(digi[i]->GetSerialNumber()), i);
       }
-      boxLayout->addWidget(xDigi, 4, 1);
+      boxLayout->addWidget(xDigi, rowID, 1);
 
       QLabel * lbXCh = new QLabel("X-Ch", this);
       lbXCh->setAlignment(Qt::AlignRight | Qt::AlignCenter);
-      boxLayout->addWidget(lbXCh, 4, 2);
+      boxLayout->addWidget(lbXCh, rowID, 2);
       xCh = new RComboBox(this);
       for( int i = 0; i < digi[0]->GetNumInputCh(); i++) xCh->addItem("Ch-" + QString::number(i), i);
-      boxLayout->addWidget(xCh, 4, 3);
+      boxLayout->addWidget(xCh, rowID, 3);
 
+      rowID ++;
       QLabel * lbYDigi = new QLabel("Y-Digi", this);
       lbYDigi->setAlignment(Qt::AlignRight | Qt::AlignCenter);
-      boxLayout->addWidget(lbYDigi, 5, 0);
+      boxLayout->addWidget(lbYDigi, rowID, 0);
       yDigi = new RComboBox(this); 
       for(unsigned int i = 0; i < nDigi; i ++ ){
         yDigi->addItem("Digi-" +  QString::number(digi[i]->GetSerialNumber()), i);
       }
-      boxLayout->addWidget(yDigi, 5, 1);
+      boxLayout->addWidget(yDigi, rowID, 1);
 
       QLabel * lbYCh = new QLabel("Y-Ch", this);
       lbYCh->setAlignment(Qt::AlignRight | Qt::AlignCenter);
-      boxLayout->addWidget(lbYCh, 5, 2);
+      boxLayout->addWidget(lbYCh, rowID, 2);
       yCh = new RComboBox(this);
       for( int i = 0; i < digi[0]->GetNumInputCh(); i++) yCh->addItem("Ch-" + QString::number(i), i);
-      boxLayout->addWidget(yCh, 5, 3);
+      boxLayout->addWidget(yCh, rowID, 3);
 
       connect(xDigi, &RComboBox::currentIndexChanged, this, [=](){
         allowSignalSlot = false;
@@ -243,26 +246,28 @@ inline void CoincidentAnalyzer::SetUpCanvas(){
     }
 
     {
+      rowID ++;
       QFrame *separator1 = new QFrame(box);
       separator1->setFrameShape(QFrame::HLine);
       separator1->setFrameShadow(QFrame::Sunken);
-      boxLayout->addWidget(separator1, 6, 0, 1, 4);
+      boxLayout->addWidget(separator1, rowID, 0, 1, 4);
 
+      rowID ++;
       QLabel * lbaDigi = new QLabel("ID-Digi", this);
       lbaDigi->setAlignment(Qt::AlignRight | Qt::AlignCenter);
-      boxLayout->addWidget(lbaDigi, 7, 0);
+      boxLayout->addWidget(lbaDigi, rowID, 0);
       aDigi = new RComboBox(this);
       for(unsigned int i = 0; i < nDigi; i ++ ){
         aDigi->addItem("Digi-" +  QString::number(digi[i]->GetSerialNumber()), i);
       }
-      boxLayout->addWidget(aDigi, 7, 1);
+      boxLayout->addWidget(aDigi, rowID, 1);
 
       QLabel * lbaCh = new QLabel("1D-Ch", this);
       lbaCh->setAlignment(Qt::AlignRight | Qt::AlignCenter);
-      boxLayout->addWidget(lbaCh, 7, 2);
+      boxLayout->addWidget(lbaCh, rowID, 2);
       aCh = new RComboBox(this);
       for( int i = 0; i < digi[0]->GetNumInputCh(); i++) aCh->addItem("Ch-" + QString::number(i), i);
-      boxLayout->addWidget(aCh, 7, 3);
+      boxLayout->addWidget(aCh, rowID, 3);
 
       connect(aDigi, &RComboBox::currentIndexChanged, this, [=](){
         allowSignalSlot = false;
@@ -292,13 +297,41 @@ inline void CoincidentAnalyzer::SetUpCanvas(){
     }
 
     {
-      QFrame *separator1 = new QFrame(box);
-      separator1->setFrameShape(QFrame::HLine);
-      separator1->setFrameShadow(QFrame::Sunken);
-      boxLayout->addWidget(separator1, 8, 0, 1, 4);
+      rowID ++;
+      QFrame *separator2 = new QFrame(box);
+      separator2->setFrameShape(QFrame::HLine);
+      separator2->setFrameShadow(QFrame::Sunken);
+      boxLayout->addWidget(separator2, rowID, 0, 1, 4);
+
+      rowID ++;
+      QLabel * lbIP = new QLabel("Database IP :", box);
+      lbIP->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+      boxLayout->addWidget(lbIP, rowID, 0);
+      QLineEdit * leInfluxIP =  new QLineEdit(box);
+      leInfluxIP->setReadOnly(true);
+      boxLayout->addWidget(leInfluxIP, rowID, 1, 1, 3);
+
+      QPushButton * bnInflux = new QPushButton("Set Influx", box);
+      boxLayout->addWidget(bnInflux, rowID, 1, 1, 3);
+
+      rowID ++;
+      QLabel * lbDBName = new QLabel("Database name :", box);
+      lbDBName->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+      boxLayout->addWidget(lbDBName, rowID, 0);
+      QLineEdit * leDBName=  new QLineEdit(box);
+      leDBName->setReadOnly(true);
+      boxLayout->addWidget(leDBName, rowID, 1);
+
+      connect(bnInflux, &QPushButton::clicked, this, &Analyzer::SetDatabaseButton);
+
+      // rowID ++;
+      // QFrame *separator3 = new QFrame(box);
+      // separator3->setFrameShape(QFrame::HLine);
+      // separator3->setFrameShadow(QFrame::Sunken);
+      // boxLayout->addWidget(separator3, rowID, 0, 1, 4);
 
       QPushButton * bnClearHist = new QPushButton("Clear All Hist.", this);
-      boxLayout->addWidget(bnClearHist, 9, 1);
+      boxLayout->addWidget(bnClearHist, rowID, 2);
 
       connect(bnClearHist, &QPushButton::clicked, this, [=](){
         h2D->Clear();
@@ -308,14 +341,14 @@ inline void CoincidentAnalyzer::SetUpCanvas(){
       });
 
       QPushButton * bnSaveSettings = new QPushButton("Save Settings", this);
-      boxLayout->addWidget(bnSaveSettings, 9, 2);
+      boxLayout->addWidget(bnSaveSettings, rowID, 3);
 
-      connect(bnSaveSettings, &QPushButton::clicked, this, &CoincidentAnalyzer::SaveHistRange);
+      connect(bnSaveSettings, &QPushButton::clicked, this, &CoincidentAnalyzer::SaveSettings);
 
       QPushButton * bnLoadSettings = new QPushButton("Load Settings", this);
-      boxLayout->addWidget(bnLoadSettings, 9, 3);
+      boxLayout->addWidget(bnLoadSettings, rowID, 4);
 
-      connect(bnLoadSettings, &QPushButton::clicked, this, &CoincidentAnalyzer::LoadHistRange);
+      connect(bnLoadSettings, &QPushButton::clicked, this, &CoincidentAnalyzer::LoadSettings);
 
     }
 
@@ -445,22 +478,24 @@ inline void CoincidentAnalyzer::UpdateHistograms(){
   hMulti->UpdatePlot();
   h1g->UpdatePlot();
 
-  // QList<QString> cutNameList = h2D->GetCutNameList();
-  // for( int p = 0; p < cutList.count(); p ++){
-  //   if( cutList[p].isEmpty() ) continue;
-    // double dT = (tMax[p]-tMin[p]) * tick2ns / 1e9; // tick to sec
-    // double rate = count[p]*1.0/(dT);
-    //printf("%llu %llu, %f %d\n", tMin[p], tMax[p], dT, count[p]);
-    //printf("%10s | %d | %f Hz \n", cutNameList[p].toStdString().c_str(), count[p], rate);  
-    
-    // influx->AddDataPoint("Cut,name=" + cutNameList[p].toStdString()+ " value=" + std::to_string(rate));
-    // influx->WriteData(dataBaseName);
-    // influx->ClearDataPointsBuffer();
-  // }
+  if( influx ){
+    QList<QString> cutNameList = h2D->GetCutNameList();
+    for( int p = 0; p < cutList.count(); p ++){
+      if( cutList[p].isEmpty() ) continue;
+      double dT = (tMax[p]-tMin[p]) / 1e9; 
+      double rate = count[p]*1.0/(dT);
+      printf("%llu %llu, %f %d\n", tMin[p], tMax[p], dT, count[p]);
+      printf("%10s | %d | %f Hz \n", cutNameList[p].toStdString().c_str(), count[p], rate);  
+      
+      influx->AddDataPoint("Cut,name=" + cutNameList[p].toStdString()+ " value=" + std::to_string(rate));
+    }
 
+    influx->WriteData(dataBaseName.toStdString());
+    influx->ClearDataPointsBuffer();
+  }
 }
 
-inline void CoincidentAnalyzer::SaveHistRange(){
+inline void CoincidentAnalyzer::SaveSettings(){
   QString filePath = QFileDialog::getSaveFileName(this, 
                                                   "Save Settings to File", 
                                                   QDir::toNativeSeparators(rawDataPath + "/CoinAnaSettings.txt" ), 
@@ -498,6 +533,10 @@ inline void CoincidentAnalyzer::SaveHistRange(){
       lines << QString::number(chkBackWardBuilding->isChecked());
       lines << QString::number(sbBackwardCount->value());
 
+      lines<< dataBaseIP;
+      lines<< dataBaseName;
+      lines<< dataBaseToken;
+
       lines << "#===== End of File";
 
       // Write each line to the file
@@ -512,7 +551,7 @@ inline void CoincidentAnalyzer::SaveHistRange(){
 
   }
 }
-inline void CoincidentAnalyzer::LoadHistRange(){
+inline void CoincidentAnalyzer::LoadSettings(){
 
   QString filePath = QFileDialog::getOpenFileName(this, 
                                                   "Load Settings to File", 
@@ -563,13 +602,17 @@ inline void CoincidentAnalyzer::LoadHistRange(){
         if( count == 16 ) isBkEvtBuild = line.toInt();
         if( count == 17 ) bkCount = line.toInt();
 
+        if( count == 18 ) dataBaseIP = line;
+        if( count == 19 ) dataBaseName = line;
+        if( count == 20 ) dataBaseToken = line;
+
         count ++;
       }
 
       file.close();
       qDebug() << "File read successfully from" << filePath;
 
-      if( count >= 18 ){
+      if( count >= 21 ){
         
         sbUpdateTime->setValue(updateTime);
         chkBackWardBuilding->setChecked(isBkEvtBuild);
@@ -593,6 +636,8 @@ inline void CoincidentAnalyzer::LoadHistRange(){
         h1->Rebin(a_bin, a_min, a_max);
         h1g->Rebin(a_bin, a_min, a_max);
         h2D->Rebin(x_bin, x_min, x_max, y_bin, y_min, y_max);
+
+        SetDatabase(dataBaseIP, dataBaseName, dataBaseToken);
 
       }
 

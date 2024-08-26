@@ -47,22 +47,23 @@ public:
   Analyzer(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent = nullptr);
   virtual ~Analyzer();
 
-  virtual void SetUpCanvas();
-
   MultiBuilder * GetEventBuilder() { return mb;}
 
   void RedefineEventBuilder(std::vector<int> idList);
   void SetBackwardBuild(bool TF, int maxNumEvent = 100) { isBuildBackward = TF; maxNumEventBuilt = maxNumEvent;}
+  void SetDatabase(QString IP, QString Name, QString Token);
 
   double RandomGauss(double mean, double sigma);
 
 public slots:
   void StartThread();
   void StopThread();
+  void SetDatabaseButton();
+  
+  virtual void SetUpCanvas();
   virtual void UpdateHistograms(); // where event-building, analysis, and ploting
 
 private slots:
-
 
 protected:
   QGridLayout * layout;
@@ -70,7 +71,9 @@ protected:
   void SetUpdateTimeInSec(double sec = 1.0) {waitTimeinSec = sec; buildTimerThread->SetWaitTimeinSec(waitTimeinSec);}
 
   InfluxDB * influx;
-  std::string dataBaseName;
+  QString dataBaseIP;
+  QString dataBaseName;
+  QString dataBaseToken;
 
 private:
   Digitizer ** digi;
