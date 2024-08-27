@@ -566,7 +566,7 @@ inline void Data::PrintChData(unsigned short ch, unsigned int maxRowDisplay) con
 inline void Data::PrintBuffer(){
   if( buffer == NULL || nByte == 0 ) return;
   printf("============== Received nByte : %u\n", nByte);
-  for( int i = 0; i < nByte/4; i++ ) {
+  for( unsigned int i = 0; i < nByte/4; i++ ) {
     ReadBuffer(i, 2);
     printf("\n");
   }
