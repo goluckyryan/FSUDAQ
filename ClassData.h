@@ -90,6 +90,7 @@ class Data{
 
     unsigned short GetNChannel() const {return numInputCh;}
 
+    void PrintBuffer();
     void CopyBuffer( const char * buffer, const unsigned int size); 
         
     void DecodeBuffer(bool fastDecode, int verbose = 0); /// fastDecode will not save waveform
@@ -346,7 +347,10 @@ inline void Data::ClearBuffer(){
 }
 
 inline void Data::CopyBuffer(const char * buffer, const unsigned int size){
+  if( this->buffer ) delete this->buffer;
+  this->buffer = (char*) malloc(size);
   std::memcpy(this->buffer, buffer, size);
+  this->nByte = size;
 }
 
 inline void Data::ClearReferenceTime(){
@@ -559,12 +563,21 @@ inline void Data::PrintChData(unsigned short ch, unsigned int maxRowDisplay) con
 
 //^#######################################################
 //^####################################################### Decode
+inline void Data::PrintBuffer(){
+  if( buffer == NULL || nByte == 0 ) return;
+  printf("============== Received nByte : %u\n", nByte);
+  for( int i = 0; i < nByte/4; i++ ) {
+    ReadBuffer(i, 2);
+    printf("\n");
+  }
+}
+
 inline unsigned int Data::ReadBuffer(unsigned int nWord, int verbose){
   if( buffer == NULL ) return 0;
   
   unsigned int word = 0;
   for( int i = 0 ; i < 4 ; i++) word += ((buffer[i + 4 * nWord] & 0xFF) << 8*i);
-  if( verbose >= 2) printf("%6d | 0x%08X | ", nWord, word);
+  if( verbose >= 2) printf("%6d | 0x%08X |", nWord, word);
   return word;
 }
 
@@ -1112,10 +1125,10 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
     //if( DataIndex[channel] >= dataSize ) ClearData();
      
     //if( verbose >= 2 ) printf("extra : 0x%08x, Qshort : %d, Qlong : %d \n", extra, Qshort, Qlong);
-    if( verbose == 1 ) printf("ch : %2d, Qshort : %6d, Qlong : %6d, timestamp : %llu\n", 
-                                channel, Qshort, Qlong, timeStamp * tick2ns);
-    if( verbose >= 2 ) printf("Qshort : %6d, Qlong : %6d, timestamp : %llu\n", 
-                               Qshort, Qlong, timeStamp * tick2ns);
+    if( verbose == 1 ) printf("ch : %2d, Qshort : %6d, Qlong : %6d, timestamp : %llu, fineTime : %u\n", 
+                                channel, Qshort, Qlong, timeStamp * tick2ns, (extra & 0x3FF) * tick2ns);
+    if( verbose >= 2 ) printf("Qshort : %6d, Qlong : %6d, timestamp : %llu, fineTime : %u\n", 
+                               Qshort, Qlong, timeStamp * tick2ns, (extra & 0x3FF) * tick2ns);
 
     
     
