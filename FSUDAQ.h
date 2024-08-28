@@ -194,7 +194,7 @@ private:
 
   //@----- SingleSpectra
   SingleSpectra * singleHistograms;
-  TimingThread * histThread;
+  // TimingThread * histThread;
 
   //@----- Analyzer
   Analyzer * onlineAnalyzer;

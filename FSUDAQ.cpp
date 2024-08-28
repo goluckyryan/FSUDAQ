@@ -36,7 +36,6 @@ FSUDAQ::FSUDAQ(QWidget *parent) : QMainWindow(parent){
   scope = nullptr;
   digiSettings = nullptr;
   singleHistograms = nullptr;
-  histThread = nullptr;
   onlineAnalyzer = nullptr;
   runTimer = new QTimer();
   breakAutoRepeat = true;
@@ -322,17 +321,6 @@ FSUDAQ::~FSUDAQ(){
   SaveProgramSettings();
 
   if( scope ) delete scope;
-
-  if( histThread ){
-
-    if( !histThread->isStopped() ){
-      histThread->Stop();
-      histThread->quit();
-      histThread->wait();
-    }
-
-    delete histThread;
-  }
 
   if( singleHistograms ) delete singleHistograms;
 
@@ -743,12 +731,6 @@ void FSUDAQ::OpenDigitizers(){
   }
 
   singleHistograms = new SingleSpectra(digi, nDigi, rawDataPath);
-  histThread = new TimingThread(this);
-  histThread->SetWaitTimeinSec(singleHistograms->GetMaxFillTime()/1000.);
-  connect(histThread, &TimingThread::timeUp, this, [=](){
-    if( singleHistograms == nullptr &&   !singleHistograms->IsFillHistograms()) return; 
-    singleHistograms->FillHistograms();
-  });
 
   LogMsg("====== <font style=\"color: blue;\"><b>" + QString("Done. Opened %1 digitizer(s).").arg(nDigi) + "</b></font> =====");
 
@@ -784,21 +766,11 @@ void FSUDAQ::CloseDigitizers(){
   scalarThread->exit();
   CleanUpScalar();
 
-  if( histThread){
-    histThread->Stop();
-    histThread->quit();
-    histThread->wait();
-
-    delete histThread;
-    histThread = nullptr;
-  }
-
   if( onlineAnalyzer ){
     onlineAnalyzer->close();
     delete onlineAnalyzer;
     onlineAnalyzer = nullptr;
   }
-
 
   if( singleHistograms ){
     singleHistograms->close();
@@ -1054,6 +1026,9 @@ void FSUDAQ::OpenScalar(){
 
 void FSUDAQ::UpdateScalar(){
   DebugPrint("%s", "FSUDAQ");
+
+  // printf("================== FSUDAQ::%s\n", __func__);
+
   if( digi == nullptr ) return;
   if( scalar == nullptr ) return;
   //if( !scalar->isVisible() ) return;
@@ -1066,6 +1041,7 @@ void FSUDAQ::UpdateScalar(){
 
   uint64_t totalFileSize = 0;
   for( unsigned int iDigi = 0; iDigi < nDigi; iDigi++){
+    // printf("======== digi-%d\n", iDigi);
     if( digi[iDigi]->IsBoardDisabled() ) continue;
 
     uint32_t acqStatus = digi[iDigi]->GetACQStatusFromMemory();
@@ -1107,6 +1083,7 @@ void FSUDAQ::UpdateScalar(){
     }
 
     // digiMTX[iDigi].unlock();
+    // printf("============= end of  FSUDAQ::%s\n", __func__);
 
   }
 
@@ -1181,7 +1158,7 @@ void FSUDAQ::StartACQ(){
   }
   lbScalarACQStatus->setText("<font style=\"color: green;\"><b>ACQ On</b></font>");
 
-  if( singleHistograms != nullptr ) histThread->start();
+  if( singleHistograms != nullptr ) singleHistograms->startWork();
 
   bnStartACQ->setEnabled(false);
   bnStartACQ->setStyleSheet("");
@@ -1256,13 +1233,9 @@ void FSUDAQ::StopACQ(){
   }
 
   if( onlineAnalyzer ) onlineAnalyzer->StopThread();
+  if( singleHistograms ) singleHistograms->stopWork();
+  
 
-  if( singleHistograms && histThread->isRunning()){
-    histThread->Stop();
-    histThread->quit();
-    histThread->wait();
-    singleHistograms->ClearInternalDataCount();
-  }
   lbScalarACQStatus->setText("<font style=\"color: red;\"><b>ACQ Off</b></font>");
 
   bnStartACQ->setEnabled(true);
@@ -1755,19 +1728,14 @@ void FSUDAQ::OpenScope(){
       }
 
       if( digiSettings ) digiSettings->setEnabled(!onOff);
-
-      if( singleHistograms ){
-        if( onOff) {
-          histThread->start();
+      if( singleHistograms ) {
+        if( onOff ) {
+          singleHistograms->startWork();
         }else{
-          if( histThread->isRunning()){
-            histThread->Stop();
-            histThread->quit();
-            histThread->wait();
-            singleHistograms->ClearInternalDataCount();
-          }
+          singleHistograms->stopWork();
         }
       }
+
     });
 
     connect(scope, &Scope::UpdateScaler, this, &FSUDAQ::UpdateScalar);
