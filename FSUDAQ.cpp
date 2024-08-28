@@ -33,6 +33,7 @@ FSUDAQ::FSUDAQ(QWidget *parent) : QMainWindow(parent){
   nDigi = 0;
 
   scalar = nullptr;
+  scalarUpdateTimeMilliSec = 1000;
   scope = nullptr;
   digiSettings = nullptr;
   singleHistograms = nullptr;
@@ -301,18 +302,18 @@ FSUDAQ::FSUDAQ(QWidget *parent) : QMainWindow(parent){
 
   CheckElog();
 
-
   LogMsg("====== <font style=\"color: blue;\"><b>FSU DAQ is ready.</b></font> ======");
-
 
 }
 
 FSUDAQ::~FSUDAQ(){
   DebugPrint("%s", "FSUDAQ");
   if( scalar ) {
-    scalarThread->Stop();
-    scalarThread->quit();
-    scalarThread->exit();
+    scalarTimer->stop();
+    if( scalarThread->isRunning() ){
+      scalarThread->quit();
+      scalarThread->exit();
+    }
     CleanUpScalar();
     //don't need to delete scalar, it is managed by this
   }
@@ -761,10 +762,12 @@ void FSUDAQ::CloseDigitizers(){
     scope = nullptr;
   }
 
-  scalarThread->Stop();
-  scalarThread->quit();
-  scalarThread->exit();
-  CleanUpScalar();
+  scalarTimer->stop();
+  if( scalarThread->isRunning() ){
+    scalarThread->quit();
+    scalarThread->exit();
+  }
+  if( scalar ) CleanUpScalar();
 
   if( onlineAnalyzer ){
     onlineAnalyzer->close();
@@ -867,9 +870,18 @@ void FSUDAQ::SetupScalar(){
   lbScalarACQStatus = nullptr;
   lbTotalFileSize = nullptr;
 
-  scalarThread = new TimingThread(scalar);
-  scalarThread->SetWaitTimeinSec(1.0);
-  connect(scalarThread, &TimingThread::timeUp, this, &FSUDAQ::UpdateScalar);
+  // scalarThread = new TimingThread(scalar);
+  // scalarThread->SetWaitTimeinSec(1.0);
+  // connect(scalarThread, &TimingThread::timeUp, this, &FSUDAQ::UpdateScalar);
+
+  scalarThread = new QThread(this);
+  scalarWorker = new ScalarWorker(this);
+  scalarWorker->moveToThread(scalarThread);
+
+  scalarTimer = new QTimer(this);
+  connect( scalarTimer, &QTimer::timeout, scalarWorker, &ScalarWorker::UpdateScalar);
+
+  scalarThread->start();
 
   unsigned short maxNChannel = 0;
   for( unsigned int k = 0; k < nDigi; k ++ ){
@@ -1024,87 +1036,6 @@ void FSUDAQ::OpenScalar(){
   scalar->show();
 }
 
-void FSUDAQ::UpdateScalar(){
-  DebugPrint("%s", "FSUDAQ");
-
-  // printf("================== FSUDAQ::%s\n", __func__);
-
-  if( digi == nullptr ) return;
-  if( scalar == nullptr ) return;
-  //if( !scalar->isVisible() ) return;
-  
-  // digi[0]->GetData()->PrintAllData();
-
-  // lbLastUpdateTime->setText("Last update: " + QDateTime::currentDateTime().toString("MM.dd hh:mm:ss"));
-  lbLastUpdateTime->setText(QDateTime::currentDateTime().toString("MM/dd hh:mm:ss"));
-  scalarCount ++;
-
-  uint64_t totalFileSize = 0;
-  for( unsigned int iDigi = 0; iDigi < nDigi; iDigi++){
-    // printf("======== digi-%d\n", iDigi);
-    if( digi[iDigi]->IsBoardDisabled() ) continue;
-
-    uint32_t acqStatus = digi[iDigi]->GetACQStatusFromMemory();
-    //printf("Digi-%d : acq on/off ? : %d \n", digi[iDigi]->GetSerialNumber(), (acqStatus >> 2) & 0x1 );
-    if( ( acqStatus >> 2 ) & 0x1 ){
-      if( runStatus[iDigi]->styleSheet() == "") runStatus[iDigi]->setStyleSheet("background-color : green;");
-    }else{
-      if( runStatus[iDigi]->styleSheet() != "") runStatus[iDigi]->setStyleSheet("");
-    }
-
-    if(digiSettings && digiSettings->isVisible() && digiSettings->GetTabID() == iDigi) digiSettings->UpdateACQStatus(acqStatus);
-
-    // digiMTX[iDigi].lock();
-
-    QString blockCountStr = QString::number(digi[iDigi]->GetData()->AggCount);
-    blockCountStr += "/" + QString::number(readDataThread[iDigi]->GetReadCount());
-    readDataThread[iDigi]->SetReadCountZero();
-    lbAggCount[iDigi]->setText(blockCountStr);
-    lbFileSize[iDigi]->setText(QString::number(digi[iDigi]->GetData()->GetTotalFileSize()/1024./1024., 'f', 3) + " MB");
-
-    digi[iDigi]->GetData()->CalTriggerRate(); //this will reset NumEventDecode & AggCount
-    if( chkSaveData->isChecked() ) totalFileSize += digi[iDigi]->GetData()->GetTotalFileSize();
-    for( int i = 0; i < digi[iDigi]->GetNumInputCh(); i++){
-      QString a = "";
-      QString b = "";
-      
-      if( digi[iDigi]->GetInputChannelOnOff(i) == true ) {
-        // printf(" %3d %2d | %7.2f %7.2f \n", digi[iDigi]->GetSerialNumber(), i, digi[iDigi]->GetData()->TriggerRate[i], digi[iDigi]->GetData()->NonPileUpRate[i]);
-        QString a = QString::number(digi[iDigi]->GetData()->TriggerRate[i], 'f', 2);
-        QString b = QString::number(digi[iDigi]->GetData()->NonPileUpRate[i], 'f', 2);
-        leTrigger[iDigi][i]->setText(a);
-        leAccept[iDigi][i]->setText(b);
-
-        if( influx && chkInflux->isChecked() && a != "inf" ){
-          influx->AddDataPoint("TrigRate,Bd="+std::to_string(digi[iDigi]->GetSerialNumber()) + ",Ch=" + QString::number(i).rightJustified(2, '0').toStdString() + " value=" +  a.toStdString());
-        }
-
-      }
-    }
-
-    // digiMTX[iDigi].unlock();
-    // printf("============= end of  FSUDAQ::%s\n", __func__);
-
-  }
-
-  lbTotalFileSize->setText("Total Data Size : " + QString::number(totalFileSize/1024./1024., 'f', 3) + " MB");
-
-  repaint();
-  scalar->repaint();
-
-  if( influx && chkInflux->isChecked() && scalarCount >= 3){
-    if( chkSaveData->isChecked() ) {
-      influx->AddDataPoint("RunID value=" + std::to_string(runID));
-      influx->AddDataPoint("FileSize value=" + std::to_string(totalFileSize));
-    }
-    //nflux->PrintDataPoints();
-    influx->WriteData(dataBaseName.toStdString());
-    influx->ClearDataPointsBuffer();
-    scalarCount = 0;
-  }
-
-}
-
 //***************************************************************
 //***************************************************************
 void FSUDAQ::StartACQ(){
@@ -1149,7 +1080,7 @@ void FSUDAQ::StartACQ(){
   // printf("------------ Go! \n");
   // for( unsigned int i = 0; i < nDigi; i++) readDataThread[i]->go();
 
-  scalarThread->start();
+  if( scalar ) scalarTimer->start(scalarUpdateTimeMilliSec); 
 
   if( !scalar->isVisible() ) {
     scalar->show();
@@ -1158,7 +1089,7 @@ void FSUDAQ::StartACQ(){
   }
   lbScalarACQStatus->setText("<font style=\"color: green;\"><b>ACQ On</b></font>");
 
-  if( singleHistograms != nullptr ) singleHistograms->startWork();
+  if( singleHistograms ) singleHistograms->startWork();
 
   bnStartACQ->setEnabled(false);
   bnStartACQ->setStyleSheet("");
@@ -1226,11 +1157,7 @@ void FSUDAQ::StopACQ(){
     digi[i]->ReadACQStatus();
   }
 
-  if( scalarThread->isRunning()){
-    scalarThread->Stop();
-    scalarThread->quit();
-    scalarThread->wait();
-  }
+  if( scalar ) scalarTimer->stop();
 
   if( onlineAnalyzer ) onlineAnalyzer->StopThread();
   if( singleHistograms ) singleHistograms->stopWork();
@@ -1738,8 +1665,7 @@ void FSUDAQ::OpenScope(){
 
     });
 
-    connect(scope, &Scope::UpdateScaler, this, &FSUDAQ::UpdateScalar);
-
+    if( scalar ) connect(scope, &Scope::UpdateScaler, scalarWorker, &ScalarWorker::UpdateScalar);
     connect(scope, &Scope::UpdateOtherPanels, this, [=](){ UpdateAllPanels(1); });
 
     scope->show();
@@ -1796,7 +1722,6 @@ void FSUDAQ::OpenAnalyzer(){
   if( id < 0 ) return;
 
   if( onlineAnalyzer == nullptr ) {
-    //onlineAnalyzer = new Analyzer(digi, nDigi);
     if( id == 0 ) onlineAnalyzer = new CoincidentAnalyzer(digi, nDigi, rawDataPath);
     if( id == 1 ) onlineAnalyzer = new SplitPole(digi, nDigi);
     if( id == 2 ) onlineAnalyzer = new Encore(digi, nDigi);
