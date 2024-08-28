@@ -321,83 +321,81 @@ int TestDigitizerRaw(){
 
 }
 
+
+void Compare_CAEN_Decoder(){
+
+  std::unique_ptr<Digitizer> digi = std::make_unique<Digitizer>(0, 49093, false, true);
+  Data * data =  digi->GetData();
+
+  int ret;
+  int handle = digi->GetHandle();  
+  CAEN_DGTZ_DPP_PSD_Event_t  *Events[16];  /// events buffer
+  uint32_t NumEvents[16];
+
+  uint32_t AllocatedSize = 0;
+
+  ret |= CAEN_DGTZ_MallocDPPEvents(handle, reinterpret_cast<void**>(&Events), &AllocatedSize) ;
+  printf("allowcated %d byte for Events\n", AllocatedSize);
+
+
+  printf("======================== start ACQ \n");
+  digi->StartACQ();
+
+  int ch = 0;
+  for( int i = 0; i < 5; i ++ ){
+    usleep(1000*1000); // every 1 second
+
+    digi->ReadData();
+    // data->CopyBuffer(cpBuffer, bufferSize);
+    data->DecodeBuffer(false, 4);
+
+    if( data->nByte > 0 ){
+      ret = (CAEN_DGTZ_ErrorCode) CAEN_DGTZ_GetDPPEvents(handle, data->buffer, data->nByte, reinterpret_cast<void**>(&Events), NumEvents);
+      if (ret) {
+        printf("Error when getting events from data %d\n", ret);
+        continue;
+      }
+
+      printf("============ %u\n", NumEvents[0]);
+
+      for( int ev = 0; ev < NumEvents[0]; ev++ ){
+
+        printf("-------- ev %d\n", ev);
+        printf( " Format : 0x%04x\n", Events[ch][ev].Format);
+        printf( "TimeTag : 0x%08x\n", Events[ch][ev].TimeTag);
+        printf(" E_short : 0x%04x\n", Events[ch][ev].ChargeShort);
+        printf("  E_long : 0x%04x\n", (Events[ch][ev].ChargeLong & 0xffff));
+        printf("Baseline : 0x%04x\n", (Events[ch][ev].Baseline & 0xffff));
+        printf("     Pur : 0x%04x\n", Events[ch][ev].Pur);
+        printf("   Extra : 0x%08x\n", Events[ch][ev].Extras);
+          
+
+      }
+    }
+
+  }
+  
+  digi->StopACQ();
+
+  printf("======================== ACQ Stopped.\n");
+
+}
+
 //^======================================
 int main(int argc, char* argv[]){
 
-  //TestDigitizerRaw();
-  
-  // CheckBufferSize(5, 4);
+  Compare_CAEN_Decoder();
 
-  //GetOneAgg();
+  // Data * data =  digi->GetData();
 
-  Digitizer * digi = new Digitizer(0, 49093, 0, true);
+  // MultiBuilder * builder = new MultiBuilder(data, DPPType::DPP_PHA_CODE, digi->GetSerialNumber());
+  // builder->SetTimeWindow(100);
 
-  delete digi;
 
-  // digi->WriteRegister(DPP::QDC::PreTrigger, 60, -1);
 
-  // digi->WriteRegister(DPP::QDC::TriggerThreshold_sub2, 17, -1);
-  // digi->SetBits(DPP::QDC::DPPAlgorithmControl, DPP::QDC::Bit_DPPAlgorithmControl::ChargeSensitivity, 0, -1);
-  // digi->SetBits(DPP::QDC::DPPAlgorithmControl, DPP::QDC::Bit_DPPAlgorithmControl::InputSmoothingFactor, 4, -1);
-  // digi->SetBits(DPP::QDC::DPPAlgorithmControl, DPP::QDC::Bit_DPPAlgorithmControl::BaselineAvg, 2, -1);
-
-  // digi->WriteRegister(DPP::QDC::GateWidth, 608/16, -1);
-
-  // digi->WriteRegister(DPP::QDC::GroupEnableMask, 0x01);
-
-  // digi->WriteRegister(DPP::QDC::NumberEventsPerAggregate, 10, -1);
-  // digi->WriteRegister(DPP::AggregateOrganization, 0, -1);
-  // digi->WriteRegister(DPP::MaxAggregatePerBlockTransfer, 100, -1);
-
-  // digi->SetBits(DPP::QDC::DPPAlgorithmControl, DPP::QDC::Bit_DPPAlgorithmControl::Polarity, 0, -1);
-
-  /*
-  digi->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::EnableExtra2, 1, -1);
-  digi->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, 0, -1);  
-
-  Data * data =  digi->GetData();
-
-  MultiBuilder * builder = new MultiBuilder(data, DPPType::DPP_PHA_CODE, digi->GetSerialNumber());
-  builder->SetTimeWindow(100);
-
-  //remove("haha_*.fsu");
-  //data->OpenSaveFile("haha");
-
-  digi->StartACQ();
-
-  for( int i = 0; i < 5; i ++ ){
-    usleep(1000*1000);
-    digi->ReadData();
-    data->DecodeBuffer(true, 0);
-    //data->DecodeBuffer(false, 2);
-    //data->SaveData();
-    //data->PrintStat();
-    
-    data->PrintAllData(true);
-
-    //builder->BuildEvents(false, true, true);
-    builder->BuildEventsBackWard(20, true);
-
-    builder->PrintStat();
-    // int index = data->NumEventsDecoded[0];
-    // printf("-------------- %ld \n", data->Waveform1[0][index].size());
-
-  }
-  digi->StopACQ();
-
-  //data->CloseSaveFile();
-  builder->BuildEvents(true, true, true);
-
-  data->PrintAllData();
-
-  builder->PrintAllEvent(); // TODO
-  */
-
-  // digi->CloseDigitizer();
-  // delete digi;
-  
   return 0;
 }
+
 
 //*********************************
 //*********************************

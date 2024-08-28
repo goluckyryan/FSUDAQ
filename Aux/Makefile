@@ -34,7 +34,7 @@ ClassInfluxDB.o : ../ClassInfluxDB.cpp ../ClassInfluxDB.h
 
 test	:	test.cpp ../ClassDigitizer.o ../MultiBuilder.o ../ClassInfluxDB.o
 		@echo "--------- making test"
-		$(CC) $(COPTS) -o test test.cpp ../ClassDigitizer.o ../MultiBuilder.o ../ClassInfluxDB.o $(CAENLIBS)  $(ROOTLIBS) -lcurl
+		$(CC) -fPIC -DLINUX -O0 -std=c++17 -lpthread -g -o test test.cpp ../ClassDigitizer.o ../MultiBuilder.o ../ClassInfluxDB.o $(CAENLIBS)  $(ROOTLIBS) -lcurl
 
 # test_indep : test_indep.cpp ../RegisterAddress.h ../macro.h
 # 		@echo "--------- making test_indep"
