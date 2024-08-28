@@ -233,6 +233,86 @@ void SingleSpectra::ChangeHistView(){
 
 }
 
+void SingleSpectra::FillHistograms(){
+
+  // printf("%s | %d %d \n", __func__, chkIsFillHistogram->checkState(), isFillingHistograms);
+  if( chkIsFillHistogram->checkState() == Qt::Unchecked ) return;
+  if( isFillingHistograms) return;
+
+  isFillingHistograms = true;
+  timespec t0, t1;
+
+  QVector<int> randomDigiList = generateNonRepeatedCombination(nDigi);
+
+  // qDebug() << randomDigiList;
+
+  for( int i = 0; i < nDigi; i++){
+    int ID = randomDigiList[i];
+
+    QVector<int> randomChList = generateNonRepeatedCombination(digi[ID]->GetNumInputCh());
+
+    // qDebug() << randomChList;
+    // digiMTX[ID].lock();
+    // digi[ID]->GetData()->PrintAllData();
+
+    clock_gettime(CLOCK_REALTIME, &t0);
+    for( int k = 0; k < digi[ID]->GetNumInputCh(); k ++ ){
+      int ch = randomChList[k];
+      int lastIndex = digi[ID]->GetData()->GetDataIndex(ch);
+      if( lastIndex < 0 ) continue;
+      // printf("--- ch %2d | last index %d \n", ch, lastIndex);
+
+      int loopIndex = digi[ID]->GetData()->GetLoopIndex(ch);
+
+      int temp1 = lastIndex + loopIndex * digi[ID]->GetData()->GetDataSize();
+      int temp2 = lastFilledIndex[ID][ch] + loopFilledIndex[ID][ch] * digi[ID]->GetData()->GetDataSize() + 1;
+
+      // printf("loopIndx : %d | ID now : %d, ID old : %d \n", loopIndex, temp1, temp2);
+
+      if( temp1 <= temp2 ) continue;
+
+      if( temp1 - temp2 > digi[ID]->GetData()->GetDataSize() ) { //DefaultDataSize = 10k
+        temp2 = temp1 - digi[ID]->GetData()->GetDataSize();
+        lastFilledIndex[ID][ch] = lastIndex;
+        lastFilledIndex[ID][ch] = loopIndex - 1;
+      }
+
+      // printf("ch %d | regulated  ID now %d  new %d | last fill idx %d\n", ch, temp2, temp1, lastFilledIndex[ID][ch]);
+      
+      for( int j = 0 ; j <= temp1 - temp2; j ++){
+        lastFilledIndex[ID][ch] ++;
+        if( lastFilledIndex[ID][ch] > digi[ID]->GetData()->GetDataSize() ) {
+          lastFilledIndex[ID][ch] = 0;
+          loopFilledIndex[ID][ch] ++;
+        }
+
+        uShort data = digi[ID]->GetData()->GetEnergy(ch, lastFilledIndex[ID][ch]);
+
+        // printf(" ch: %d, last fill idx : %d | %d \n", ch, lastFilledIndex[ID][ch], data);
+
+        hist[ID][ch]->Fill( data );
+        if( digi[i]->GetDPPType() == DPPTypeCode::DPP_PSD_CODE ){
+          uShort e2 = digi[ID]->GetData()->GetEnergy2(ch, lastFilledIndex[ID][ch]);
+          // printf("%u \n", e2);
+          hist[ID][ch]->Fill( e2, 1);
+        }
+        hist2D[ID]->Fill(ch, data);
+      }
+      if( histVisibility[ID][ch]  ) hist[ID][ch]->UpdatePlot();
+
+      clock_gettime(CLOCK_REALTIME, &t1);
+      if( t1.tv_nsec - t0.tv_nsec + (t1.tv_sec - t0.tv_sec)*1e9 > maxFillTimePerDigi * 1e6 ) break;  
+    }
+
+    if( hist2DVisibility[ID] ) hist2D[ID]->UpdatePlot();
+    // digiMTX[ID].unlock();
+
+  }
+
+  isFillingHistograms = false;
+
+}
+
 void SingleSpectra::SaveSetting(){
   DebugPrint("%s", "SingleSpectra");
 

@@ -31,6 +31,7 @@ FSUDAQ::FSUDAQ(QWidget *parent) : QMainWindow(parent){
 
   digi = nullptr;
   nDigi = 0;
+  isACQStarted= false;
 
   scalar = nullptr;
   scalarUpdateTimeMilliSec = 1000;
@@ -1002,6 +1003,88 @@ void FSUDAQ::SetupScalar(){
 
 }
 
+void FSUDAQ::UpdateScalar(){
+
+  DebugPrint("%s", "FSUDAQ");
+
+  // printf("================== FSUDAQ::%s\n", __func__);
+
+  if( digi == nullptr ) return;
+  if( scalar == nullptr ) return;
+  //if( !scalar->isVisible() ) return;
+  
+  // digi[0]->GetData()->PrintAllData();
+
+  // lbLastUpdateTime->setText("Last update: " + QDateTime::currentDateTime().toString("MM.dd hh:mm:ss"));
+  lbLastUpdateTime->setText(QDateTime::currentDateTime().toString("MM/dd hh:mm:ss"));
+  scalarCount ++;
+
+  uint64_t totalFileSize = 0;
+  for( unsigned int iDigi = 0; iDigi < nDigi; iDigi++){
+    // printf("======== digi-%d\n", iDigi);
+    if( digi[iDigi]->IsBoardDisabled() ) continue;
+
+    uint32_t acqStatus = digi[iDigi]->GetACQStatusFromMemory();
+    //printf("Digi-%d : acq on/off ? : %d \n", digi[iDigi]->GetSerialNumber(), (acqStatus >> 2) & 0x1 );
+    if( ( acqStatus >> 2 ) & 0x1 ){
+      if( runStatus[iDigi]->styleSheet() == "") runStatus[iDigi]->setStyleSheet("background-color : green;");
+    }else{
+      if( runStatus[iDigi]->styleSheet() != "") runStatus[iDigi]->setStyleSheet("");
+    }
+
+    if(digiSettings && digiSettings->isVisible() && digiSettings->GetTabID() == iDigi) digiSettings->UpdateACQStatus(acqStatus);
+
+    // digiMTX[iDigi].lock();
+
+    QString blockCountStr = QString::number(digi[iDigi]->GetData()->AggCount);
+    blockCountStr += "/" + QString::number(readDataThread[iDigi]->GetReadCount());
+    readDataThread[iDigi]->SetReadCountZero();
+    lbAggCount[iDigi]->setText(blockCountStr);
+    lbFileSize[iDigi]->setText(QString::number(digi[iDigi]->GetData()->GetTotalFileSize()/1024./1024., 'f', 3) + " MB");
+
+    digi[iDigi]->GetData()->CalTriggerRate(); //this will reset NumEventDecode & AggCount
+    if( chkSaveData->isChecked() ) totalFileSize += digi[iDigi]->GetData()->GetTotalFileSize();
+    for( int i = 0; i < digi[iDigi]->GetNumInputCh(); i++){
+      QString a = "";
+      QString b = "";
+      
+      if( digi[iDigi]->GetInputChannelOnOff(i) == true ) {
+        // printf(" %3d %2d | %7.2f %7.2f \n", digi[iDigi]->GetSerialNumber(), i, digi[iDigi]->GetData()->TriggerRate[i], digi[iDigi]->GetData()->NonPileUpRate[i]);
+        QString a = QString::number(digi[iDigi]->GetData()->TriggerRate[i], 'f', 2);
+        QString b = QString::number(digi[iDigi]->GetData()->NonPileUpRate[i], 'f', 2);
+        leTrigger[iDigi][i]->setText(a);
+        leAccept[iDigi][i]->setText(b);
+
+        if( influx && chkInflux->isChecked() && a != "inf" ){
+          influx->AddDataPoint("TrigRate,Bd="+std::to_string(digi[iDigi]->GetSerialNumber()) + ",Ch=" + QString::number(i).rightJustified(2, '0').toStdString() + " value=" +  a.toStdString());
+        }
+
+      }
+    }
+
+    // digiMTX[iDigi].unlock();
+    // printf("============= end of  FSUDAQ::%s\n", __func__);
+
+  }
+
+  lbTotalFileSize->setText("Total Data Size : " + QString::number(totalFileSize/1024./1024., 'f', 3) + " MB");
+
+  repaint();
+  scalar->repaint();
+
+  if( influx && chkInflux->isChecked() && scalarCount >= 3){
+    if( chkSaveData->isChecked() ) {
+      influx->AddDataPoint("RunID value=" + std::to_string(runID));
+      influx->AddDataPoint("FileSize value=" + std::to_string(totalFileSize));
+    }
+    //nflux->PrintDataPoints();
+    influx->WriteData(dataBaseName.toStdString());
+    influx->ClearDataPointsBuffer();
+    scalarCount = 0;
+  }
+  
+}
+
 void FSUDAQ::CleanUpScalar(){
   DebugPrint("%s", "FSUDAQ");
   if( scalar == nullptr) return;
@@ -1120,6 +1203,7 @@ void FSUDAQ::StartACQ(){
     }
   }
 
+  isACQStarted = true;
   chkSaveData->setEnabled(false);
   // bnDigiSettings->setEnabled(false);
 
@@ -1214,6 +1298,7 @@ void FSUDAQ::StopACQ(){
 
   chkSaveData->setEnabled(true);
   // bnDigiSettings->setEnabled(true);
+  isACQStarted = false;
 
   repaint();
   // printf("================ end of %s \n", __func__);
@@ -1730,7 +1815,7 @@ void FSUDAQ::OpenAnalyzer(){
     if( id == 5 ) onlineAnalyzer = new NeutronGamma(digi, nDigi, rawDataPath);
     if( id >=  0 ) onlineAnalyzer->show();
 
-    if( scalarThread->isRunning() ) onlineAnalyzer->StartThread();
+    if( isACQStarted ) onlineAnalyzer->StartThread();
 
   }else{
 
@@ -1746,7 +1831,7 @@ void FSUDAQ::OpenAnalyzer(){
     if( id >= 0 ){
       onlineAnalyzer->show();
       onlineAnalyzer->activateWindow();
-      if( scalarThread->isRunning() ) onlineAnalyzer->StartThread();
+      if( isACQStarted ) onlineAnalyzer->StartThread();
     }
   }
 

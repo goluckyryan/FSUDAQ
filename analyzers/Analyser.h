@@ -38,6 +38,8 @@ and recompile FSUDAQ to incorporate the changes and activate the custom analyzer
 #include "Histogram1D.h"
 #include "Histogram2D.h"
 
+// class AnalyzerWorker; //Forward decalration
+
 //^==============================================
 //^==============================================
 class Analyzer : public QMainWindow{
@@ -92,4 +94,25 @@ private:
 
 
 };
+
+//^================================================ AnalyzerWorker
+
+// class ScalarWorker : public QObject{
+//   Q_OBJECT
+// public:
+//   ScalarWorker(Analyzer * parent): SS(parent){}
+
+// public slots:
+//   void UpdateScalar(){
+//     SS->UpdateHistograms();
+//     emit workDone();
+//   }
+
+// signals:
+//   void workDone();
+
+// private:
+//   Analyzer * SS;
+// };
+
 #endif
