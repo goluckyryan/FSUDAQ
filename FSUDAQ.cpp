@@ -1289,7 +1289,7 @@ void FSUDAQ::StopACQ(){
   // bnDigiSettings->setEnabled(true);
 
   repaint();
-  printf("================ end of %s \n", __func__);
+  // printf("================ end of %s \n", __func__);
 
 }
 

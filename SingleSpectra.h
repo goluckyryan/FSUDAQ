@@ -59,11 +59,11 @@ public:
   unsigned short nDigi;
 
   void startWork(){ 
-    printf("timer start\n");
+    // printf("timer start\n");
     timer->start(maxFillTimeinMilliSec); 
   } 
   void stopWork(){ 
-    printf("timer stop\n");
+    // printf("timer stop\n");
     timer->stop();
     ClearInternalDataCount();
   }
@@ -132,7 +132,7 @@ public slots:
         int ch = randomChList[k];
         int lastIndex = SS->digi[ID]->GetData()->GetDataIndex(ch);
         if( lastIndex < 0 ) continue;
-        printf("--- ch %2d | last index %d \n", ch, lastIndex);
+        // printf("--- ch %2d | last index %d \n", ch, lastIndex);
 
         int loopIndex = SS->digi[ID]->GetData()->GetLoopIndex(ch);
 
