@@ -1714,39 +1714,46 @@ void FSUDAQ::OpenScope(){
   if( scope == nullptr ) {
     scope = new Scope(digi, nDigi, readDataThread);
     connect(scope, &Scope::SendLogMsg, this, &FSUDAQ::LogMsg);
+    
     connect(scope, &Scope::CloseWindow, this, [=](){
       bnStartACQ->setEnabled(true);
       bnStartACQ->setStyleSheet("background-color: green;");
       bnStopACQ->setEnabled(false);  
       bnStopACQ->setStyleSheet("");
     });
+
     connect(scope, &Scope::TellACQOnOff, this, [=](bool onOff){
-      if( scope  ) {
-        if( onOff ) {
+
+      isACQStarted = onOff;
+
+      if( onOff ){
+        if( influx && chkInflux->isChecked() && !elogName.isEmpty()) influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=1");
+        
+        if( scalar ){
           lbScalarACQStatus->setText("<font style=\"color: green;\"><b>ACQ On</b></font>");
-          if( influx && chkInflux->isChecked() && !elogName.isEmpty()) influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=1");
-        }else{
+          scalarTimer->start(ScalarUpdateinMiliSec); 
+        }
+
+        if( singleHistograms ) singleHistograms->startWork();
+        if( onlineAnalyzer ) onlineAnalyzer->startWork();
+
+      }else{
+        if( influx && chkInflux->isChecked() && !elogName.isEmpty()) influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=0");
+
+        if( scalar ){
           lbScalarACQStatus->setText("<font style=\"color: red;\"><b>ACQ Off</b></font>");
-          if( influx && chkInflux->isChecked() && !elogName.isEmpty()) influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=0");
+          scalarTimer->stop(); 
         }
-        if( influx && chkInflux->isChecked()){
-          influx->WriteData(dataBaseName.toStdString());
-          influx->ClearDataPointsBuffer();
-        }
+
+        if( singleHistograms ) singleHistograms->stopWork();
+        if( onlineAnalyzer ) onlineAnalyzer->stopWork();
+
       }
 
-      if( digiSettings ) digiSettings->setEnabled(!onOff);
-      if( singleHistograms ) {
-        if( onOff ) {
-          singleHistograms->startWork();
-        }else{
-          singleHistograms->stopWork();
-        }
-      }
+      if( digiSettings ) digiSettings->EnableButtons(!onOff);
 
     });
 
-    if( scalar ) connect(scope, &Scope::UpdateScaler, scalarWorker, &ScalarWorker::UpdateScalar);
     connect(scope, &Scope::UpdateOtherPanels, this, [=](){ UpdateAllPanels(1); });
 
     scope->show();

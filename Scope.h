@@ -54,7 +54,6 @@ signals:
   void CloseWindow();
   void SendLogMsg(const QString &msg);
   void TellACQOnOff(const bool onOff);
-  void UpdateScaler();
   void UpdateOtherPanels();
 
 private:
@@ -90,7 +89,6 @@ private:
   unsigned short oldCh, oldDigi;
 
   ReadDataThread ** readDataThread;   
-  // TimingThread * updateScalarThread;
 
   bool enableSignalSlot;
 
@@ -152,8 +150,6 @@ private:
   QThread * workerThread;
   ScopeWorker * scopeWorker;
   QTimer * scopeTimer;
-  QTimer * scalarTimer;
-
 
 };
 

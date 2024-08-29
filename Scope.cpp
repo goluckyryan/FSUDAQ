@@ -289,9 +289,6 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   });
   workerThread->start();
 
-  scalarTimer = new QTimer(this);
-  connect(scalarTimer, &QTimer::timeout, this, &Scope::UpdateScaler);
-
   enableSignalSlot = true;
 
 }
@@ -300,7 +297,7 @@ Scope::~Scope(){
   DebugPrint("%s", "Scope");
 
   scopeTimer->stop();
-  scalarTimer->stop();
+  // scalarTimer->stop();
 
   if( workerThread->isRunning() ){
     workerThread->quit();
@@ -435,7 +432,6 @@ void Scope::StartScope(){
   }
 
   scopeTimer->start(ScopeUpdateMiliSec);
-  scalarTimer->start(ScalarUpdateinMiliSec);
 
   bnScopeStart->setEnabled(false);
   bnScopeStart->setStyleSheet("");
@@ -458,7 +454,7 @@ void Scope::StopScope(){
 
   // printf("------ Scope::%s \n", __func__);
   scopeTimer->stop();
-  scalarTimer->stop();
+  // scalarTimer->stop();
 
   if( chkSoleRun->isChecked() ){
 
@@ -517,7 +513,7 @@ void Scope::StopScope(){
 
   }
 
-  runStatus->setStyleSheet(""); // cheated, don;t know why digi[iDigi]->GetACQStatusFromMemory(), sometimes return ACQ on
+  runStatus->setStyleSheet(""); // cheated, don;t know why digi[iDigi]->GetACQStatusFromMemory(), sometimes return ACQ one.
 
   emit UpdateOtherPanels();
 
