@@ -10,8 +10,6 @@ class CoincidentAnalyzer : public Analyzer{
 public:
   CoincidentAnalyzer(Digitizer ** digi, unsigned int nDigi, QString rawDataPath, QMainWindow * parent = nullptr): Analyzer(digi, nDigi, parent){
 
-    this->digi = digi;
-    this->nDigi = nDigi;
     this->rawDataPath = rawDataPath;
 
     SetUpdateTimeInSec(1.0);
@@ -19,8 +17,7 @@ public:
     //RedefineEventBuilder({0}); // only build for the 0-th digitizer, otherwise, it will build event accross all digitizers
     SetBackwardBuild(false, 100); // using normal building (acceding in time) or backward building, int the case of backward building, default events to be build is 100. 
 
-    evtbder = GetEventBuilder();
-    evtbder->SetTimeWindow(500);
+    mb->SetTimeWindow(500);
 
     allowSignalSlot = false;
     SetUpCanvas();
@@ -36,11 +33,6 @@ public slots:
   void UpdateHistograms();
 
 private:
-
-  Digitizer ** digi;
-  unsigned int nDigi;
-
-  MultiBuilder *evtbder;
 
   bool allowSignalSlot;
 
@@ -96,6 +88,15 @@ inline void CoincidentAnalyzer::SetUpCanvas(){
       chkRunAnalyzer = new QCheckBox("Run Analyzer", this);
       boxLayout->addWidget(chkRunAnalyzer, rowID, 0);
 
+      connect(chkRunAnalyzer, &QCheckBox::stateChanged, this, [=](int state){
+
+        sbBuildWindow->setEnabled(state != Qt::Checked);
+        sbUpdateTime->setEnabled(state != Qt::Checked);
+        chkBackWardBuilding->setEnabled(state != Qt::Checked);
+        sbBackwardCount->setEnabled(state != Qt::Checked);
+
+      });
+
       QLabel * lbUpdateTime = new QLabel("Update Period [s]", this);
       lbUpdateTime->setAlignment(Qt::AlignRight | Qt::AlignCenter);
       boxLayout->addWidget(lbUpdateTime, rowID, 1);
@@ -127,7 +128,7 @@ inline void CoincidentAnalyzer::SetUpCanvas(){
 
       connect(sbBuildWindow, &RSpinBox::returnPressed, this, [=](){
         sbBuildWindow->setStyleSheet("");
-        evtbder->SetTimeWindow((int)sbBuildWindow->value());
+        mb->SetTimeWindow((int)sbBuildWindow->value());
       });
 
       rowID ++;
@@ -408,16 +409,13 @@ inline void CoincidentAnalyzer::UpdateHistograms(){
   if( this->isVisible() == false ) return;
   if( chkRunAnalyzer->isChecked() == false ) return;
 
-  if( isWorking ) return; 
-  isWorking = true; // This is important. set the isWorking = true to prevent another call of UpdateHistograms()
-
   unsigned long long t0 = getTime_ns();
   BuildEvents(false); // call the event builder to build events
   // unsigned long long t1 = getTime_ns();
   // printf("Event Build time : %llu ns = %.f msec\n", t1 - t0, (t1-t0)/1e6);
 
   //============ Get events, and do analysis
-  long eventBuilt = evtbder->eventBuilt;
+  long eventBuilt = mb->eventBuilt;
 
   if( eventBuilt == 0 ) return;
 
@@ -442,12 +440,12 @@ inline void CoincidentAnalyzer::UpdateHistograms(){
   int y_sn = digi[y_bd]->GetSerialNumber();
 
   //============ Processing data and fill histograms
-  long eventIndex = evtbder->eventIndex;
+  long eventIndex = mb->eventIndex;
   long eventStart = eventIndex - eventBuilt + 1;
   if(eventStart < 0 ) eventStart += MaxNEvent;
   
   for( long i = eventStart ; i <= eventIndex; i ++ ){
-    std::vector<Hit> event = evtbder->events[i];
+    std::vector<Hit> event = mb->events[i];
 
     hMulti->Fill((int) event.size());
     if( event.size() == 0 ) return;
@@ -488,7 +486,6 @@ inline void CoincidentAnalyzer::UpdateHistograms(){
 
   }
 
-  // printf("--------------- update histograms\n");
   h2D->UpdatePlot();
   h1->UpdatePlot();
   hMulti->UpdatePlot();
@@ -510,9 +507,6 @@ inline void CoincidentAnalyzer::UpdateHistograms(){
     influx->ClearDataPointsBuffer();
   }
 
-  // printf("<<<<<<<<<<<<< end of UpdateHistorgams\n");
-
-  isWorking = false;
 }
 
 inline void CoincidentAnalyzer::SaveSettings(){

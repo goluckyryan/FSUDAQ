@@ -51,7 +51,9 @@ Analyzer::Analyzer(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent )
 
   connect(anaTimer, &QTimer::timeout, anaWorker, [=](){
     if( isWorking ) return;
+    isWorking = true;
     anaWorker->UpdateHistograms();
+    isWorking = false;
   });
 
   // connect(anaWorker, &AnalyzerWorker::workDone, this, [=](){

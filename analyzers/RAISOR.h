@@ -66,7 +66,7 @@ inline void RAISOR::SetUpCanvas(){
 inline void RAISOR::UpdateHistograms(){
 
   if( this->isVisible() == false ) return;
-  
+
   BuildEvents(false); // call the event builder to build events
 
   //============ Get events, and do analysis
@@ -127,6 +127,7 @@ inline void RAISOR::UpdateHistograms(){
     influx->WriteData(dataBaseName.toStdString());
     influx->ClearDataPointsBuffer();
   }
+
 }
 
 

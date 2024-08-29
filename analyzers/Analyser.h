@@ -90,7 +90,6 @@ protected:
 
   bool isWorking; // a flag to indicate the worker is working
 
-private:
   Digitizer ** digi;
   unsigned short nDigi;
 
@@ -108,7 +107,6 @@ private:
   QThread * anaThread;
   AnalyzerWorker * anaWorker;
   QTimer * anaTimer;
-
 
 };
 
