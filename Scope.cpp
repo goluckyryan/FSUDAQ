@@ -6,7 +6,7 @@
 #include <QGroupBox>
 #include <QStandardItemModel>
 #include <QLabel>
-// #include <QScreen>
+#include <QScreen>
 
 QVector<QPointF> Scope::TrapezoidFilter(QVector<QPointF> data, int baseLineEndS, int riseTimeS, int flatTopS, float decayTime_ns){
   DebugPrint("%s", "Scope");
@@ -41,12 +41,12 @@ QVector<QPointF> Scope::TrapezoidFilter(QVector<QPointF> data, int baseLineEndS,
     
     trapezoid.append(QPointF(data[i].x(), sn / decayTime_ns / riseTimeS));
   
-  }
-  
+  }  
   return trapezoid;
 }
 
-
+//^========================================================
+//^========================================================
 Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataThread, QMainWindow * parent) : QMainWindow(parent){
   DebugPrint("%s", "Scope");
   this->digi = digi;
@@ -64,7 +64,6 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   }else{
     setGeometry(0, 0, 1000, 800);
   }
-  // setGeometry(0, 0, 1000, 800);
 
   enableSignalSlot = false;
 
@@ -99,16 +98,6 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   xaxis->setTickCount(11);
   xaxis->setLabelFormat("%.0f");
   xaxis->setTitleText("Time [ns]");
-
-  updateTraceThread = new TimingThread();
-  updateTraceThread->SetWaitTimeinSec(ScopeUpdateMiliSec / 1000.);
-  connect(updateTraceThread, &TimingThread::timeUp, this, &Scope::UpdateScope);
-
-  updateScalarThread = new TimingThread();
-  updateScalarThread->SetWaitTimeinSec(2);
-  connect(updateScalarThread, &TimingThread::timeUp, this, [=](){
-    emit UpdateScaler();
-  });
 
   NullThePointers();
 
@@ -226,7 +215,7 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
   QLabel * lbhints = new QLabel("Type 'r' to restore view, '+/-' Zoom in/out, arrow key to pan.", this);
   layout->addWidget(lbhints, rowID, 0, 1, 4);
   
-  QLabel * lbinfo = new QLabel("Trace updates every " + QString::number(updateTraceThread->GetWaitTimeinSec()) + " sec.", this);
+  QLabel * lbinfo = new QLabel("Trace updates every " + QString::number(ScopeUpdateMiliSec / 1000.) + " sec.", this);
   lbinfo->setAlignment(Qt::AlignRight);
   layout->addWidget(lbinfo, rowID, 6);
 
@@ -288,22 +277,35 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
     yaxis->setRange(0, 0xFFF);
   }
 
+  workerThread = new QThread(this);
+  scopeWorker = new ScopeWorker(this);
+  scopeTimer = new QTimer(this);
+
+  scopeWorker->moveToThread(workerThread);
+
+  // Setup the timer to trigger every second
+  connect(scopeTimer, &QTimer::timeout, scopeWorker, [=](){
+    scopeWorker->UpdateScope();
+  });
+  workerThread->start();
+
+  scalarTimer = new QTimer(this);
+  connect(scalarTimer, &QTimer::timeout, this, &Scope::UpdateScaler);
+
   enableSignalSlot = true;
 
 }
 
-
 Scope::~Scope(){
   DebugPrint("%s", "Scope");
-  updateTraceThread->Stop();
-  updateTraceThread->quit();
-  updateTraceThread->wait();
-  delete updateTraceThread;
 
-  updateScalarThread->Stop();
-  updateScalarThread->quit();
-  updateScalarThread->wait();
-  delete updateScalarThread;
+  scopeTimer->stop();
+  scalarTimer->stop();
+
+  if( workerThread->isRunning() ){
+    workerThread->quit();
+    workerThread->wait();
+  }
 
   for( int i = 0; i < MaxNumberOfTrace; i++) delete dataTrace[i];
   delete plot;
@@ -432,8 +434,8 @@ void Scope::StartScope(){
 
   }
 
-  updateTraceThread->start();
-  updateScalarThread->start();
+  scopeTimer->start(ScopeUpdateMiliSec);
+  scalarTimer->start(ScalarUpdateinMiliSec);
 
   bnScopeStart->setEnabled(false);
   bnScopeStart->setStyleSheet("");
@@ -444,7 +446,7 @@ void Scope::StartScope(){
 
   EnableControl(false);
 
-  TellACQOnOff(true);
+  emit TellACQOnOff(true);
 
   isACQStarted = true;
 
@@ -455,13 +457,8 @@ void Scope::StopScope(){
   if( !digi ) return;
 
   // printf("------ Scope::%s \n", __func__);
-  updateTraceThread->Stop();
-  updateTraceThread->quit();
-  updateTraceThread->exit();
-
-  updateScalarThread->Stop();
-  updateScalarThread->quit();
-  updateScalarThread->exit();
+  scopeTimer->stop();
+  scalarTimer->stop();
 
   if( chkSoleRun->isChecked() ){
 
@@ -477,7 +474,6 @@ void Scope::StopScope(){
 
     digiMTX[ID].lock();
     digi[ID]->StopACQ();
-    digi[ID]->ReadACQStatus();
     digiMTX[ID].unlock();
 
     //restore setting
@@ -508,9 +504,9 @@ void Scope::StopScope(){
         readDataThread[iDigi]->wait();
         readDataThread[iDigi]->SetScopeMode(false);
       }
+
       digiMTX[iDigi].lock();
       digi[iDigi]->StopACQ();
-      digi[iDigi]->ReadACQStatus();
       //digi[iDigi]->GetData()->PrintAllData();
       digiMTX[iDigi].unlock();
 
@@ -520,6 +516,8 @@ void Scope::StopScope(){
     }
 
   }
+
+  runStatus->setStyleSheet(""); // cheated, don;t know why digi[iDigi]->GetACQStatusFromMemory(), sometimes return ACQ on
 
   emit UpdateOtherPanels();
 
@@ -533,7 +531,7 @@ void Scope::StopScope(){
 
   EnableControl(true);
 
-  TellACQOnOff(false);
+  emit TellACQOnOff(false);
 
   isACQStarted = false;
 

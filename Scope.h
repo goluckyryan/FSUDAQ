@@ -12,6 +12,7 @@
 #include <QComboBox>
 #include <QGridLayout>
 #include <QGroupBox>
+#include <QTimer>
 #include <QLineSeries>
 #include <QRubberBand>
 #include <QMouseEvent>
@@ -21,6 +22,8 @@
 #include "ClassDigitizer.h"
 #include "CustomThreads.h"
 #include "CustomWidgets.h"
+
+class ScopeWorker; //Forward declaration
 
 //^====================================================
 //^====================================================
@@ -87,8 +90,7 @@ private:
   unsigned short oldCh, oldDigi;
 
   ReadDataThread ** readDataThread;   
-  TimingThread * updateTraceThread;
-  TimingThread * updateScalarThread;
+  // TimingThread * updateScalarThread;
 
   bool enableSignalSlot;
 
@@ -147,8 +149,31 @@ private:
   //sbGateOffset -> GateOffset
   //sbTriggerHoldOff ->Trigger Hold Off
 
+  QThread * workerThread;
+  ScopeWorker * scopeWorker;
+  QTimer * scopeTimer;
+  QTimer * scalarTimer;
+
+
 };
 
+//^#======================================================== ScopeWorker
+class ScopeWorker : public QObject{
+  Q_OBJECT
+public:
+  ScopeWorker(Scope * parent): SS(parent){}
 
+public slots:
+  void UpdateScope(){
+    SS->UpdateScope();
+    emit workDone();
+  }
+
+signals:
+  void workDone();
+
+private:
+  Scope * SS;
+};
 
 #endif 

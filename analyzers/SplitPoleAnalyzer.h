@@ -30,8 +30,7 @@ public:
     RedefineEventBuilder({0}); // only build for the 0-th digitizer, otherwise, it will build event accross all digitizers
     tick2ns = digi[0]->GetTick2ns();
     SetBackwardBuild(false, 100); // using normal building (acceding in time) or backward building, int the case of backward building, default events to be build is 100. 
-    evtbder = GetEventBuilder();
-    evtbder->SetTimeWindow(3000);
+    mb->SetTimeWindow(3000);
     
     //========== use the influx from the Analyzer
     influx = new InfluxDB("https://fsunuc.physics.fsu.edu/influx/");
@@ -66,8 +65,6 @@ public slots:
   void UpdateHistograms();
 
 private:
-
-  MultiBuilder *evtbder;
 
   // declaie histograms
   Histogram2D * hPID;
@@ -224,7 +221,7 @@ inline void SplitPole::SetUpCanvas(){
     boxLayout->addWidget(sbEventWin, 4, 1);
     sbEventWin->setValue(3000);
     connect(sbEventWin, &RSpinBox::returnPressed, this, [=](){
-      evtbder->SetTimeWindow(sbEventWin->value());
+      mb->SetTimeWindow(sbEventWin->value());
     });
 
     chkRunAnalyzer = new QCheckBox("Run Analyzer", this);
@@ -352,7 +349,7 @@ inline void SplitPole::UpdateHistograms(){
   BuildEvents(); // call the event builder to build events
 
   //============ Get events, and do analysis
-  long eventBuilt = evtbder->eventBuilt;
+  long eventBuilt = mb->eventBuilt;
   if( eventBuilt == 0 ) return;
 
   //============ Get the cut list, if any
@@ -362,12 +359,12 @@ inline void SplitPole::UpdateHistograms(){
   unsigned int count[nCut]={0};
 
   //============ Processing data and fill histograms
-  long eventIndex = evtbder->eventIndex;
+  long eventIndex = mb->eventIndex;
   long eventStart = eventIndex - eventBuilt + 1;
   if(eventStart < 0 ) eventStart += MaxNEvent;
   
   for( long i = eventStart ; i <= eventIndex; i ++ ){
-    std::vector<Hit> event = evtbder->events[i];
+    std::vector<Hit> event = mb->events[i];
     //printf("-------------- %ld\n", i);
 
     hMulti->Fill((int) event.size());

@@ -34,7 +34,6 @@ FSUDAQ::FSUDAQ(QWidget *parent) : QMainWindow(parent){
   isACQStarted= false;
 
   scalar = nullptr;
-  scalarUpdateTimeMilliSec = 1000;
   scope = nullptr;
   digiSettings = nullptr;
   singleHistograms = nullptr;
@@ -1163,7 +1162,7 @@ void FSUDAQ::StartACQ(){
   // printf("------------ Go! \n");
   // for( unsigned int i = 0; i < nDigi; i++) readDataThread[i]->go();
 
-  if( scalar ) scalarTimer->start(scalarUpdateTimeMilliSec); 
+  if( scalar ) scalarTimer->start(ScalarUpdateinMiliSec); 
 
   if( !scalar->isVisible() ) {
     scalar->show();
@@ -1238,7 +1237,6 @@ void FSUDAQ::StopACQ(){
     if( chkSaveData->isChecked() ) digi[i]->GetData()->CloseSaveFile();
     LogMsg("Digi-" + QString::number(digi[i]->GetSerialNumber()) + " ACQ is stopped." );
     QCoreApplication::processEvents();
-    digi[i]->ReadACQStatus();
   }
 
   if( scalar ) scalarTimer->stop();

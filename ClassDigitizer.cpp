@@ -606,6 +606,8 @@ void Digitizer::StopACQ(){
   data->ClearBuffer();
   data->ClearReferenceTime();
   data->ZeroTotalFileSize();
+
+  ReadACQStatus();
 }
 
 unsigned int Digitizer::CalByteForBuffer(bool verbose){

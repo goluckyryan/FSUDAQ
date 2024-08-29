@@ -187,8 +187,6 @@ private:
   QLabel * lbFileSize[MaxNDigitizer];
   QLabel * lbTotalFileSize;
 
-  unsigned short scalarUpdateTimeMilliSec;
-
   //@----- Run Record
   QMainWindow * runRecord;
   QStandardItemModel *model;
