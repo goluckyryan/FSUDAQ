@@ -236,6 +236,7 @@ void SingleSpectra::ChangeHistView(){
 void SingleSpectra::FillHistograms(){
 
   // printf("%s | %d %d \n", __func__, chkIsFillHistogram->checkState(), isFillingHistograms);
+  if( this->isVisible() == false ) return;
   if( chkIsFillHistogram->checkState() == Qt::Unchecked ) return;
   if( isFillingHistograms) return;
 

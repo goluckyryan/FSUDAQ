@@ -14,6 +14,8 @@ public:
   MultiBuilder(Data * singleData, int type, int sn);
   ~MultiBuilder();
 
+  void ForceStop(bool onOff) { forceStop = onOff;}
+
   void SetTimeWindow(unsigned short nanosec) {timeWindow = nanosec; leftOverTime = nanosec;}
   unsigned short GetTimeWindow() const{return timeWindow;}
 
@@ -48,6 +50,7 @@ private:
   std::vector<int> tick2ns;
   const unsigned short nData;
   Data ** data; // assume all data has MaxNChannel (16) 
+  int numTotCh; // number of total channel = sum digi[i]->GetNChannel()
 
   std::vector<uShort> dataSize;
 
@@ -77,6 +80,8 @@ private:
   void FindLatestTimeOfData(bool verbose = false);
 
   int lastBackWardIndex[MaxNDigitizer][MaxNChannels];
+
+  bool forceStop;
 
 };
 

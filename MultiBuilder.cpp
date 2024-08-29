@@ -7,15 +7,18 @@ MultiBuilder::MultiBuilder(Data ** multiData, std::vector<int> type, std::vector
   data = multiData;
   typeList = type;
   snList = sn;
+  numTotCh = 0;
   for( uShort i = 0; i < nData; i++) {
     idList.push_back(i);
     dataSize.push_back(data[i]->GetDataSize());
+    numTotCh += data[i]->GetNChannel();
   }
   timeWindow = 100;
   leftOverTime = 100;
   breakTime = -1;
   timeJump = 1e8;
   lastEventTime = 0;
+  forceStop = false;
   ClearEvents();
 
 
@@ -29,6 +32,7 @@ MultiBuilder::MultiBuilder(Data * singleData, int type, int sn): nData(1){
   DebugPrint("%s", "MultiBuilder");
   data = new Data *[1];
   data[0] = singleData;
+  numTotCh = data[0]->GetNChannel();
   typeList.push_back(type);
   snList.push_back(sn);
   idList.push_back(0);  
@@ -37,7 +41,7 @@ MultiBuilder::MultiBuilder(Data * singleData, int type, int sn): nData(1){
   breakTime = -1;
   timeJump = 1e8;
   lastEventTime = 0;
-
+  forceStop = false;
   ClearEvents();
 }
 
@@ -57,6 +61,7 @@ void MultiBuilder::ClearEvents(){
       loopIndex[i][j] = 0;
       nextIndex[i][j] = -1;
       chExhaused[i][j] = false;
+      lastBackWardIndex[i][j] = 0;
     }
 
     earlistDigi = -1;
@@ -77,7 +82,6 @@ void MultiBuilder::PrintStat(){
       if( nextIndex[i][ch] >= 0 ) printf("%d %3d %2d | %7d (%d)\n", i, snList[i], ch, nextIndex[i][ch], loopIndex[i][ch]);
     }
   }
-
 }
 
 void MultiBuilder::PrintAllEvent(){
@@ -89,7 +93,6 @@ void MultiBuilder::PrintAllEvent(){
       events[i][j].Print();
     }
   }
-
 }
 
 void MultiBuilder::FindEarlistTimeAndCh(bool verbose){
@@ -100,22 +103,26 @@ void MultiBuilder::FindEarlistTimeAndCh(bool verbose){
   nExhaushedCh = 0;
   for( int i = 0; i < nData; i++){
 
-    for( int j = 0; j < data[i]->GetNChannel(); j++ ) chExhaused[i][j] = false;
+    for( int j = 0; j < data[i]->GetNChannel(); j++ ) {
+      chExhaused[i][j] = false;
+    }
 
     for(unsigned int ch = 0; ch < data[i]->GetNChannel(); ch ++){
 
-      int index =  data[i]->GetDataIndex(ch);
-      if( index < 0 ) {
-        nExhaushedCh ++;
-        chExhaused[i][ch] = true;
-        continue;
-      }
+      {// check is dataIndex is valid
+        int index = data[i]->GetDataIndex(ch);
+        if( index < 0 ) {
+          nExhaushedCh ++;
+          chExhaused[i][ch] = true;
+          continue;
+        }
 
-      if( data[i]->GetTimestamp(ch, index) == 0 ||  
-          loopIndex[i][ch] * dataSize[i] > data[i]->GetLoopIndex(ch) * dataSize[i] +  data[i]->GetDataIndex(ch)) {
-        nExhaushedCh ++;
-        chExhaused[i][ch] = true;
-        continue;
+        if( data[i]->GetTimestamp(ch, index) == 0 ||  
+            loopIndex[i][ch] * dataSize[i] > data[i]->GetLoopIndex(ch) * dataSize[i] +  data[i]->GetDataIndex(ch)) {
+          nExhaushedCh ++;
+          chExhaused[i][ch] = true;
+          continue;
+        }
       }
 
       if( nextIndex[i][ch] == -1 ) nextIndex[i][ch] = 0;
@@ -126,6 +133,7 @@ void MultiBuilder::FindEarlistTimeAndCh(bool verbose){
         earlistDigi = i;
         earlistCh = ch;
       }
+      // printf(" ch : %d | time %llu | %llu\n", ch, time, earlistTime);
     }
   }
 
@@ -147,7 +155,7 @@ void MultiBuilder::FindLatestTimeAndCh(bool verbose){
 
     for(unsigned int ch = 0; ch < data[i]->GetNChannel(); ch ++){
       
-      if( nextIndex[i][ch] < 0  || data[i]->GetDataIndex(ch) < 0 ) {
+      if( nextIndex[i][ch] < 0  || data[i]->GetDataIndex(ch) < 0 || nextIndex[i][ch] <= lastBackWardIndex[i][ch] ) {
         nExhaushedCh ++;
         chExhaused[i][ch] = true;
         // printf(", exhanshed. %d \n", nExhaushedCh);
@@ -211,6 +219,7 @@ void MultiBuilder::FindLatestTimeOfData(bool verbose){
 
 void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
   DebugPrint("%s", "MultiBuilder");
+
   FindEarlistTimeAmongLastData(verbose); // give lastest Time, Ch, and Digi for event building
 
   FindEarlistTimeAndCh(verbose); //Give the earliest time, ch, digi
@@ -220,6 +229,8 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
   //======= Start building event
   Hit em;
   do{
+
+    if( forceStop ) break;
 
     eventIndex ++;
     if( eventIndex >= MaxNEvent ) eventIndex = 0;
@@ -339,13 +350,16 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
     }
   }while(nExhaushedCh < nData * MaxNChannels);
 
+  forceStop = false;
+
 }
 
 void MultiBuilder::BuildEventsBackWard(int maxNumEvent, bool verbose){
   DebugPrint("%s", "MultiBuilder");
   //skip trace, and only build for maxNumEvent events max
 
-  // remember the end of DataIndex, prevent over build
+  // Get the last data index and loop index
+
   for( int k = 0; k < nData; k++){
     for( int i = 0; i < data[k]->GetNChannel(); i++){
       nextIndex[k][i] = data[k]->GetDataIndex(i);
@@ -359,12 +373,11 @@ void MultiBuilder::BuildEventsBackWard(int maxNumEvent, bool verbose){
   eventBuilt = 0;
   Hit em;
   do{
+    if( forceStop ) break;
     eventIndex ++;
     if( eventIndex >= MaxNEvent ) eventIndex = 0;
     events[eventIndex].clear();
 
-    eventBuilt ++;
-    totalEventBuilt ++;
     em.Clear();
 
     for( int k = 0; k < nData; k++){
@@ -375,10 +388,9 @@ void MultiBuilder::BuildEventsBackWard(int maxNumEvent, bool verbose){
       for( int i = 0; i < numCh; i++){
         int ch = (i + latestCh) % numCh;
         if( chExhaused[bd][ch] ) continue;
-        //if( nextIndex[bd][ch] <= lastBackWardIndex[bd][ch] || nextIndex[bd][ch] < 0){
-        if( nextIndex[bd][ch] < 0){
-          chExhaused[bd][ch] = true;
+        if( nextIndex[bd][ch] <= lastBackWardIndex[bd][ch] || nextIndex[bd][ch] <= 0){
           nExhaushedCh ++;
+          chExhaused[bd][ch] = true;
           continue;
         }
 
@@ -406,11 +418,26 @@ void MultiBuilder::BuildEventsBackWard(int maxNumEvent, bool verbose){
       if( timeWindow == 0 ) break;
     }
 
-    std::sort(events[eventIndex].begin(), events[eventIndex].end(), [](const Hit& a, const Hit& b) {
-      return a.timestamp < b.timestamp;
-    });
 
     FindLatestTimeAndCh(verbose);
+
+    if( verbose ) printf(" nExhaushedCh %d | numToCh %d \n", nExhaushedCh, numTotCh);
+    if( nExhaushedCh == numTotCh  ) {
+      if( verbose ) printf("######################### no more event to be built\n"); 
+      break;
+    } 
+    if( verbose ) printf("----- next bd: %d, ch : %d, next latest Time : %llu.\n", latestDigi, latestCh, latestTime);
+
+    if( events[eventIndex].size() > 0 ) {
+      eventBuilt ++;
+      totalEventBuilt ++;
+
+      std::sort(events[eventIndex].begin(), events[eventIndex].end(), [](const Hit& a, const Hit& b) {
+        return a.timestamp < b.timestamp;
+      });
+    }else{
+      continue;
+    }
 
     if( verbose ){
       printf(">>>>>>>>>>>>>>>>> Event ID : %ld, total built: %ld, multiplicity : %ld\n", eventIndex, totalEventBuilt, events[eventIndex].size());
@@ -424,24 +451,19 @@ void MultiBuilder::BuildEventsBackWard(int maxNumEvent, bool verbose){
             break;
           }
         }
-        printf("%05d, %02d | %5d |  %5d %llu \n", sn, chxxx, nextIndex[bd][chxxx], events[eventIndex][i].energy, events[eventIndex][i].timestamp); 
+        printf("%5d, %02d | %5d |  %5d %llu \n", sn, chxxx, nextIndex[bd][chxxx], events[eventIndex][i].energy, events[eventIndex][i].timestamp); 
       }
-
-      if( nExhaushedCh == nData * MaxNChannels ) {
-        printf("######################### no more event to be built\n"); 
-        break;
-      } 
-      printf("----- next bd: %d, ch : %d, next latest Time : %llu.\n", latestDigi, latestCh, latestTime);
-
     }
 
-  }while(nExhaushedCh < nData * MaxNChannels && eventBuilt < maxNumEvent);
+  }while(nExhaushedCh < numTotCh && eventBuilt < maxNumEvent);
 
-  // // remember the end of DataIndex, prevent over build
-  // for( int k = 0; k < nData; k++){
-  //   for( int i = 0; i < MaxRegChannel; i++){
-  //     lastBackWardIndex[k][i] = data[k]->DataIndex[i];
-  //   }
-  // }
+  forceStop = false;
+
+  // remember the end of DataIndex, prevent over build
+  for( int k = 0; k < nData; k++){
+    for( int i = 0; i < data[k]->GetNChannel(); i++){
+      lastBackWardIndex[k][i] = data[k]->GetDataIndex(i);
+    }
+  }
 
 }

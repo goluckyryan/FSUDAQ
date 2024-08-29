@@ -1173,6 +1173,7 @@ void FSUDAQ::StartACQ(){
   lbScalarACQStatus->setText("<font style=\"color: green;\"><b>ACQ On</b></font>");
 
   if( singleHistograms ) singleHistograms->startWork();
+  if( onlineAnalyzer ) onlineAnalyzer->startWork();
 
   bnStartACQ->setEnabled(false);
   bnStartACQ->setStyleSheet("");
@@ -1184,7 +1185,6 @@ void FSUDAQ::StartACQ(){
 
   if( digiSettings ) digiSettings->EnableButtons(false);
 
-  if( onlineAnalyzer ) onlineAnalyzer->StartThread();
 
   {//^=== elog and database
     if( influx && chkInflux->isChecked() ){
@@ -1242,11 +1242,9 @@ void FSUDAQ::StopACQ(){
   }
 
   if( scalar ) scalarTimer->stop();
-
-  if( onlineAnalyzer ) onlineAnalyzer->StopThread();
   if( singleHistograms ) singleHistograms->stopWork();
+  if( onlineAnalyzer ) onlineAnalyzer->stopWork();
   
-
   lbScalarACQStatus->setText("<font style=\"color: red;\"><b>ACQ Off</b></font>");
 
   bnStartACQ->setEnabled(true);
@@ -1815,7 +1813,7 @@ void FSUDAQ::OpenAnalyzer(){
     if( id == 5 ) onlineAnalyzer = new NeutronGamma(digi, nDigi, rawDataPath);
     if( id >=  0 ) onlineAnalyzer->show();
 
-    if( isACQStarted ) onlineAnalyzer->StartThread();
+    if( isACQStarted ) onlineAnalyzer->startWork();
 
   }else{
 
@@ -1831,7 +1829,7 @@ void FSUDAQ::OpenAnalyzer(){
     if( id >= 0 ){
       onlineAnalyzer->show();
       onlineAnalyzer->activateWindow();
-      if( isACQStarted ) onlineAnalyzer->StartThread();
+      if( isACQStarted ) onlineAnalyzer->stopWork();
     }
   }
 

@@ -30,9 +30,9 @@ Analyzer::Analyzer(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent )
   isBuildBackward = false;
   mb = new MultiBuilder(dataList, typeList, snList);
 
-  buildTimerThread = new TimingThread(this);
-  buildTimerThread->SetWaitTimeinSec(1.0); //^Set event build interval
-  connect( buildTimerThread, &TimingThread::timeUp, this, &Analyzer::UpdateHistograms);
+  // buildTimerThread = new TimingThread(this);
+  // buildTimerThread->SetWaitTimeinSec(1.0); //^Set event build interval
+  // connect( buildTimerThread, &TimingThread::timeUp, this, &Analyzer::UpdateHistograms);
 
   QWidget * layoutWidget = new QWidget(this);
   setCentralWidget(layoutWidget);
@@ -42,18 +42,38 @@ Analyzer::Analyzer(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent )
   // QPushButton * bnSetting = new QPushButton("Settings", this);
   // layout->addWidget(bnSetting);
 
+  anaThread = new QThread(this);
+  anaWorker = new AnalyzerWorker(this);
+  anaTimer = new QTimer();
+  isWorking = false;
+
+  anaWorker->moveToThread(anaThread);
+
+  connect(anaTimer, &QTimer::timeout, anaWorker, [=](){
+    if( isWorking ) return;
+    anaWorker->UpdateHistograms();
+  });
+
+  // connect(anaWorker, &AnalyzerWorker::workDone, this, [=](){
+  //   printf(" --------- work Done\n");
+  // });
+
+  anaThread->start();
+
 }
 
 Analyzer::~Analyzer(){
 
-  if( buildTimerThread ){
-    if( !buildTimerThread->isStopped() ){
-      buildTimerThread->Stop();
-      buildTimerThread->quit();
-      buildTimerThread->wait();
-    }
-    delete buildTimerThread;
+  printf("Analyzer::%s\n", __func__);
+  anaTimer->stop();
+
+  printf(" is anaThread is running %d \n", anaThread->isRunning());
+  if( anaThread->isRunning() ){
+    anaThread->quit();
+    anaThread->wait();
   }
+
+  printf("------ end of anaThread \n");
 
   delete influx;
   delete mb;
@@ -144,28 +164,17 @@ void Analyzer::RedefineEventBuilder(std::vector<int> idList){
   mb = new MultiBuilder(dataList, typeList, snList);
 }
 
-void Analyzer::StartThread(){
-  mb->ClearEvents();
-  buildTimerThread->start();
-}
-
-void Analyzer::StopThread(){
-  // printf("%s\n", __func__);
-  buildTimerThread->Stop();
-  buildTimerThread->quit();
-  buildTimerThread->wait();
-}
-
 void Analyzer::BuildEvents(bool verbose){
   
-  unsigned int nData = mb->GetNumOfDigitizer();
-  std::vector<int> idList = mb->GetDigiIDList();
+  // unsigned int nData = mb->GetNumOfDigitizer();
+  // std::vector<int> idList = mb->GetDigiIDList();
   // for( unsigned int i = 0; i < nData; i++ ) digiMTX[idList[i]].lock();
   if( isBuildBackward ){
     mb->BuildEventsBackWard(maxNumEventBuilt, verbose);
   }else{
     mb->BuildEvents(0, true, verbose);
   }
+  // mb->PrintStat();
   // for( unsigned int i = 0; i < nData; i++ ) digiMTX[idList[i]].unlock();
 
 }

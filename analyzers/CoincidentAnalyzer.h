@@ -403,16 +403,22 @@ inline void CoincidentAnalyzer::SetUpCanvas(){
 
 inline void CoincidentAnalyzer::UpdateHistograms(){
 
+  // printf(">>>>>>>>>>>>> CoincidentAnalyzer::%s | %d %d %d \n", __func__, this->isVisible(), chkRunAnalyzer->isChecked(), isWorking);
+
   if( this->isVisible() == false ) return;
   if( chkRunAnalyzer->isChecked() == false ) return;
 
+  if( isWorking ) return; 
+  isWorking = true; // This is important. set the isWorking = true to prevent another call of UpdateHistograms()
+
   unsigned long long t0 = getTime_ns();
-  BuildEvents(); // call the event builder to build events
+  BuildEvents(false); // call the event builder to build events
   // unsigned long long t1 = getTime_ns();
   // printf("Event Build time : %llu ns = %.f msec\n", t1 - t0, (t1-t0)/1e6);
 
   //============ Get events, and do analysis
   long eventBuilt = evtbder->eventBuilt;
+
   if( eventBuilt == 0 ) return;
 
   //============ Get the cut list, if any
@@ -450,7 +456,7 @@ inline void CoincidentAnalyzer::UpdateHistograms(){
     int xE = -1, yE = -1;
     unsigned long long xT = 0;
     for( int k = 0; k < (int) event.size(); k++ ){
-      //event[k].Print();
+      // event[k].Print();
       if( event[k].sn == a_sn && event[k].ch == a_ch) {
         h1->Fill(event[k].energy);
         aE = event[k].energy;
@@ -478,10 +484,11 @@ inline void CoincidentAnalyzer::UpdateHistograms(){
     }
 
     unsigned long long ta = getTime_ns();
-    if( ta - t0 > sbUpdateTime->value() * 0.9 * 1e9 ) break;
+    if( ta - t0 > sbUpdateTime->value() * 0.9 * GetUpdateTimeInSec() * 1e9 ) break;
 
   }
 
+  // printf("--------------- update histograms\n");
   h2D->UpdatePlot();
   h1->UpdatePlot();
   hMulti->UpdatePlot();
@@ -502,6 +509,10 @@ inline void CoincidentAnalyzer::UpdateHistograms(){
     influx->WriteData(dataBaseName.toStdString());
     influx->ClearDataPointsBuffer();
   }
+
+  // printf("<<<<<<<<<<<<< end of UpdateHistorgams\n");
+
+  isWorking = false;
 }
 
 inline void CoincidentAnalyzer::SaveSettings(){

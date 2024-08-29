@@ -38,7 +38,7 @@ and recompile FSUDAQ to incorporate the changes and activate the custom analyzer
 #include "Histogram1D.h"
 #include "Histogram2D.h"
 
-// class AnalyzerWorker; //Forward decalration
+class AnalyzerWorker; //Forward decalration
 
 //^==============================================
 //^==============================================
@@ -56,26 +56,39 @@ public:
   void SetDatabase(QString IP, QString Name, QString Token);
 
   double RandomGauss(double mean, double sigma);
-
-public slots:
-  void StartThread();
-  void StopThread();
   void SetDatabaseButton();
-  
+
+  double GetUpdateTimeInSec() const {return waitTimeinSec;}
+
   virtual void SetUpCanvas();
   virtual void UpdateHistograms(); // where event-building, analysis, and ploting
+
+public slots:
+  void startWork(){ 
+    // printf("start timer\n");
+    mb->ForceStop(false);
+    mb->ClearEvents();
+    anaTimer->start(waitTimeinSec*1000); 
+  } 
+  void stopWork(){ 
+    // printf("stop worker\n");
+    anaTimer->stop(); 
+    mb->ForceStop(true);
+  }  
 
 private slots:
 
 protected:
   QGridLayout * layout;
   void BuildEvents(bool verbose = false);
-  void SetUpdateTimeInSec(double sec = 1.0) {waitTimeinSec = sec; buildTimerThread->SetWaitTimeinSec(waitTimeinSec);}
+  void SetUpdateTimeInSec(double sec = 1.0) { waitTimeinSec = sec; }
 
   InfluxDB * influx;
   QString dataBaseIP;
   QString dataBaseName;
   QString dataBaseToken;
+
+  bool isWorking; // a flag to indicate the worker is working
 
 private:
   Digitizer ** digi;
@@ -90,29 +103,33 @@ private:
   MultiBuilder * mb;
   bool isBuildBackward;
   int maxNumEventBuilt;
-  TimingThread * buildTimerThread;
+  // TimingThread * buildTimerThread;
+
+  QThread * anaThread;
+  AnalyzerWorker * anaWorker;
+  QTimer * anaTimer;
 
 
 };
 
 //^================================================ AnalyzerWorker
 
-// class ScalarWorker : public QObject{
-//   Q_OBJECT
-// public:
-//   ScalarWorker(Analyzer * parent): SS(parent){}
+class AnalyzerWorker : public QObject{
+  Q_OBJECT
+public:
+  AnalyzerWorker(Analyzer * parent): SS(parent){}
 
-// public slots:
-//   void UpdateScalar(){
-//     SS->UpdateHistograms();
-//     emit workDone();
-//   }
+public slots:
+  void UpdateHistograms(){
+    SS->UpdateHistograms();
+    emit workDone();
+  }
 
-// signals:
-//   void workDone();
+signals:
+  void workDone();
 
-// private:
-//   Analyzer * SS;
-// };
+private:
+  Analyzer * SS;
+};
 
 #endif
