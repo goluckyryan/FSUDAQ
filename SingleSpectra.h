@@ -46,11 +46,11 @@ public:
 public slots:
   void FillHistograms();
   void ChangeHistView();
-  void startWork(){ 
+  void startTimer(){ 
     // printf("timer start\n");
     timer->start(maxFillTimeinMilliSec); 
   } 
-  void stopWork(){ 
+  void stopTimer(){ 
     // printf("timer stop\n");
     timer->stop();
     ClearInternalDataCount();

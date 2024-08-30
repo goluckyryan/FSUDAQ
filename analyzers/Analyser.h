@@ -64,13 +64,13 @@ public:
   virtual void UpdateHistograms(); // where event-building, analysis, and ploting
 
 public slots:
-  void startWork(){ 
+  void startTimer(){ 
     // printf("start timer\n");
     mb->ForceStop(false);
     mb->ClearEvents();
     anaTimer->start(waitTimeinSec*1000); 
   } 
-  void stopWork(){ 
+  void stopTimer(){ 
     // printf("stop worker\n");
     anaTimer->stop(); 
     mb->ForceStop(true);

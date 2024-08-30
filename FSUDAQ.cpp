@@ -1171,8 +1171,8 @@ void FSUDAQ::StartACQ(){
   }
   lbScalarACQStatus->setText("<font style=\"color: green;\"><b>ACQ On</b></font>");
 
-  if( singleHistograms ) singleHistograms->startWork();
-  if( onlineAnalyzer ) onlineAnalyzer->startWork();
+  if( singleHistograms ) singleHistograms->startTimer();
+  if( onlineAnalyzer ) onlineAnalyzer->startTimer();
 
   bnStartACQ->setEnabled(false);
   bnStartACQ->setStyleSheet("");
@@ -1240,8 +1240,8 @@ void FSUDAQ::StopACQ(){
   }
 
   if( scalar ) scalarTimer->stop();
-  if( singleHistograms ) singleHistograms->stopWork();
-  if( onlineAnalyzer ) onlineAnalyzer->stopWork();
+  if( singleHistograms ) singleHistograms->stopTimer();
+  if( onlineAnalyzer ) onlineAnalyzer->stopTimer();
   
   lbScalarACQStatus->setText("<font style=\"color: red;\"><b>ACQ Off</b></font>");
 
@@ -1734,8 +1734,8 @@ void FSUDAQ::OpenScope(){
           scalarTimer->start(ScalarUpdateinMiliSec); 
         }
 
-        if( singleHistograms ) singleHistograms->startWork();
-        if( onlineAnalyzer ) onlineAnalyzer->startWork();
+        if( singleHistograms ) singleHistograms->startTimer();
+        if( onlineAnalyzer ) onlineAnalyzer->startTimer();
 
       }else{
         if( influx && chkInflux->isChecked() && !elogName.isEmpty()) influx->AddDataPoint("SavingData,ExpName=" +  elogName.toStdString() + " value=0");
@@ -1745,8 +1745,8 @@ void FSUDAQ::OpenScope(){
           scalarTimer->stop(); 
         }
 
-        if( singleHistograms ) singleHistograms->stopWork();
-        if( onlineAnalyzer ) onlineAnalyzer->stopWork();
+        if( singleHistograms ) singleHistograms->stopTimer();
+        if( onlineAnalyzer ) onlineAnalyzer->stopTimer();
 
       }
 
@@ -1818,7 +1818,7 @@ void FSUDAQ::OpenAnalyzer(){
     if( id == 5 ) onlineAnalyzer = new NeutronGamma(digi, nDigi, rawDataPath);
     if( id >=  0 ) onlineAnalyzer->show();
 
-    if( isACQStarted ) onlineAnalyzer->startWork();
+    if( isACQStarted ) onlineAnalyzer->startTimer();
 
   }else{
 
@@ -1834,7 +1834,7 @@ void FSUDAQ::OpenAnalyzer(){
     if( id >= 0 ){
       onlineAnalyzer->show();
       onlineAnalyzer->activateWindow();
-      if( isACQStarted ) onlineAnalyzer->stopWork();
+      if( isACQStarted ) onlineAnalyzer->stopTimer();
     }
   }
 

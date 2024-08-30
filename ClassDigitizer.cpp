@@ -279,7 +279,9 @@ int Digitizer::CloseDigitizer(){
   isConnected = false;
   ret  = CAEN_DGTZ_SWStopAcquisition(handle);
   printf("-------- Closing Digtizer Board : %d Port : %d \n", boardID, portID);
-  printf("  Model %s with handle %d using %s\n", BoardInfo.ModelName, handle, LinkType == CAEN_DGTZ_USB ? "USB" : "Optical Link");
+  if( LinkType == CAEN_DGTZ_USB ) printf("  Model %s with handle %d using USB\n", BoardInfo.ModelName, handle);
+  if( LinkType == CAEN_DGTZ_OpticalLink ) printf("  Model %s with handle %d using Optical Fiber\n", BoardInfo.ModelName, handle);
+  if( LinkType == CAEN_DGTZ_USB_A4818 ) printf("  Model %s with handle %d using A4818\n", BoardInfo.ModelName, handle);
   ret |= CAEN_DGTZ_CloseDigitizer(handle);
   
   return ret;

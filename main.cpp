@@ -3,6 +3,7 @@
 #include <QProcess>
 #include <QPushButton>
 #include <QFile>
+#include <QLocale>
 
 #include "FSUDAQ.h"
 
@@ -26,6 +27,8 @@ int main(int argc, char *argv[]){
 
     // CustomApplication a(argc, argv);
     QApplication a(argc, argv);
+
+    QLocale::setDefault(QLocale::system());
 
     setpriority(PRIO_PROCESS, 0, -20);
 
