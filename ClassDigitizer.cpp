@@ -183,7 +183,6 @@ int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose
   /// change address 0xEF08 (5 bits), this will reflected in the 2nd word of the Board Agg. header.
   ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardID, (DPPType & 0xF));
 
-
   //TODO somehow the bdInfo does not work, use DPPType to set it
   uint32_t bdInfo = GetSettingFromMemory(DPP::BoardInfo_R);
   uint32_t haha = ((bdInfo >> 8 ) & 0xFF);
@@ -286,7 +285,6 @@ int Digitizer::CloseDigitizer(){
   
   return ret;
 }
-
 
 void Digitizer::SetRegChannelMask(uint32_t mask){
   DebugPrint("%s", "Digitizer");
