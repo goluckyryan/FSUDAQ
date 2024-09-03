@@ -1133,10 +1133,16 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
     //if( DataIndex[channel] >= dataSize ) ClearData();
      
     //if( verbose >= 2 ) printf("extra : 0x%08x, Qshort : %d, Qlong : %d \n", extra, Qshort, Qlong);
-    if( verbose == 1 ) printf("ch : %2d, Qshort : %6d, Qlong : %6d, timestamp : %llu, fineTime : %u\n", 
-                                channel, Qshort, Qlong, timeStamp * tick2ns, (extra & 0x3FF) * tick2ns);
-    if( verbose >= 2 ) printf("Qshort : %6d, Qlong : %6d, timestamp : %llu, fineTime : %u\n", 
+    if( verbose >= 1 ) {
+      if( extraOption == 0){
+        printf("Qshort : %6d, Qlong : %6d, timestamp : %llu, baseline : %u\n", 
+                               Qshort, Qlong, timeStamp * tick2ns, (extra & 0xFFFF) * 4);
+      }
+      if( extraOption == 2){
+        printf("Qshort : %6d, Qlong : %6d, timestamp : %llu, fineTime : %u\n", 
                                Qshort, Qlong, timeStamp * tick2ns, (extra & 0x3FF) * tick2ns);
+      }
+    }
 
     
     
