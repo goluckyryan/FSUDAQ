@@ -89,6 +89,8 @@ int main(int argc, char **argv) {
   FSUReader * readerA = new FSUReader(inFileName[0].Data(), 1, 1);
   readerA->ScanNumBlock(0,0);
   if( readerA->GetOptimumBatchSize() > batchSize ) batchSize = readerA->GetOptimumBatchSize();
+  //printf("Hit count : %7ld | opt. batch size : %7ld\n", readerA->GetTotalHitCount(), readerA->GetOptimumBatchSize());
+
   FileInfo fileInfo = {inFileName[0].Data(), readerA->GetSN() * 1000 +  readerA->GetFileOrder(), readerA->GetTotalHitCount()};
   fileList.push_back(fileInfo);
   totalHitCount += readerA->GetTotalHitCount();
@@ -98,6 +100,7 @@ int main(int argc, char **argv) {
     readerB->ScanNumBlock(0,0);
     // if( readerB->GetOptimumBatchSize() > batchSize ) batchSize = readerB->GetOptimumBatchSize();
     batchSize = readerB->GetOptimumBatchSize();
+    //printf("Hit count : %7ld | opt. batch size : %7ld\n", readerB->GetTotalHitCount(), readerB->GetOptimumBatchSize());
 
     totalHitCount += readerB->GetTotalHitCount();
     fileInfo = {inFileName[i].Data(), readerB->GetSN() * 1000 +  readerB->GetFileOrder(), readerB->GetTotalHitCount()};
@@ -162,9 +165,8 @@ int main(int argc, char **argv) {
     tree->GetBranch("trace")->SetCompressionSettings(205);
   }
 
-
   //*======================================= Open files
-  printf("========================================= Open files & Build Events.\n"); 
+  printf("========================================= Open files & reading 1st batch.\n"); 
 
   const short nGroup = fileGroupList.size();
   std::vector<Hit> hitList[nGroup];
@@ -177,7 +179,7 @@ int main(int argc, char **argv) {
       fList.push_back( fileGroupList[i][j].fileName );
     }
     reader[i] = new FSUReader(fList, 1024, debug); // 1024 is the maximum event / agg.
-    hitList[i] = reader[i]->ReadBatch(batchSize, debug );
+    hitList[i] = reader[i]->ReadBatch(batchSize, traceOn, debug );
     reader[i]->PrintHitListInfo(&hitList[i], "hitList-" + std::to_string(reader[i]->GetSN()));
     ID[i] = 0;
     if( debug ) {
@@ -212,6 +214,7 @@ int main(int argc, char **argv) {
   std::vector<Hit> events;
 
   unsigned long long hitProcessed = 0;
+  printf("========================================= Start Building Events....\n"); 
 
   do{
 
@@ -226,7 +229,7 @@ int main(int argc, char **argv) {
 
       //chekc if reached the end of hitList
       if( ID[ig] >= hitList[ig].size() ) {
-        hitList[ig] = reader[ig]->ReadBatch(batchSize, debug + 1);
+        hitList[ig] = reader[ig]->ReadBatch(batchSize, traceOn, debug + 1);
         if( debug ) reader[ig]->PrintHitListInfo( &hitList[ig], "hitList-" + std::to_string(ig));
         ID[ig] = 0;
         if( hitList[ig].size() == 0 ) continue;
@@ -245,7 +248,7 @@ int main(int argc, char **argv) {
 
           //check if reached the end of hitList
           if( ID[ig] >= hitList[ig].size() ) {
-            hitList[ig] = reader[ig]->ReadBatch(batchSize, debug);
+            hitList[ig] = reader[ig]->ReadBatch(batchSize, traceOn, debug);
             if( debug ) reader[ig]->PrintHitListInfo( &hitList[ig], "hitList-" + std::to_string(ig));
             ID[ig] = 0;
             if( hitList[ig].size() == 0 ) break;
@@ -334,7 +337,7 @@ int main(int argc, char **argv) {
         continue;
       }else{
         if( ID[i] >= hitList[i].size( )) {
-          hitList[i] = reader[i]->ReadBatch(batchSize, debug);
+          hitList[i] = reader[i]->ReadBatch(batchSize, traceOn, debug);
           ID[i] = 0;
           if( hitList[i].size() == 0 ) nFileFinished ++;
         }

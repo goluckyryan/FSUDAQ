@@ -64,7 +64,7 @@ class FSUReader{
     void ClearTotalHitCount() {totalHitCount = 0;}
     ulong GetTotalHitCount() const{return totalHitCount;}
 
-    std::vector<Hit> ReadBatch(unsigned int batchSize = 1000000, bool verbose = false); // output the sorted Hit
+    std::vector<Hit> ReadBatch(unsigned int batchSize = 1000000, bool traceOn = false, bool verbose = false); // output the sorted Hit
 
     void PrintHit(ulong numHit = -1, ulong startIndex = 0) {
       for( ulong i = startIndex; i < std::min(numHit, totalHitCount); i++){
@@ -296,7 +296,7 @@ inline int FSUReader::ReadNextBlock(bool traceON, int verbose, uShort saveData){
   if( inFile == NULL ) return -1;
   if( feof(inFile) || filePos >= inFileSize) {
     if( fileID >= 0 && fileID + 1  < (short) fileList.size() ){
-      printf("-------------- next file\n");
+      printf("-------------- next file | hit size : %zu\n", hit.size());
       fileID ++;
       OpenFile(fileList[fileID], data->GetDataSize(), 1 );
     }else{
@@ -375,7 +375,11 @@ inline int FSUReader::ReadNextBlock(bool traceON, int verbose, uShort saveData){
         temp.ch = ch;
         temp.energy    = data->GetEnergy(ch, k);
         temp.energy2   = data->GetEnergy2(ch, k);
+
         temp.timestamp = data->GetTimestamp(ch, k);
+        // unsigned long long offset = 1000000;
+        // if( sn == 405 && ch == 0) temp.timestamp -= offset;
+
         temp.fineTime  = data->GetFineTime(ch, k);
         temp.pileUp    = data->GetPileUp(ch, k);
         if( saveData > 1 ) {
@@ -498,7 +502,7 @@ inline void FSUReader::ScanNumBlock(int verbose, uShort saveData){
 }
 
 //^==============================================================
-inline std::vector<Hit> FSUReader::ReadBatch(unsigned int batchSize, bool verbose){
+inline std::vector<Hit> FSUReader::ReadBatch(unsigned int batchSize, bool traceOn, bool verbose){
 
   // printf("%s sn:%d. filePos : %lu\n", __func__, sn, ftell(inFile));
 
@@ -512,7 +516,7 @@ inline std::vector<Hit> FSUReader::ReadBatch(unsigned int batchSize, bool verbos
   if( hit.size() == 0 ){
     int res = 0;
     do{
-      res = ReadNextBlock(true, 0, 3);
+      res = ReadNextBlock(traceOn, 0, 3);
     }while ( hit.size() < batchSize && res == 0);
     SortHit();
     uLong t0_B = hit.at(0).timestamp;
@@ -538,7 +542,7 @@ inline std::vector<Hit> FSUReader::ReadBatch(unsigned int batchSize, bool verbos
 
   int res = 0;
   do{
-    res = ReadNextBlock(true, 0, 3);
+    res = ReadNextBlock(traceOn, 0, 3);
   }while ( hit.size() < batchSize && res == 0);
   SortHit();
   uLong t0_B = hit.at(0).timestamp;
