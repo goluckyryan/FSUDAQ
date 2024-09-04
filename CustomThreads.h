@@ -111,34 +111,34 @@ private:
 };
 
 //^#======================================================= Timing Thread
-// class TimingThread : public QThread {
-//   Q_OBJECT
-// public:
-//   TimingThread(QObject * parent = 0 ) : QThread(parent){
-//     waitTime = 20; // multiple of 100 mili sec
-//     stop = false;
-//   }
-//   bool isStopped() const {return stop;}
-//   void Stop() { this->stop = true;}
-//   void SetWaitTimeinSec(float sec) {waitTime = sec * 10 ;}
-//   float GetWaitTimeinSec() const {return waitTime/10.;}
-//   void DoOnce() {emit timeUp();};
-//   void run(){
-//     unsigned int count  = 0;
-//     stop = false;
-//     do{
-//       usleep(100000);
-//       count ++;
-//       if( count % waitTime == 0){
-//         emit timeUp();
-//       }
-//     }while(!stop);
-//   }
-// signals:
-//   void timeUp();
-// private:
-//   bool stop;
-//   unsigned int waitTime;
-// };
+class TimingThread : public QThread {
+  Q_OBJECT
+public:
+  TimingThread(QObject * parent = 0 ) : QThread(parent){
+    waitTime = 20; // multiple of 100 mili sec
+    stop = false;
+  }
+  bool isStopped() const {return stop;}
+  void Stop() { this->stop = true;}
+  void SetWaitTimeinSec(float sec) {waitTime = sec * 10 ;}
+  float GetWaitTimeinSec() const {return waitTime/10.;}
+  void DoOnce() {emit timeUp();};
+  void run(){
+    unsigned int count  = 0;
+    stop = false;
+    do{
+      usleep(100000);
+      count ++;
+      if( count % waitTime == 0){
+        emit timeUp();
+      }
+    }while(!stop);
+  }
+signals:
+  void timeUp();
+private:
+  bool stop;
+  unsigned int waitTime;
+};
 
 #endif

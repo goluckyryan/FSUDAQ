@@ -173,9 +173,11 @@ private:
   //@----- Scalar
   QMainWindow  * scalar;
   QGridLayout * scalarLayout;
-  QThread * scalarThread;
-  ScalarWorker * scalarWorker;
-  QTimer * scalarTimer;
+  TimingThread * scalarTimingThread;
+  // QThread * scalarThread;
+  // ScalarWorker * scalarWorker;
+  // QTimer * scalarTimer;
+
 
   // TimingThread * scalarThread;
   QLineEdit  *** leTrigger; // need to delete manually
@@ -212,23 +214,23 @@ private:
 
 //^======================== Scalar Worker
 
-class ScalarWorker : public QObject{
-  Q_OBJECT
-public:
-  ScalarWorker(FSUDAQ * parent): SS(parent){}
+// class ScalarWorker : public QObject{
+//   Q_OBJECT
+// public:
+//   ScalarWorker(FSUDAQ * parent): SS(parent){}
 
-public slots:
-  void UpdateScalar(){
-    SS->UpdateScalar();
-    emit workDone();
-  }
+// public slots:
+//   void UpdateScalar(){
+//     SS->UpdateScalar();
+//     emit workDone();
+//   }
 
-signals:
-  void workDone();
+// signals:
+//   void workDone();
 
-private:
-  FSUDAQ * SS;
-};
+// private:
+//   FSUDAQ * SS;
+// };
 
 
 #endif // MAINWINDOW_H

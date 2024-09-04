@@ -309,11 +309,14 @@ FSUDAQ::FSUDAQ(QWidget *parent) : QMainWindow(parent){
 FSUDAQ::~FSUDAQ(){
   DebugPrint("%s", "FSUDAQ");
   if( scalar ) {
-    scalarTimer->stop();
-    if( scalarThread->isRunning() ){
-      scalarThread->quit();
-      scalarThread->exit();
-    }
+    scalarTimingThread->Stop();
+    scalarTimingThread->quit();
+    scalarTimingThread->exit();
+    // scalarTimer->stop();
+    // if( scalarThread->isRunning() ){
+    //   scalarThread->quit();
+    //   scalarThread->exit();
+    // }
     CleanUpScalar();
     //don't need to delete scalar, it is managed by this
   }
@@ -762,10 +765,15 @@ void FSUDAQ::CloseDigitizers(){
     scope = nullptr;
   }
 
-  scalarTimer->stop();
-  if( scalarThread->isRunning() ){
-    scalarThread->quit();
-    scalarThread->exit();
+  // scalarTimer->stop();
+  // if( scalarThread->isRunning() ){
+  //   scalarThread->quit();
+  //   scalarThread->exit();
+  // }
+  scalarTimingThread->Stop();
+  if( scalarTimingThread->isRunning() ){
+    scalarTimingThread->quit();
+    scalarTimingThread->exit();
   }
   if( scalar ) CleanUpScalar();
 
@@ -870,18 +878,18 @@ void FSUDAQ::SetupScalar(){
   lbScalarACQStatus = nullptr;
   lbTotalFileSize = nullptr;
 
-  // scalarThread = new TimingThread(scalar);
-  // scalarThread->SetWaitTimeinSec(1.0);
-  // connect(scalarThread, &TimingThread::timeUp, this, &FSUDAQ::UpdateScalar);
+  scalarTimingThread = new TimingThread(scalar);
+  scalarTimingThread->SetWaitTimeinSec(ScalarUpdateinMiliSec / 1000.);
+  connect(scalarTimingThread, &TimingThread::timeUp, this, &FSUDAQ::UpdateScalar);
 
-  scalarThread = new QThread(this);
-  scalarWorker = new ScalarWorker(this);
-  scalarWorker->moveToThread(scalarThread);
+  // scalarThread = new QThread(this);
+  // scalarWorker = new ScalarWorker(this);
+  // scalarWorker->moveToThread(scalarThread);
 
-  scalarTimer = new QTimer(this);
-  connect( scalarTimer, &QTimer::timeout, scalarWorker, &ScalarWorker::UpdateScalar);
+  // scalarTimer = new QTimer(this);
+  // connect( scalarTimer, &QTimer::timeout, scalarWorker, &ScalarWorker::UpdateScalar);
 
-  scalarThread->start();
+  // scalarThread->start();
 
   unsigned short maxNChannel = 0;
   for( unsigned int k = 0; k < nDigi; k ++ ){
@@ -1068,8 +1076,8 @@ void FSUDAQ::UpdateScalar(){
 
   lbTotalFileSize->setText("Total Data Size : " + QString::number(totalFileSize/1024./1024., 'f', 3) + " MB");
 
-  repaint();
-  scalar->repaint();
+  // repaint();
+  // scalar->repaint();
 
   if( influx && chkInflux->isChecked() && scalarCount >= 3){
     if( chkSaveData->isChecked() ) {
@@ -1081,6 +1089,8 @@ void FSUDAQ::UpdateScalar(){
     influx->ClearDataPointsBuffer();
     scalarCount = 0;
   }
+
+  // printf("end of %s\n", __func__);
   
 }
 
@@ -1162,7 +1172,8 @@ void FSUDAQ::StartACQ(){
   // printf("------------ Go! \n");
   // for( unsigned int i = 0; i < nDigi; i++) readDataThread[i]->go();
 
-  if( scalar ) scalarTimer->start(ScalarUpdateinMiliSec); 
+  // if( scalar ) scalarTimer->start(ScalarUpdateinMiliSec); 
+  if( scalar ) scalarTimingThread->start();
 
   if( !scalar->isVisible() ) {
     scalar->show();
@@ -1239,7 +1250,13 @@ void FSUDAQ::StopACQ(){
     QCoreApplication::processEvents();
   }
 
-  if( scalar ) scalarTimer->stop();
+  if( scalarTimingThread->isRunning()){
+    scalarTimingThread->Stop();
+    scalarTimingThread->quit();
+    scalarTimingThread->wait();
+  }
+
+  // if( scalar ) scalarTimer->stop();
   if( singleHistograms ) singleHistograms->stopTimer();
   if( onlineAnalyzer ) onlineAnalyzer->stopTimer();
   
@@ -1731,7 +1748,8 @@ void FSUDAQ::OpenScope(){
         
         if( scalar ){
           lbScalarACQStatus->setText("<font style=\"color: green;\"><b>ACQ On</b></font>");
-          scalarTimer->start(ScalarUpdateinMiliSec); 
+          // scalarTimer->start(ScalarUpdateinMiliSec); 
+          scalarTimingThread->start();
         }
 
         if( singleHistograms ) singleHistograms->startTimer();
@@ -1742,7 +1760,10 @@ void FSUDAQ::OpenScope(){
 
         if( scalar ){
           lbScalarACQStatus->setText("<font style=\"color: red;\"><b>ACQ Off</b></font>");
-          scalarTimer->stop(); 
+          // scalarTimer->stop(); 
+          scalarTimingThread->Stop();
+          scalarTimingThread->quit();
+          scalarTimingThread->wait();
         }
 
         if( singleHistograms ) singleHistograms->stopTimer();
