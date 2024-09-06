@@ -206,6 +206,10 @@ class Digitizer{
       return returnData;
     }
 
+    void SetTrace(bool onOff){
+      SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, onOff, -1);
+    }
+
 };
 
 

@@ -684,6 +684,9 @@ void FSUDAQ::OpenDigitizers(){
     digi[i] = new Digitizer(portList[i].first, portList[i].second);
     //digi[i]->Reset();
 
+    //===== set no trace, even when FSQDAQ segfault at scope, the digitizer will save no trace
+    digi[i]->SetTrace(false);
+
     if( cbOpenMethod->currentData().toInt() == 2 ) {
       digi[i]->ProgramBoard();
     }
