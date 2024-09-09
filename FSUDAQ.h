@@ -209,6 +209,18 @@ private:
   //@----- Analyzer
   Analyzer * onlineAnalyzer;
   
+  QString maskText(const QString &password) {
+    if (password.length() <= 3) {
+      return password; // No masking needed for short passwords
+    } else if (password.length() <= 10) {
+      QString maskedPassword = password.left(3);
+      maskedPassword += QString("*").repeated(password.length() - 3);
+      return maskedPassword;
+    } else {
+      return password.left(3) + QString("*").repeated(7);
+    }
+  }
+
 
 };
 

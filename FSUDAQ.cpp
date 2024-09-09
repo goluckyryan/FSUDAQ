@@ -468,11 +468,11 @@ void FSUDAQ::LoadProgramSettings(){
     LogMsg(" Raw Data Path : " + rawDataPath);
     LogMsg("     Influx IP : " + influxIP);
     LogMsg(" Database Name : " + dataBaseName);
-    LogMsg("Database Token : " + influxToken);
+    LogMsg("Database Token : " + maskText(influxToken));
     LogMsg("       Elog IP : " + elogIP);
     LogMsg("     Elog Name : " + elogName);
-    LogMsg("     Elog User : " + elogUser);
-    LogMsg("      Elog PWD : " + elogPWD);
+    LogMsg("     Elog User : " + maskText(elogUser));
+    LogMsg("      Elog PWD : " + maskText(elogPWD));
     logMsgHTMLMode = true;
 
     //check is rawDataPath exist, if not, create one
