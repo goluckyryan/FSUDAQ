@@ -1,6 +1,7 @@
 *.o
 *.fsu
 *.root
+core.FSUDAQ*
 
 FSUDAQ_Qt6
 test

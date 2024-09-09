@@ -12,26 +12,28 @@
 
 #include <sys/resource.h>
 
-// class CustomApplication : public QApplication{
-// public:
-//     CustomApplication(int &argc, char **argv) : QApplication(argc, argv) {}
+#include <csignal>
+#include <cstdlib>
+#include <iostream>
 
-// protected:
-//     bool notify(QObject *receiver, QEvent *event) override{
-//         qDebug() << event->type() << "Receiver:" << receiver;
-//         return QApplication::notify(receiver, event);
-//     }
-// };
+void abortHandler(int signal) {
+    std::cerr << "Signal received: " << signal << ", aborting..." << std::endl;
+    std::abort();  // Calls abort to generate core dump
+}
 
 int main(int argc, char *argv[]){
+
+    std::signal(SIGSEGV, abortHandler);
+
+    setpriority(PRIO_PROCESS, 0, -20);
 
     // CustomApplication a(argc, argv);
     QApplication a(argc, argv);
 
+    // Set Locale
     QLocale::setDefault(QLocale::system());
 
-    setpriority(PRIO_PROCESS, 0, -20);
-
+    // Set Lock file
     bool isLock = false;
     int pid = 0;
     QFile lockFile(DAQLockFile);

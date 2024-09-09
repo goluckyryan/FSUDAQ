@@ -159,6 +159,23 @@ if you want to use GDB debugger, in the *.pro file add
 
 There is a folder Aux, this folder contains many auxillary programs, such as EventBuilder. User can `make` under the folder to compile the programs.
 
+# Enable Core dump 
+
+The program has abort handler to save core dump.
+
+first, enable the gdb in compilation by edit the FSUDAQ_Qt6.pro by commen out the following lines:
+```sh
+QMAKE_CXXFLAGS += -g
+QMAKE_CXXFLAGS_RELEASE = -O0
+QMAKE_CFLAGS_RELEASE = -O0
+```
+
+second, ensure the core dump file has unlimited size and set the core dump file name
+```sh
+>ulimit -c unlimited
+>echo "core.%e.%p" | sudo tee /proc/sys/kernel/core_pattern
+```
+
 
 # Known Issues
 
