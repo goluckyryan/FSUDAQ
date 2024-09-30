@@ -3634,7 +3634,7 @@ void DigiSettingsPanel::SyncCheckBox(QCheckBox *(&chk)[][MaxRegChannel+1]){
 }
 
 void DigiSettingsPanel::EnableButtons(bool enable){
-  for( int i = 0; i < nDigi; i++ ){
+  for( unsigned int i = 0; i < nDigi; i++ ){
     if( !enable ) {
       leSaveFilePath[i]->setText("changing setting is disabled due to ACQ is running.");
       leSaveFilePath[i]->setStyleSheet("color:red;");

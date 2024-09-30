@@ -25,28 +25,29 @@ QMAKE_CFLAGS_RELEASE = -O0
 # Input
 HEADERS += ClassData.h \
            ClassDigitizer.h \
+           ClassInfluxDB.h\
            CustomThreads.h \
            CustomWidgets.h \
-           Histogram1D.h \
-           Histogram2D.h \
            DigiSettingsPanel.h \
            FSUDAQ.h \
-           macro.h \
-           RegisterAddress.h \
-           ClassInfluxDB.h\
-           Scope.h \
-           SingleSpectra.h \
+           Histogram1D.h \
+           Histogram2D.h \
            Hit.h \
+           macro.h \
            MultiBuilder.h \
            qcustomplot.h \
-           analyzers/Isotope.h \
+           RegisterAddress.h \
+           Scope.h \
+           SingleSpectra.h \
            analyzers/Analyser.h \
            analyzers/CoincidentAnalyzer.h \
-           analyzers/SplitPoleAnalyzer.h \
+           analyzers/Cross.h\
            analyzers/EncoreAnalyzer.h \
+           analyzers/Isotope.h \
+           analyzers/SplitPoleAnalyzer.h \
            analyzers/MUSICAnalyzer.h \
-           analyzers/NeutronGamma.h \
-           analyzers/RAISOR.h
+           analyzers/NeutronGamma.h 
+
 SOURCES += ClassDigitizer.cpp \
            DigiSettingsPanel.cpp \
            FSUDAQ.cpp \

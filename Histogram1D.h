@@ -276,6 +276,7 @@ public:
     UpdatePlot();
   }
   
+  void SetLineTitle(QString title, int lineID = 0) { graph(lineID)->setName(title);  }
   void SetXTitle(QString xTitle) { xAxis->setLabel(xTitle);}
 
   void Rebin(int xbin, double xmin, double xmax){
@@ -283,6 +284,7 @@ public:
     xMin = xmin;
     xMax = xmax;
     xBin = xbin;
+    if( xBin > 1000) xBin = 1000;
 
     dX = (xMax - xMin)/(xBin);
 

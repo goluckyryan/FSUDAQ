@@ -43,6 +43,8 @@ public:
 
   QVector<int> generateNonRepeatedCombination(int size);
 
+  void ReplotHistograms();
+
 public slots:
   void FillHistograms();
   void ChangeHistView();

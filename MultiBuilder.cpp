@@ -95,6 +95,8 @@ void MultiBuilder::PrintAllEvent(){
   }
 }
 
+//^############################################### forward event builder
+
 void MultiBuilder::FindEarlistTimeAndCh(bool verbose){
   DebugPrint("%s", "MultiBuilder");
   earlistTime = -1;
@@ -103,9 +105,7 @@ void MultiBuilder::FindEarlistTimeAndCh(bool verbose){
   nExhaushedCh = 0;
   for( int i = 0; i < nData; i++){
 
-    for( int j = 0; j < data[i]->GetNChannel(); j++ ) {
-      chExhaused[i][j] = false;
-    }
+    for( int j = 0; j < data[i]->GetNChannel(); j++ ) chExhaused[i][j] = false;
 
     for(unsigned int ch = 0; ch < data[i]->GetNChannel(); ch ++){
 
@@ -118,7 +118,7 @@ void MultiBuilder::FindEarlistTimeAndCh(bool verbose){
         }
 
         if( data[i]->GetTimestamp(ch, index) == 0 ||  
-            loopIndex[i][ch] * dataSize[i] > data[i]->GetLoopIndex(ch) * dataSize[i] +  data[i]->GetDataIndex(ch)) {
+            loopIndex[i][ch] * dataSize[i] + nextIndex[i][ch] > data[i]->GetLoopIndex(ch) * dataSize[i] +  data[i]->GetDataIndex(ch)) {
           nExhaushedCh ++;
           chExhaused[i][ch] = true;
           continue;
@@ -138,42 +138,6 @@ void MultiBuilder::FindEarlistTimeAndCh(bool verbose){
   }
 
   if( verbose ) printf("%s | bd : %d, ch : %d, %llu\n", __func__, earlistDigi, earlistCh, earlistTime);
-
-}
-
-void MultiBuilder::FindLatestTimeAndCh(bool verbose){
-  DebugPrint("%s", "MultiBuilder");
-  latestTime = 0;
-  latestDigi = -1;
-  latestCh = -1;
-
-  nExhaushedCh = 0;
-  
-  for( int i = 0; i < nData; i++){
-
-    for( int j = 0; j < data[i]->GetNChannel(); j++ ) chExhaused[i][j] = false;
-
-    for(unsigned int ch = 0; ch < data[i]->GetNChannel(); ch ++){
-      
-      if( nextIndex[i][ch] < 0  || data[i]->GetDataIndex(ch) < 0 || nextIndex[i][ch] <= lastBackWardIndex[i][ch] ) {
-        nExhaushedCh ++;
-        chExhaused[i][ch] = true;
-        // printf(", exhanshed. %d \n", nExhaushedCh);
-        continue;
-      }
-
-      unsigned long long time = data[i]->GetTimestamp(ch, nextIndex[i][ch]);
-      // printf(", time : %llu\n", time );
-      if( time > latestTime ) {
-        latestTime = time;
-        latestDigi = i;
-        latestCh = ch;
-      }
-    }
-  }
-
-  if( verbose ) printf("%s | bd : %d, ch : %d, %llu\n", __func__, latestDigi, latestCh, latestTime);
-
 }
 
 void MultiBuilder::FindEarlistTimeAmongLastData(bool verbose){
@@ -195,35 +159,16 @@ void MultiBuilder::FindEarlistTimeAmongLastData(bool verbose){
   }
   if( verbose )  printf("%s | bd : %d, ch : %d, %lld \n", __func__, latestDigi, latestCh, latestTime);
 }
-  
-void MultiBuilder::FindLatestTimeOfData(bool verbose){
-  DebugPrint("%s", "MultiBuilder");
-  latestTime = 0;
-  latestCh = -1;
-  latestDigi = -1;
-  for( int i = 0; i < nData; i++){
-    // printf("%s | digi-%d-th | %d\n", __func__, i, data[i]->GetNChannel());
-    for( unsigned ch = 0; ch < data[i]->GetNChannel(); ch++ ){
-      int index = data[i]->GetDataIndex(ch);
-      // printf("ch-%2d | index : %d \n", ch, index);
-      if( index == -1 ) continue;
-      if( data[i]->GetTimestamp(ch, index) > latestTime ) {
-        latestTime = data[i]->GetTimestamp(ch, index);
-        latestCh = ch;
-        latestDigi = i;
-      }
-    }
-  }
-  if( verbose )  printf("%s | bd : %d, ch : %d, %lld \n", __func__, latestDigi, latestCh, latestTime);
-}
+
 
 void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
   DebugPrint("%s", "MultiBuilder");
 
+  FindEarlistTimeAndCh(verbose); //Give the earliest time, ch, digi
+
   FindEarlistTimeAmongLastData(verbose); // give lastest Time, Ch, and Digi for event building
 
-  FindEarlistTimeAndCh(verbose); //Give the earliest time, ch, digi
-  if( earlistCh == -1 || nExhaushedCh == nData * MaxNChannels) return; /// no data
+  if( earlistCh == -1 || nExhaushedCh == numTotCh) return; /// no data
 
   eventBuilt = 0;
   //======= Start building event
@@ -235,14 +180,13 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
     eventIndex ++;
     if( eventIndex >= MaxNEvent ) eventIndex = 0;
     events[eventIndex].clear();
-
     em.Clear();
     
     for( int k = 0; k < nData; k++){
       int bd = (k + earlistDigi) % nData;
 
-      // printf("##### %d/%d | ", k, nData);
-      // data[k]->PrintAllData(true, 10);
+      // printf("##### %d/%d | ", bd, nData);
+      // data[bd]->PrintAllData(true);
 
       const int numCh = data[bd]->GetNChannel();
 
@@ -250,16 +194,22 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
         int ch = (i + earlistCh ) % numCh;
         // printf("ch : %d | exhaused ? %s \n", ch, chExhaused[bd][ch] ? "Yes" : "No");
         if( chExhaused[bd][ch] ) continue;
-        if( loopIndex[bd][ch] * dataSize[bd] + nextIndex[bd][ch] > data[bd]->GetLoopIndex(ch) * dataSize[bd] +  data[bd]->GetDataIndex(ch)) {
+
+        // printf(" ch : %2d | %d(%d) | %d(%d)\n", ch, loopIndex[bd][ch], nextIndex[bd][ch], data[bd]->GetLoopIndex(ch), data[bd]->GetDataIndex(ch) );
+
+        if( nextIndex[bd][ch] == -1 
+            || loopIndex[bd][ch] * dataSize[bd] + nextIndex[bd][ch] > data[bd]->GetLoopIndex(ch) * dataSize[bd] +  data[bd]->GetDataIndex(ch)) {
           nExhaushedCh ++;
           chExhaused[bd][ch] = true;
+
+          // printf(" ch : %d exhaused\n", ch);
           continue;
         }
 
         do {
 
           unsigned long long time = data[bd]->GetTimestamp(ch, nextIndex[bd][ch]);
-          //printf("%6ld, sn: %5d, ch: %2d, timestamp : %16llu | earlistTime : %16llu | timeWindow : %u \n", eventIndex, data[bd]->boardSN, ch, time, earlistTime, timeWindow);
+          // printf("%6d, sn: %5d, ch: %2d, timestamp : %16llu | earlistTime : %16llu | timeWindow : %u \n", nextIndex[bd][ch], data[bd]->boardSN, ch, time, earlistTime, timeWindow);
 
           if( time >= earlistTime && (time - earlistTime <=  timeWindow) ){
             em.sn = snList[bd];
@@ -280,14 +230,21 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
           }else{
             break;
           }
-          if( timeWindow <= 0 ) break;
+          if( timeWindow == 0 ) break;
         }while( true );
-        if( timeWindow <= 0 ) break;
+        if( timeWindow == 0 ) break;
       }
-      if( timeWindow <= 0 ) break;
+      if( timeWindow == 0 ) break;
     }
 
-    if( events[eventIndex].size() == 0 ) continue;
+    if( events[eventIndex].size() == 0 ) {
+      if( eventIndex > 1) {
+        eventIndex --;
+      }else{
+        eventIndex = MaxNEvent - 1;
+      }
+      continue;
+    }
 
     if( events[eventIndex].size() > 1) {
       std::sort(events[eventIndex].begin(), events[eventIndex].end(), [](const Hit& a, const Hit& b) {
@@ -295,21 +252,21 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
       });
     }
 
-    lastEventTime = events[eventIndex].back().timestamp;
+    // lastEventTime = events[eventIndex].back().timestamp;
     
     ///Find the next earlist 
     FindEarlistTimeAndCh(false);
 
     // //if there is a time jump, say, bigger than TimeJump. break
-    if( earlistTime - lastEventTime > timeJump ) {
-      if( verbose ){
-        printf("!!!!!!!! Time Jump detected stop event building and get more data.\n"); 
-        printf("event index : %6lu,    earlist time : %16llu\n", eventIndex, earlistTime);
-        printf("              %6s  last event time : %16llu \n", "", lastEventTime);
-        printf("              %6s        time jump > %16llu \n", "", timeJump);
-      }
-      return;
-    }
+    // if( earlistTime - lastEventTime > timeJump ) {
+    //   if( verbose ){
+    //     printf("!!!!!!!! Time Jump detected stop event building and get more data.\n"); 
+    //     printf("event index : %6lu,  last event time : %16llu\n", eventIndex, lastEventTime);
+    //     printf("              %6s    earilest time : %16llu \n", "", earlistTime);
+    //     printf("              %6s        time jump > %16llu \n", "", timeJump);
+    //   }
+    //   return;
+    // }
 
     eventBuilt ++;
     totalEventBuilt ++;
@@ -329,7 +286,7 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
         printf("%05d, %02d | %5d |  %5d %llu \n", sn, chxxx, nextIndex[bd][chxxx], events[eventIndex][i].energy, events[eventIndex][i].timestamp); 
       }
 
-      if( nExhaushedCh == nData * MaxNChannels ) {
+      if( nExhaushedCh == numTotCh ) {
         printf("######################### no more event to be built\n"); 
         break;
       } 
@@ -348,10 +305,65 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
         break;
       }
     }
-  }while(nExhaushedCh < nData * MaxNChannels);
+  }while(nExhaushedCh < numTotCh);
 
   forceStop = false;
 
+}
+
+//^############################################### backward event builder
+
+void MultiBuilder::FindLatestTimeAndCh(bool verbose){
+  DebugPrint("%s", "MultiBuilder");
+  latestTime = 0;
+  latestDigi = -1;
+  latestCh = -1;
+
+  nExhaushedCh = 0;
+  
+  for( int i = 0; i < nData; i++){
+    for( int j = 0; j < data[i]->GetNChannel(); j++ ) chExhaused[i][j] = false;
+
+    for(unsigned int ch = 0; ch < data[i]->GetNChannel(); ch ++){
+      if( nextIndex[i][ch] < 0  || data[i]->GetDataIndex(ch) < 0 || nextIndex[i][ch] <= lastBackWardIndex[i][ch] ) {
+        nExhaushedCh ++;
+        chExhaused[i][ch] = true;
+        // printf(", exhanshed. %d \n", nExhaushedCh);
+        continue;
+      }
+
+      unsigned long long time = data[i]->GetTimestamp(ch, nextIndex[i][ch]);
+      // printf(", time : %llu\n", time );
+      if( time > latestTime ) {
+        latestTime = time;
+        latestDigi = i;
+        latestCh = ch;
+      }
+    }
+  }
+
+  if( verbose ) printf("%s | bd : %d, ch : %d, %llu\n", __func__, latestDigi, latestCh, latestTime);
+}
+  
+void MultiBuilder::FindLatestTimeOfData(bool verbose){
+  DebugPrint("%s", "MultiBuilder");
+  latestTime = 0;
+  latestCh = -1;
+  latestDigi = -1;
+  for( int i = 0; i < nData; i++){
+    // printf("%s | digi-%d-th | %d\n", __func__, i, data[i]->GetNChannel());
+    for( unsigned ch = 0; ch < data[i]->GetNChannel(); ch++ ){
+      int index = data[i]->GetDataIndex(ch);
+      // printf("ch-%2d | index : %d \n", ch, index);
+      if( index == -1 ) continue;
+      if( data[i]->GetTimestamp(ch, index) > latestTime ) {
+        latestTime = data[i]->GetTimestamp(ch, index);
+        latestCh = ch;
+        latestDigi = i;
+      }
+    }
+  }
+  if( verbose )  printf("%s | bd : %d, ch : %d, %lld \n", __func__, latestDigi, latestCh, latestTime);
 }
 
 void MultiBuilder::BuildEventsBackWard(int maxNumEvent, bool verbose){

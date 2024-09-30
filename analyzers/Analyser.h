@@ -17,6 +17,7 @@
 #include "CustomWidgets.h"
 #include "MultiBuilder.h"
 #include "ClassInfluxDB.h"
+#include "math.h"
 
 /**************************************
 
@@ -62,18 +63,19 @@ public:
 
   virtual void SetUpCanvas();
   virtual void UpdateHistograms(); // where event-building, analysis, and ploting
+  virtual void ReplotHistograms();
 
 public slots:
   void startTimer(){ 
     // printf("start timer\n");
     mb->ForceStop(false);
-    mb->ClearEvents();
     anaTimer->start(waitTimeinSec*1000); 
   } 
   void stopTimer(){ 
     // printf("stop worker\n");
     anaTimer->stop(); 
     mb->ForceStop(true);
+    mb->ClearEvents();
   }  
 
 private slots:

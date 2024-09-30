@@ -19,10 +19,10 @@
 #include "analyzers/SplitPoleAnalyzer.h"
 #include "analyzers/EncoreAnalyzer.h"
 #include "analyzers/MUSICAnalyzer.h"
-#include "analyzers/RAISOR.h"
 #include "analyzers/NeutronGamma.h"
+#include "analyzers/Cross.h"
 
-std::vector<std::string> onlineAnalyzerList = {"Coincident","Splie-Pole", "Encore", "RAISOR", "MUSICS", "Neutron-Gamma"};
+std::vector<std::string> onlineAnalyzerList = {"Coincident","Splie-Pole", "Encore", "MUSICS", "Neutron-Gamma", "Cross"};
 
 FSUDAQ::FSUDAQ(QWidget *parent) : QMainWindow(parent){
   DebugPrint("%s", "FSUDAQ");
@@ -684,9 +684,6 @@ void FSUDAQ::OpenDigitizers(){
     digi[i] = new Digitizer(portList[i].first, portList[i].second);
     //digi[i]->Reset();
 
-    //===== set no trace, even when FSQDAQ segfault at scope, the digitizer will save no trace
-    digi[i]->SetTrace(false);
-
     if( cbOpenMethod->currentData().toInt() == 2 ) {
       digi[i]->ProgramBoard();
     }
@@ -730,6 +727,10 @@ void FSUDAQ::OpenDigitizers(){
       }
     }    
     digi[i]->ReadAllSettingsFromBoard(true);
+
+    //===== set no trace, even when FSQDAQ segfault at scope, the digitizer will save no trace
+    digi[i]->SetTrace(false);
+    // if( digi[i]->GetDPPType() == V1730_DPP_PHA_CODE) digi[i]->WriteRegister(DPP::BoardConfiguration, 0xE8915);
 
     readDataThread[i] = new ReadDataThread(digi[i], i);
     connect(readDataThread[i], &ReadDataThread::sendMsg, this, &FSUDAQ::LogMsg);
@@ -1207,7 +1208,7 @@ void FSUDAQ::StartACQ(){
       influx->ClearDataPointsBuffer();
     }
 
-    if( elogID > 0 && !chkElog->isChecked() && chkSaveData->isChecked() ){
+    if( elogID > 0 && chkElog->isChecked() && chkSaveData->isChecked() ){
       QString msg = "================================= Run-" + QString::number(runID).rightJustified(3, '0') + "<p>" 
                     + QDateTime::currentDateTime().toString("MM.dd hh:mm:ss") + "<p>"
                     + startComment + "<p>"
@@ -1297,7 +1298,7 @@ void FSUDAQ::StopACQ(){
       influx->ClearDataPointsBuffer();
     }
 
-    if( elogID > 0 && !chkElog->isChecked() && chkSaveData->isChecked()){
+    if( elogID > 0 && chkElog->isChecked() && chkSaveData->isChecked()){
       QString msg = QDateTime::currentDateTime().toString("MM.dd hh:mm:ss") + "<p>" + stopComment + "<p>";
       uint64_t totalFileSize = 0;
       for(unsigned int i = 0 ; i < nDigi; i++){
@@ -1837,9 +1838,11 @@ void FSUDAQ::OpenAnalyzer(){
     if( id == 0 ) onlineAnalyzer = new CoincidentAnalyzer(digi, nDigi, rawDataPath);
     if( id == 1 ) onlineAnalyzer = new SplitPole(digi, nDigi);
     if( id == 2 ) onlineAnalyzer = new Encore(digi, nDigi);
-    if( id == 3 ) onlineAnalyzer = new RAISOR(digi, nDigi);
-    if( id == 4 ) onlineAnalyzer = new MUSIC(digi, nDigi);
-    if( id == 5 ) onlineAnalyzer = new NeutronGamma(digi, nDigi, rawDataPath);
+    if( id == 3 ) onlineAnalyzer = new MUSIC(digi, nDigi);
+    if( id == 4 ) onlineAnalyzer = new NeutronGamma(digi, nDigi, rawDataPath);
+
+    if( id == 5 ) onlineAnalyzer = new Cross(digi, nDigi);
+
     if( id >=  0 ) onlineAnalyzer->show();
 
     if( isACQStarted ) onlineAnalyzer->startTimer();
@@ -1851,9 +1854,10 @@ void FSUDAQ::OpenAnalyzer(){
     if( id == 0 ) onlineAnalyzer = new CoincidentAnalyzer(digi, nDigi, rawDataPath);
     if( id == 1 ) onlineAnalyzer = new SplitPole(digi, nDigi);
     if( id == 2 ) onlineAnalyzer = new Encore(digi, nDigi);
-    if( id == 3 ) onlineAnalyzer = new RAISOR(digi, nDigi);
-    if( id == 4 ) onlineAnalyzer = new MUSIC(digi, nDigi);
-    if( id == 5 ) onlineAnalyzer = new NeutronGamma(digi, nDigi, rawDataPath);
+    if( id == 3 ) onlineAnalyzer = new MUSIC(digi, nDigi);
+    if( id == 4 ) onlineAnalyzer = new NeutronGamma(digi, nDigi, rawDataPath);
+    
+    if( id == 5 ) onlineAnalyzer = new Cross(digi, nDigi);
 
     if( id >= 0 ){
       onlineAnalyzer->show();

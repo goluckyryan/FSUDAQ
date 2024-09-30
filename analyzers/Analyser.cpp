@@ -60,6 +60,8 @@ Analyzer::Analyzer(Digitizer ** digi, unsigned int nDigi, QMainWindow * parent )
   //   printf(" --------- work Done\n");
   // });
 
+  connect( anaWorker, &AnalyzerWorker::workDone, this, &Analyzer::ReplotHistograms);
+
   anaThread->start();
 
 }
@@ -138,12 +140,12 @@ void Analyzer::SetDatabase(QString IP, QString Name, QString Token){
         influx = nullptr;
       }
     }else{
-      printf("Database name : %s NOT found.\n", dataBaseName.toStdString().c_str());
+      printf(RED "Database name : %s NOT found.\n" RESET, dataBaseName.toStdString().c_str());
       delete influx;
       influx = nullptr;
     }
   }else{
-    printf("InfluxDB URL (%s) is NOT Valid. \n", dataBaseIP.toStdString().c_str());
+    printf(RED "InfluxDB URL (%s) is NOT Valid. \n" RESET, dataBaseIP.toStdString().c_str());
     delete influx;
     influx = nullptr;
   }
@@ -240,6 +242,11 @@ void Analyzer::SetUpCanvas(){
 }
 
 void Analyzer::UpdateHistograms(){
+
+
+}
+
+void Analyzer::ReplotHistograms(){
 
 
 }

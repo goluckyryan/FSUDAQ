@@ -151,6 +151,9 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
 
   // Setup the timer to trigger every second
   connect(timer, &QTimer::timeout, histWorker, &HistWorker::FillHistograms);
+
+  connect( histWorker, &HistWorker::workDone, this, &SingleSpectra::ReplotHistograms);
+
   workerThread->start();
 
 }
@@ -311,6 +314,20 @@ void SingleSpectra::FillHistograms(){
   }
 
   isFillingHistograms = false;
+
+}
+
+void SingleSpectra::ReplotHistograms(){
+
+  int ID = cbDigi->currentData().toInt();
+  int ch = cbCh->currentData().toInt();
+
+  if( ch == digi[ID]->GetNumInputCh()) {
+    if( hist2DVisibility[ID] ) hist2D[ID]->UpdatePlot();
+    return;
+  }
+
+  if( histVisibility[ID][ch]  ) hist[ID][ch]->UpdatePlot();
 
 }
 

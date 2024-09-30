@@ -2,6 +2,10 @@
 
 timestamp=$(date +%Y%m%d_%H%M%S)
 
-outFile=program_${timestamp}.log
+outFile=log/program_${timestamp}.log
+
+mkdir -p "$(dirname "$outFile")"
+
+echo "FSUDAQ, save stdout to $outFile"
 
 stdbuf -oL ./FSUDAQ_Qt6  | tee $outFile

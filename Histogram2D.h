@@ -310,6 +310,9 @@ inline  void Histogram2D::Rebin(int xbin, double xmin, double xmax, int ybin, do
   xBin = xbin + 2;
   yBin = ybin + 2;
 
+  if( xBin > 1002) xBin = 1002;
+  if( yBin > 1002) yBin = 1002;
+
   colorMap->data()->clear();
   colorMap->data()->setSize(xBin, yBin);
   colorMap->data()->setRange(QCPRange(xMin, xMax), QCPRange(yMin, yMax));
@@ -752,7 +755,7 @@ inline void Histogram2D::LoadCuts(QString cutFileName){
             int colorID = tempCutID% colorCycle.count();
             text->setColor(colorCycle[colorID].first);
             cutTextIDList.push_back(itemCount() - 1);
-            // cutList.push_back(tempCut);
+            cutList.push_back(tempCut);
             cutIDList.push_back(tempCutID);
           }
           tempCut.clear();
@@ -792,6 +795,7 @@ inline void Histogram2D::LoadCuts(QString cutFileName){
       // Close the file
       file.close();
       qDebug() << "File read successfully from" << cutFileName;
+      qDebug() << " Number of cut loaded " << numCut << ", " << cutList.count();
 
       // PrintCutEntry();
       // DrawCut();
