@@ -171,7 +171,7 @@ const Reg FrontPanelTRGOUTEnableMask   ("FrontPanelTRGOUTEnableMask"   , 0x8110,
 const Reg PostTrigger                  ("PostTrigger"                  , 0x8114, RW::ReadWrite, false, {});  /// R/W
 const Reg LVDSIOData                   ("LVDSIOData"                   , 0x8118, RW::ReadWrite, false, {});  /// R/W
 const Reg FrontPanelIOControl          ("FrontPanelIOControl"          , 0x811C, RW::ReadWrite, false, {});  /// R/W
-const Reg RegChannelEnableMask            ("RegChannelEnableMask"            , 0x8120, RW::ReadWrite, false, {});  /// R/W
+const Reg RegChannelEnableMask         ("RegChannelEnableMask"         , 0x8120, RW::ReadWrite, false, {});  /// R/W
 const Reg ROCFPGAFirmwareRevision_R    ("ROCFPGAFirmwareRevision_R"    , 0x8124, RW::ReadONLY , false, {});  /// R
 const Reg EventStored_R                ("EventStored_R"                , 0x812C, RW::ReadONLY , false, {});  /// R
 const Reg VoltageLevelModeConfig       ("VoltageLevelModeConfig"       , 0x8138, RW::ReadWrite, false, {});  /// R/W
@@ -198,7 +198,6 @@ const Reg MaxAggregatePerBlockTransfer ("MaxAggregatePerBlockTransfer" , 0xEF1C,
 const Reg Scratch                      ("Scratch"                      , 0xEF20, RW::ReadWrite, false, {});  /// R/W
 const Reg SoftwareReset_W              ("SoftwareReset_W"              , 0xEF24, RW::WriteONLY, false, {});  ///   W
 const Reg SoftwareClear_W              ("SoftwareClear_W"              , 0xEF28, RW::WriteONLY, false, {});  ///   W  
-
 
 ///====== Common for PHA and PSD
 namespace DPP {
@@ -601,6 +600,9 @@ namespace DPP {
 
   const Reg TriggerValidationMask_G     ("TriggerValidationMask_G"     , 0x8180, RW::ReadWrite, true, {});  /// R/W,  
   
+  //& Artifical Register that not in CAEN manual
+  const Reg DecimationFactor             ("Decimation Factor"            , 0x8044, RW::ReadWrite, false, 0x7, -1);  /// R/W  
+
   namespace PHA {
     const Reg DataFlush_W               ("DataFlush_W"              , 0x103C, RW::WriteONLY, false, {}); ///   W   not sure
     const Reg ChannelStopAcquisition    ("ChannelStopAcquisition"   , 0x1040, RW::ReadWrite, false, {{"Run", 0}, {"Stop", 1}}); /// R/W   not sure
@@ -1027,6 +1029,7 @@ const std::vector<Reg> RegisterBoardList_QDC = {
   DPP::QDC::NumberEventsPerAggregate,
   DPP::QDC::RecordLength_W,
   DPP::QDC::RecordLength_R,
+  DPP::DecimationFactor,
   DPP::AcquisitionControl,
   DPP::AcquisitionStatus_R,
   DPP::SoftwareTrigger_W,

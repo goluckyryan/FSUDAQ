@@ -743,6 +743,8 @@ void Digitizer::WriteRegister (Reg registerAddress, uint32_t value, int ch, bool
   
   ret = CAEN_DGTZ_WriteRegister(handle, registerAddress.ActualAddress(ch), value);
 
+  if( registerAddress == DPP::DecimationFactor ) data->SetDecimationFactor(value);
+
   if( ret == 0 && isSave2MemAndFile && !AcqRun && registerAddress.GetRWType() == RW::ReadWrite ) {
     if( ch < 0 ) {
       if( registerAddress.GetAddress() < 0x8000 ){
@@ -789,6 +791,8 @@ uint32_t Digitizer::ReadRegister(Reg registerAddress, unsigned short ch, bool is
     SetSettingToMemory(registerAddress, returnData, ch);
     SaveSettingToFile(registerAddress, returnData, ch);
   }
+
+  if( registerAddress == DPP::DecimationFactor ) data->SetDecimationFactor( returnData );
 
   std::stringstream ss;
   ss << std::hex << registerAddress.ActualAddress(ch);
@@ -994,6 +998,8 @@ void Digitizer::ProgramSettingsToBoard(){
     haha = DPP::QDC::GroupEnableMask; WriteRegister(haha, GetSettingFromMemory(haha), -1, false);
     haha = DPP::QDC::RecordLength_W; WriteRegister(haha, GetSettingFromMemory(haha), -1, false);
     // haha = DPP::QDC::NumberEventsPerAggregate; WriteRegister(haha, GetSettingFromMemory(haha), -1, false);
+
+    haha = DPP::DecimationFactor; WriteRegister(haha, GetSettingFromMemory(haha), -1, false);
 
     /// Channels Setting
     for( int ch = 0; ch < GetNumRegChannels(); ch ++){

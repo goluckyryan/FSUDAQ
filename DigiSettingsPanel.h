@@ -125,7 +125,8 @@ private:
   QGridLayout * bdTriggerLayout[MaxNDigitizer];
   QGridLayout * bdLVDSLayout[MaxNDigitizer];
 
-  RComboBox * cbSWDecimation[MaxNDigitizer]; // software decimation
+  // RComboBox * cbSWDecimation[MaxNDigitizer]; // software decimation
+  RSpinBox * sbSWDecimation[MaxNDigitizer];
 
   QCheckBox * chkAutoDataFlush[MaxNDigitizer];
   QCheckBox * chkDecimateTrace[MaxNDigitizer];
