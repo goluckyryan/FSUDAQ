@@ -2534,6 +2534,40 @@ void DigiSettingsPanel::SetUpBoard_QDC(){
   SetUpSpinBox(sbNumEventAgg[ID][0],    "Event pre Agg. : ", bdCfgLayout[ID], 5, 0, DPP::QDC::NumberEventsPerAggregate, -1, true);
   SetUpSpinBox(sbRecordLength[ID][0],   "Record Length [ns] : ", bdCfgLayout[ID], 6, 0, DPP::QDC::RecordLength_W, -1, true);
 
+
+  QLabel * lbSWDeci = new QLabel("SW Decimation Factor :", this);
+  lbSWDeci->setAlignment(Qt::AlignRight | Qt::AlignCenter);
+  bdCfgLayout[ID]->addWidget(lbSWDeci, 7, 0);  
+  
+  cbSWDecimation[ID] = new RComboBox(this); 
+  bdCfgLayout[ID]->addWidget(cbSWDecimation[ID], 7, 1);  
+  cbSWDecimation[ID]->addItem("No Deci.", 0);
+  cbSWDecimation[ID]->addItem("Factor 2", 1);
+  cbSWDecimation[ID]->addItem("Factor 4", 2);
+  cbSWDecimation[ID]->addItem("Factor 8", 3);
+  cbSWDecimation[ID]->addItem("Factor 16", 4);
+  cbSWDecimation[ID]->addItem("Factor 32", 5);
+  cbSWDecimation[ID]->addItem("Factor 64", 6);
+  cbSWDecimation[ID]->addItem("Factor 128", 7);
+
+  connect(cbSWDecimation[ID], &RComboBox::currentIndexChanged, this, [=](){
+    if( !enableSignalSlot ) return;
+    
+    unsigned short factor = cbSWDecimation[ID]->currentData().toInt();
+
+    int deci = pow(2, factor);
+
+    int sampleSize = sbRecordLength[ID][0]->value() / digi[ID]->GetTick2ns();
+
+    if( sampleSize / deci <= 2 ) {
+      SendLogMsg("Tried to set waveform decimation to be " +  QString::number(deci) + ", which make the number of trace less than 2. Abort.");
+      cbSWDecimation[ID]->setCurrentIndex(0);
+    }else{
+      SendLogMsg("Set waveform decimation to be " +  QString::number(deci) + ".");
+      digi[ID]->GetData()->SetDecimationFactor(factor);
+    }
+  });
+
 }
 
 void DigiSettingsPanel::SetUpChannel_QDC(){

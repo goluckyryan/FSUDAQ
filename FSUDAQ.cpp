@@ -1803,6 +1803,7 @@ void FSUDAQ::OpenDigiSettings(){
     digiSettings = new DigiSettingsPanel(digi, nDigi, rawDataPath);
     //connect(scope, &Scope::SendLogMsg, this, &FSUDAQ::LogMsg);
     connect(digiSettings, &DigiSettingsPanel::UpdateOtherPanels, this, [=](){ UpdateAllPanels(2); });
+    connect(digiSettings, &DigiSettingsPanel::SendLogMsg, this, &FSUDAQ::LogMsg);
 
     digiSettings->show();
   }else{

@@ -105,7 +105,7 @@ class Data{
     //^================= Saving data
     bool OpenSaveFile(std::string fileNamePrefix); // return false when fail
     std::string GetOutFileName() const {return outFileName;}
-    void SetDecimationFactor(unsigned short factor) { decimation = factor; }
+    void SetDecimationFactor(unsigned short factor) { decimation = factor; printf("Set Decimation Factor to be %d\n", factor);}
     void SaveData(); 
     void CloseSaveFile();
     unsigned int GetFileSize() const {return outFileSize;}
@@ -500,7 +500,6 @@ inline void Data::SaveData(){
     int sampleSize = 0;
     int chAggSize = 0;
 
-    uint32_t oldHeader0 = 0;
     uint32_t oldHeader1 = 0;
     uint32_t oldHeader2 = 0;
     uint32_t oldHeader3 = 0;
@@ -520,7 +519,6 @@ inline void Data::SaveData(){
         // fwrite(buffer + i * chunkSize, sizeof(char), chunkSize, outFile);
         // fwrite(&word, sizeof(word), 1, outFile);
 
-        if( bdAggWordCount == 1 ) oldHeader0 = word;
         if( bdAggWordCount == 2 ) oldHeader1 = word;
         if( bdAggWordCount == 3 ) oldHeader2 = word;
         if( bdAggWordCount == 4 ) oldHeader3 = word;
@@ -537,8 +535,7 @@ inline void Data::SaveData(){
           sampleSize = (word & 0xFFF) * 8;
           bool isExtra = ( (word >> 28 ) & 0x1 );
           chAggSize = 2 + sampleSize / 2 + isExtra;
-          uint32_t oldWord = word;
-                    
+          // uint32_t oldWord = word;                    
           word = (word & 0xFFFFF000) + (sampleSize / 8 / Deci); // change the number of sample
           // printf("============= Sample Size : %d | Ch Size : %d | old %08X new %08X\n", sampleSize, chAggSize, oldWord, word);
 
@@ -874,6 +871,7 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
           }
         }
         if( hasWaveForm ){
+          printf("Sample Size : %d | Decimation: %d \n", nSample, decimation);
           printf("...... Analog Probe 1 : ");
           switch (analogProbe1 ){
             case 0 : printf("Input \n"); break;
@@ -1114,6 +1112,7 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
       }
     }
     if( hasWaveForm ){
+      printf("Sample Size : %d | Decimation: %d \n", nSample, decimation);
       printf(".... digital Probe 1 : ");
       switch(digitalProbe1){
         case 0 : printf("Long gate \n"); break;
@@ -1316,7 +1315,7 @@ inline int Data::DecodeQDCGroupedChannelBlock(unsigned int ChannelMask, bool fas
   if( verbose >= 2 ) {
     printf("Charge : %d, Time: %d, Wave : %d, Extra: %d\n", hasEnergy, hasTimeStamp, hasWaveForm, hasExtra);
     if( hasWaveForm ){
-      printf("Sample Size : %d .... analog Probe (%d): ", nSample, analogProbe);
+      printf("Sample Size : %d | Decimation %d .... analog Probe (%d): ", nSample, decimation, analogProbe);
       switch(analogProbe){
         case 0 : printf("Input\n"); break;
         case 1 : printf("Smoothed Input\n"); break;
