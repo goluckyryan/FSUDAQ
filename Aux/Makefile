@@ -12,9 +12,9 @@ CAENLIBS	=	-lCAENDigitizer -lCAENVME
 
 ROOTLIBS = `root-config --cflags --glibs`
 
-OBJS = ClassDigitizer.o MultiBuilder.o ClassInfluxDB.o
+OBJS = ClassDigitizer.o MultiBuilder.o ClassInfluxDB.o ClassDigitizerAPI.o
 
-ALL = test EventBuilder DataReader DumpFSU2ROOT SettingsExplorer FSU2CAEN
+ALL = test EventBuilder DataReader DumpFSU2ROOT SettingsExplorer FSU2CAEN haha
 
 #########################################################################
 
@@ -29,12 +29,15 @@ MultiBuilder.o : ../MultiBuilder.cpp ../MultiBuilder.h ../Hit.h
 ClassDigitizer.o : ../ClassDigitizer.cpp ../ClassDigitizer.h ../RegisterAddress.h ../macro.h ../ClassData.h
 		$(CC) $(COPTS) -c ../ClassDigitizer.cpp
 
+ClassDigitizerAPI.o : ../ClassDigitizer.cpp ClassDigitizerAPI.cpp ../ClassDigitizer.h ../RegisterAddress.h ../macro.h ../ClassData.h
+		$(CC) $(COPTS) -c ClassDigitizerAPI.cpp
+
 ClassInfluxDB.o : ../ClassInfluxDB.cpp ../ClassInfluxDB.h 
 		$(CC) $(COPTS) -c ../ClassInfluxDB.cpp -lcurl
 
-test	:	test.cpp ../ClassDigitizer.o ../MultiBuilder.o ../ClassInfluxDB.o
+test	:	test.cpp ../ClassDigitizer.o ../MultiBuilder.o ../ClassInfluxDB.o ClassDigitizerAPI.o
 		@echo "--------- making test"
-		$(CC) -fPIC -DLINUX -O0 -std=c++17 -lpthread -g -o test test.cpp ../ClassDigitizer.o ../MultiBuilder.o ../ClassInfluxDB.o $(CAENLIBS)  $(ROOTLIBS) -lcurl
+		$(CC) -fPIC -DLINUX -O0 -std=c++17 -lpthread -g -o test test.cpp ../ClassDigitizer.o ClassDigitizerAPI.o ../MultiBuilder.o ../ClassInfluxDB.o $(CAENLIBS)  $(ROOTLIBS) -lcurl
 
 # test_indep : test_indep.cpp ../RegisterAddress.h ../macro.h
 # 		@echo "--------- making test_indep"

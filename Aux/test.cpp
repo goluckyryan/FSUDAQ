@@ -3,6 +3,7 @@
 #include "../ClassDigitizer.h"
 #include "../MultiBuilder.h"
 #include "../ClassInfluxDB.h"
+#include "ClassDigitizerAPI.h"
 
 #include <TROOT.h>
 #include <TSystem.h>
@@ -322,6 +323,38 @@ int TestDigitizerRaw(){
 }
 
 
+void SimpleDAQ(){
+
+  std::unique_ptr<Digitizer> digi = std::make_unique<Digitizer>(0, 49093, false, true);
+
+  digi->ProgramBoard();
+  digi->SetBits(DPP::QDC::DPPAlgorithmControl, DPP::QDC::Bit_DPPAlgorithmControl::Polarity, 0, -1);
+  digi->WriteRegister(DPP::QDC::NumberEventsPerAggregate, 5);
+  digi->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, 1, -1); // enable trace recording
+  digi->WriteRegister(DPP::MaxAggregatePerBlockTransfer, 10);
+
+  Data * data = digi->GetData();
+  data->OpenSaveFile("haha2");
+
+  digi->StartACQ();
+
+  for( int i = 0; i < 10 ; i++ ){
+
+    usleep(500*1000);
+
+    digi->ReadData();
+    data->DecodeBuffer(true, 0);
+    data->SaveData(2);
+
+    data->PrintStat();
+
+  }
+
+  digi->StopACQ();
+
+}
+
+
 void Compare_CAEN_Decoder(){
 
   std::unique_ptr<Digitizer> digi = std::make_unique<Digitizer>(0, 49093, false, true);
@@ -384,12 +417,18 @@ void Compare_CAEN_Decoder(){
 //^======================================
 int main(int argc, char* argv[]){
 
-  Compare_CAEN_Decoder();
+  // Compare_CAEN_Decoder();
 
   // Data * data =  digi->GetData();
 
+  SimpleDAQ();
+
   // MultiBuilder * builder = new MultiBuilder(data, DPPType::DPP_PHA_CODE, digi->GetSerialNumber());
   // builder->SetTimeWindow(100);
+
+
+  // std::unique_ptr<DigitizerAPI> digi = std::make_unique<DigitizerAPI>(0, 49093, false, true);
+
 
 
 

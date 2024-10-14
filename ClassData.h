@@ -105,7 +105,8 @@ class Data{
     //^================= Saving data
     bool OpenSaveFile(std::string fileNamePrefix); // return false when fail
     std::string GetOutFileName() const {return outFileName;}
-    void SaveData();
+    void SetDecimationFactor(unsigned short factor) { decimation = factor; }
+    void SaveData(); 
     void CloseSaveFile();
     unsigned int GetFileSize() const {return outFileSize;}
     uint64_t GetTotalFileSize() const {return FinishedOutFilesSize + outFileSize;}
@@ -137,6 +138,8 @@ class Data{
     std::vector<bool> tempDigiWaveform2;
     std::vector<bool> tempDigiWaveform3;
     std::vector<bool> tempDigiWaveform4;
+
+    unsigned short decimation;
 
     FILE * outFile;
     uint64_t FinishedOutFilesSize; // sum of files size.
@@ -176,6 +179,8 @@ inline Data::Data(unsigned short numCh, uInt dataSize): numInputCh(numCh){
   ClearTriggerRate();
   ClearNumEventsDecoded();
   nw = 0;
+
+  decimation = 0;
 
   outFileIndex = 0;
   outFilePrefix = "";
@@ -472,10 +477,137 @@ inline void Data::SaveData(){
     outFile = fopen(outFileName.c_str(), "wb"); //overwrite binary
   }
 
-  fwrite(buffer, nByte, 1, outFile);
-  outFileSize = ftell(outFile);
+  if( decimation == 0){
+    fwrite(buffer, nByte, 1, outFile);
+  }else{
+    
+    int Deci = pow(2, decimation);
 
+    // printf("Decimation Factor : %d | Deci : %d | nByte %d | nWord %d\n", decimation, Deci, nByte, nByte / 4);
+
+    const size_t chunkSize = 4;
+    size_t numChunk = nByte / chunkSize;
+
+    uint32_t word = 0;
+
+    int bdAggWordCount = 0;
+    int groupWordCount = 0;
+    int chWordCount = 0;
+    int sampleWordCount = 0;
+
+    int bdAggSize = 0;
+    int groupAggSize = 0;
+    int sampleSize = 0;
+    int chAggSize = 0;
+
+    uint32_t oldHeader0 = 0;
+    uint32_t oldHeader1 = 0;
+    uint32_t oldHeader2 = 0;
+    uint32_t oldHeader3 = 0;
+
+    for( size_t i = 0; i < numChunk; i++ ){
+
+      bdAggWordCount ++;
+      memcpy(&word, buffer + i * chunkSize, chunkSize);
+
+      if( bdAggWordCount <= 4) {
+        
+        if( bdAggWordCount == 1 ) {
+          bdAggSize = word & 0x0FFFFFFF;
+          // printf("###################### Bd Agg Size : %d\n", bdAggSize);
+        }
+
+        // fwrite(buffer + i * chunkSize, sizeof(char), chunkSize, outFile);
+        // fwrite(&word, sizeof(word), 1, outFile);
+
+        if( bdAggWordCount == 1 ) oldHeader0 = word;
+        if( bdAggWordCount == 2 ) oldHeader1 = word;
+        if( bdAggWordCount == 3 ) oldHeader2 = word;
+        if( bdAggWordCount == 4 ) oldHeader3 = word;
+      
+      }else{
+
+        groupWordCount ++;
+
+        if( groupWordCount == 1 ) {
+          groupAggSize = word & 0x3FFFFFFF;
+          // printf("============= Coupled Channel Agg Size : %d \n", groupAggSize);
+        }
+        if( groupWordCount == 2 ) {
+          sampleSize = (word & 0xFFF) * 8;
+          bool isExtra = ( (word >> 28 ) & 0x1 );
+          chAggSize = 2 + sampleSize / 2 + isExtra;
+          uint32_t oldWord = word;
+                    
+          word = (word & 0xFFFFF000) + (sampleSize / 8 / Deci); // change the number of sample
+          // printf("============= Sample Size : %d | Ch Size : %d | old %08X new %08X\n", sampleSize, chAggSize, oldWord, word);
+
+          int nEvent = (groupAggSize - 2 ) / chAggSize;
+          int newGroupAggSize = 2 + nEvent * ( 2 + sampleSize / Deci / 2 + isExtra );
+          int newBdAggSize = 4 + newGroupAggSize;
+
+          //Write board header and Agg header
+          uint32_t newHeader0 = (0xA << 28) + newBdAggSize;
+          fwrite(&newHeader0, sizeof(uint32_t), 1, outFile);
+          fwrite(&oldHeader1, sizeof(uint32_t), 1, outFile);
+          fwrite(&oldHeader2, sizeof(uint32_t), 1, outFile);
+          fwrite(&oldHeader3, sizeof(uint32_t), 1, outFile);
+
+          uint32_t newAggHeader0 = (0x8 << 28) + newGroupAggSize + (decimation << 12); // add decimation factor in the word
+          fwrite(&newAggHeader0, sizeof(uint32_t), 1, outFile);
+          fwrite(&word, sizeof(uint32_t), 1, outFile);
+
+          // printf(" New Board Agg Size : %d \n", newBdAggSize);
+          // printf(" New Group Agg Size : %d \n", newGroupAggSize);
+          // printf("             nEvent : %d \n", nEvent);
+          // printf(" New Event Agg Size : %d \n", 2 + sampleSize / Deci / 2 + isExtra);
+
+          // printf("%3d | %08X \n", 1,  newHeader0); 
+          // printf("%3d | %08X \n", 2,  oldHeader1); 
+          // printf("%3d | %08X \n", 3,  oldHeader2); 
+          // printf("%3d | %08X \n", 4,  oldHeader3); 
+          // printf("%3d | %3d | %08X \n", 5, 1, newAggHeader0); 
+          // printf("%3d | %3d | %08X \n", 6, 2, word); 
+        }
+
+        if( groupWordCount > 2 ) {
+          chWordCount ++;
+
+          if( 1 < chWordCount && chWordCount <= chAggSize - 2 ){ // trace
+            sampleWordCount ++;
+            uint16_t S0 = word & 0xFFFF;
+
+            if( decimation == 1 ){
+              // printf("%3d | %3d | %3d | %3d | %08X | %4X \n", bdAggWordCount, groupWordCount, chWordCount, sampleWordCount, word, S0); 
+              fwrite(&S0, sizeof(S0), 1, outFile);
+            }else if( sampleWordCount % decimation == 1)  {
+              // printf("%3d | %3d | %3d | %3d | %08X | %4X \n", bdAggWordCount, groupWordCount, chWordCount, sampleWordCount, word, S0); 
+              fwrite(&S0, sizeof(S0), 1, outFile);
+            }
+
+          }else{
+            // printf("%3d | %3d | %3d | %08X \n", bdAggWordCount, groupWordCount, chWordCount, word); 
+            fwrite(&word, sizeof(word), 1, outFile);
+          }
+        }
+
+        if( sampleWordCount == sampleSize / 2 ) sampleWordCount = 0;
+
+        if( chAggSize == chWordCount) chWordCount = 0;
+
+        if( groupWordCount == groupAggSize ) groupWordCount = 0;
+
+      }
+
+      if( bdAggWordCount == bdAggSize ) bdAggWordCount = 0; 
+
+    }
+    
+  }
+
+  outFileSize = ftell(outFile);
 }
+
 inline void Data::CloseSaveFile(){
   if( outFile != nullptr ){
     fclose(outFile);
@@ -576,7 +708,8 @@ inline unsigned int Data::ReadBuffer(unsigned int nWord, int verbose){
   if( buffer == NULL ) return 0;
   
   unsigned int word = 0;
-  for( int i = 0 ; i < 4 ; i++) word += ((buffer[i + 4 * nWord] & 0xFF) << 8*i);
+  // for( int i = 0 ; i < 4 ; i++) word += ((buffer[i + 4 * nWord] & 0xFF) << 8*i);
+  memcpy(&word, buffer + 4 * nWord, 4);  // Copy 4 bytes directly into word
   if( verbose >= 2) printf("%6d | 0x%08X |", nWord, word);
   return word;
 }
@@ -700,6 +833,7 @@ inline int Data::DecodePHADualChannelBlock(unsigned int ChannelMask, bool fastDe
   bool hasFormatInfo = ((word >> 31) & 0x1);
   unsigned int aggSize = ( word & 0x7FFFFFFF ) ;
   if( verbose >= 2 ) printf("Dual Channel size : %d \n",  aggSize);
+  unsigned short decimation = (word >> 12) & 0xF ;
   unsigned int nSample = 0; /// wave form;
   unsigned int nEvents = 0;
   unsigned int extra2Option = 0;
@@ -950,6 +1084,7 @@ inline int Data::DecodePSDDualChannelBlock(unsigned int ChannelMask, bool fastDe
 
   unsigned int nEvents = 0;
   nw = nw + 1; word = ReadBuffer(nw, verbose);
+  unsigned short decimation = (word >> 12) & 0xF ;
   unsigned int nSample = ( word & 0xFFFF )  * 8;
   unsigned int digitalProbe1 = ( (word >> 16 ) & 0x7 );
   unsigned int digitalProbe2 = ( (word >> 19 ) & 0x7 );
@@ -1169,6 +1304,7 @@ inline int Data::DecodeQDCGroupedChannelBlock(unsigned int ChannelMask, bool fas
 
   unsigned int nEvents = 0;
   nw = nw + 1; word = ReadBuffer(nw, verbose);
+  unsigned short decimation = (word >> 12) & 0xF ;
   unsigned int nSample = ( word & 0xFFFF )  * 8;
   unsigned int analogProbe = ( (word >> 22 ) & 0x3 );
   bool hasWaveForm  = ( (word >> 27 ) & 0x1 );
@@ -1180,7 +1316,7 @@ inline int Data::DecodeQDCGroupedChannelBlock(unsigned int ChannelMask, bool fas
   if( verbose >= 2 ) {
     printf("Charge : %d, Time: %d, Wave : %d, Extra: %d\n", hasEnergy, hasTimeStamp, hasWaveForm, hasExtra);
     if( hasWaveForm ){
-      printf(".... analog Probe (%d): ", analogProbe);
+      printf("Sample Size : %d .... analog Probe (%d): ", nSample, analogProbe);
       switch(analogProbe){
         case 0 : printf("Input\n"); break;
         case 1 : printf("Smoothed Input\n"); break;
@@ -1232,7 +1368,7 @@ inline int Data::DecodeQDCGroupedChannelBlock(unsigned int ChannelMask, bool fas
 
           if( verbose >= 3 ){
             printf("%4d| %5d, %d, %d, %d, %d \n",   2*wi, (word & 0xFFF)         , (( word >> 12 ) & 0x1 ), (( word >> 13 ) & 0x1 ), (( word >> 14 ) & 0x1 ), (( word >> 15 ) & 0x1 ));
-            printf("%-22s", "");
+            printf("%-21s", "");
             printf("%4d| %5d, %d, %d, %d, %d \n", 2*wi+1, (( word >> 16) & 0xFFF), (( word >> 28 ) & 0x1 ), (( word >> 29 ) & 0x1 ), (( word >> 30 ) & 0x1 ), (( word >> 31 ) & 0x1 ));
           }
         }

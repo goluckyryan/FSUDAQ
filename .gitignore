@@ -27,6 +27,7 @@ Bin2Root
 data
 Data
 raw_binary
+log
 
 *.d
 *.pcm
