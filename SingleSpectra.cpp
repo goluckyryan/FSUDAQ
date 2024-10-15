@@ -302,13 +302,13 @@ void SingleSpectra::FillHistograms(){
         }
         hist2D[ID]->Fill(ch, data);
       }
-      if( histVisibility[ID][ch]  ) hist[ID][ch]->UpdatePlot();
+      // if( histVisibility[ID][ch]  ) hist[ID][ch]->UpdatePlot();
 
       clock_gettime(CLOCK_REALTIME, &t1);
       if( t1.tv_nsec - t0.tv_nsec + (t1.tv_sec - t0.tv_sec)*1e9 > maxFillTimePerDigi * 1e6 ) break;  
     }
 
-    if( hist2DVisibility[ID] ) hist2D[ID]->UpdatePlot();
+    // if( hist2DVisibility[ID] ) hist2D[ID]->UpdatePlot();
     // digiMTX[ID].unlock();
 
   }
