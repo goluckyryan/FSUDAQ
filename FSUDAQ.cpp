@@ -59,9 +59,6 @@ FSUDAQ::FSUDAQ(QWidget *parent) : QMainWindow(parent){
     cbOpenDigitizers = new RComboBox(this);
     cbOpenDigitizers->addItem("Open Digitizers ... ", 0);
     cbOpenDigitizers->addItem("Open Digitizers via Optical/USB", 1);
-    // cbOpenDigitizers->addItem("Open Digitizers (default program)", 2);
-    // cbOpenDigitizers->addItem("Open Digitizers + load Settings", 3);
-    //cbOpenDigitizers->addItem("Open Digitizers via USB", 3);
     cbOpenDigitizers->addItem("Open Digitizers via A4818(s)", 4);
     layout->addWidget(cbOpenDigitizers, 0, 0);
     connect(cbOpenDigitizers, &RComboBox::currentIndexChanged, this, &FSUDAQ::OpenDigitizers);

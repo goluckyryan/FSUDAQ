@@ -439,12 +439,15 @@ inline void Histogram2D::rightMouseClickMenu(QMouseEvent * event){
   QAction * a4 = menu->addAction("Rebin (clear histogram)");
   QAction * a8 = menu->addAction("Load Cut(s)");
   QAction * a5 = menu->addAction("Create a Cut");
-  QAction * a7 = nullptr;
+  
+  QAction * b0 = nullptr;
+  QAction * b1 = nullptr;
+  QAction * b2 = nullptr;
   if( numCut > 0 ) {
-    a7 = menu->addAction("Save Cut(s)");
     menu->addSeparator();
-    menu->addAction("Add/Edit names to Cuts");
-    menu->addAction("Clear all Cuts");
+    b0 = menu->addAction("Save Cut(s)");
+    b2 = menu->addAction("Add/Edit names to Cuts");
+    b1 = menu->addAction("Clear all Cuts");
   }
   for( int i = 0; i < cutList.size(); i++){
     if( cutList[i].isEmpty()) continue;
@@ -454,20 +457,25 @@ inline void Histogram2D::rightMouseClickMenu(QMouseEvent * event){
 
   QAction *selectedAction = menu->exec(event->globalPosition().toPoint());
 
+  // qDebug() << "=======================";
+  // qDebug() << selectedAction;
+  // qDebug() << b2;
+
+  if( selectedAction == nullptr ){
+    usingMenu = false;
+    return;
+  }
+
   if( selectedAction == a1 ){
     xAxis->setRangeLower(xMin);
     xAxis->setRangeUpper(xMax);
     yAxis->setRangeLower(yMin);
     yAxis->setRangeUpper(yMax);
     replot();
-    usingMenu = false;
-    return;
   }
 
   if( selectedAction == a2 ) {
     Clear();
-    usingMenu = false;
-    return;
   }
 
   if( selectedAction == a3 ){
@@ -478,23 +486,17 @@ inline void Histogram2D::rightMouseClickMenu(QMouseEvent * event){
       }
     }
     replot();
-    usingMenu = false;
-    return;
   }
 
   if( selectedAction == a4){
     rightMouseClickRebin();
-    usingMenu = false;
-    return;
   }
 
   if( selectedAction == a5 ){
     tempCut.clear();
     tempCutID ++;
     isDrawCut= true;
-    usingMenu = false;
     numCut ++;
-    return;
   }
 
   if( selectedAction == a6){
@@ -506,6 +508,55 @@ inline void Histogram2D::rightMouseClickMenu(QMouseEvent * event){
       isLogZ = false;
     }
     replot();
+  }
+
+  if( selectedAction == a8 ){ // load Cuts
+    QString filePath = QFileDialog::getOpenFileName(this, 
+                                                "Load Cuts from File", 
+                                                settingPath, 
+                                                "Text file (*.txt)");
+
+    if (!filePath.isEmpty()) LoadCuts(filePath);      
+  }
+
+  //*==================================== when there are cuts
+  if( selectedAction == b0 ){ // Save Cuts
+    
+    QString filePath = QFileDialog::getSaveFileName(this, 
+                                                    "Save Cuts to File", 
+                                                    settingPath, 
+                                                    "Text file (*.txt)");
+
+    if (!filePath.isEmpty()) SaveCuts(filePath);
+  }
+
+  if( selectedAction == b1 ){
+    ClearAllCuts();
+  }
+
+  if( selectedAction == b2 ){
+
+    QDialog dialog(this);
+    dialog.setWindowTitle("Add/Edit name of cuts ");
+
+    QFormLayout layout(&dialog);
+
+    for(int i = 0; i < cutTextIDList.count(); i++){
+      if( cutTextIDList[i] < 0 ) continue;
+      QLineEdit * le = new QLineEdit(&dialog);
+      layout.addRow(colorCycle[i%colorCycle.count()].second, le);
+      le->setText( cutNameList[i] );
+      connect(le, &QLineEdit::textChanged, this, [=](){
+        le->setStyleSheet("color : blue;");
+      });
+      connect(le, &QLineEdit::returnPressed, this, [=](){
+        le->setStyleSheet("");
+        cutNameList[i] = le->text();
+        ((QCPItemText *) this->item(cutTextIDList[i]))->setText(le->text());
+        replot();
+      });
+    }
+    dialog.exec();
   }
 
   if( selectedAction && numCut > 0 && selectedAction->text().contains("Delete ") ){
@@ -542,61 +593,11 @@ inline void Histogram2D::rightMouseClickMenu(QMouseEvent * event){
       cutNameList.clear();
       cutEntryList.clear();
     }
-    return;
   }
 
-  if( selectedAction && numCut > 0 && selectedAction->text().contains("Clear all Cuts") ){
-    ClearAllCuts();
-    return;
-  }
 
-  if( selectedAction && numCut > 0 && selectedAction->text().contains("Add/Edit names to Cuts") ){
-    
-    QDialog dialog(this);
-    dialog.setWindowTitle("Add/Edit name of cuts ");
 
-    QFormLayout layout(&dialog);
-
-    for(int i = 0; i < cutTextIDList.count(); i++){
-      if( cutTextIDList[i] < 0 ) continue;
-      QLineEdit * le = new QLineEdit(&dialog);
-      layout.addRow(colorCycle[i%colorCycle.count()].second, le);
-      le->setText( cutNameList[i] );
-      connect(le, &QLineEdit::textChanged, this, [=](){
-        le->setStyleSheet("color : blue;");
-      });
-      connect(le, &QLineEdit::returnPressed, this, [=](){
-        le->setStyleSheet("");
-        cutNameList[i] = le->text();
-        ((QCPItemText *) this->item(cutTextIDList[i]))->setText(le->text());
-        replot();
-      });
-    }
-    dialog.exec();
-    return;
-  }
-
-  if( selectedAction == a8 ){ // load Cuts
-    QString filePath = QFileDialog::getOpenFileName(this, 
-                                                "Load Cuts from File", 
-                                                settingPath, 
-                                                "Text file (*.txt)");
-
-    if (!filePath.isEmpty()) LoadCuts(filePath);      
-
-  }
-
-  if( selectedAction == a7 ){ // Save Cuts
-    
-    QString filePath = QFileDialog::getSaveFileName(this, 
-                                                    "Save Cuts to File", 
-                                                    settingPath, 
-                                                    "Text file (*.txt)");
-
-    if (!filePath.isEmpty()) SaveCuts(filePath);
-
-  }
-
+  usingMenu = false;
 
 }
 
