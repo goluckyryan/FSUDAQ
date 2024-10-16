@@ -55,6 +55,7 @@ public slots:
   void stopTimer(){ 
     // printf("timer stop\n");
     timer->stop();
+    isFillingHistograms = false; // this will also break the FillHistogram do-loop
     ClearInternalDataCount();
   }
 

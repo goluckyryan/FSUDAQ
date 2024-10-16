@@ -275,6 +275,7 @@ void SingleSpectra::FillHistograms(){
   std::vector<int> digiChList; // (digi*1000 + ch) 
   std::vector<int> digiChLastIndex; // lastIndex 
   std::vector<int> digiChLoopIndex; // loopIndex 
+  std::vector<int> digiChAvalibleData; 
   std::vector<bool> digiChFilled;
 
   for( int ID = 0; ID < nDigi; ID++){
@@ -289,6 +290,7 @@ void SingleSpectra::FillHistograms(){
       digiChList.push_back( ID*1000 + ch ) ;
       digiChLastIndex.push_back(lastIndex);
       digiChLoopIndex.push_back(loopIndex);
+      digiChAvalibleData.push_back(temp1-temp2);
       digiChFilled.push_back(false);
     }
   }
@@ -332,7 +334,7 @@ void SingleSpectra::FillHistograms(){
     if( temp1 - temp2 > digi[ID]->GetData()->GetDataSize() ) { //DefaultDataSize = 10k
       temp2 = temp1 - digi[ID]->GetData()->GetDataSize();
       lastFilledIndex[ID][ch] = lastIndex;
-      lastFilledIndex[ID][ch] = loopIndex - 1;
+      loopFilledIndex[ID][ch] = loopIndex - 1;
     }
 
     lastFilledIndex[ID][ch] ++;
@@ -351,7 +353,7 @@ void SingleSpectra::FillHistograms(){
     hist2D[ID]->Fill(ch, data);
 
     clock_gettime(CLOCK_REALTIME, &tb);
-  }while( (tb.tv_nsec - ta.tv_nsec)/1e6 + (tb.tv_sec - ta.tv_sec)*1e3 < maxFillTimeinMilliSec ); 
+  }while( isFillingHistograms || (tb.tv_nsec - ta.tv_nsec)/1e6 + (tb.tv_sec - ta.tv_sec)*1e3 < maxFillTimeinMilliSec ); 
 
   //*--------------- generate fillign report
   for( size_t i = 0; i < digiChFilled.size() ; i++){
@@ -366,7 +368,7 @@ void SingleSpectra::FillHistograms(){
     int temp1 = lastIndex + loopIndex * digi[ID]->GetData()->GetDataSize();
     int temp2 = lastFilledIndex[ID][ch] + loopFilledIndex[ID][ch] * digi[ID]->GetData()->GetDataSize() + 1;
 
-    printf("Digi-%2d ch-%2d | event unfilled %d\n", ID, ch, temp1 - temp2 );
+    printf("Digi-%2d ch-%2d | event unfilled %d / %d\n", ID, ch, temp1 - temp2, digiChAvalibleData[i] );
   }  
 
   clock_gettime(CLOCK_REALTIME, &tb);
