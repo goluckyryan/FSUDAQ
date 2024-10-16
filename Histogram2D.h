@@ -32,7 +32,7 @@ public:
 
   void SetChannelMap(bool onOff, int tickStep = 1) { isChannelMap = onOff; this->tickStep = tickStep;}
 
-  void UpdatePlot(){ colorMap->rescaleDataRange(); replot(); }
+  void UpdatePlot(){ colorMap->rescaleDataRange(true); replot(); }
   void Clear(); // Clear Data and histrogram
 
   void Fill(double x, double y);
@@ -135,7 +135,7 @@ inline Histogram2D::Histogram2D(QString title, QString xLabel, QString yLabel, i
 
   QCPColorGradient color;
   color.setNanHandling(QCPColorGradient::NanHandling::nhNanColor);
-  color.setNanColor(QColor("white"));
+  color.setNanColor(QColor(0,0,0,0));
   color.clearColorStops();
   // color.setColorStopAt( 0.0, QColor("white" ));
   color.setColorStopAt( 0.0, QColor("purple" ));
@@ -267,8 +267,6 @@ inline Histogram2D::Histogram2D(QString title, QString xLabel, QString yLabel, i
 
   });
 }
-
-
 
 inline void Histogram2D::Fill(double x, double y){
   // DebugPrint("%s", "Histogram2D");
