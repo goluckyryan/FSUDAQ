@@ -515,7 +515,7 @@ inline void Data::SaveData(){
         
         if( bdAggWordCount == 1 ) {
           bdAggSize = word & 0x0FFFFFFF;
-          printf("###################### Bd Agg Size : %d\n", bdAggSize);
+          // printf("###################### Bd Agg Size : %d\n", bdAggSize);
         }
 
         // fwrite(buffer + i * chunkSize, sizeof(char), chunkSize, outFile);
@@ -531,7 +531,7 @@ inline void Data::SaveData(){
 
         if( groupWordCount == 1 ) {
           groupAggSize = word & 0x3FFFFFFF;
-          printf("============= Coupled Channel Agg Size : %d \n", groupAggSize);
+          // printf("============= Coupled Channel Agg Size : %d \n", groupAggSize);
         }
         if( groupWordCount == 2 ) {
           sampleSize = (word & 0xFFF) * 8;
@@ -540,7 +540,7 @@ inline void Data::SaveData(){
           uint32_t oldWord = word;                    
           uint32_t newSampleSize = sampleSize / Deci;
           word = (word & 0xFFFFF000) + (newSampleSize / 8 ); // change the number of sample
-          printf("============= Sample Size : %d | Ch Size : %d | old %08X new %08X\n", sampleSize, chAggSize, oldWord, word);
+          // printf("============= Sample Size : %d | Ch Size : %d | old %08X new %08X\n", sampleSize, chAggSize, oldWord, word);
 
           int nEvent = (groupAggSize - 2 ) / chAggSize;
           int newGroupAggSize = 2 + nEvent * ( 2 + newSampleSize / 2 + isExtra );
@@ -563,12 +563,12 @@ inline void Data::SaveData(){
           // printf("             nEvent : %d \n", nEvent);
           // printf(" New Event Agg Size : %d \n", 2 + sampleSize / Deci / 2 + isExtra);
 
-          printf("%3d | %08X \n", 1,  newHeader0); 
-          printf("%3d | %08X \n", 2,  oldHeader1); 
-          printf("%3d | %08X \n", 3,  oldHeader2); 
-          printf("%3d | %08X \n", 4,  oldHeader3); 
-          printf("%3d | %3d | %08X \n", 5, 1, newAggHeader0); 
-          printf("%3d | %3d | %08X \n", 6, 2, newAggHeader1); 
+          // printf("%3d | %08X \n", 1,  newHeader0); 
+          // printf("%3d | %08X \n", 2,  oldHeader1); 
+          // printf("%3d | %08X \n", 3,  oldHeader2); 
+          // printf("%3d | %08X \n", 4,  oldHeader3); 
+          // printf("%3d | %3d | %08X \n", 5, 1, newAggHeader0); 
+          // printf("%3d | %3d | %08X \n", 6, 2, newAggHeader1); 
         }
 
         if( groupWordCount > 2 ) {
@@ -581,21 +581,21 @@ inline void Data::SaveData(){
 
             if( decimation == 1 ){
               average = S0/2 + S1/2;
-              printf("%3d | %3d | %3d | %3d | %08X | %4X \n", bdAggWordCount, groupWordCount, chWordCount, sampleWordCount, word, average); 
+              // printf("%3d | %3d | %3d | %3d | %08X | %4X \n", bdAggWordCount, groupWordCount, chWordCount, sampleWordCount, word, average); 
               fwrite(&average, sizeof(average), 1, outFile);
             }else{
               average += S0/Deci + S1/Deci;
-              printf("%3d | %3d | %3d | %3d | %08X | %4X \n", bdAggWordCount, groupWordCount, chWordCount, sampleWordCount, word, average); 
+              // printf("%3d | %3d | %3d | %3d | %08X | %4X \n", bdAggWordCount, groupWordCount, chWordCount, sampleWordCount, word, average); 
               if( sampleWordCount % (Deci/2) == 0)  {
                 // fwrite(&S0, sizeof(S0), 1, outFile);
-                printf("                       --> %4X \n", average);
+                // printf("                       --> %4X \n", average);
                 fwrite(&average, sizeof(average), 1, outFile);
                 average = 0;
               }
             }
 
           }else{
-            printf("%3d | %3d | %3d | %08X \n", bdAggWordCount, groupWordCount, chWordCount, word); 
+            // printf("%3d | %3d | %3d | %08X \n", bdAggWordCount, groupWordCount, chWordCount, word); 
             fwrite(&word, sizeof(word), 1, outFile);
           }
         }
