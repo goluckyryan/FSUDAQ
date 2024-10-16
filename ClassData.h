@@ -537,9 +537,9 @@ inline void Data::SaveData(){
           sampleSize = (word & 0xFFF) * 8;
           bool isExtra = ( (word >> 28 ) & 0x1 );
           chAggSize = 2 + sampleSize / 2 + isExtra;
-          uint32_t oldWord = word;                    
           uint32_t newSampleSize = sampleSize / Deci;
-          word = (word & 0xFFFFF000) + (newSampleSize / 8 ); // change the number of sample
+          // uint32_t oldWord = word;
+          // word = (word & 0xFFFFF000) + (newSampleSize / 8 ); // change the number of sample
           // printf("============= Sample Size : %d | Ch Size : %d | old %08X new %08X\n", sampleSize, chAggSize, oldWord, word);
 
           int nEvent = (groupAggSize - 2 ) / chAggSize;
@@ -554,7 +554,7 @@ inline void Data::SaveData(){
           fwrite(&oldHeader3, sizeof(uint32_t), 1, outFile);
 
           uint32_t newAggHeader0 = (0x8 << 28) + newGroupAggSize ; // add decimation factor in the word
-          uint32_t newAggHeader1 = word + (decimation << 12); // add decimation factor in the word
+          uint32_t newAggHeader1 = (word & 0xFFFFF000) + (newSampleSize / 8 ) + (decimation << 12); // add decimation factor in the word
           fwrite(&newAggHeader0, sizeof(uint32_t), 1, outFile);
           fwrite(&newAggHeader1, sizeof(uint32_t), 1, outFile);
 
