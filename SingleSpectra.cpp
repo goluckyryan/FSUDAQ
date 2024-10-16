@@ -4,6 +4,7 @@
 #include <QGroupBox>
 #include <QStandardItemModel>
 #include <QLabel>
+#include <QRandomGenerator>
 // #include <QScreen>
 
 SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawDataPath, QMainWindow * parent) : QMainWindow(parent){
@@ -12,7 +13,7 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
   this->nDigi = nDigi;
   this->settingPath = rawDataPath + "/HistogramSettings.txt";
 
-  maxFillTimeinMilliSec = 1000;  
+  maxFillTimeinMilliSec = 900;  
   maxFillTimePerDigi = maxFillTimeinMilliSec/nDigi;
 
   isSignalSlotActive = true;
@@ -51,15 +52,17 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
       isSignalSlotActive = true;
 
       //printf("oldCh = %d \n", oldCh);
-      if( oldCh >=  digi[index]->GetNumInputCh()) {
-        cbCh->setCurrentIndex(0);
-      }else{
-        if( oldCh >= 0 ){
-          cbCh->setCurrentIndex(oldCh);
-        }else{
-          cbCh->setCurrentIndex(0);
-        }
-      }
+      // if( oldCh >=  digi[index]->GetNumInputCh()) {
+      //   cbCh->setCurrentIndex(0);
+      // }else{
+      //   if( oldCh >= 0 ){
+      //     cbCh->setCurrentIndex(oldCh);
+      //   }else{
+      //     cbCh->setCurrentIndex(0);
+      //   }
+      // }
+
+      cbCh->setCurrentIndex(oldChComboBoxindex[index]);
       ChangeHistView();
       
     });
@@ -80,6 +83,7 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
         if( hist2D[i] ) hist2D[i]->Clear();
       }
     });
+
 
     chkIsFillHistogram = new QCheckBox("Fill Histograms", this);
     ctrlLayout->addWidget(chkIsFillHistogram, 0, 6, 1, 2);
@@ -133,9 +137,11 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
 
     histLayout->addWidget(hist2D[0], 0, 0);
     hist2DVisibility[0] = true;
-    oldBd = 0;
-    oldCh = digi[0]->GetNumInputCh();
   }
+
+  //set default oldChComboBoxindex
+  for( unsigned int i = 0; i < nDigi; i++ ) oldChComboBoxindex[i] = 0;
+  oldBd = 0;
 
   layout->setStretch(0, 1);
   layout->setStretch(1, 6);
@@ -149,12 +155,17 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
 
   histWorker->moveToThread(workerThread);
 
-  // Setup the timer to trigger every second
-  connect(timer, &QTimer::timeout, histWorker, &HistWorker::FillHistograms);
-
+  // connect(timer, &QTimer::timeout, histWorker, &HistWorker::FillHistograms);
   connect( histWorker, &HistWorker::workDone, this, &SingleSpectra::ReplotHistograms);
 
-  workerThread->start();
+  // workerThread->start();
+
+  connect(timer, &QTimer::timeout, this, [=](){
+    if( isFillingHistograms == false){
+      histWorker->FillHistograms();
+      // ReplotHistograms();
+    }
+  });
 
 }
 
@@ -198,23 +209,34 @@ void SingleSpectra::ChangeHistView(){
   //printf("bd : %d, ch : %d \n", bd, ch);
 
   // Remove oldCh
-  if( oldCh >= 0 && oldCh < digi[oldBd]->GetNumInputCh()){
-    histLayout->removeWidget(hist[oldBd][oldCh]);
-    hist[oldBd][oldCh]->setParent(nullptr);
-    histVisibility[oldBd][oldCh] = false;
-  }
+  int oldCh = oldChComboBoxindex[oldBd] == 0 ? digi[oldBd]->GetNumInputCh() : oldChComboBoxindex[oldBd] - 1;
 
-  if( oldCh == digi[oldBd]->GetNumInputCh() ){
+  if( oldChComboBoxindex[oldBd] > 0 ){
+    histLayout->removeWidget(hist[oldBd][oldCh]);
+    histVisibility[oldBd][oldCh] = false;
+    hist[oldBd][oldCh]->setParent(nullptr);
+  }else{
     histLayout->removeWidget(hist2D[oldBd]);
     hist2D[oldBd]->setParent(nullptr);
     hist2DVisibility[oldBd] = false;
   }
 
+  // if( oldCh >= 0 && oldCh < digi[oldBd]->GetNumInputCh()){
+  //   histLayout->removeWidget(hist[oldBd][oldCh]);
+  //   hist[oldBd][oldCh]->setParent(nullptr);
+  //   histVisibility[oldBd][oldCh] = false;
+  // }
+
+  // if( oldCh == digi[oldBd]->GetNumInputCh() ){
+  //   histLayout->removeWidget(hist2D[oldBd]);
+  //   hist2D[oldBd]->setParent(nullptr);
+  //   hist2DVisibility[oldBd] = false;
+  // }
+
   // Add ch
   if( ch >=0 && ch < digi[bd]->GetNumInputCh()) {
     histLayout->addWidget(hist[bd][ch], 0, 0);
     histVisibility[bd][ch] = true;
-
     hist[bd][ch]->UpdatePlot();
   }
 
@@ -225,7 +247,7 @@ void SingleSpectra::ChangeHistView(){
   }
 
   oldBd = bd;
-  oldCh = ch;
+  oldChComboBoxindex[bd] = cbCh->currentIndex();
 
   // for( unsigned int i = 0; i < nDigi; i++ ){
   //   if( hist2DVisibility[i] ) printf(" hist2D-%d is visible\n", i); 
@@ -244,74 +266,111 @@ void SingleSpectra::FillHistograms(){
   if( isFillingHistograms) return;
 
   isFillingHistograms = true;
-  timespec t0, t1;
+  // timespec t0, t1;
+  timespec ta, tb;
 
-  QVector<int> randomDigiList = generateNonRepeatedCombination(nDigi);
+  printf("####################### SingleSpectra::%s\n", __func__);
+  clock_gettime(CLOCK_REALTIME, &ta);
 
-  // qDebug() << randomDigiList;
+  std::vector<int> digiChList; // (digi*1000 + ch) 
+  std::vector<int> digiChLastIndex; // lastIndex 
+  std::vector<int> digiChLoopIndex; // loopIndex 
+  std::vector<bool> digiChFilled;
 
-  for( int i = 0; i < nDigi; i++){
-    int ID = randomDigiList[i];
-
-    QVector<int> randomChList = generateNonRepeatedCombination(digi[ID]->GetNumInputCh());
-
-    // qDebug() << randomChList;
-    // digiMTX[ID].lock();
-    // digi[ID]->GetData()->PrintAllData();
-
-    clock_gettime(CLOCK_REALTIME, &t0);
-    for( int k = 0; k < digi[ID]->GetNumInputCh(); k ++ ){
-      int ch = randomChList[k];
+  for( int ID = 0; ID < nDigi; ID++){
+    for( int ch = 0; ch < digi[ID]->GetNumInputCh(); ch++){
       int lastIndex = digi[ID]->GetData()->GetDataIndex(ch);
-      if( lastIndex < 0 ) continue;
-      // printf("--- ch %2d | last index %d \n", ch, lastIndex);
-
       int loopIndex = digi[ID]->GetData()->GetLoopIndex(ch);
 
       int temp1 = lastIndex + loopIndex * digi[ID]->GetData()->GetDataSize();
       int temp2 = lastFilledIndex[ID][ch] + loopFilledIndex[ID][ch] * digi[ID]->GetData()->GetDataSize() + 1;
 
-      // printf("loopIndx : %d | ID now : %d, ID old : %d \n", loopIndex, temp1, temp2);
-
       if( temp1 <= temp2 ) continue;
+      digiChList.push_back( ID*1000 + ch ) ;
+      digiChLastIndex.push_back(lastIndex);
+      digiChLoopIndex.push_back(loopIndex);
+      digiChFilled.push_back(false);
+    }
+  }
 
-      if( temp1 - temp2 > digi[ID]->GetData()->GetDataSize() ) { //DefaultDataSize = 10k
-        temp2 = temp1 - digi[ID]->GetData()->GetDataSize();
-        lastFilledIndex[ID][ch] = lastIndex;
-        lastFilledIndex[ID][ch] = loopIndex - 1;
-      }
+  int nSize = digiChList.size();
 
-      // printf("ch %d | regulated  ID now %d  new %d | last fill idx %d\n", ch, temp2, temp1, lastFilledIndex[ID][ch]);
-      
-      for( int j = 0 ; j <= temp1 - temp2; j ++){
-        lastFilledIndex[ID][ch] ++;
-        if( lastFilledIndex[ID][ch] > digi[ID]->GetData()->GetDataSize() ) {
-          lastFilledIndex[ID][ch] = 0;
-          loopFilledIndex[ID][ch] ++;
-        }
+  // printf("------------ nSize : %d \n", nSize);
 
-        uShort data = digi[ID]->GetData()->GetEnergy(ch, lastFilledIndex[ID][ch]);
+  if( nSize == 0 ) {
+    isFillingHistograms = false;
+    return;
+  }
 
-        // printf(" ch: %d, last fill idx : %d | %d \n", ch, lastFilledIndex[ID][ch], data);
+  // this method, small trigger rate channel will have more chance to fill all data
+  do{
+    size_t filledCount = 0;
+    for( size_t i = 0; i < digiChFilled.size() ; i++ ){
+      if( digiChFilled[i] ) filledCount ++;
+    }
+    if( filledCount == digiChFilled.size() ) break;
 
-        hist[ID][ch]->Fill( data );
-        if( digi[i]->GetDPPType() == DPPTypeCode::DPP_PSD_CODE ){
-          uShort e2 = digi[ID]->GetData()->GetEnergy2(ch, lastFilledIndex[ID][ch]);
-          // printf("%u \n", e2);
-          hist[ID][ch]->Fill( e2, 1);
-        }
-        hist2D[ID]->Fill(ch, data);
-      }
-      // if( histVisibility[ID][ch]  ) hist[ID][ch]->UpdatePlot();
+    int randomValue  = QRandomGenerator::global()->bounded(nSize);
+    if( digiChFilled[randomValue] == true ) continue;
+    
+    int digiCh = digiChList[randomValue];
+    int ID = digiCh  / 1000;
+    int ch = digiCh  % 1000;
+    // printf(" -------------------- %d  /  %d | %d\n", randomValue, nSize-1, digiCh);
 
-      clock_gettime(CLOCK_REALTIME, &t1);
-      if( t1.tv_nsec - t0.tv_nsec + (t1.tv_sec - t0.tv_sec)*1e9 > maxFillTimePerDigi * 1e6 ) break;  
+    int lastIndex = digiChLastIndex[randomValue];
+    int loopIndex = digiChLoopIndex[randomValue];
+
+    int temp1 = lastIndex + loopIndex * digi[ID]->GetData()->GetDataSize();
+    int temp2 = lastFilledIndex[ID][ch] + loopFilledIndex[ID][ch] * digi[ID]->GetData()->GetDataSize() + 1;
+
+    if( temp1 <= temp2 ) {
+      digiChFilled[randomValue] = true;
+      // printf("Digi-%2d ch-%2d all filled | %zu\n", ID, ch, digiChList.size());
+      continue;
+    }
+    if( temp1 - temp2 > digi[ID]->GetData()->GetDataSize() ) { //DefaultDataSize = 10k
+      temp2 = temp1 - digi[ID]->GetData()->GetDataSize();
+      lastFilledIndex[ID][ch] = lastIndex;
+      lastFilledIndex[ID][ch] = loopIndex - 1;
     }
 
-    // if( hist2DVisibility[ID] ) hist2D[ID]->UpdatePlot();
-    // digiMTX[ID].unlock();
+    lastFilledIndex[ID][ch] ++;
+    if( lastFilledIndex[ID][ch] > digi[ID]->GetData()->GetDataSize() ) {
+      lastFilledIndex[ID][ch] = 0;
+      loopFilledIndex[ID][ch] ++;
+    }
 
-  }
+    uShort data = digi[ID]->GetData()->GetEnergy(ch, lastFilledIndex[ID][ch]);
+    
+    hist[ID][ch]->Fill( data );
+    if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_PSD_CODE ){
+      uShort e2 = digi[ID]->GetData()->GetEnergy2(ch, lastFilledIndex[ID][ch]);
+      hist[ID][ch]->Fill( e2, 1);
+    }
+    hist2D[ID]->Fill(ch, data);
+
+    clock_gettime(CLOCK_REALTIME, &tb);
+  }while( (tb.tv_nsec - ta.tv_nsec)/1e6 + (tb.tv_sec - ta.tv_sec)*1e3 < maxFillTimeinMilliSec ); 
+
+  //*--------------- generate fillign report
+  for( size_t i = 0; i < digiChFilled.size() ; i++){
+    int digiCh = digiChList[i];
+    int ID = digiCh  / 1000;
+    int ch = digiCh  % 1000;
+    // printf(" -------------------- %d  /  %d | %d\n", randomValue, nSize-1, digiCh);
+
+    int lastIndex = digiChLastIndex[i];
+    int loopIndex = digiChLoopIndex[i];
+
+    int temp1 = lastIndex + loopIndex * digi[ID]->GetData()->GetDataSize();
+    int temp2 = lastFilledIndex[ID][ch] + loopFilledIndex[ID][ch] * digi[ID]->GetData()->GetDataSize() + 1;
+
+    printf("Digi-%2d ch-%2d | event unfilled %d\n", ID, ch, temp1 - temp2 );
+  }  
+
+  clock_gettime(CLOCK_REALTIME, &tb);
+  printf("total time : %8.3f ms\n", (tb.tv_nsec - ta.tv_nsec)/1e6 + (tb.tv_sec - ta.tv_sec)*1e3 );
 
   isFillingHistograms = false;
 

@@ -73,7 +73,6 @@ private:
   Histogram1D * hist[MaxNDigitizer][MaxNChannels];
   Histogram2D * hist2D[MaxNDigitizer];
 
-
   QCheckBox * chkIsFillHistogram;
 
   RComboBox * cbDivision;
@@ -83,7 +82,8 @@ private:
 
   QGroupBox * histBox;
   QGridLayout * histLayout;
-  int oldBd, oldCh;
+  int oldBd;
+  int oldChComboBoxindex[MaxNDigitizer]; // the ID of hist for display
 
   QString settingPath;
 
@@ -97,7 +97,7 @@ private:
 
 };
 
-//^#======================================================== HistWorker
+// //^#======================================================== HistWorker
 class HistWorker : public QObject{
   Q_OBJECT
 public:
