@@ -2545,6 +2545,8 @@ void DigiSettingsPanel::SetUpBoard_QDC(){
   SetUpSpinBox(sbRecordLength[ID][0],   "Record Length [ns] : ", bdCfgLayout[ID], 6, 0, DPP::QDC::RecordLength_W, -1, true);
 
   SetUpSpinBox( sbSWDecimation[ID], "SW Decimation Factor : ", bdCfgLayout[ID], 7, 0, DPP::DecimationFactor, -1, true);
+  QLabel * lbDeci = new QLabel("This average trace.", this);
+  bdCfgLayout[ID]->addWidget(lbDeci, 7, 2, 1, 2);
 
 }
 
