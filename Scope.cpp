@@ -372,6 +372,8 @@ void Scope::StartScope(){
 
       digi[ID]->SetBits(DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::LocalShapeTriggerMode, 0, ch);
       digi[ID]->SetBits(DPP::PHA::DPPAlgorithmControl2_G, DPP::PHA::Bit_DPPAlgorithmControl2::LocalTrigValidMode, 0, ch);
+  
+      digi[ID]->WriteRegister(DPP::RegChannelEnableMask, (1 << ch));
 
     }
 
@@ -384,14 +386,17 @@ void Scope::StartScope(){
 
       digi[ID]->SetBits(DPP::PSD::DPPAlgorithmControl2_G, DPP::PSD::Bit_DPPAlgorithmControl2::LocalShapeTriggerMode, 0, ch);
       digi[ID]->SetBits(DPP::PSD::DPPAlgorithmControl2_G, DPP::PSD::Bit_DPPAlgorithmControl2::LocalTrigValidMode, 0, ch);
+  
+      digi[ID]->WriteRegister(DPP::RegChannelEnableMask, (1 << ch));
     }
 
     if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_QDC_CODE ){
       dppAlg  = digi[ID]->GetSettingFromMemory(DPP::QDC::DPPAlgorithmControl, ch);
       digi[ID]->SetBits(DPP::QDC::DPPAlgorithmControl, DPP::QDC::Bit_DPPAlgorithmControl::TriggerMode, 0, ch); //set self-triiger
+  
+      digi[ID]->WriteRegister(DPP::RegChannelEnableMask, (1 << ch/8));
     }
 
-    digi[ID]->WriteRegister(DPP::RegChannelEnableMask, (1 << ch));
 
     //=========== start 
     digi[ID]->WriteRegister(DPP::SoftwareClear_W, 1);
