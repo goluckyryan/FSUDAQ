@@ -144,6 +144,7 @@ private:
   
   //@----- Elog
   QString elogIP;
+  QString elogPort;
   QString elogName;
   QString elogUser;
   QString elogPWD;

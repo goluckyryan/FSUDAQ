@@ -446,9 +446,10 @@ void FSUDAQ::LoadProgramSettings(){
       if( count == 2 ) dataBaseName = line;
       if( count == 3 ) influxToken = line;
       if( count == 4 ) elogIP = line;
-      if( count == 5 ) elogName = line;
-      if( count == 6 ) elogUser = line;
-      if( count == 7 ) elogPWD = line;
+      if( count == 5 ) elogPort = line;
+      if( count == 6 ) elogName = line;
+      if( count == 7 ) elogUser = line;
+      if( count == 8 ) elogPWD = line;
 
       count ++;
       line = in.readLine();
@@ -467,6 +468,7 @@ void FSUDAQ::LoadProgramSettings(){
     LogMsg(" Database Name : " + dataBaseName);
     LogMsg("Database Token : " + maskText(influxToken));
     LogMsg("       Elog IP : " + elogIP);
+    LogMsg("     Elog Port : " + elogPort);
     LogMsg("     Elog Name : " + elogName);
     LogMsg("     Elog User : " + maskText(elogUser));
     LogMsg("      Elog PWD : " + maskText(elogPWD));
@@ -501,6 +503,7 @@ void FSUDAQ::SaveProgramSettings(){
   file.write((dataBaseName+"\n").toStdString().c_str());
   file.write((influxToken+"\n").toStdString().c_str());
   file.write((elogIP+"\n").toStdString().c_str());
+  file.write((elogPort+"\n").toStdString().c_str());
   file.write((elogName+"\n").toStdString().c_str());
   file.write((elogUser+"\n").toStdString().c_str());
   file.write((elogPWD+"\n").toStdString().c_str());
@@ -1561,13 +1564,16 @@ void FSUDAQ::SetAndLockInfluxElog(){
       QVBoxLayout layout(&dialog);
       QFormLayout formLayout;
 
+      QLineEdit portLineEdit;
       QLineEdit usernameLineEdit;
       QLineEdit passwordLineEdit;
       //passwordLineEdit.setEchoMode(QLineEdit::Password);
 
+      formLayout.addRow("Port:", &portLineEdit);
       formLayout.addRow("Username:", &usernameLineEdit);
       formLayout.addRow("Password:", &passwordLineEdit);
 
+      portLineEdit.setText(elogPort);
       usernameLineEdit.setText(elogUser);
       passwordLineEdit.setText(elogPWD);
 
@@ -1584,17 +1590,19 @@ void FSUDAQ::SetAndLockInfluxElog(){
 
       // Show the dialog and get the result
       if (dialog.exec() == QDialog::Accepted) {
-          QString username = usernameLineEdit.text();
-          QString password = passwordLineEdit.text();
+        QString portNum = portLineEdit.text();
+        QString username = usernameLineEdit.text();
+        QString password = passwordLineEdit.text();
 
-          // Check if username and password are not empty
-          if (!username.isEmpty() && !password.isEmpty()) {
-              elogUser = username;
-              elogPWD = password;
+        // Check if username and password are not empty
+        if (!portNum.isEmpty() &&  !username.isEmpty() && !password.isEmpty()) {
+          elogPort = portNum;
+          elogUser = username;
+          elogPWD = password;
 
-          } else {
-              qDebug() << "Please enter both username and password.";
-          }
+        } else {
+          qDebug() << "Please enter both port, username, and password.";
+        }
       }
 
     }
@@ -2044,7 +2052,7 @@ void FSUDAQ::WriteElog(QString htmlText, QString subject, QString category, int 
   if( elogUser == "" ) return;
   if( elogPWD == "" ) return;
   QStringList arg;
-  arg << "-h" << elogIP << "-p" << "8080" << "-l" << elogName << "-u" << elogUser << elogPWD << "-a" << "Author=FSUDAQ";
+  arg << "-h" << elogIP << "-p" << elogPort << "-l" << elogName << "-u" << elogUser << elogPWD << "-a" << "Author=FSUDAQ";
   if( runNumber > 0 ) arg << "-a" << "RunNo=" + QString::number(runNumber);
   if( category != "" ) arg << "-a" << "Category=" + category;
   arg << "-a" << "Subject=" + subject 
@@ -2074,7 +2082,7 @@ void FSUDAQ::AppendElog(QString appendHtmlText){
   
   QProcess elogBash(this);
   QStringList arg;
-  arg << "-h" << elogIP << "-p" << "8080" << "-l" << elogName << "-u" << elogUser << elogPWD << "-w" << QString::number(elogID);
+  arg << "-h" << elogIP << "-p" << elogPort << "-l" << elogName << "-u" << elogUser << elogPWD << "-w" << QString::number(elogID);
   //retrevie the elog
   elogBash.start("elog", arg); 
   elogBash.waitForFinished();
@@ -2085,7 +2093,7 @@ void FSUDAQ::AppendElog(QString appendHtmlText){
   if( index != -1){
     QString originalHtml = output.mid(index + separator.length());
     arg.clear();
-    arg << "-h" << elogIP << "-p" << "8080" << "-l" << elogName << "-u" << elogUser << elogPWD << "-e" << QString::number(elogID)
+    arg << "-h" << elogIP << "-p" << elogPort << "-l" << elogName << "-u" << elogUser << elogPWD << "-e" << QString::number(elogID)
         << "-n" << "2" << originalHtml + "<br>" + appendHtmlText;
     
     elogBash.start("elog", arg); 
