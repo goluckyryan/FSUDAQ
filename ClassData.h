@@ -52,6 +52,7 @@ class Data{
 
     int GetLoopIndex(unsigned short ch) const {return LoopIndex[ch];}
     int GetDataIndex(unsigned short ch) const {return DataIndex[ch];}
+    long GetAbsDataIndex(unsigned short ch) const {return LoopIndex[ch] * dataSize + DataIndex[ch];}
 
     uShort GetDataSize() const {return dataSize;}
 

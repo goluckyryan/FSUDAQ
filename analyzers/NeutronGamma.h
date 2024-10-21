@@ -74,8 +74,7 @@ private:
   QGroupBox * histBox;
   QGridLayout * histLayout;
 
-  int lastFilledIndex[MaxNDigitizer][MaxNChannels];
-  int loopFilledIndex[MaxNDigitizer][MaxNChannels];
+  int lastFilledIndex[MaxNDigitizer][MaxNChannels];// absolute data index = loop * dataSize + index
 
   bool fillHistograms;
 
@@ -178,7 +177,6 @@ inline void NeutronGamma::ClearInternalDataCount(){
   for( unsigned int i = 0; i < nDigi; i++){
     for( int ch = 0; ch < MaxRegChannel ; ch++) {
       lastFilledIndex[i][ch] = -1;
-      loopFilledIndex[i][ch] = 0;
     }
   }
 }
@@ -190,36 +188,25 @@ inline void NeutronGamma::UpdateHistograms(){
   int ID = cbDigi->currentData().toInt();
   int ch = cbCh->currentData().toInt();
 
-  int lastIndex = digi[ID]->GetData()->GetDataIndex(ch);
-  if( lastIndex < 0 ) return;
+  if( digi[ID]->GetData()->GetDataIndex(ch) < 0 ) return;
 
-  int loopIndex = digi[ID]->GetData()->GetLoopIndex(ch);
+  int dataAvalible = digi[ID]->GetData()->GetAbsDataIndex(ch) - lastFilledIndex[ID][ch];
 
-  int temp1 = lastIndex + loopIndex * digi[ID]->GetData()->GetDataSize();
-  int temp2 = lastFilledIndex[ID][ch] + loopFilledIndex[ID][ch] * digi[ID]->GetData()->GetDataSize() + 1;
-
-  if( temp1 - temp2 > digi[ID]->GetData()->GetDataSize() ) { //DefaultDataSize = 10k
-    temp2 = temp1 - digi[ID]->GetData()->GetDataSize();
-    lastFilledIndex[ID][ch] = lastIndex;
-    lastFilledIndex[ID][ch] = loopIndex - 1;
+  if( dataAvalible > digi[ID]->GetData()->GetDataSize() ) { //DefaultDataSize = 10k
+    lastFilledIndex[ID][ch] = digi[ID]->GetData()->GetAbsDataIndex(ch) - digi[ID]->GetData()->GetDataSize();
   }
 
-  for( int j = 0 ; j <= temp1 - temp2; j ++){
+  do{
     lastFilledIndex[ID][ch] ++;
-    if( lastFilledIndex[ID][ch] > digi[ID]->GetData()->GetDataSize() ) {
-      lastFilledIndex[ID][ch] = 0;
-      loopFilledIndex[ID][ch] ++;
-    }
 
     uShort data_long = digi[ID]->GetData()->GetEnergy(ch, lastFilledIndex[ID][ch]);
     uShort data_short = digi[ID]->GetData()->GetEnergy2(ch, lastFilledIndex[ID][ch]);
 
     // printf(" ch: %d, last fill idx : %d | %d \n", ch, lastFilledIndex[ID][ch], data);
-
     double psd = (data_long - data_short) *1.0 / data_long;
-
     hist2D->Fill(data_long, psd);
-  }
+
+  }while(lastFilledIndex[ID][ch] <= digi[ID]->GetData()->GetAbsDataIndex(ch));
 
   hist2D->UpdatePlot();
 

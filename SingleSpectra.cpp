@@ -252,7 +252,7 @@ void SingleSpectra::FillHistograms(){
   clock_gettime(CLOCK_REALTIME, &ta);
 
   std::vector<int> digiChList; // (digi*1000 + ch) 
-  std::vector<int> digiChLastIndex; // loop * dataSize + index; 
+  std::vector<long> digiChLastIndex; // loop * dataSize + index; 
   std::vector<int> digiChAvalibleData; 
   std::vector<bool> digiChFilled;
   std::vector<int> digiChFilledCount; 
@@ -260,10 +260,7 @@ void SingleSpectra::FillHistograms(){
 
   for( int ID = 0; ID < nDigi; ID++){
     for( int ch = 0; ch < digi[ID]->GetNumInputCh(); ch++){
-      int lastIndex = digi[ID]->GetData()->GetDataIndex(ch);
-      int loopIndex = digi[ID]->GetData()->GetLoopIndex(ch);
-
-      int temp1 = lastIndex + loopIndex * digi[ID]->GetData()->GetDataSize();
+      int temp1 = digi[ID]->GetData()->GetAbsDataIndex(ch); 
       int temp2 = lastFilledIndex[ID][ch];
 
       if( temp1 <= temp2 ) continue;
@@ -272,6 +269,9 @@ void SingleSpectra::FillHistograms(){
       digiChAvalibleData.push_back(temp1-temp2);
       digiChFilled.push_back(false);
       digiChFilledCount.push_back(0);
+
+      if( temp1 - temp2 > digi[ID]->GetData()->GetDataSize() ) lastFilledIndex[ID][ch] = temp1 - digi[ID]->GetData()->GetDataSize() ;
+
     }
   }
 
@@ -301,9 +301,6 @@ void SingleSpectra::FillHistograms(){
       digiChFilled[randomValue] = true;
       // printf("Digi-%2d ch-%2d all filled | %zu\n", ID, ch, digiChList.size());
       continue;
-    }
-    if( digiChLastIndex[randomValue] - lastFilledIndex[ID][ch] > digi[ID]->GetData()->GetDataSize() ) { //DefaultDataSize = 10k
-      lastFilledIndex[ID][ch] = digiChLastIndex[randomValue] -  digi[ID]->GetData()->GetDataSize() ;
     }
 
     lastFilledIndex[ID][ch] ++;
