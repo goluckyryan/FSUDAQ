@@ -16,9 +16,6 @@
 
 #include "macro.h"
 
-//#define MaxNData 10000 /// store 10k events per channels
-#define DefaultDataSize 10000
-
 enum DPPTypeCode{ 
   DPP_PHA_CODE = 0x8B,
   DPP_PSD_CODE = 0x88,
@@ -58,11 +55,11 @@ class Data{
 
     uShort GetDataSize() const {return dataSize;}
 
-    ullong GetTimestamp(unsigned short ch, unsigned int index) const {return Timestamp[ch][index];}
-    uShort GetFineTime(unsigned short ch, unsigned int index)  const {return fineTime[ch][index];}
-    uShort GetEnergy(unsigned short ch, unsigned int index)    const {return Energy[ch][index];}
-    uShort GetEnergy2(unsigned short ch, unsigned int index)   const {return Energy2[ch][index];}
-    bool   GetPileUp(unsigned short ch, unsigned int index)    const {return PileUp[ch][index];}
+    ullong GetTimestamp(unsigned short ch, unsigned int index) const {return Timestamp[ch][index % dataSize];}
+    uShort GetFineTime(unsigned short ch, unsigned int index)  const {return fineTime[ch][index % dataSize];}
+    uShort GetEnergy(unsigned short ch, unsigned int index)    const {return Energy[ch][index % dataSize];}
+    uShort GetEnergy2(unsigned short ch, unsigned int index)   const {return Energy2[ch][index % dataSize];}
+    bool   GetPileUp(unsigned short ch, unsigned int index)    const {return PileUp[ch][index % dataSize];}
 
     uInt GetWordIndex() const {return nw;}
 

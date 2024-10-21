@@ -13,8 +13,7 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
   this->nDigi = nDigi;
   this->settingPath = rawDataPath + "/HistogramSettings.txt";
 
-  maxFillTimeinMilliSec = 900;  
-  maxFillTimePerDigi = maxFillTimeinMilliSec/nDigi;
+  maxFillTimeinMilliSec = SingleHistogramFillingTime;  
 
   isSignalSlotActive = true;
 
@@ -155,10 +154,10 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
 
   histWorker->moveToThread(workerThread);
 
+  workerThread->start();
+
   // connect(timer, &QTimer::timeout, histWorker, &HistWorker::FillHistograms);
   connect( histWorker, &HistWorker::workDone, this, &SingleSpectra::ReplotHistograms);
-
-  // workerThread->start();
 
   connect(timer, &QTimer::timeout, this, [=](){
     if( isFillingHistograms == false){
@@ -194,7 +193,6 @@ void SingleSpectra::ClearInternalDataCount(){
   for( unsigned int i = 0; i < nDigi; i++){
     for( int ch = 0; ch < MaxRegChannel ; ch++) {
       lastFilledIndex[i][ch] = -1;
-      loopFilledIndex[i][ch] = 0;
     }
   }
 }
@@ -273,10 +271,11 @@ void SingleSpectra::FillHistograms(){
   clock_gettime(CLOCK_REALTIME, &ta);
 
   std::vector<int> digiChList; // (digi*1000 + ch) 
-  std::vector<int> digiChLastIndex; // lastIndex 
-  std::vector<int> digiChLoopIndex; // loopIndex 
+  std::vector<int> digiChLastIndex; // loop * dataSize + index; 
   std::vector<int> digiChAvalibleData; 
   std::vector<bool> digiChFilled;
+  std::vector<int> digiChFilledCount; 
+
 
   for( int ID = 0; ID < nDigi; ID++){
     for( int ch = 0; ch < digi[ID]->GetNumInputCh(); ch++){
@@ -284,18 +283,21 @@ void SingleSpectra::FillHistograms(){
       int loopIndex = digi[ID]->GetData()->GetLoopIndex(ch);
 
       int temp1 = lastIndex + loopIndex * digi[ID]->GetData()->GetDataSize();
-      int temp2 = lastFilledIndex[ID][ch] + loopFilledIndex[ID][ch] * digi[ID]->GetData()->GetDataSize() + 1;
+      int temp2 = lastFilledIndex[ID][ch];
 
       if( temp1 <= temp2 ) continue;
       digiChList.push_back( ID*1000 + ch ) ;
-      digiChLastIndex.push_back(lastIndex);
-      digiChLoopIndex.push_back(loopIndex);
+      digiChLastIndex.push_back(temp1);
       digiChAvalibleData.push_back(temp1-temp2);
       digiChFilled.push_back(false);
+      digiChFilledCount.push_back(0);
     }
   }
 
   int nSize = digiChList.size();
+
+  clock_gettime(CLOCK_REALTIME, &tb);
+  printf("Checking time : %8.3f ms\n", (tb.tv_nsec - ta.tv_nsec)/1e6 + (tb.tv_sec - ta.tv_sec)*1e3 );
 
   // printf("------------ nSize : %d \n", nSize);
 
@@ -320,28 +322,17 @@ void SingleSpectra::FillHistograms(){
     int ch = digiCh  % 1000;
     // printf(" -------------------- %d  /  %d | %d\n", randomValue, nSize-1, digiCh);
 
-    int lastIndex = digiChLastIndex[randomValue];
-    int loopIndex = digiChLoopIndex[randomValue];
-
-    int temp1 = lastIndex + loopIndex * digi[ID]->GetData()->GetDataSize();
-    int temp2 = lastFilledIndex[ID][ch] + loopFilledIndex[ID][ch] * digi[ID]->GetData()->GetDataSize() + 1;
-
-    if( temp1 <= temp2 ) {
+    if( digiChLastIndex[randomValue] <= lastFilledIndex[ID][ch]  ) {
       digiChFilled[randomValue] = true;
       // printf("Digi-%2d ch-%2d all filled | %zu\n", ID, ch, digiChList.size());
       continue;
     }
-    if( temp1 - temp2 > digi[ID]->GetData()->GetDataSize() ) { //DefaultDataSize = 10k
-      temp2 = temp1 - digi[ID]->GetData()->GetDataSize();
-      lastFilledIndex[ID][ch] = lastIndex;
-      loopFilledIndex[ID][ch] = loopIndex - 1;
+    if( digiChLastIndex[randomValue] - lastFilledIndex[ID][ch] > digi[ID]->GetData()->GetDataSize() ) { //DefaultDataSize = 10k
+      lastFilledIndex[ID][ch] = digiChLastIndex[randomValue] -  digi[ID]->GetData()->GetDataSize() ;
     }
 
     lastFilledIndex[ID][ch] ++;
-    if( lastFilledIndex[ID][ch] > digi[ID]->GetData()->GetDataSize() ) {
-      lastFilledIndex[ID][ch] = 0;
-      loopFilledIndex[ID][ch] ++;
-    }
+    digiChFilledCount[randomValue]++;
 
     uShort data = digi[ID]->GetData()->GetEnergy(ch, lastFilledIndex[ID][ch]);
     
@@ -352,8 +343,13 @@ void SingleSpectra::FillHistograms(){
     }
     hist2D[ID]->Fill(ch, data);
 
+    usleep(10);
+
     clock_gettime(CLOCK_REALTIME, &tb);
-  }while( isFillingHistograms || (tb.tv_nsec - ta.tv_nsec)/1e6 + (tb.tv_sec - ta.tv_sec)*1e3 < maxFillTimeinMilliSec ); 
+  }while( isFillingHistograms && (tb.tv_nsec - ta.tv_nsec)/1e6 + (tb.tv_sec - ta.tv_sec)*1e3 < maxFillTimeinMilliSec ); 
+
+  clock_gettime(CLOCK_REALTIME, &tb);
+  printf("Filling time : %8.3f ms\n", (tb.tv_nsec - ta.tv_nsec)/1e6 + (tb.tv_sec - ta.tv_sec)*1e3 );
 
   //*--------------- generate fillign report
   for( size_t i = 0; i < digiChFilled.size() ; i++){
@@ -362,13 +358,7 @@ void SingleSpectra::FillHistograms(){
     int ch = digiCh  % 1000;
     // printf(" -------------------- %d  /  %d | %d\n", randomValue, nSize-1, digiCh);
 
-    int lastIndex = digiChLastIndex[i];
-    int loopIndex = digiChLoopIndex[i];
-
-    int temp1 = lastIndex + loopIndex * digi[ID]->GetData()->GetDataSize();
-    int temp2 = lastFilledIndex[ID][ch] + loopFilledIndex[ID][ch] * digi[ID]->GetData()->GetDataSize() + 1;
-
-    printf("Digi-%2d ch-%2d | event unfilled %d / %d\n", ID, ch, temp1 - temp2, digiChAvalibleData[i] );
+    printf("Digi-%2d ch-%2d | event filled %d / %d\n", ID, ch, digiChFilledCount[i], digiChAvalibleData[i] );
   }  
 
   clock_gettime(CLOCK_REALTIME, &tb);

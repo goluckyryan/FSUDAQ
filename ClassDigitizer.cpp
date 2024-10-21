@@ -441,7 +441,7 @@ int Digitizer::ProgramBoard_PSD(){
 
   ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PSD::DPPAlgorithmControl2_G) + 0x7000 , 0x00000200 ); // use fine time
 
-  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::DPPAlgorithmControl) + 0x7000 , 0x00100002 ); // baseline 16 sample, 80fC
+  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::DPPAlgorithmControl) + 0x7000 , 0x00100003 ); // baseline 16 sample, 320fC
 
   ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PSD::TriggerThreshold) + 0x7000 , 100 );
 

@@ -11,7 +11,11 @@
 #define MaxRecordLength 0x3fff * 8 
 #define MaxSaveFileSize  1024 * 1024 * 1024 * 2
 
+#define DefaultDataSize 10000 /// store 10k events per channels
+
 #define ScalarUpdateinMiliSec  1000 // msec
+
+#define SingleHistogramFillingTime 900 // msec
 
 #define MaxDisplayTraceTimeLength 20000 //ns
 #define ScopeUpdateMiliSec  200 // msec

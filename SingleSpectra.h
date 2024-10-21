@@ -64,11 +64,9 @@ private:
   Digitizer ** digi;
   unsigned short nDigi;
 
-  int lastFilledIndex[MaxNDigitizer][MaxNChannels];
-  int loopFilledIndex[MaxNDigitizer][MaxNChannels];
+  long lastFilledIndex[MaxNDigitizer][MaxNChannels]; // index * dataSize + index
   bool histVisibility[MaxNDigitizer][MaxNChannels];
   bool hist2DVisibility[MaxNDigitizer];
-  unsigned short maxFillTimePerDigi;
 
   bool isFillingHistograms;
   Histogram1D * hist[MaxNDigitizer][MaxNChannels];
