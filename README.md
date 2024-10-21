@@ -188,6 +188,7 @@ second, ensure the core dump file has unlimited size and set the core dump file 
 * Sometimes, the buffer is not in time order, and make the trigger/Accept rate to be nagative. This is nothing to do with the program but the digitizer settings. Recommand reporgram the digitizer.
 * For 1740 QDC, RecordLenght is board setting, but readout is indivuial group.
 * For PHA, the trapezoid scaling and fine-gain register are calculated before ACQ start.
+* For 1740D QDC, when 1st grouped channel is enabled, the 0th-channel must be enabled, otherwise, there is a ReadData error and the ACQ will stop. 
 
 # Known Bugs
 

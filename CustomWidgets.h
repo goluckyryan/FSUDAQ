@@ -130,7 +130,7 @@ protected:
       QAction *selectedAction = menu->exec(event->globalPosition().toPoint());
       if( selectedAction == a1 ) {
         chart()->zoomReset();
-        chart()->axes(Qt::Vertical).first()->setRange(-(0x3FFF), 0x3FFF);
+        // chart()->axes(Qt::Vertical).first()->setRange(-(0x3FFF), 0x3FFF);
       }
 
     }
@@ -169,7 +169,7 @@ protected:
       case Qt::Key_Down: chart()->scroll(0, -10);  break;
       case Qt::Key_R : 
         chart()->zoomReset();
-        chart()->axes(Qt::Vertical).first()->setRange(-(0x3FFF), 0x3FFF);
+        // chart()->axes(Qt::Vertical).first()->setRange(-(0x3FFF), 0x3FFF);
         break;
       default: QGraphicsView::keyPressEvent(event); break;
     }

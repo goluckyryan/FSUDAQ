@@ -147,11 +147,38 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
     if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) SetUpPanel_PSD();
     if( digi[ID]->GetDPPType() == V1740_DPP_QDC_CODE ) SetUpPanel_QDC();
 
+    if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) {
+      QValueAxis * yaxis = qobject_cast<QValueAxis*> (plot->axes(Qt::Vertical).first());
+      yaxis->setRange(-(0x1FFF), 0x1FFF);
+    }
+    if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) {
+      QValueAxis * yaxis = qobject_cast<QValueAxis*> (plot->axes(Qt::Vertical).first());
+      yaxis->setRange(0, 0x3FFF);
+    }
+    if( digi[ID]->GetDPPType() == V1740_DPP_QDC_CODE ) {
+      QValueAxis * yaxis = qobject_cast<QValueAxis*> (plot->axes(Qt::Vertical).first());
+      yaxis->setRange(0, 0xFFF);
+    }
+
     ReadSettingsFromBoard();
 
     if( saveACQStartStatus )StartScope();
 
   });
+
+  if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) {
+    QValueAxis * yaxis = qobject_cast<QValueAxis*> (plot->axes(Qt::Vertical).first());
+    yaxis->setRange(-(0x1FFF), 0x1FFF);
+  }
+  if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) {
+    QValueAxis * yaxis = qobject_cast<QValueAxis*> (plot->axes(Qt::Vertical).first());
+    yaxis->setRange(0, 0x3FFF);
+  }
+  if( digi[ID]->GetDPPType() == V1740_DPP_QDC_CODE ) {
+    QValueAxis * yaxis = qobject_cast<QValueAxis*> (plot->axes(Qt::Vertical).first());
+    yaxis->setRange(0, 0xFFF);
+  }
+
 
   connect(cbScopeCh, &RComboBox::currentIndexChanged, this, [=](){
     if( !enableSignalSlot ) return;
@@ -264,19 +291,6 @@ Scope::Scope(Digitizer ** digi, unsigned int nDigi, ReadDataThread ** readDataTh
 
   UpdatePanelFromMomeory();
 
-  if( digi[ID]->GetDPPType() == V1730_DPP_PHA_CODE ) {
-    QValueAxis * yaxis = qobject_cast<QValueAxis*> (plot->axes(Qt::Vertical).first());
-    yaxis->setRange(-(0x1FFF), 0x1FFF);
-  }
-  if( digi[ID]->GetDPPType() == V1730_DPP_PSD_CODE ) {
-    QValueAxis * yaxis = qobject_cast<QValueAxis*> (plot->axes(Qt::Vertical).first());
-    yaxis->setRange(0, 0x3FFF);
-  }
-  if( digi[ID]->GetDPPType() == V1740_DPP_QDC_CODE ) {
-    QValueAxis * yaxis = qobject_cast<QValueAxis*> (plot->axes(Qt::Vertical).first());
-    yaxis->setRange(0, 0xFFF);
-  }
-
   workerThread = new QThread(this);
   scopeWorker = new ScopeWorker(this);
   scopeTimer = new QTimer(this);
@@ -361,9 +375,9 @@ void Scope::StartScope(){
     //save present settings, channleMap, trigger condition
     traceOn[ID] = digi[ID]->IsRecordTrace();
     digi[ID]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, 1, -1);
-    chMask = digi[ID]->GetSettingFromMemory(DPP::RegChannelEnableMask);
 
     if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_PHA_CODE ){
+      chMask = digi[ID]->GetSettingFromMemory(DPP::RegChannelEnableMask);
       dppAlg  = digi[ID]->GetSettingFromMemory(DPP::DPPAlgorithmControl, ch);
       dppAlg2 = digi[ID]->GetSettingFromMemory(DPP::PHA::DPPAlgorithmControl2_G, ch);
 
@@ -378,6 +392,7 @@ void Scope::StartScope(){
     }
 
     if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_PSD_CODE ){
+      chMask = digi[ID]->GetSettingFromMemory(DPP::RegChannelEnableMask);
       dppAlg  = digi[ID]->GetSettingFromMemory(DPP::DPPAlgorithmControl, ch);
       dppAlg2 = digi[ID]->GetSettingFromMemory(DPP::PSD::DPPAlgorithmControl2_G, ch);
       
@@ -391,10 +406,17 @@ void Scope::StartScope(){
     }
 
     if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_QDC_CODE ){
+      chMask = digi[ID]->GetSettingFromMemory(DPP::QDC::GroupEnableMask);
+      subChMask = digi[ID]->GetSettingFromMemory(DPP::QDC::SubChannelMask);
       dppAlg  = digi[ID]->GetSettingFromMemory(DPP::QDC::DPPAlgorithmControl, ch);
       digi[ID]->SetBits(DPP::QDC::DPPAlgorithmControl, DPP::QDC::Bit_DPPAlgorithmControl::TriggerMode, 0, ch); //set self-triiger
   
-      digi[ID]->WriteRegister(DPP::RegChannelEnableMask, (1 << ch/8));
+      digi[ID]->WriteRegister(DPP::QDC::GroupEnableMask, (1 << (ch/8)));
+
+      uint32_t haha = (1 << (ch%8));
+      if( ch/8 == 0 ) haha |= 0x1; //must include the first subchannel
+
+      digi[ID]->WriteRegister(DPP::QDC::SubChannelMask, haha); 
     }
 
 
@@ -479,20 +501,23 @@ void Scope::StopScope(){
 
     //restore setting
     digi[ID]->SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, traceOn[ID], -1);
-    digi[ID]->WriteRegister(DPP::RegChannelEnableMask, chMask);
 
     if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_PHA_CODE ){
       digi[ID]->WriteRegister(DPP::DPPAlgorithmControl, dppAlg, oldCh);
       digi[ID]->WriteRegister(DPP::PHA::DPPAlgorithmControl2_G, dppAlg2, oldCh);
+      digi[ID]->WriteRegister(DPP::RegChannelEnableMask, chMask);
     }
 
     if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_PSD_CODE ){
       digi[ID]->WriteRegister(DPP::DPPAlgorithmControl, dppAlg, oldCh);
       digi[ID]->WriteRegister(DPP::PSD::DPPAlgorithmControl2_G, dppAlg2, oldCh);
+      digi[ID]->WriteRegister(DPP::RegChannelEnableMask, chMask);
     }
 
     if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_QDC_CODE ){
       digi[ID]->WriteRegister(DPP::QDC::DPPAlgorithmControl, dppAlg, oldCh);
+      digi[ID]->WriteRegister(DPP::QDC::GroupEnableMask, chMask);
+      digi[ID]->WriteRegister(DPP::QDC::SubChannelMask, subChMask);
     }
 
   }else{

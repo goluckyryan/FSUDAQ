@@ -441,7 +441,7 @@ int Digitizer::ProgramBoard_PSD(){
 
   ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PSD::DPPAlgorithmControl2_G) + 0x7000 , 0x00000200 ); // use fine time
 
-  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::DPPAlgorithmControl) + 0x7000 , 0x00100000 ); // baseline 16 sample
+  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::DPPAlgorithmControl) + 0x7000 , 0x00100002 ); // baseline 16 sample, 80fC
 
   ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PSD::TriggerThreshold) + 0x7000 , 100 );
 
@@ -1373,7 +1373,7 @@ void Digitizer::SetOptimialAggOrg(){
 
   printf("=================================== Setting related to Buffer\n");
   printf("      agg. orgainzation (bit) : 0x%X \n", aggOrgan);
-  printf("                 Channel Mask : %04X \n", chMask);
+  printf("                 Channel Mask : %08X \n", chMask);
   printf("Max number of Agg per Readout : %u \n", AggRead);
   printf("              is Extra enabed : %u \n", Ex );
   printf("               is Record wave : %u \n", traceOn );

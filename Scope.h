@@ -86,6 +86,7 @@ private:
 
   bool traceOn[MaxNDigitizer];
   uint32_t dppAlg, dppAlg2, chMask; //for single channel run
+  uint32_t subChMask; // for QDC
   unsigned short oldCh, oldDigi;
 
   ReadDataThread ** readDataThread;   
