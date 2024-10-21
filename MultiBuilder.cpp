@@ -58,7 +58,6 @@ void MultiBuilder::ClearEvents(){
 
   for( int i = 0; i < MaxNDigitizer; i++){
     for( int j = 0; j < MaxNChannels; j++){
-      loopIndex[i][j] = 0;
       nextIndex[i][j] = -1;
       chExhaused[i][j] = false;
       lastBackWardIndex[i][j] = 0;
@@ -79,7 +78,7 @@ void MultiBuilder::PrintStat(){
   printf("Total number of evet built : %ld\n", totalEventBuilt);
   for( int i = 0; i < nData ; i++){
     for( int ch = 0; ch < data[i]->GetNChannel() ; ch++){
-      if( nextIndex[i][ch] >= 0 ) printf("%d %3d %2d | %7d (%d)\n", i, snList[i], ch, nextIndex[i][ch], loopIndex[i][ch]);
+      if( nextIndex[i][ch] >= 0 ) printf("%d %3d %2d | %7ld (%d)\n", i, snList[i], ch, nextIndex[i][ch]);
     }
   }
 }
@@ -117,8 +116,7 @@ void MultiBuilder::FindEarlistTimeAndCh(bool verbose){
           continue;
         }
 
-        if( data[i]->GetTimestamp(ch, index) == 0 ||  
-            loopIndex[i][ch] * dataSize[i] + nextIndex[i][ch] > data[i]->GetLoopIndex(ch) * dataSize[i] +  data[i]->GetDataIndex(ch)) {
+        if( data[i]->GetTimestamp(ch, index) == 0 || nextIndex[i][ch] > data[i]->GetAbsDataIndex(ch)) {
           nExhaushedCh ++;
           chExhaused[i][ch] = true;
           continue;
@@ -197,8 +195,7 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
 
         // printf(" ch : %2d | %d(%d) | %d(%d)\n", ch, loopIndex[bd][ch], nextIndex[bd][ch], data[bd]->GetLoopIndex(ch), data[bd]->GetDataIndex(ch) );
 
-        if( nextIndex[bd][ch] == -1 
-            || loopIndex[bd][ch] * dataSize[bd] + nextIndex[bd][ch] > data[bd]->GetLoopIndex(ch) * dataSize[bd] +  data[bd]->GetDataIndex(ch)) {
+        if( nextIndex[bd][ch] == -1 || nextIndex[bd][ch] > data[bd]->GetAbsDataIndex(ch)) {
           nExhaushedCh ++;
           chExhaused[bd][ch] = true;
 
@@ -223,10 +220,7 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
 
             events[eventIndex].push_back(em);
             nextIndex[bd][ch]++;
-            if( nextIndex[bd][ch] >= dataSize[bd]) {
-              loopIndex[bd][ch] ++;
-              nextIndex[bd][ch] = 0;
-            }
+            
           }else{
             break;
           }
@@ -374,8 +368,7 @@ void MultiBuilder::BuildEventsBackWard(int maxNumEvent, bool verbose){
 
   for( int k = 0; k < nData; k++){
     for( int i = 0; i < data[k]->GetNChannel(); i++){
-      nextIndex[k][i] = data[k]->GetDataIndex(i);
-      loopIndex[k][i] = data[k]->GetLoopIndex(i);
+      nextIndex[k][i] = data[k]->GetAbsDataIndex(i);
     }
   }
 
@@ -418,7 +411,7 @@ void MultiBuilder::BuildEventsBackWard(int maxNumEvent, bool verbose){
 
             events[eventIndex].push_back(em);
             nextIndex[bd][ch]--;
-            if( nextIndex[bd][ch] < 0 && data[bd]->GetLoopIndex(ch) > 0 ) nextIndex[bd][ch] = dataSize[bd] - 1;
+            // if( nextIndex[bd][ch] < 0 && data[bd]->GetLoopIndex(ch) > 0 ) nextIndex[bd][ch] = dataSize[bd] - 1;
             
           }else{
             break;
@@ -474,7 +467,7 @@ void MultiBuilder::BuildEventsBackWard(int maxNumEvent, bool verbose){
   // remember the end of DataIndex, prevent over build
   for( int k = 0; k < nData; k++){
     for( int i = 0; i < data[k]->GetNChannel(); i++){
-      lastBackWardIndex[k][i] = data[k]->GetDataIndex(i);
+      lastBackWardIndex[k][i] = data[k]->GetAbsDataIndex(i);
     }
   }
 

@@ -61,8 +61,8 @@ private:
   unsigned long long timeJump; //time diff for a time jump, default is 1e8 ns
   unsigned long long lastEventTime; // timestamp for detect time jump 
 
-  int loopIndex[MaxNDigitizer][MaxNChannels];
-  int nextIndex[MaxNDigitizer][MaxNChannels];
+  // int loopIndex[MaxNDigitizer][MaxNChannels];
+  long nextIndex[MaxNDigitizer][MaxNChannels]; // loopIndex * dataSize + index
 
   int nExhaushedCh;
   bool chExhaused[MaxNDigitizer][MaxNChannels];
@@ -79,7 +79,7 @@ private:
   void FindEarlistTimeAmongLastData(bool verbose = false);
   void FindLatestTimeOfData(bool verbose = false);
 
-  int lastBackWardIndex[MaxNDigitizer][MaxNChannels];
+  int lastBackWardIndex[MaxNDigitizer][MaxNChannels]; // abs. index
 
   bool forceStop;
 
