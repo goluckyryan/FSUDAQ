@@ -219,18 +219,6 @@ void SingleSpectra::ChangeHistView(){
     hist2DVisibility[oldBd] = false;
   }
 
-  // if( oldCh >= 0 && oldCh < digi[oldBd]->GetNumInputCh()){
-  //   histLayout->removeWidget(hist[oldBd][oldCh]);
-  //   hist[oldBd][oldCh]->setParent(nullptr);
-  //   histVisibility[oldBd][oldCh] = false;
-  // }
-
-  // if( oldCh == digi[oldBd]->GetNumInputCh() ){
-  //   histLayout->removeWidget(hist2D[oldBd]);
-  //   hist2D[oldBd]->setParent(nullptr);
-  //   hist2DVisibility[oldBd] = false;
-  // }
-
   // Add ch
   if( ch >=0 && ch < digi[bd]->GetNumInputCh()) {
     histLayout->addWidget(hist[bd][ch], 0, 0);
@@ -246,13 +234,6 @@ void SingleSpectra::ChangeHistView(){
 
   oldBd = bd;
   oldChComboBoxindex[bd] = cbCh->currentIndex();
-
-  // for( unsigned int i = 0; i < nDigi; i++ ){
-  //   if( hist2DVisibility[i] ) printf(" hist2D-%d is visible\n", i); 
-  //   for( int j = 0; j < digi[i]->GetNumInputCh(); j++){
-  //     if( histVisibility[i][j] ) printf(" hist-%d-%d is visible\n", i, j); 
-  //   }
-  // }
 
 }
 
@@ -296,11 +277,6 @@ void SingleSpectra::FillHistograms(){
 
   int nSize = digiChList.size();
 
-  clock_gettime(CLOCK_REALTIME, &tb);
-  printf("Checking time : %8.3f ms\n", (tb.tv_nsec - ta.tv_nsec)/1e6 + (tb.tv_sec - ta.tv_sec)*1e3 );
-
-  // printf("------------ nSize : %d \n", nSize);
-
   if( nSize == 0 ) {
     isFillingHistograms = false;
     return;
@@ -317,9 +293,8 @@ void SingleSpectra::FillHistograms(){
     int randomValue  = QRandomGenerator::global()->bounded(nSize);
     if( digiChFilled[randomValue] == true ) continue;
     
-    int digiCh = digiChList[randomValue];
-    int ID = digiCh  / 1000;
-    int ch = digiCh  % 1000;
+    int ID = digiChList[randomValue] / 1000;
+    int ch = digiChList[randomValue] % 1000;
     // printf(" -------------------- %d  /  %d | %d\n", randomValue, nSize-1, digiCh);
 
     if( digiChLastIndex[randomValue] <= lastFilledIndex[ID][ch]  ) {
@@ -348,17 +323,9 @@ void SingleSpectra::FillHistograms(){
     clock_gettime(CLOCK_REALTIME, &tb);
   }while( isFillingHistograms && (tb.tv_nsec - ta.tv_nsec)/1e6 + (tb.tv_sec - ta.tv_sec)*1e3 < maxFillTimeinMilliSec ); 
 
-  clock_gettime(CLOCK_REALTIME, &tb);
-  printf("Filling time : %8.3f ms\n", (tb.tv_nsec - ta.tv_nsec)/1e6 + (tb.tv_sec - ta.tv_sec)*1e3 );
-
   //*--------------- generate fillign report
   for( size_t i = 0; i < digiChFilled.size() ; i++){
-    int digiCh = digiChList[i];
-    int ID = digiCh  / 1000;
-    int ch = digiCh  % 1000;
-    // printf(" -------------------- %d  /  %d | %d\n", randomValue, nSize-1, digiCh);
-
-    printf("Digi-%2d ch-%2d | event filled %d / %d\n", ID, ch, digiChFilledCount[i], digiChAvalibleData[i] );
+    printf("Digi-%2d ch-%2d | event filled %d / %d\n", digiChList[i] / 1000, digiChList[i] % 1000, digiChFilledCount[i], digiChAvalibleData[i] );
   }  
 
   clock_gettime(CLOCK_REALTIME, &tb);
