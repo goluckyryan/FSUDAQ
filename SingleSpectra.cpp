@@ -343,7 +343,7 @@ void SingleSpectra::FillHistograms(){
     }
     hist2D[ID]->Fill(ch, data);
 
-    usleep(10);
+    QCoreApplication::processEvents();
 
     clock_gettime(CLOCK_REALTIME, &tb);
   }while( isFillingHistograms && (tb.tv_nsec - ta.tv_nsec)/1e6 + (tb.tv_sec - ta.tv_sec)*1e3 < maxFillTimeinMilliSec ); 
