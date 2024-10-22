@@ -59,6 +59,8 @@ public:
 public slots:
   void UpdateHistograms();
 
+  void ReplotHistograms();
+
 private:
   QVector<int> generateNonRepeatedCombination(int size);
   void SetUpCanvas();
@@ -210,8 +212,11 @@ inline void NeutronGamma::UpdateHistograms(){
 
   }while(lastFilledIndex[ID][ch] <= digi[ID]->GetData()->GetAbsDataIndex(ch));
 
-  hist2D->UpdatePlot();
+}
 
+inline void NeutronGamma::ReplotHistograms(){
+  // qDebug() << __func__ << "| thread:" << QThread::currentThreadId();
+  hist2D->UpdatePlot();
 }
 
 inline QVector<int> NeutronGamma::generateNonRepeatedCombination(int size) {

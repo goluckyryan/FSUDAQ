@@ -164,9 +164,6 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
   connect(timer, &QTimer::timeout, histWorker, &HistWorker::FillHistograms);
   connect( histWorker, &HistWorker::workDone, this, &SingleSpectra::ReplotHistograms);
 
-
-
-
   workerThread->start();
 
 }
@@ -252,7 +249,7 @@ void SingleSpectra::FillHistograms(){
   timespec ta, tb;
 
   printf("####################### SingleSpectra::%s\n", __func__);
-  qDebug() << __func__ << "| thread:" << QThread::currentThreadId();
+  // qDebug() << __func__ << "| thread:" << QThread::currentThreadId();
 
   clock_gettime(CLOCK_REALTIME, &ta);
 

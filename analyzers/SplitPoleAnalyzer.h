@@ -63,6 +63,7 @@ public:
 
 public slots:
   void UpdateHistograms();
+  void ReplotHistograms();
 
 private:
 
@@ -421,11 +422,6 @@ inline void SplitPole::UpdateHistograms(){
     }
   }
 
-  hPID->UpdatePlot();
-  h1->UpdatePlot();
-  hMulti->UpdatePlot();
-  h1g->UpdatePlot();
-
   QList<QString> cutNameList = hPID->GetCutNameList();
   for( int p = 0; p < cutList.count(); p ++){
     if( cutList[p].isEmpty() ) continue;
@@ -441,5 +437,11 @@ inline void SplitPole::UpdateHistograms(){
 
 }
 
+inline void SplitPole::ReplotHistograms(){
+  hPID->UpdatePlot();
+  h1->UpdatePlot();
+  hMulti->UpdatePlot();
+  h1g->UpdatePlot();
+}
 
 #endif

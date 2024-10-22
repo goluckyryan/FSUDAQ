@@ -31,6 +31,7 @@ public:
 
 public slots:
   void UpdateHistograms();
+  void ReplotHistograms();
 
 private:
 
@@ -486,11 +487,6 @@ inline void CoincidentAnalyzer::UpdateHistograms(){
 
   }
 
-  h2D->UpdatePlot();
-  h1->UpdatePlot();
-  hMulti->UpdatePlot();
-  h1g->UpdatePlot();
-
   if( influx ){
     QList<QString> cutNameList = h2D->GetCutNameList();
     for( int p = 0; p < cutList.count(); p ++){
@@ -507,6 +503,13 @@ inline void CoincidentAnalyzer::UpdateHistograms(){
     influx->ClearDataPointsBuffer();
   }
 
+}
+
+inline void CoincidentAnalyzer::ReplotHistograms(){
+  h2D->UpdatePlot();
+  h1->UpdatePlot();
+  hMulti->UpdatePlot();
+  h1g->UpdatePlot();
 }
 
 inline void CoincidentAnalyzer::SaveSettings(){
