@@ -1018,6 +1018,8 @@ void FSUDAQ::UpdateScalar(){
 
   DebugPrint("%s", "FSUDAQ");
 
+  // qDebug() << __func__ << "| thread:" << QThread::currentThreadId();
+
   // printf("================== FSUDAQ::%s\n", __func__);
 
   if( digi == nullptr ) return;

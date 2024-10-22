@@ -153,18 +153,19 @@ SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawD
   timer = new QTimer(this);
 
   histWorker->moveToThread(workerThread);
+  timer->moveToThread(workerThread);
 
-  workerThread->start();
-
+  isFillingHistograms = false;
   // connect(timer, &QTimer::timeout, histWorker, &HistWorker::FillHistograms);
   connect( histWorker, &HistWorker::workDone, this, &SingleSpectra::ReplotHistograms);
 
-  connect(timer, &QTimer::timeout, this, [=](){
-    if( isFillingHistograms == false){
-      histWorker->FillHistograms();
-      // ReplotHistograms();
-    }
-  });
+  connect(timer, &QTimer::timeout, histWorker, &HistWorker::FillHistograms);
+
+  connect(this, &SingleSpectra::startWorkerTimer, timer, static_cast<void(QTimer::*)(int)>(&QTimer::start));
+  connect(this, &SingleSpectra::stopWorkerTimer, timer, &QTimer::stop);
+
+
+  workerThread->start();
 
 }
 
@@ -249,6 +250,8 @@ void SingleSpectra::FillHistograms(){
   timespec ta, tb;
 
   printf("####################### SingleSpectra::%s\n", __func__);
+  // qDebug() << __func__ << "| thread:" << QThread::currentThreadId();
+
   clock_gettime(CLOCK_REALTIME, &ta);
 
   std::vector<int> digiChList; // (digi*1000 + ch) 
@@ -315,7 +318,7 @@ void SingleSpectra::FillHistograms(){
     }
     hist2D[ID]->Fill(ch, data);
 
-    QCoreApplication::processEvents();
+    // QCoreApplication::processEvents();
 
     clock_gettime(CLOCK_REALTIME, &tb);
   }while( isFillingHistograms && (tb.tv_nsec - ta.tv_nsec)/1e6 + (tb.tv_sec - ta.tv_sec)*1e3 < maxFillTimeinMilliSec ); 
@@ -333,6 +336,8 @@ void SingleSpectra::FillHistograms(){
 }
 
 void SingleSpectra::ReplotHistograms(){
+
+  // qDebug() << __func__ << "| thread:" << QThread::currentThreadId();
 
   int ID = cbDigi->currentData().toInt();
   int ch = cbCh->currentData().toInt();

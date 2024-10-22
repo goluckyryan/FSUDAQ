@@ -78,7 +78,7 @@ void MultiBuilder::PrintStat(){
   printf("Total number of evet built : %ld\n", totalEventBuilt);
   for( int i = 0; i < nData ; i++){
     for( int ch = 0; ch < data[i]->GetNChannel() ; ch++){
-      if( nextIndex[i][ch] >= 0 ) printf("%d %3d %2d | %7ld (%d)\n", i, snList[i], ch, nextIndex[i][ch]);
+      if( nextIndex[i][ch] >= 0 ) printf("%d %3d %2d | %7ld\n", i, snList[i], ch, nextIndex[i][ch]);
     }
   }
 }
@@ -277,7 +277,7 @@ void MultiBuilder::BuildEvents(bool isFinal, bool skipTrace, bool verbose){
             break;
           }
         }
-        printf("%05d, %02d | %5d |  %5d %llu \n", sn, chxxx, nextIndex[bd][chxxx], events[eventIndex][i].energy, events[eventIndex][i].timestamp); 
+        printf("%05d, %02d | %7ld |  %5d %llu \n", sn, chxxx, nextIndex[bd][chxxx], events[eventIndex][i].energy, events[eventIndex][i].timestamp); 
       }
 
       if( nExhaushedCh == numTotCh ) {
@@ -456,7 +456,7 @@ void MultiBuilder::BuildEventsBackWard(int maxNumEvent, bool verbose){
             break;
           }
         }
-        printf("%5d, %02d | %5d |  %5d %llu \n", sn, chxxx, nextIndex[bd][chxxx], events[eventIndex][i].energy, events[eventIndex][i].timestamp); 
+        printf("%5d, %02d | %7ld |  %5d %llu \n", sn, chxxx, nextIndex[bd][chxxx], events[eventIndex][i].energy, events[eventIndex][i].timestamp); 
       }
     }
 

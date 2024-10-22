@@ -45,16 +45,22 @@ public:
 
   void ReplotHistograms();
 
+signals:
+  void startWorkerTimer(int interval);
+  void stopWorkerTimer();
+
 public slots:
   void FillHistograms();
   void ChangeHistView();
   void startTimer(){ 
     // printf("timer start\n");
-    timer->start(maxFillTimeinMilliSec); 
+    // timer->start(maxFillTimeinMilliSec); 
+    emit startWorkerTimer(maxFillTimeinMilliSec);
   } 
   void stopTimer(){ 
     // printf("timer stop\n");
-    timer->stop();
+    // timer->stop();
+    emit stopWorkerTimer();
     isFillingHistograms = false; // this will also break the FillHistogram do-loop
     ClearInternalDataCount();
   }
