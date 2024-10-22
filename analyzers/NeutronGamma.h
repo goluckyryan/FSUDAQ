@@ -185,6 +185,8 @@ inline void NeutronGamma::UpdateHistograms(){
   if( !fillHistograms ) return;
   if( this->isVisible() == false ) return;
 
+  // qDebug() << __func__ << "| thread:" << QThread::currentThreadId();
+
   int ID = cbDigi->currentData().toInt();
   int ch = cbCh->currentData().toInt();
 

@@ -169,7 +169,7 @@ void Analyzer::RedefineEventBuilder(std::vector<int> idList){
 }
 
 void Analyzer::BuildEvents(bool verbose){
-  
+  // qDebug() << __func__ << "| thread:" << QThread::currentThreadId();
   // unsigned int nData = mb->GetNumOfDigitizer();
   // std::vector<int> idList = mb->GetDigiIDList();
   // for( unsigned int i = 0; i < nData; i++ ) digiMTX[idList[i]].lock();
