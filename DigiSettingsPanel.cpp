@@ -1328,6 +1328,7 @@ void DigiSettingsPanel::SetUpInquiryCopyTab(){
       std::vector<Reg> regList;
       if( digi[fromIndex]->GetDPPType() == V1730_DPP_PHA_CODE ) regList = RegisterChannelList_PHA;
       if( digi[fromIndex]->GetDPPType() == V1730_DPP_PSD_CODE ) regList = RegisterChannelList_PSD;
+      if( digi[fromIndex]->GetDPPType() == V1740_DPP_QDC_CODE ) regList = RegisterChannelList_QDC;
 
       int fromCh = -1;
       for( int i = 0; i < MaxRegChannel; i++) {
