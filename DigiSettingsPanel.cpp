@@ -354,6 +354,7 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
   }
 
   SetUpInquiryCopyTab();
+  CheckRadioAndCheckedButtons();
 
   connect(tabWidget, &QTabWidget::currentChanged, this, [=](int index){ 
     if( index < (int) nDigi) {
@@ -1338,8 +1339,13 @@ void DigiSettingsPanel::SetUpInquiryCopyTab(){
 
       if( fromCh == -1 ) return;
 
+      printf("Copy Digi-%d, ch %d \n", digi[fromIndex]->GetSerialNumber(), fromCh);
+
       for( int i = 0; i < MaxRegChannel; i++){
-        if( ! chkCh[i]->isChecked() ) return;
+
+        if( !chkCh[i]->isChecked() || !chkCh[i]->isEnabled() ) continue;
+
+        printf("... to Digi-%d, ch %d \n", digi[toIndex]->GetSerialNumber(), i);
         //Copy setting
         for( int k = 0; k < (int) regList.size(); k ++){
           if( regList[k].GetRWType() != RW::ReadWrite ) continue;
@@ -4105,15 +4111,27 @@ void DigiSettingsPanel::CheckRadioAndCheckedButtons(){
   int id1 = cbFromBoard->currentIndex();
   int id2 = cbToBoard->currentIndex();
 
-  for( int i = 0 ; i < MaxRegChannel; i++){
-    if( i >= digi[id1]->GetNumRegChannels() ) rbCh[i]->setEnabled(false);
-    if( i >= digi[id2]->GetNumRegChannels() ) chkCh[i]->setEnabled(false);
+  if( digi[id1]->GetDPPType() == DPPTypeCode::DPP_QDC_CODE ){
+    bnCopyChannel->setText("Copy Group(s)");
+  }else{
+    bnCopyChannel->setText("Copy Channel(s)");
   }
 
   if( digi[id1]->GetDPPType() != digi[id2]->GetDPPType() ){
     bnCopyBoard->setEnabled(false);
     bnCopyChannel->setEnabled(false);
+
+    for( int i = 0 ; i < MaxRegChannel; i++){
+      rbCh[i]->setEnabled(false);
+      chkCh[i]->setEnabled(false);
+    }
+
     return;
+  }
+
+  for( int i = 0 ; i < MaxRegChannel; i++){
+    rbCh[i]->setEnabled(i < digi[id1]->GetNumRegChannels());
+    chkCh[i]->setEnabled(i < digi[id1]->GetNumRegChannels());
   }
 
   if( id1 == id2 ){
