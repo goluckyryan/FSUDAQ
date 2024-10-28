@@ -1791,6 +1791,7 @@ void FSUDAQ::OpenScope(){
     scope->show();
   }else{
     scope->show();
+    scope->UpdatePanelFromMomeory();
     scope->activateWindow();
   }
 
@@ -1815,6 +1816,7 @@ void FSUDAQ::OpenDigiSettings(){
     digiSettings->show();
   }else{
     digiSettings->show();
+    digiSettings->UpdatePanelFromMemory();
     digiSettings->activateWindow();
   }
 }
