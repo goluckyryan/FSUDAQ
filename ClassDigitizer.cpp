@@ -576,7 +576,7 @@ void Digitizer::StartACQ(){
 
   data->ClearTriggerRate();
   data->ClearData();
-  if( DPPType == DPPTypeCode::DPP_QDC_CODE ) SetOptimialAggOrg();
+  if( DPPType == DPPTypeCode::DPP_QDC_CODE ) SetQDCOptimialAggOrg();
 
   printf("    ACQ mode : %s (%d), TRG-OUT mode : %s (%d) \n", acqStr.c_str(), acqID, trgOutStr.c_str(), trgOutID);
 
@@ -1351,7 +1351,50 @@ void Digitizer::SetBits(Reg address, unsigned int bitValue, unsigned int bitLeng
   if( ret != 0 ) ErrorMsg(__func__);  
 }
 
-void Digitizer::SetOptimialAggOrg(){
+void Digitizer::AutoSetDPPEventAggregation(){ 
+  //ret  = CAEN_DGTZ_SetDPPAcquisitionMode(handle, CAEN_DGTZ_DPP_ACQ_MODE_List, CAEN_DGTZ_DPP_SAVE_PARAM_EnergyAndTime);
+
+  // if( DPPType == DPPTypeCode::DPP_QDC_CODE ){
+
+  // }else{
+
+  //   for( int ch = 0; ch < GetNumInputCh(); ch += 2 ){
+  //     uint32_t a1, a2;
+  //     ret |= CAEN_DGTZ_GetRecordLength(handle, &a1, ch);
+  //     ret |= CAEN_DGTZ_GetNumEventsPerAggregate(handle, &a2, ch);
+  //     printf("Ch %2d | RecordLength : %d | Event Agg : %d \n", ch, a1, a2);
+  //   }
+
+  //   uint32_t chMask ;
+  //   ret |= CAEN_DGTZ_GetChannelEnableMask(handle, &chMask);
+  //   printf("Ch Mask %0X \n", chMask);
+
+  // }
+
+  ret = 0;
+  ret |= CAEN_DGTZ_SetDPPEventAggregation(handle, 0, 0); // AutoSet
+  if( ret != 0 ) { 
+    printf("!!!!!!!! set %s error.\n", __func__);
+  }else{
+    Reg regAdd = DPP::AggregateOrganization;
+    uint32_t haha = ReadRegister(regAdd);
+    SetSettingToMemory(regAdd, haha, 0);
+    SaveSettingToFile(regAdd, haha, 0);
+  }
+}
+
+uint32_t Digitizer::ReadQDCRecordLength()  {
+  returnData = ReadRegister(DPP::QDC::RecordLength_R);
+  Reg temp = DPP::QDC::RecordLength_R; 
+  int indexR = temp.Index(0);
+  temp = DPP::QDC::RecordLength_W; 
+  int indexW = temp.Index(0);
+  setting[indexW] = setting[indexR];
+  //printf("%d %d | %u %u \n", indexR, indexW, setting[indexR], setting[indexW]);
+  return returnData;
+}
+
+void Digitizer::SetQDCOptimialAggOrg(){
   DebugPrint("%s", "Digitizer");
   if( DPPType != DPPTypeCode::DPP_QDC_CODE ) {
     printf("%s | this method only support QDC board.\n", __func__); 

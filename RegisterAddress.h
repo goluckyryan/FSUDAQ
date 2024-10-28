@@ -508,7 +508,7 @@ namespace DPP {
 
   const Reg RecordLength_G              ("RecordLength_G"              , 0x1020, RW::ReadWrite,  true, 0x3FFF,  8); /// R/W
   const Reg InputDynamicRange           ("InputDynamicRange"           , 0x1028, RW::ReadWrite, false, {{"2 Vpp", 0},{"0.5 Vpp", 1}}); /// R/W
-  const Reg NumberEventsPerAggregate_G  ("NumberEventsPerAggregate_G"  , 0x1034, RW::ReadWrite,  true,  0x3FF, -1); /// R/W
+  const Reg NumberEventsPerAggregate_G  ("NumberEventsPerAggregate_G"  , 0x1034, RW::ReadWrite,  true,  0x1FF, -1); /// R/W
   const Reg PreTrigger                  ("PreTrigger"                  , 0x1038, RW::ReadWrite, false,   0xFF,  4); /// R/W
   const Reg TriggerThreshold            ("TriggerThreshold"            , 0x106C, RW::ReadWrite, false, 0x3FFF, -1); /// R/W
   const Reg TriggerHoldOffWidth         ("TriggerHoldOffWidth"         , 0x1074, RW::ReadWrite, false,  0x3FF,  4); /// R/W

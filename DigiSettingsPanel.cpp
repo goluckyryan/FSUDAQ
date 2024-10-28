@@ -257,6 +257,8 @@ DigiSettingsPanel::DigiSettingsPanel(Digitizer ** digi, unsigned int nDigi, QStr
         SendLogMsg("Digi-" +QString::number(digi[ID]->GetSerialNumber()) + " : AutoSetDPPEventAggregation()");
         digi[ID]->AutoSetDPPEventAggregation(); 
         UpdateBoardAndChannelsStatus();
+        UpdatePanelFromMemory();
+        emit UpdateOtherPanels();
       });
 
       // bnSendSoftwareClockSyncSignal = new QPushButton("Send SW Clock-Sync Signal", this);

@@ -95,12 +95,8 @@ class Digitizer{
 
     void PrintBoard();    
     void ProgramBoard();
-    void AutoSetDPPEventAggregation(){ 
-      //ret  = CAEN_DGTZ_SetDPPAcquisitionMode(handle, CAEN_DGTZ_DPP_ACQ_MODE_List, CAEN_DGTZ_DPP_SAVE_PARAM_EnergyAndTime);
-      ret |= CAEN_DGTZ_SetNumEventsPerAggregate(handle, 10);
-      ret |= CAEN_DGTZ_SetDPPEventAggregation(handle, 0, 0); // AutoSet
-      if( ret != 0 ) { printf("!!!!!!!! set %s error.\n", __func__);}
-    } 
+
+    void AutoSetDPPEventAggregation();
     
     //^================ ACQ control
     void   StopACQ();
@@ -192,19 +188,9 @@ class Digitizer{
     bool IsDualTrace_PHA()           {return ( (GetSettingFromMemory(DPP::BoardConfiguration) >> 11) & 0x1 );}
     bool IsRecordTrace()             {return ( (GetSettingFromMemory(DPP::BoardConfiguration) >> 16) & 0x1 );}
 
-    void SetOptimialAggOrg();
-
     //QDC read recordLength
-    uint32_t ReadQDCRecordLength()  {
-      returnData = ReadRegister(DPP::QDC::RecordLength_R);
-      Reg temp = DPP::QDC::RecordLength_R; 
-      int indexR = temp.Index(0);
-      temp = DPP::QDC::RecordLength_W; 
-      int indexW = temp.Index(0);
-      setting[indexW] = setting[indexR];
-      //printf("%d %d | %u %u \n", indexR, indexW, setting[indexR], setting[indexW]);
-      return returnData;
-    }
+    uint32_t ReadQDCRecordLength();
+    void SetQDCOptimialAggOrg();
 
     void SetTrace(bool onOff){
       SetBits(DPP::BoardConfiguration, DPP::Bit_BoardConfig::RecordTrace, onOff, -1);
