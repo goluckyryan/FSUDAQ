@@ -407,7 +407,13 @@ void DigiSettingsPanel::SetUpCheckBox(QCheckBox * &chkBox, QString label, QGridL
     if( !enableSignalSlot ) return;
 
     int chID = ch < 0 ? chSelection[ID]->currentData().toInt() : ch;
-    digi[ID]->SetBits(para, bit, state ? 1 : 0, chID);
+    
+    if( para == DPP::DisableExternalTrigger ) {
+      digi[ID]->SetBits(para, bit, state ? 0 : 1, chID);
+    }else{
+      digi[ID]->SetBits(para, bit, state ? 1 : 0, chID);
+    }
+
     if( para.IsCoupled() == true && chID >= 0 ) digi[ID]->SetBits(para, bit, state ? 1 : 0, chID%2 == 0 ? chID + 1 : chID - 1);
     UpdatePanelFromMemory();
     emit UpdateOtherPanels();
@@ -625,6 +631,11 @@ void DigiSettingsPanel::SetUpGlobalTriggerMaskAndFrontPanelMask(QGridLayout * & 
   });
 
   SetUpCheckBox(chkEnableExternalTrigger[ID], "Enable TRG-IN ", gLayout, 1, 1, DPP::DisableExternalTrigger, {1, 0});
+
+  connect(chkEnableExternalTrigger[ID], &QCheckBox::stateChanged, this, [=](int state){
+    cbTRGINMode[ID]->setEnabled(state);
+    cbTRINMezzanines[ID]->setEnabled(state);
+  });
   
   ///============================ Trig In mode
   QLabel * trgInMode = new QLabel("TRI-In Mode ", this);
@@ -658,11 +669,6 @@ void DigiSettingsPanel::SetUpGlobalTriggerMaskAndFrontPanelMask(QGridLayout * & 
   connect( cbTRINMezzanines[ID], &RComboBox::currentIndexChanged, this, [=](int index){
     if( !enableSignalSlot ) return;
     digi[ID]->SetBits(DPP::FrontPanelIOControl, DPP::Bit_FrontPanelIOControl::TRGINMode, index, -1);
-  });
-
-  connect(chkEnableExternalTrigger[ID], &QCheckBox::stateChanged, this, [=](int state){
-    cbTRGINMode[ID]->setEnabled(state);
-    cbTRINMezzanines[ID]->setEnabled(state);
   });
 
   SetUpComboBox(cbAnalogMonitorMode[ID], "Analog Monitor Mode ", gLayout, 4, 0, DPP::AnalogMonitorMode, 0);
@@ -3390,7 +3396,7 @@ void DigiSettingsPanel::UpdatePanelFromMemory(){
 
   sbAggNum[ID]->setValue(digi[ID]->GetSettingFromMemory(DPP::MaxAggregatePerBlockTransfer));
 
-  chkEnableExternalTrigger[ID]->setChecked( ! ( digi[ID]->GetSettingFromMemory(DPP::DisableExternalTrigger) & 0x1) );
+  chkEnableExternalTrigger[ID]->setChecked( !( digi[ID]->GetSettingFromMemory(DPP::DisableExternalTrigger) & 0x1) );
 
   sbRunDelay[ID]->setValue(digi[ID]->GetSettingFromMemory(DPP::RunStartStopDelay) * DPP::RunStartStopDelay.GetPartialStep() * digi[ID]->GetTick2ns());
 
@@ -3434,6 +3440,9 @@ void DigiSettingsPanel::UpdatePanelFromMemory(){
       }
     }
   }
+
+  cbTRGINMode[ID]->setCurrentIndex((frontPanel >> 10 ) & 0x1);
+  cbTRINMezzanines[ID]->setCurrentIndex((frontPanel >> 11 ) & 0x1);
 
   //*========================================
   uint32_t glbTrgMask = digi[ID]->GetSettingFromMemory(DPP::GlobalTriggerMask);

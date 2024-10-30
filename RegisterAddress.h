@@ -545,7 +545,7 @@ namespace DPP {
   const Reg RegChannelEnableMask           ("RegChannelEnableMask"           , 0x8120, RW::ReadWrite, false, {});  /// R/W
   const Reg ROCFPGAFirmwareRevision_R   ("ROCFPGAFirmwareRevision_R"   , 0x8124, RW::ReadONLY , false, {});  /// R
   const Reg EventStored_R               ("EventStored_R"               , 0x812C, RW::ReadONLY , false, {});  /// R
-  const Reg VoltageLevelModeConfig      ("VoltageLevelModeConfig"      , 0x8138, RW::ReadWrite, false, {});  /// R/W
+  const Reg VoltageLevelModeConfig      ("VoltageLevelModeConfig"      , 0x8138, RW::ReadWrite, false, 0xFFF, -1);  /// R/W
   const Reg SoftwareClockSync_W         ("SoftwareClockSync_W"         , 0x813C, RW::WriteONLY, false, {});  ///   W
   const Reg BoardInfo_R                 ("BoardInfo_R"                 , 0x8140, RW::ReadONLY , false, {});  /// R    
   const Reg AnalogMonitorMode           ("AnalogMonitorMode"           , 0x8144, RW::ReadWrite, false, {{"Trig. Maj. Mode", 0},
