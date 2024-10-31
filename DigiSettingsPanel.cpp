@@ -662,13 +662,13 @@ void DigiSettingsPanel::SetUpGlobalTriggerMaskAndFrontPanelMask(QGridLayout * & 
   cbTRINMezzanines[ID] = new RComboBox(this);
   gLayout->addWidget(cbTRINMezzanines[ID], 3, 1, 1, 2);
 
-  items = DPP::Bit_FrontPanelIOControl::ListTRGIMezzanine;
+  items = DPP::Bit_FrontPanelIOControl::ListTRGINMezzanine;
   for(int i = 0; i < (int) items.size(); i++){
     cbTRINMezzanines[ID]->addItem(QString::fromStdString(items[i].first), items[i].second);
   }
   connect( cbTRINMezzanines[ID], &RComboBox::currentIndexChanged, this, [=](int index){
     if( !enableSignalSlot ) return;
-    digi[ID]->SetBits(DPP::FrontPanelIOControl, DPP::Bit_FrontPanelIOControl::TRGINMode, index, -1);
+    digi[ID]->SetBits(DPP::FrontPanelIOControl, DPP::Bit_FrontPanelIOControl::TRGINMezzanine, index, -1);
   });
 
   SetUpComboBox(cbAnalogMonitorMode[ID], "Analog Monitor Mode ", gLayout, 4, 0, DPP::AnalogMonitorMode, 0);
@@ -3456,10 +3456,16 @@ void DigiSettingsPanel::UpdatePanelFromMemory(){
       }
     }
     sbGlbMajLvl[ID]->setValue( Digitizer::ExtractBits(glbTrgMask, DPP::Bit_GlobalTriggerMask::MajorLevel) );
-  }
 
-  sbGlbMajCoinWin[ID]->setValue( Digitizer::ExtractBits(glbTrgMask, DPP::Bit_GlobalTriggerMask::MajorCoinWin) );
-  cbGlbUseOtherTriggers[ID]->setCurrentIndex(Digitizer::ExtractBits(glbTrgMask, {2, 30}));
+    sbGlbMajCoinWin[ID]->setValue( Digitizer::ExtractBits(glbTrgMask, DPP::Bit_GlobalTriggerMask::MajorCoinWin) * 4 * digi[ID]->GetTick2ns());
+    cbGlbUseOtherTriggers[ID]->setCurrentIndex(Digitizer::ExtractBits(glbTrgMask, {2, 30}));
+
+    if( sbGlbMajLvl[ID]->value() > 0 ) {
+      sbGlbMajCoinWin[ID]->setEnabled(true);
+    }else{
+      sbGlbMajCoinWin[ID]->setEnabled(false);
+    }
+  }
 
   //*========================================
   uint32_t TRGOUTMask = digi[ID]->GetSettingFromMemory(DPP::FrontPanelTRGOUTEnableMask);

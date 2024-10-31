@@ -314,7 +314,7 @@ namespace DPP {
     const std::vector<std::pair<std::string, unsigned int>> ListPolarity = {{"Positive", 0},
                                                                             {"Negative", 1}};
 
-    const std::vector<std::pair<std::string, unsigned int>> ListTrigMode = {{"Independent", 0},
+    const std::vector<std::pair<std::string, unsigned int>> ListTrigMode = {{"Normal", 0},
                                                                             {"Coincident", 1},
                                                                             {"Anti-Coincident", 3}};
 
@@ -381,7 +381,7 @@ namespace DPP {
     const std::vector<std::pair<std::string, unsigned int>> ListPolarity = {{"Positive", 0},
                                                                             {"Negative", 1}};
 
-    const std::vector<std::pair<std::string, unsigned int>> ListTrigMode = {{"Independent", 0},
+    const std::vector<std::pair<std::string, unsigned int>> ListTrigMode = {{"Normal", 0},
                                                                             {"Coincident ", 1},
                                                                             {"Anti-Coincident", 3}};
 
@@ -480,7 +480,7 @@ namespace DPP {
                                                                               {"TTL I/O", 1}};
     const std::vector<std::pair<std::string, unsigned int>> ListTRGIMode = {{"Edge of TRG-IN", 0},
                                                                             {"Whole duration of TRG-IN", 1}};
-    const std::vector<std::pair<std::string, unsigned int>> ListTRGIMezzanine = {{"Pocessed by Motherboard", 0},
+    const std::vector<std::pair<std::string, unsigned int>> ListTRGINMezzanine = {{"Pocessed by Motherboard", 0},
                                                                                   {"Skip Motherboard", 1}};
 
     const std::vector<std::pair<std::string, unsigned int>> ListTRGOUTConfig = {{"Disable",            0x00002}, /// this is TRG_OUT high  imped. 0x811C bit[1]
@@ -647,7 +647,7 @@ namespace DPP {
 
       const std::vector<std::pair<std::string, unsigned int>> ListLocalTrigValidMode = {{"Disabled", 0},
                                                                                         {"Crossed Trigger", 4},
-                                                                                        {"Both from Mother board", 5},
+                                                                                        {"Both from TRG_VAL", 5},
                                                                                         {"AND", 6},
                                                                                         {"OR", 7}};
 
@@ -736,7 +736,7 @@ namespace DPP {
 
       const std::vector<std::pair<std::string, unsigned int>> ListLocalTrigValidMode = {{"Disabled", 0},
                                                                                         {"Crossed Trigger", 4},
-                                                                                        {"Both from Mother board", 5},
+                                                                                        {"Both from TRG_VAL", 5},
                                                                                         {"AND", 6},
                                                                                         {"OR", 7}};
 
