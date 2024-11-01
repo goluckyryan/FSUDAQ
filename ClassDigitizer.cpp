@@ -326,6 +326,14 @@ void Digitizer::ProgramBoard(){
   if( DPPType == DPPTypeCode::DPP_QDC_CODE ) ProgramBoard_QDC();
 }
 
+void Digitizer::ProgramChannel(short chOrGroup){
+  if( softwareDisable ) return;
+  if( AcqRun ) return;
+  if( DPPType == DPPTypeCode::DPP_PHA_CODE ) ProgramChannel_PHA(chOrGroup);
+  if( DPPType == DPPTypeCode::DPP_PSD_CODE ) ProgramChannel_PSD(chOrGroup);
+  if( DPPType == DPPTypeCode::DPP_QDC_CODE ) ProgramChannel_QDC(chOrGroup);
+}
+
 int Digitizer::ProgramBoard_PHA(){
   DebugPrint("%s", "Digitizer");
   printf("===== Digitizer::%s\n", __func__);

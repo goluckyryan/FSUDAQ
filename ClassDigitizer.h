@@ -99,6 +99,7 @@ class Digitizer{
 
     void PrintBoard();    
     void ProgramBoard();
+    void ProgramChannel(short chOrGroup);
 
     void AutoSetDPPEventAggregation();
     

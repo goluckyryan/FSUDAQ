@@ -1562,12 +1562,13 @@ void DigiSettingsPanel::SetUpChannel_PHA(){
   QWidget * jaja = new QWidget(this);
   allSettingLayout->addWidget(jaja);
 
-  QHBoxLayout * papa = new QHBoxLayout(jaja);
-  papa->setAlignment(Qt::AlignLeft);
 
   const unsigned short numChannel = digi[ID]->GetNumRegChannels();
 
   {//^============================== Channel selection
+    QHBoxLayout * papa = new QHBoxLayout(jaja);
+    papa->setAlignment(Qt::AlignLeft);
+
     QLabel * lbChSel = new QLabel ("Channel : ", this);
     lbChSel->setAlignment(Qt::AlignCenter | Qt::AlignRight);
     papa->addWidget(lbChSel);
@@ -1579,6 +1580,16 @@ void DigiSettingsPanel::SetUpChannel_PHA(){
 
     connect(chSelection[ID], &RComboBox::currentIndexChanged, this, [=](){
       SyncAllChannelsTab_PHA();
+    });
+
+    bnProgramChannel[ID] = new QPushButton("Program Default Channel Settings",this);
+    papa->addWidget(bnProgramChannel[ID]);
+    connect(bnProgramChannel[ID], &QPushButton::clicked, this, [=](){
+      short ch = chSelection[ID]->currentData().toInt();
+      digi[ID]->ProgramChannel(ch);
+      digi[ID]->ReadAllSettingsFromBoard(true);
+      UpdatePanelFromMemory();
+      emit UpdateOtherPanels();
     });
   }
 
@@ -2011,12 +2022,12 @@ void DigiSettingsPanel::SetUpChannel_PSD(){
   QWidget * jaja = new QWidget(this);
   allSettingLayout->addWidget(jaja);
 
-  QHBoxLayout * papa = new QHBoxLayout(jaja);
-  papa->setAlignment(Qt::AlignLeft);
-
   const unsigned short numChannel = digi[ID]->GetNumRegChannels();
 
   {//^============================== Channel selection
+    QHBoxLayout * papa = new QHBoxLayout(jaja);
+    papa->setAlignment(Qt::AlignLeft);
+
     QLabel * lbChSel = new QLabel ("Ch : ", this);
     lbChSel->setAlignment(Qt::AlignCenter | Qt::AlignRight);
     papa->addWidget(lbChSel);
@@ -2028,6 +2039,16 @@ void DigiSettingsPanel::SetUpChannel_PSD(){
 
     connect(chSelection[ID], &RComboBox::currentIndexChanged, this, [=](){
       SyncAllChannelsTab_PSD();
+    });
+
+    bnProgramChannel[ID] = new QPushButton("Program Default Channel Settings",this);
+    papa->addWidget(bnProgramChannel[ID]);
+    connect(bnProgramChannel[ID], &QPushButton::clicked, this, [=](){
+      short ch = chSelection[ID]->currentData().toInt();
+      digi[ID]->ProgramChannel(ch);
+      digi[ID]->ReadAllSettingsFromBoard(true);
+      UpdatePanelFromMemory();
+      emit UpdateOtherPanels();
     });
   }
 
@@ -2595,12 +2616,12 @@ void DigiSettingsPanel::SetUpChannel_QDC(){
   QWidget * jaja = new QWidget(this);
   allSettingLayout->addWidget(jaja);
 
-  QHBoxLayout * papa = new QHBoxLayout(jaja);
-  papa->setAlignment(Qt::AlignLeft);
-
   const unsigned short numGroup = digi[ID]->GetNumRegChannels();
 
   {//^============================== Group selection
+    QHBoxLayout * papa = new QHBoxLayout(jaja);
+    papa->setAlignment(Qt::AlignLeft);
+    
     QLabel * lbChSel = new QLabel ("Group : ", this);
     lbChSel->setAlignment(Qt::AlignCenter | Qt::AlignRight);
     papa->addWidget(lbChSel);
@@ -2612,14 +2633,21 @@ void DigiSettingsPanel::SetUpChannel_QDC(){
 
     connect(chSelection[ID], &RComboBox::currentIndexChanged, this, [=](){
       SyncAllChannelsTab_QDC();
-
       int grpID = chSelection[ID]->currentIndex() - 1;
-
       for( int i = 0; i < 8; i ++){
         lbSubCh[ID][i] ->setText((grpID == -1 ? "Sub-Ch:" : "Ch:" )+ QString::number(grpID < 0 ? i : grpID*8 + i));
         lbSubCh2[ID][i]->setText((grpID == -1 ? "Sub-Ch:" : "Ch:" )+ QString::number(grpID < 0 ? i : grpID*8 + i));
-      }    
+      }
+    });
 
+    bnProgramChannel[ID] = new QPushButton("Program Default Channel Settings",this);
+    papa->addWidget(bnProgramChannel[ID]);
+    connect(bnProgramChannel[ID], &QPushButton::clicked, this, [=](){
+      short group = chSelection[ID]->currentData().toInt();
+      digi[ID]->ProgramChannel(group);
+      digi[ID]->ReadAllSettingsFromBoard(true);
+      UpdatePanelFromMemory();
+      emit UpdateOtherPanels();
     });
   }
 

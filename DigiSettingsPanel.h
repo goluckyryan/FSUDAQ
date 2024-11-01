@@ -198,6 +198,7 @@ private:
   QTabWidget * chTab;
 
   RComboBox * chSelection[MaxNDigitizer];
+  QPushButton * bnProgramChannel[MaxNDigitizer];
 
   //----------- common for PHA and PSD
   RSpinBox * sbRecordLength[MaxNDigitizer][MaxRegChannel + 1];
