@@ -328,180 +328,172 @@ void Digitizer::ProgramBoard(){
 
 int Digitizer::ProgramBoard_PHA(){
   DebugPrint("%s", "Digitizer");
-
   printf("===== Digitizer::%s\n", __func__);
-
-  //ret = CAEN_DGTZ_Reset(handle);
 
   Reset();
 
-  ret = CAEN_DGTZ_WriteRegister(handle, DPP::RecordLength_G + 0x7000, 62);  
+  //*========================== Board
+  /// change address 0xEF08 (5 bits), this will reflected in the 2nd word of the Board Agg. header.
+  ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardID, (DPPType & 0xF));
+  //WriteRegister(DPP::BoardID, (DPPType & 0xF));
+
   //ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardConfiguration, 0x0F8915);  /// has Extra2, dual trace, input and trap-baseline
-  ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardConfiguration, 0x0E8915);  /// has Extra2, no trace
+  ret |= CAEN_DGTZ_WriteRegister(handle, DPP::BoardConfiguration, 0x0E8915);  /// has Extra2, no trace
   //ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardConfiguration, 0x0D8115);  /// diable Extra2
   
   //TODO change to write register
   ret = CAEN_DGTZ_SetAcquisitionMode(handle, CAEN_DGTZ_SW_CONTROLLED); /// software command
+  ret |= CAEN_DGTZ_SetChannelEnableMask(handle, ModelType == ModelTypeCode::VME ? 0xFFFF : 0x00FF);
+  ret |= CAEN_DGTZ_SetRunSynchronizationMode(handle, CAEN_DGTZ_RUN_SYNC_Disabled);
   ret |= CAEN_DGTZ_SetIOLevel(handle, CAEN_DGTZ_IOLevel_NIM);
   ret |= CAEN_DGTZ_SetExtTriggerInputMode(handle, CAEN_DGTZ_TRGMODE_ACQ_ONLY);
+  ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::GlobalTriggerMask), 0x0);
+  ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::FrontPanelTRGOUTEnableMask), 0x0);
 
-  ret = CAEN_DGTZ_SetChannelEnableMask(handle, ModelType == ModelTypeCode::VME ? 0xFFFF : 0x00FF);
-  
   //ret = CAEN_DGTZ_SetNumEventsPerAggregate(handle, 0);
   
-  ret = CAEN_DGTZ_SetRunSynchronizationMode(handle, CAEN_DGTZ_RUN_SYNC_Disabled);
   if( ret != 0 ) { printf("==== set board error.\n"); return 0;}
   
-  uint32_t address;
-  
-  address = DPP::PHA::DecayTime;               ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 5000 ); 
-  address = DPP::PHA::TrapezoidFlatTop;        ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 0x1A ); 
-  address = DPP::PHA::TrapezoidRiseTime;       ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 6 ); 
-  address = DPP::PHA::PeakingTime;             ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 6 ); 
-  address = DPP::PHA::RCCR2SmoothingFactor;    ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 4 ); 
-  address = DPP::PHA::InputRiseTime;           ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 6 ); 
-  address = DPP::PHA::TriggerThreshold;        ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 1000 );
-  address = DPP::PHA::PeakHoldOff;             ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 0x3E );
-  address = DPP::PHA::TriggerHoldOffWidth;     ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 0x3E );
-  address = DPP::PHA::RiseTimeValidationWindow;ret |= CAEN_DGTZ_WriteRegister(handle, address + 0x7000 , 0x0 );
-
-  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x0, 0xAAAA);
-  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x1, 0xAAAA);
-  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x2, 0xAAAA);
-  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x3, 0xAAAA);
-  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x4, 0xAAAA);
-  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x5, 0xAAAA);
-  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x6, 0xAAAA);
-  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x7, 0xAAAA);
-  if( ModelType == ModelTypeCode::VME ){
-    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x8, 0xAAAA);
-    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x9, 0xAAAA);
-    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xA, 0xAAAA);
-    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xB, 0xAAAA);
-    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xC, 0xAAAA);
-    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xD, 0xAAAA);
-    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xE, 0xAAAA);
-    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xF, 0xAAAA);
-  }
-
-  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PreTrigger) + 0x7000 , 32 );
-  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::InputDynamicRange) + 0x7000 , 0x0 );
-  ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::DPPAlgorithmControl) + 0x7000, 0x030200f);
-  
-  if( ret != 0 ) { printf("!!!!!!!! set channels error.\n");}
-
-  AutoSetDPPEventAggregation();
-
-  /// change address 0xEF08 (5 bits), this will reflected in the 2nd word of the Board Agg. header.
-  ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardID, (DPPType & 0xF));
-  //WriteRegister(DPP::BoardID, (DPPType & 0xF));
+  //*========================== Group
+  ProgramChannel_PHA(-1);
   
   isSettingFilledinMemeory = false; /// unlock the ReadAllSettingsFromBoard();
-
   usleep(1000*300);
-
   ReadAllSettingsFromBoard();
   
   return ret;
 }
 
+int Digitizer::ProgramChannel_PHA(short ch){
+  DebugPrint("%s", "Digitizer");
+  printf("===== Digitizer::%s|ch:%d\n", __func__,ch);
+
+  uint32_t channel = (ch << 8);
+  if( ch < 0 ) channel = 0x7000;
+
+  uint32_t address = (ch << 8);
+  
+  address = channel + DPP::RecordLength_G;               ret  = CAEN_DGTZ_WriteRegister(handle, address, 62);  
+  address = channel + DPP::PHA::DecayTime;               ret |= CAEN_DGTZ_WriteRegister(handle, address, 5000 ); 
+  address = channel + DPP::PHA::TrapezoidFlatTop;        ret |= CAEN_DGTZ_WriteRegister(handle, address, 0x1A ); 
+  address = channel + DPP::PHA::TrapezoidRiseTime;       ret |= CAEN_DGTZ_WriteRegister(handle, address, 6 ); 
+  address = channel + DPP::PHA::PeakingTime;             ret |= CAEN_DGTZ_WriteRegister(handle, address, 6 ); 
+  address = channel + DPP::PHA::RCCR2SmoothingFactor;    ret |= CAEN_DGTZ_WriteRegister(handle, address, 4 ); 
+  address = channel + DPP::PHA::InputRiseTime;           ret |= CAEN_DGTZ_WriteRegister(handle, address, 6 ); 
+  address = channel + DPP::PHA::TriggerThreshold;        ret |= CAEN_DGTZ_WriteRegister(handle, address, 1000 );
+  address = channel + DPP::PHA::PeakHoldOff;             ret |= CAEN_DGTZ_WriteRegister(handle, address, 0x3E );
+  address = channel + DPP::PHA::TriggerHoldOffWidth;     ret |= CAEN_DGTZ_WriteRegister(handle, address, 0x3E );
+  address = channel + DPP::PHA::RiseTimeValidationWindow;ret |= CAEN_DGTZ_WriteRegister(handle, address, 0x0 );
+  address = channel + DPP::PreTrigger;                   ret |= CAEN_DGTZ_WriteRegister(handle, address, 32 );
+  address = channel + DPP::InputDynamicRange;            ret |= CAEN_DGTZ_WriteRegister(handle, address, 0x0 );
+  address = channel + DPP::DPPAlgorithmControl;          ret |= CAEN_DGTZ_WriteRegister(handle, address, 0x030200f);
+  address = channel + DPP::PHA::DPPAlgorithmControl2_G;  ret |= CAEN_DGTZ_WriteRegister(handle, address, 0x200); // use fine time
+  
+  if( ch >= 0 ) {
+    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, ch, 0xAAAA);
+  }else{
+    for( int i = 0; i < NumRegChannel; i ++ ){
+      ret |= CAEN_DGTZ_SetChannelDCOffset(handle, i, 0xAAAA);
+    }
+  }
+
+  if( ret != 0 ) { printf("!!!!!!!! set channels error.\n");}
+
+  AutoSetDPPEventAggregation();
+
+  if( ch >= 0 ){
+    isSettingFilledinMemeory = false;
+    usleep(1000*300);
+    ReadAllSettingsFromBoard();
+  }
+
+  return ret;
+}
+
 int Digitizer::ProgramBoard_PSD(){
+  DebugPrint("%s", "Digitizer");
   printf("===== Digitizer::%s\n", __func__);
 
   //ret = CAEN_DGTZ_Reset(handle);
   Reset();
 
-  //ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardConfiguration, 0x0F0115);  /// has Extra2, dual trace, input and CFD
-  ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardConfiguration, 0x0E0115);  /// has Extra2, no trace
-
-  ret = CAEN_DGTZ_SetAcquisitionMode(handle, CAEN_DGTZ_SW_CONTROLLED); /// software command
-  ret |= CAEN_DGTZ_SetIOLevel(handle, CAEN_DGTZ_IOLevel_NIM);
-  ret |= CAEN_DGTZ_SetExtTriggerInputMode(handle, CAEN_DGTZ_TRGMODE_ACQ_ONLY);
-
-  ret |= CAEN_DGTZ_SetChannelEnableMask(handle, 0xFFFF);
-
-  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x0, 0xAAAA);
-  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x1, 0xAAAA);
-  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x2, 0xAAAA);
-  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x3, 0xAAAA);
-  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x4, 0xAAAA);
-  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x5, 0xAAAA);
-  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x6, 0xAAAA);
-  ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x7, 0xAAAA);
-  if( ModelType == ModelTypeCode::VME ){
-    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x8, 0xAAAA);
-    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0x9, 0xAAAA);
-    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xA, 0xAAAA);
-    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xB, 0xAAAA);
-    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xC, 0xAAAA);
-    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xD, 0xAAAA);
-    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xE, 0xAAAA);
-    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, 0xF, 0xAAAA);
-  }
-
-  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PSD::DPPAlgorithmControl2_G) + 0x7000 , 0x00000200 ); // use fine time
-
-  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::DPPAlgorithmControl) + 0x7000 , 0x00100003 ); // baseline 16 sample, 320fC
-
-  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PSD::TriggerThreshold) + 0x7000 , 100 );
-
-  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PreTrigger) + 0x7000 , 20 );
-  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::RecordLength_G) + 0x7000 , 80 );
-  
-  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PSD::ShortGateWidth) + 0x7000 , 32 );
-  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PSD::LongGateWidth) + 0x7000 , 64 );
-  ret |= CAEN_DGTZ_WriteRegister(handle, (uint32_t)(DPP::PSD::GateOffset) + 0x7000 , 19 );
-
-  if( ret != 0 ) { printf("!!!!!!!! set channels error.\n");}
-
+  //*========================== Board
   /// change address 0xEF08 (5 bits), this will reflected in the 2nd word of the Board Agg. header.
   ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardID, (DPPType & 0xF));
   //WriteRegister(DPP::BoardID, (DPPType & 0xF));
 
-  AutoSetDPPEventAggregation();
+  //ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardConfiguration, 0x0F0115);  /// has Extra2, dual trace, input and CFD
+  ret |= CAEN_DGTZ_WriteRegister(handle, DPP::BoardConfiguration, 0x0E0115);  /// has Extra2, no trace
+  ret |= CAEN_DGTZ_SetAcquisitionMode(handle, CAEN_DGTZ_SW_CONTROLLED); /// software command
+  ret |= CAEN_DGTZ_SetIOLevel(handle, CAEN_DGTZ_IOLevel_NIM);
+  ret |= CAEN_DGTZ_SetExtTriggerInputMode(handle, CAEN_DGTZ_TRGMODE_ACQ_ONLY);
+  ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::GlobalTriggerMask), 0x0);
+  ret |= CAEN_DGTZ_WriteRegister(handle, (int32_t)(DPP::FrontPanelTRGOUTEnableMask), 0x0);
+ 
+  ret |= CAEN_DGTZ_SetChannelEnableMask(handle, 0xFFFF);
+
+  //*========================== Group
+  ProgramChannel_PSD(-1);
 
   isSettingFilledinMemeory = false; /// unlock the ReadAllSettingsFromBoard();
-
   usleep(1000*300);
-
   ReadAllSettingsFromBoard();
+
+  return ret;
+}
+
+int Digitizer::ProgramChannel_PSD(short ch){
+  DebugPrint("%s", "Digitizer");
+  printf("===== Digitizer::%s|ch:%d\n", __func__,ch);
+
+  uint32_t channel = (ch << 8);
+  if( ch <  0 ) channel = 0x7000;
+  uint32_t address = (ch << 8);
+
+  address = channel + DPP::PSD::DPPAlgorithmControl2_G; ret  = CAEN_DGTZ_WriteRegister(handle, address, 0x00000200 ); // use fine time
+  address = channel + DPP::DPPAlgorithmControl;         ret |= CAEN_DGTZ_WriteRegister(handle, address, 0x00100003 ); // baseline 16 sample, 320fC
+  address = channel + DPP::PSD::TriggerThreshold;       ret |= CAEN_DGTZ_WriteRegister(handle, address, 100 );
+  address = channel + DPP::PreTrigger;                  ret |= CAEN_DGTZ_WriteRegister(handle, address, 20 );
+  address = channel + DPP::RecordLength_G;              ret |= CAEN_DGTZ_WriteRegister(handle, address, 80 );
+  address = channel + DPP::PSD::ShortGateWidth;         ret |= CAEN_DGTZ_WriteRegister(handle, address, 32 );
+  address = channel + DPP::PSD::LongGateWidth;          ret |= CAEN_DGTZ_WriteRegister(handle, address, 64 );
+  address = channel + DPP::PSD::GateOffset;             ret |= CAEN_DGTZ_WriteRegister(handle, address, 19 );
+ 
+  if( ch >= 0 ) {
+    ret |= CAEN_DGTZ_SetChannelDCOffset(handle, ch, 0xAAAA);
+  }else{
+    for( int i = 0; i < NumRegChannel; i ++ ){
+      ret |= CAEN_DGTZ_SetChannelDCOffset(handle, i, 0xAAAA);
+    }
+  }
+
+  if( ret != 0 ) { printf("!!!!!!!! set channels error.\n");}
+
+  AutoSetDPPEventAggregation();
+
+  if( ch >= 0 ){
+    isSettingFilledinMemeory = false;
+    usleep(1000*300);
+    ReadAllSettingsFromBoard();
+  }
+
   return ret;
 }
 
 int Digitizer::ProgramBoard_QDC(){
+  DebugPrint("%s", "Digitizer");
   printf("===== Digitizer::%s\n", __func__);
   Reset();
 
   int ret = 0;
 
+  //*========================== Board
+  /// change address 0xEF08 (5 bits), this will reflected in the 2nd word of the Board Agg. header.
+  ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardID, (DPPType & 0xF));
+  //WriteRegister(DPP::BoardID, (DPPType & 0xF));
+
   //WriteRegister(DPP::QDC::NumberEventsPerAggregate, 0x10, -1);
   WriteRegister(DPP::QDC::RecordLength_W, 16, -1); // 128 sample = 2048 ns
-
-  WriteRegister(DPP::QDC::PreTrigger,  60, -1); // at 60 sample = 960 ns
-
-  WriteRegister(DPP::QDC::GateWidth, 100/16, -1);
-  WriteRegister(DPP::QDC::GateOffset, 0, -1);
-  WriteRegister(DPP::QDC::FixedBaseline, 0, -1);
-  
-  //WriteRegister(DPP::QDC::DPPAlgorithmControl, 0x300112); // with test pulse, positive
-  //WriteRegister(DPP::QDC::DPPAlgorithmControl, 0x300102); // No test pulse, positive 
-  WriteRegister(DPP::QDC::DPPAlgorithmControl, 0x310102); // No test pulse, negative 
-  
-  WriteRegister(DPP::QDC::TriggerHoldOffWidth, 100/16, -1);
-  WriteRegister(DPP::QDC::TRGOUTWidth, 100/16, -1);
-  //WriteRegister(DPP::QDC::OverThresholdWidth, 100/16, -1);
-  WriteRegister(DPP::QDC::SubChannelMask, 0xFF, -1);
-
-  WriteRegister(DPP::QDC::DCOffset, 0xAAAA, -1);
-
-  WriteRegister(DPP::QDC::TriggerThreshold_sub0, 100, -1);
-  WriteRegister(DPP::QDC::TriggerThreshold_sub1, 100, -1);
-  WriteRegister(DPP::QDC::TriggerThreshold_sub2, 100, -1);
-  WriteRegister(DPP::QDC::TriggerThreshold_sub3, 100, -1);
-  WriteRegister(DPP::QDC::TriggerThreshold_sub4, 100, -1);
-  WriteRegister(DPP::QDC::TriggerThreshold_sub5, 100, -1);
-  WriteRegister(DPP::QDC::TriggerThreshold_sub6, 100, -1);
-  WriteRegister(DPP::QDC::TriggerThreshold_sub7, 100, -1);
 
   WriteRegister(DPP::BoardConfiguration, 0xE0110);
   //WriteRegister(DPP::AggregateOrganization, 0x0);
@@ -512,18 +504,55 @@ int Digitizer::ProgramBoard_QDC(){
   WriteRegister(DPP::FrontPanelIOControl, 0x0);
   WriteRegister(DPP::QDC::GroupEnableMask, 0xFF);
 
-  /// change address 0xEF08 (5 bits), this will reflected in the 2nd word of the Board Agg. header.
-  ret = CAEN_DGTZ_WriteRegister(handle, DPP::BoardID, (DPPType & 0xF));
-  //WriteRegister(DPP::BoardID, (DPPType & 0xF));
+  //*========================== Group
+  ProgramChannel_QDC(-1);
+
+  isSettingFilledinMemeory = false; /// unlock the ReadAllSettingsFromBoard();
+  usleep(1000*300);
+  ReadAllSettingsFromBoard();
+
+  return ret;
+
+}
+
+int Digitizer::ProgramChannel_QDC(short group){
+
+  printf("===== Digitizer::%s|ch:%d\n", __func__,group);
+
+  WriteRegister(DPP::QDC::PreTrigger,  60, group); // at 60 sample = 960 ns
+  WriteRegister(DPP::QDC::GateWidth, 100/16, group);
+  WriteRegister(DPP::QDC::GateOffset, 0, group);
+  WriteRegister(DPP::QDC::FixedBaseline, 0, group);
+  
+  //WriteRegister(DPP::QDC::DPPAlgorithmControl, 0x300112); // with test pulse, positive
+  //WriteRegister(DPP::QDC::DPPAlgorithmControl, 0x300102); // No test pulse, positive 
+  WriteRegister(DPP::QDC::DPPAlgorithmControl, 0x310102); // No test pulse, negative 
+  
+  WriteRegister(DPP::QDC::TriggerHoldOffWidth, 100/16, group);
+  WriteRegister(DPP::QDC::TRGOUTWidth, 100/16, group);
+  //WriteRegister(DPP::QDC::OverThresholdWidth, 100/16, group);
+  WriteRegister(DPP::QDC::SubChannelMask, 0xFF, group);
+
+  WriteRegister(DPP::QDC::DCOffset, 0xAAAA, group);
+
+  WriteRegister(DPP::QDC::TriggerThreshold_sub0, 100, group);
+  WriteRegister(DPP::QDC::TriggerThreshold_sub1, 100, group);
+  WriteRegister(DPP::QDC::TriggerThreshold_sub2, 100, group);
+  WriteRegister(DPP::QDC::TriggerThreshold_sub3, 100, group);
+  WriteRegister(DPP::QDC::TriggerThreshold_sub4, 100, group);
+  WriteRegister(DPP::QDC::TriggerThreshold_sub5, 100, group);
+  WriteRegister(DPP::QDC::TriggerThreshold_sub6, 100, group);
+  WriteRegister(DPP::QDC::TriggerThreshold_sub7, 100, group);
 
   AutoSetDPPEventAggregation();
 
-  isSettingFilledinMemeory = false; /// unlock the ReadAllSettingsFromBoard();
+  if( group >= 0 ){
+    isSettingFilledinMemeory = false;
+    usleep(1000*300);
+    ReadAllSettingsFromBoard();
+  }
 
-  usleep(1000*300);
-  ReadAllSettingsFromBoard();
   return ret;
-
 }
 
 //========================================================= ACQ control

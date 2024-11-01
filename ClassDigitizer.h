@@ -73,6 +73,10 @@ class Digitizer{
     int ProgramBoard_PSD() ; 
     int ProgramBoard_QDC() ;
 
+    int ProgramChannel_PHA(short ch) ; /// program a default PHA Channel for Si-detector, ch = -1 for all channel
+    int ProgramChannel_PSD(short ch) ; /// program a default PSD Channel for Si-detector, ch = -1 for all channel
+    int ProgramChannel_QDC(short group) ; /// program a default QDC group for Si-detector, ch = -1 for all group
+
   public:
     Digitizer(); /// no digitizer open
     Digitizer(int boardID, int portID = 0, bool program = false, bool verbose = false); 
