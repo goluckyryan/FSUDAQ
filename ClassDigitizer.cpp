@@ -144,23 +144,23 @@ int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose
           ModelType = ModelTypeCode::VME;
           tick2ns = 16.0; ///ns -> 62.5 MSamples/s
           
-          std::string ROC = BoardInfo.ROC_FirmwareRel;
-          std::string AMC = BoardInfo.AMC_FirmwareRel;
+          // std::string ROC = BoardInfo.ROC_FirmwareRel;
+          // std::size_t pos = ROC.find(" - ");
+          // std::string versionROCStr = (pos != std::string::npos) ? ROC.substr(0, pos) : "";
+          // double versionROC = 0.0;
+          // if (!versionROCStr.empty()) versionROC = std::stod(versionROCStr); 
+          // printf("   QDC ROC version : %.2f \n", versionROC);
 
-          std::size_t pos = ROC.find(" - ");
-          std::string versionROCStr = (pos != std::string::npos) ? ROC.substr(0, pos) : "";
-          pos = AMC.find(" - ");
+          std::string AMC = BoardInfo.AMC_FirmwareRel;
+          std::size_t pos = AMC.find(" - ");
           std::string versionAMCStr = (pos != std::string::npos) ? AMC.substr(0, pos) : "";
 
-          double versionROC = 0.0;
           double versionAMC = 0.0;
-          if (!versionROCStr.empty()) versionROC = std::stod(versionROCStr); 
           if (!versionAMCStr.empty()) versionAMC = std::stod(versionAMCStr);
 
-          printf("   QDC ROC version : %.2f \n", versionROC);
           printf("   QDC AMC version : %.2f \n", versionAMC);
-          if( versionROC <= 4.25 || versionAMC <= 135.15 ){
-            printf("   QDC ROC or AMC version not support OverThreshold Width.\n");
+          if( versionAMC < 135.17 ){
+            printf("   QDC AMC version not support OverThreshold Width.\n");
             hasOverThresholdWidth = false;
           }else{
             hasOverThresholdWidth = true;
