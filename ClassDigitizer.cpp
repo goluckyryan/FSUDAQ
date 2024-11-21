@@ -142,8 +142,31 @@ int Digitizer::OpenDigitizer(int boardID, int portID, bool program, bool verbose
           NCoupledCh = NumRegChannel;
           isInputChEqRegCh = false;
           ModelType = ModelTypeCode::VME;
-          tick2ns = 16.0; break; ///ns -> 62.5 MSamples/s
-        }
+          tick2ns = 16.0; ///ns -> 62.5 MSamples/s
+          
+          std::string ROC = BoardInfo.ROC_FirmwareRel;
+          std::string AMC = BoardInfo.AMC_FirmwareRel;
+
+          std::size_t pos = ROC.find(" - ");
+          std::string versionROCStr = (pos != std::string::npos) ? ROC.substr(0, pos) : "";
+          pos = AMC.find(" - ");
+          std::string versionAMCStr = (pos != std::string::npos) ? AMC.substr(0, pos) : "";
+
+          double versionROC = 0.0;
+          double versionAMC = 0.0;
+          if (!versionROCStr.empty()) versionROC = std::stod(versionROCStr); 
+          if (!versionAMCStr.empty()) versionAMC = std::stod(versionAMCStr);
+
+          printf("   QDC ROC version : %.2f \n", versionROC);
+          printf("   QDC AMC version : %.2f \n", versionAMC);
+          if( versionROC <= 4.25 || versionAMC <= 135.15 ){
+            printf("   QDC ROC or AMC version not support OverThreshold Width.\n");
+            hasOverThresholdWidth = false;
+          }else{
+            hasOverThresholdWidth = true;
+          }
+
+        }; break;
         default : tick2ns = 4.0; break;
       }
 
@@ -777,6 +800,7 @@ void Digitizer::WriteRegister (Reg registerAddress, uint32_t value, int ch, bool
   }
   
   if( registerAddress.GetRWType() == RW::ReadONLY ) return;
+  if( !hasOverThresholdWidth && registerAddress == DPP::QDC::OverThresholdWidth ) return ;
   
   ret = CAEN_DGTZ_WriteRegister(handle, registerAddress.ActualAddress(ch), value);
 
@@ -820,6 +844,8 @@ uint32_t Digitizer::ReadRegister(Reg registerAddress, unsigned short ch, bool is
   if( !isConnected )  return 0;
   if( registerAddress.GetRWType() == RW::WriteONLY ) return 0;
   // if( registerAddress == DPP::QDC::RecordLength_W ) return 0;
+
+  if( !hasOverThresholdWidth && registerAddress == DPP::QDC::OverThresholdWidth ) return 0;
 
   ret = CAEN_DGTZ_ReadRegister(handle, registerAddress.ActualAddress(ch), &returnData);
   

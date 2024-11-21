@@ -795,7 +795,7 @@ namespace DPP {
     const Reg DPPAlgorithmControl         ("DPPAlgorithmControl"           , 0x1040, RW::ReadWrite, false, {}); /// R/W
     const Reg TriggerHoldOffWidth         ("Trigger Hold-off width"        , 0x1074, RW::ReadWrite, false, 0xFFFF, 1); /// R/W
     const Reg TRGOUTWidth                 ("Trigger out width"             , 0x1078, RW::ReadWrite, false, 0xFFFF, 1); /// R/W
-    //const Reg OverThresholdWidth          ("Over Threshold width"          , 0x107C, RW::ReadWrite, false, 0xFFFF, 1); /// R/W // need firmware version 4.25 & 135.17
+    const Reg OverThresholdWidth          ("Over Threshold width"          , 0x107C, RW::ReadWrite, false, 0xFFFF, 1); /// R/W // need firmware version 4.25 & 135.17
     const Reg GroupStatus_R               ("Group Status"                  , 0x1088, RW::ReadONLY,  false, {});  /// R/
     const Reg AMCFirmwareRevision_R       ("AMC firmware version"          , 0x108C, RW::ReadONLY,  false, {});  /// R/
     const Reg DCOffset                    ("DC offset"                     , 0x1098, RW::ReadWrite, false, 0xFFFF, -1); /// R/W
@@ -821,7 +821,7 @@ namespace DPP {
       const std::pair<unsigned short, unsigned short> ChargeSensitivity = {3, 0} ; /// length, smallest pos
       const std::pair<unsigned short, unsigned short> InternalTestPulse = {1, 4};
       const std::pair<unsigned short, unsigned short> TestPulseRate = {2, 5};
-      //const std::pair<unsigned short, unsigned short> OverThresholdWitdhEnable = {1, 7}; ///need firmware version 4.25 & 135.17
+      const std::pair<unsigned short, unsigned short> OverThresholdWitdhEnable = {1, 7}; ///need firmware version 4.25 & 135.17
       const std::pair<unsigned short, unsigned short> ChargePedestal = {1, 8};
       const std::pair<unsigned short, unsigned short> InputSmoothingFactor = {3, 12};
       const std::pair<unsigned short, unsigned short> Polarity = {1, 16};
@@ -937,7 +937,7 @@ const std::vector<Reg> RegisterChannelList_QDC = {
   DPP::QDC::DPPAlgorithmControl,
   DPP::QDC::TriggerHoldOffWidth,
   DPP::QDC::TRGOUTWidth,
-  //DPP::QDC::OverThresholdWidth,
+  DPP::QDC::OverThresholdWidth,
   DPP::QDC::GroupStatus_R,
   DPP::QDC::AMCFirmwareRevision_R,
   DPP::QDC::DCOffset,

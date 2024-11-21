@@ -2760,13 +2760,22 @@ void DigiSettingsPanel::SetUpChannel_QDC(){
 
     SetUpCheckBox(chkDisableSelfTrigger[ID][numGroup],     "Disable Self Trigger ", triggerLayout, 0, 1, DPP::QDC::DPPAlgorithmControl, DPP::QDC::Bit_DPPAlgorithmControl::DisableSelfTrigger);    
     SetUpCheckBox(chkDisableTriggerHysteresis[ID][numGroup],   "Disbale Trig. Hysteresis ", triggerLayout, 2, 1, DPP::QDC::DPPAlgorithmControl, DPP::QDC::Bit_DPPAlgorithmControl::DisableTriggerHysteresis, -1, 2);
+
     SetUpComboBoxBit(cbTrigMode[ID][numGroup], "Trig. Mode : ", triggerLayout, 0, 2, DPP::QDC::Bit_DPPAlgorithmControl::ListTrigMode, DPP::QDC::DPPAlgorithmControl, DPP::QDC::Bit_DPPAlgorithmControl::TriggerMode);
     SetUpSpinBox(sbTriggerHoldOff[ID][numGroup],  "Trig. Holdoff [ns] : ",   triggerLayout, 2, 2, DPP::QDC::TriggerHoldOffWidth);
     SetUpSpinBox(sbShapedTrigWidth[ID][numGroup], "Trig. Out Width [ns] : ", triggerLayout, 3, 2, DPP::QDC::TRGOUTWidth);
+    
+    int rowID = 4;
+    if( digi[ID]->HasOverThresholdWidth_QDC() ){
+      SetUpCheckBox(chkOverthreshold[ID][numGroup], "Enable OverThreshold Width ", triggerLayout, rowID, 1, DPP::QDC::DPPAlgorithmControl, DPP::QDC::Bit_DPPAlgorithmControl::OverThresholdWitdhEnable);
+      SetUpSpinBox(sbOverThresholdWidth[ID][numGroup], "OverThreshold Width [ns] :", triggerLayout, rowID, 2, DPP::QDC::OverThresholdWidth);
+      rowID ++;
+    }
+
 
     /// Trigger Threshold
     QGroupBox * widget = new QGroupBox("Threshold [LSB]", triggerBox);
-    triggerLayout->addWidget(widget, 4, 0, 1, 4);
+    triggerLayout->addWidget(widget, rowID, 0, 1, 4);
 
     QGridLayout * dcLayout = new QGridLayout(widget);
     dcLayout->setSpacing(2);
@@ -3025,7 +3034,7 @@ void DigiSettingsPanel::SetUpChannel_QDC(){
     QTabWidget * trigTab = new QTabWidget(this);
     trigLayout->addWidget(trigTab);
 
-    QStringList tabName = {"Common Settings", "Threshold", "Others"};
+    QStringList tabName = {"Common Settings", "Threshold", "OverThreshold Width", "Others"};
 
     const int nTab = tabName.count();
 
@@ -3105,6 +3114,20 @@ void DigiSettingsPanel::SetUpChannel_QDC(){
         }
 
         if( i == 2 ){
+
+          if( digi[ID]->HasOverThresholdWidth_QDC() ){
+            if( ch == 0 ){
+              QLabel * lb0 = new QLabel("OverThreshold Width [ns]", this); lb0->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb0, 0, 4);
+            }
+            SetUpCheckBox(chkOverthreshold[ID][ch],   "Enable OverThreshold Width ",    tabLayout, ch+1, 1, DPP::QDC::DPPAlgorithmControl, DPP::QDC::Bit_DPPAlgorithmControl::OverThresholdWitdhEnable, ch);    
+            SetUpSpinBox(sbOverThresholdWidth[ID][ch],   "", tabLayout, ch+1, 3, DPP::QDC::OverThresholdWidth, ch);
+          }else{
+            QLabel * lb0 = new QLabel("OverThreshold Width not supported.", this); lb0->setAlignment(Qt::AlignHCenter); tabLayout->addWidget(lb0, 0, 1);
+          }
+
+        }
+
+        if( i == 3 ){
           SetUpCheckBox(chkDisableSelfTrigger[ID][ch],         "Disable Self Trigger ",     tabLayout, ch+1, 1, DPP::QDC::DPPAlgorithmControl, DPP::QDC::Bit_DPPAlgorithmControl::DisableSelfTrigger, ch);    
           SetUpCheckBox(chkDisableTriggerHysteresis[ID][ch],   "Disbale Trig. Hysteresis ", tabLayout, ch+1, 3, DPP::QDC::DPPAlgorithmControl, DPP::QDC::Bit_DPPAlgorithmControl::DisableTriggerHysteresis, ch, 2);
         }
@@ -3113,7 +3136,7 @@ void DigiSettingsPanel::SetUpChannel_QDC(){
     }
   }
 
-{//^================================== QDC 
+  {//^================================== QDC 
 
     QVBoxLayout *trapLayout = new QVBoxLayout(chTrap);
 
@@ -3172,7 +3195,7 @@ void DigiSettingsPanel::SetUpChannel_QDC(){
     }
   }
 
-{//^======================================== Others
+  {//^======================================== Others
     QVBoxLayout *otherLayout = new QVBoxLayout(chOthers);
 
     QTabWidget * othersTab = new QTabWidget(this);
@@ -3972,21 +3995,22 @@ void DigiSettingsPanel::SyncAllChannelsTab_QDC(){
   DebugPrint("%s", "DigiSettingsPanel");
   if( !enableSignalSlot ) return;
 
-  // SyncSpinBox(sbRecordLength);
   SyncSpinBox(sbPreTrigger);
   SyncSpinBox(sbDCOffset);
   SyncSpinBox(sbTriggerHoldOff);
   SyncSpinBox(sbShapedTrigWidth);
-  // SyncSpinBox(sbNumEventAgg);
   SyncSpinBox(sbShortGate);
   SyncSpinBox(sbGateOffset);
-  //SyncSpinBox(sbOverThresholdWidth);
   
   SyncCheckBox(chkDisableSelfTrigger);
   SyncCheckBox(chkDisableTriggerHysteresis);
-  //SyncCheckBox(chkOverthreshold);
   SyncCheckBox(chkChargePedestal);
   SyncCheckBox(chkTestPule);
+
+  if( digi[ID]->HasOverThresholdWidth_QDC() ){
+    SyncSpinBox(sbOverThresholdWidth);
+    SyncCheckBox(chkOverthreshold);
+  }
 
   SyncComboBox(cbPolarity);
   SyncComboBox(cbRCCR2Smoothing);
@@ -4081,7 +4105,7 @@ void DigiSettingsPanel::UpdateSettings_QDC(){
     UpdateSpinBox(sbShapedTrigWidth[ID][grp],    DPP::QDC::TRGOUTWidth, grp);
     UpdateSpinBox(sbShortGate[ID][grp],          DPP::QDC::GateWidth, grp);
     UpdateSpinBox(sbGateOffset[ID][grp],         DPP::QDC::GateOffset, grp);
-    //UpdateSpinBox(sbOverThresholdWidth[ID][grp], DPP::QDC::OverThresholdWidth, grp);
+
 
     uint32_t subChMask = digi[ID]->GetSettingFromMemory(DPP::QDC::SubChannelMask, grp);
 
@@ -4104,10 +4128,13 @@ void DigiSettingsPanel::UpdateSettings_QDC(){
 
     chkDisableSelfTrigger[ID][grp]->setChecked(       Digitizer::ExtractBits(dpp, DPP::QDC::Bit_DPPAlgorithmControl::DisableSelfTrigger) );
     chkDisableTriggerHysteresis[ID][grp]->setChecked( Digitizer::ExtractBits(dpp, DPP::QDC::Bit_DPPAlgorithmControl::DisableTriggerHysteresis) );
-    //chkOverthreshold[ID][grp]->setChecked(            Digitizer::ExtractBits(dpp, DPP::QDC::Bit_DPPAlgorithmControl::OverThresholdWitdhEnable) );
     chkChargePedestal[ID][grp]->setChecked(           Digitizer::ExtractBits(dpp, DPP::QDC::Bit_DPPAlgorithmControl::ChargePedestal));
     chkTestPule[ID][grp]->setChecked(                 Digitizer::ExtractBits(dpp, DPP::QDC::Bit_DPPAlgorithmControl::InternalTestPulse));
 
+    if( digi[ID]->HasOverThresholdWidth_QDC() ) {
+      UpdateSpinBox(sbOverThresholdWidth[ID][grp], DPP::QDC::OverThresholdWidth, grp);
+      chkOverthreshold[ID][grp]->setChecked(            Digitizer::ExtractBits(dpp, DPP::QDC::Bit_DPPAlgorithmControl::OverThresholdWitdhEnable) );
+    }
 
     uint32_t dcOffSet_low = digi[ID]->GetSettingFromMemory(DPP::QDC::DCOffset_LowCh, grp);
 

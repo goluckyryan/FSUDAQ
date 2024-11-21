@@ -60,6 +60,7 @@ class Digitizer{
     bool         isSettingFileExist;         /// 
     bool         isSettingFileUpdate;
     bool         isSettingFilledinMemeory; /// false for disabled ReadAllSettingFromBoard()   
+    bool         hasOverThresholdWidth;  /// for QDC
     unsigned int setting[SETTINGSIZE];     /// Setting, 4bytes x 2048 = 8192 bytes
     
     //^-------- other protected functions
@@ -152,6 +153,7 @@ class Digitizer{
     int         GetErrorCode()               const {return ret;}
     unsigned int GetChMemSizekSample()       const {return MemorySizekSample;}
     std::string GetFamilyName()              const {return familyName;}
+    bool        HasOverThresholdWidth_QDC()  const {return hasOverThresholdWidth;}
     
     //^================ Setting 
     Reg FindRegister(uint32_t address);
