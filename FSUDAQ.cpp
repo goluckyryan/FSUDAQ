@@ -22,7 +22,7 @@
 #include "analyzers/NeutronGamma.h"
 #include "analyzers/Cross.h"
 
-std::vector<std::string> onlineAnalyzerList = {"Coincident","Splie-Pole", "Encore", "MUSICS", "Neutron-Gamma", "Cross"};
+std::vector<std::string> onlineAnalyzerList = {"Coincident","Split-Pole", "Encore", "MUSICS", "Neutron-Gamma", "Cross"};
 
 FSUDAQ::FSUDAQ(QWidget *parent) : QMainWindow(parent){
   DebugPrint("%s", "FSUDAQ");
@@ -495,8 +495,11 @@ void FSUDAQ::SaveProgramSettings(){
   rawDataPath = leDataPath->text();
 
   QFile file(programSettingsFilePath);
-  
-  file.open(QIODevice::Text | QIODevice::WriteOnly);
+
+  if( !file.open(QIODevice::Text | QIODevice::WriteOnly) ){
+    LogMsg("<font style=\"color:red;\">Failed to save program settings to <b>" + programSettingsFilePath + "</b>.</font>");
+    return;
+  }
 
   file.write((rawDataPath+"\n").toStdString().c_str());
   file.write((influxIP+"\n").toStdString().c_str());
@@ -510,7 +513,7 @@ void FSUDAQ::SaveProgramSettings(){
   file.write("//------------end of file.\n");
   
   file.close();
-  LogMsg("Saved program settings to <b>"+ programSettingsFilePath + "<b>.");
+  LogMsg("Saved program settings to <b>"+ programSettingsFilePath + "</b>.");
 
 }
 
@@ -562,14 +565,17 @@ void FSUDAQ::SaveLastRunFile(){
   prefix = lePrefix->text();
   lePrefix->setStyleSheet("");
 
-  file.open(QIODevice::Text | QIODevice::WriteOnly);
+  if( !file.open(QIODevice::Text | QIODevice::WriteOnly) ){
+    LogMsg("<font style=\"color:red;\">Failed to save last run file to <b>" + rawDataPath + "/lastRun.sh</b>.</font>");
+    return;
+  }
   file.write(("prefix=" + prefix + "\n").toStdString().c_str());
   file.write(("runID=" + QString::number(runID) + "\n").toStdString().c_str());
   file.write(("elogID=" + QString::number(elogID) + "\n").toStdString().c_str());
   file.write("//------------end of file.");
   
   file.close();
-  LogMsg("Saved program settings to <b>"+ rawDataPath + "/lastRun.sh<b>.");
+  LogMsg("Saved program settings to <b>"+ rawDataPath + "/lastRun.sh</b>.");
 
 }
 
@@ -594,7 +600,7 @@ void FSUDAQ::OpenDigitizers(){
 
     if( !file.open(QIODevice::Text | QIODevice::ReadOnly) ) {
       LogMsg("<b>" + a4818Path + "</b> not found.");
-      LogMsg("Please create such file and put the a4818 PIDs inseperate lines.");
+      LogMsg("Please create such file and put the a4818 PIDs in separate lines.");
       cbOpenDigitizers->setCurrentIndex(0);
       return;
     }else{
@@ -668,13 +674,13 @@ void FSUDAQ::OpenDigitizers(){
   logMsgHTMLMode = true;
 
   if( nDigi == 0 ) {
-    LogMsg(QString("Done seraching. No digitizer found from port 0 to ") +  QString::number(MaxNPorts) + " and board 0 to " + QString::number(MaxNBoards) + ".");
+    LogMsg(QString("Done searching. No digitizer found from port 0 to ") +  QString::number(MaxNPorts) + " and board 0 to " + QString::number(MaxNBoards) + ".");
     cbOpenDigitizers->setCurrentIndex(0);
     return;
   }else{
-    if( cbOpenMethod->currentData().toInt() == 0 ) LogMsg(QString("Done seraching. Found %1 digitizer(s). Opening digitizer(s)....").arg(nDigi));
-    if( cbOpenMethod->currentData().toInt() == 1 ) LogMsg(QString("Done seraching. Found %1 digitizer(s). Opening digitizer(s) and program default....").arg(nDigi));
-    if( cbOpenMethod->currentData().toInt() == 2 ) LogMsg(QString("Done seraching. Found %1 digitizer(s). Opening digitizer(s) and load settings....").arg(nDigi));    
+    if( cbOpenMethod->currentData().toInt() == 0 ) LogMsg(QString("Done searching. Found %1 digitizer(s). Opening digitizer(s)....").arg(nDigi));
+    if( cbOpenMethod->currentData().toInt() == 1 ) LogMsg(QString("Done searching. Found %1 digitizer(s). Opening digitizer(s) and load settings....").arg(nDigi));
+    if( cbOpenMethod->currentData().toInt() == 2 ) LogMsg(QString("Done searching. Found %1 digitizer(s). Opening digitizer(s) and program default....").arg(nDigi));    
   }
   
   digi = new Digitizer * [nDigi];
@@ -1063,8 +1069,8 @@ void FSUDAQ::UpdateScalar(){
       
       if( digi[iDigi]->GetInputChannelOnOff(i) == true ) {
         // printf(" %3d %2d | %7.2f %7.2f \n", digi[iDigi]->GetSerialNumber(), i, digi[iDigi]->GetData()->TriggerRate[i], digi[iDigi]->GetData()->NonPileUpRate[i]);
-        QString a = QString::number(digi[iDigi]->GetData()->TriggerRate[i], 'f', 2);
-        QString b = QString::number(digi[iDigi]->GetData()->NonPileUpRate[i], 'f', 2);
+        a = QString::number(digi[iDigi]->GetData()->TriggerRate[i], 'f', 2);
+        b = QString::number(digi[iDigi]->GetData()->NonPileUpRate[i], 'f', 2);
         leTrigger[iDigi][i]->setText(a);
         leAccept[iDigi][i]->setText(b);
 
@@ -1119,6 +1125,7 @@ void FSUDAQ::CleanUpScalar(){
   }
   delete [] leTrigger;
   leTrigger = nullptr;
+  delete [] leAccept;
   leAccept = nullptr;
 
   //Clean up QLabel
@@ -1438,7 +1445,7 @@ void FSUDAQ::SetSyncMode(){
   
   connect(bnMethod1, &QPushButton::clicked, [&](){ /// Software TRG-OUT --> TRG-IN
     LogMsg("Set Software TRG-OUT -> TRG-IN");
-    LogMsg("Set master saftware ACQ, internal clock.");
+    LogMsg("Set master software ACQ, internal clock.");
     LogMsg("Set slaves TRG-IN, external clock");
     digi[0]->WriteRegister(DPP::AcquisitionControl, 0);
     digi[0]->WriteRegister(DPP::FrontPanelIOControl, 0x10000); //RUN
@@ -1452,7 +1459,7 @@ void FSUDAQ::SetSyncMode(){
   
   connect(bnMethod2, &QPushButton::clicked, [&](){ /// Software TRG-OUT --> S-IN
     LogMsg("Set Software TRG-OUT -> S-IN");
-    LogMsg("Set master saftware ACQ, internal clock.");
+    LogMsg("Set master software ACQ, internal clock.");
     LogMsg("Set slaves S-IN, external clock");
     digi[0]->WriteRegister(DPP::AcquisitionControl, 0);
     digi[0]->WriteRegister(DPP::FrontPanelIOControl, 0x10000); //RUN
@@ -1469,7 +1476,8 @@ void FSUDAQ::SetSyncMode(){
     LogMsg("Set master external S-IN, internal clock.");
     LogMsg("Set slaves S-IN, external clock");
     digi[0]->WriteRegister(DPP::AcquisitionControl, 0x01);
-    for(unsigned int i = 0; i < nDigi; i++){
+    digi[0]->WriteRegister(DPP::FrontPanelIOControl, 0x30000); // S-IN
+    for(unsigned int i = 1; i < nDigi; i++){
       digi[i]->WriteRegister(DPP::AcquisitionControl, 0x41);
       digi[i]->WriteRegister(DPP::FrontPanelIOControl, 0x30000); // S-IN
     }
@@ -1661,7 +1669,7 @@ bool FSUDAQ::CommentDialog(bool isStartRun){
   if(result == QDialog::Accepted ){
     if( isStartRun ){
       startComment = lineEdit->text();
-      if( startComment == "") startComment = "No commet was typed.";
+      if( startComment == "") startComment = "No comment was typed.";
       
       if( needManualComment ){
         int minute = cbAutoRun->currentData().toInt();
@@ -1676,7 +1684,7 @@ bool FSUDAQ::CommentDialog(bool isStartRun){
       leRunID->setText(QString::number(runID));
     }else{
       stopComment = lineEdit->text();
-      if( stopComment == "") stopComment = "No commet was typed.";
+      if( stopComment == "") stopComment = "No comment was typed.";
       stopComment = "Stop Comment: " + stopComment;
       leComment->setText(stopComment);
     }
@@ -1872,7 +1880,7 @@ void FSUDAQ::OpenAnalyzer(){
     if( id >= 0 ){
       onlineAnalyzer->show();
       onlineAnalyzer->activateWindow();
-      if( isACQStarted ) onlineAnalyzer->stopTimer();
+      if( isACQStarted ) onlineAnalyzer->startTimer();
     }
   }
 
@@ -2060,7 +2068,7 @@ void FSUDAQ::WriteElog(QString htmlText, QString subject, QString category, int 
   if( runNumber > 0 ) arg << "-a" << "RunNo=" + QString::number(runNumber);
   if( category != "" ) arg << "-a" << "Category=" + category;
   arg << "-a" << "Subject=" + subject 
-      << "-n " << "2" <<  htmlText  ;
+      << "-n" << "2" <<  htmlText  ;
   QProcess elogBash(this);
   elogBash.start("elog", arg); 
   elogBash.waitForFinished();
