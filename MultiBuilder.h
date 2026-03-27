@@ -1,11 +1,23 @@
 #ifndef MuLTI_BUILDER_H
 #define MuLTI_BUILDER_H
 
+#include <queue>
 #include "ClassData.h"
 #include "Hit.h"
 
 #define MaxNEvent 100000 // circular, this number should be at least nDigi * MaxNChannel * MaxNData
 
+struct ChannelEntry {
+  unsigned long long timestamp;
+  int  digiIdx;  // index into data[]
+  int  chIdx;    // channel index within that digitizer
+  long absIndex; // absolute index = LoopIndex*dataSize + DataIndex
+
+  // min-heap comparator (smallest timestamp on top)
+  bool operator>(const ChannelEntry& o) const { return timestamp > o.timestamp; }
+  // max-heap comparator (largest timestamp on top, for backward build)
+  bool operator<(const ChannelEntry& o) const { return timestamp < o.timestamp; }
+};
 
 class MultiBuilder {
 
@@ -32,7 +44,7 @@ public:
   std::vector<int> GetDigiIDList() const {return idList;}
 
   void BuildEvents(bool isFinal = false, bool skipTrace = false, bool verbose = false);
-  void BuildEventsBackWard(int maxNumEvent = 100, bool verbose = false); // always skip trace, for faster online building 
+  void BuildEventsBackWard(int maxNumEvent = 100, bool verbose = false); // always skip trace, for faster online building
 
   void ClearEvents();
   void PrintStat();
@@ -49,44 +61,42 @@ private:
   std::vector<int> idList;
   std::vector<int> tick2ns;
   const unsigned short nData;
-  Data ** data; // assume all data has MaxNChannel (16) 
-  int numTotCh; // number of total channel = sum digi[i]->GetNChannel()
+  Data ** data;
+  int numTotCh;
 
   std::vector<uShort> dataSize;
 
   unsigned short timeWindow;
   unsigned long long leftOverTime;
-  unsigned long long breakTime; // timestamp for breaking the event builder
+  unsigned long long breakTime;
+  unsigned long long timeJump;
+  unsigned long long lastEventTime;
 
-  unsigned long long timeJump; //time diff for a time jump, default is 1e8 ns
-  unsigned long long lastEventTime; // timestamp for detect time jump 
+  // Forward build: persistent min-heap (smallest timestamp on top)
+  std::priority_queue<ChannelEntry,
+                      std::vector<ChannelEntry>,
+                      std::greater<ChannelEntry>> pq;
 
-  // int loopIndex[MaxNDigitizer][MaxNChannels];
-  long nextIndex[MaxNDigitizer][MaxNChannels]; // loopIndex * dataSize + index
+  // Backward build: max-heap (largest timestamp on top), re-init each call
+  std::priority_queue<ChannelEntry,
+                      std::vector<ChannelEntry>,
+                      std::less<ChannelEntry>> pqBack;
 
-  int nExhaushedCh;
-  bool chExhaused[MaxNDigitizer][MaxNChannels];
+  // Per-channel tracking for persistent forward heap
+  long nextForwardIndex[MaxNDigitizer][MaxNChannels]; // next abs index to push (-1 = uninit)
+  bool inHeap[MaxNDigitizer][MaxNChannels];           // true if channel currently has entry in pq
 
-  void FindEarlistTimeAndCh(bool verbose = false); // search through the nextIndex
-  unsigned long long earlistTime;
-  int earlistDigi;
-  int earlistCh;
-  void FindLatestTimeAndCh(bool verbose = false); // search through the nextIndex
-  unsigned long long latestTime;
-  int latestDigi;
-  int latestCh;
-
-  void FindEarlistTimeAmongLastData(bool verbose = false);
-  void FindLatestTimeOfData(bool verbose = false);
-
-  int lastBackWardIndex[MaxNDigitizer][MaxNChannels]; // abs. index
+  // Backward build watermark (prevent re-processing)
+  long lastBackWardIndex[MaxNDigitizer][MaxNChannels];
 
   bool forceStop;
 
+  void SeedForwardHeap();           // initial population of pq
+  void RefreshExhaustedChannels();  // re-seed channels that were empty but now have data
+  bool PushNextForward(int digiIdx, int chIdx, long nextAbs);
+  bool PushNextBackward(int digiIdx, int chIdx, long nextAbs);
+  Hit  MakeHit(const ChannelEntry& e, bool skipTrace) const;
+  unsigned long long GetSafeBuildLimit() const;
 };
-
-
-
-
 
 #endif
