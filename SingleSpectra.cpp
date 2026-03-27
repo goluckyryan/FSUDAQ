@@ -4,7 +4,8 @@
 #include <QGroupBox>
 #include <QStandardItemModel>
 #include <QLabel>
-#include <QRandomGenerator>
+#include <queue>
+#include <algorithm>
 // #include <QScreen>
 
 SingleSpectra::SingleSpectra(Digitizer ** digi, unsigned int nDigi, QString rawDataPath, QMainWindow * parent) : QMainWindow(parent){
@@ -239,99 +240,81 @@ void SingleSpectra::ChangeHistView(){
 
 void SingleSpectra::FillHistograms(){
 
-  // printf("%s | %d %d \n", __func__, chkIsFillHistogram->checkState(), isFillingHistograms);
-  if( this->isVisible() == false ) return;
+  if( !this->isVisible() ) return;
   if( chkIsFillHistogram->checkState() == Qt::Unchecked ) return;
-  if( isFillingHistograms) return;
+  if( isFillingHistograms ) return;
 
   isFillingHistograms = true;
-  // timespec t0, t1;
-  timespec ta, tb;
 
   printf("####################### SingleSpectra::%s\n", __func__);
-  // qDebug() << __func__ << "| thread:" << QThread::currentThreadId();
 
+  timespec ta, tb;
   clock_gettime(CLOCK_REALTIME, &ta);
 
-  std::vector<int> digiChList; // (digi*1000 + ch) 
-  std::vector<long> digiChLastIndex; // loop * dataSize + index; 
-  std::vector<int> digiChAvalibleData; 
-  std::vector<bool> digiChFilled;
-  std::vector<int> digiChFilledCount; 
+  // ---- max-heap: most-backlogged channel first
+  struct ChannelBacklog {
+    int  backlog;   // events queued for this cycle (capped at MaxHistFillPerChannel)
+    int  digiIdx;
+    int  chIdx;
+    long trueBacklog; // actual pending events, for the fill report
+    bool operator<(const ChannelBacklog& o) const { return backlog < o.backlog; }
+  };
+  std::priority_queue<ChannelBacklog> pq;
 
-
-  for( int ID = 0; ID < nDigi; ID++){
+  for( int ID = 0; ID < (int)nDigi; ID++){
     for( int ch = 0; ch < digi[ID]->GetNumInputCh(); ch++){
-      int temp1 = digi[ID]->GetData()->GetAbsDataIndex(ch); 
-      int temp2 = lastFilledIndex[ID][ch];
+      long tail = digi[ID]->GetData()->GetAbsDataIndex(ch);
+      long& last = lastFilledIndex[ID][ch];
 
-      if( temp1 <= temp2 ) continue;
-      digiChList.push_back( ID*1000 + ch ) ;
-      digiChLastIndex.push_back(temp1);
-      digiChAvalibleData.push_back(temp1-temp2);
-      digiChFilled.push_back(false);
-      digiChFilledCount.push_back(0);
+      if( tail <= last ) continue;
 
-      if( temp1 - temp2 > digi[ID]->GetData()->GetDataSize() ) lastFilledIndex[ID][ch] = temp1 - digi[ID]->GetData()->GetDataSize() ;
+      // clamp if ring buffer lapped the fill cursor
+      long dataSize = digi[ID]->GetData()->GetDataSize();
+      if( tail - last > dataSize ) last = tail - dataSize;
 
+      long trueBacklog = tail - last;
+      int  capped      = (int)std::min((long)MaxHistFillPerChannel, trueBacklog);
+      pq.push({capped, ID, ch, trueBacklog});
     }
   }
 
-  int nSize = digiChList.size();
-
-  if( nSize == 0 ) {
+  if( pq.empty() ){
     isFillingHistograms = false;
     return;
   }
 
-  // this method, small trigger rate channel will have more chance to fill all data
-  do{
-    size_t filledCount = 0;
-    for( size_t i = 0; i < digiChFilled.size() ; i++ ){
-      if( digiChFilled[i] ) filledCount ++;
-    }
-    if( filledCount == digiChFilled.size() ) break;
+  // ---- drain heap within time budget
+  while( isFillingHistograms && !pq.empty() ){
+    ChannelBacklog top = pq.top(); pq.pop();
+    int  ID   = top.digiIdx;
+    int  ch   = top.chIdx;
+    long tail = digi[ID]->GetData()->GetAbsDataIndex(ch);
 
-    int randomValue  = QRandomGenerator::global()->bounded(nSize);
-    if( digiChFilled[randomValue] == true ) continue;
-    
-    int ID = digiChList[randomValue] / 1000;
-    int ch = digiChList[randomValue] % 1000;
-    // printf(" -------------------- %d  /  %d | %d\n", randomValue, nSize-1, digiCh);
-
-    if( digiChLastIndex[randomValue] <= lastFilledIndex[ID][ch]  ) {
-      digiChFilled[randomValue] = true;
-      // printf("Digi-%2d ch-%2d all filled | %zu\n", ID, ch, digiChList.size());
+    lastFilledIndex[ID][ch]++;
+    if( lastFilledIndex[ID][ch] > tail ){
+      // cursor overtook tail (data stopped); done with this channel this cycle
       continue;
     }
 
-    lastFilledIndex[ID][ch] ++;
-    digiChFilledCount[randomValue]++;
-
-    uShort data = digi[ID]->GetData()->GetEnergy(ch, lastFilledIndex[ID][ch]);
-    
-    hist[ID][ch]->Fill( data );
+    uShort energy = digi[ID]->GetData()->GetEnergy(ch, lastFilledIndex[ID][ch]);
+    hist[ID][ch]->Fill(energy);
     if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_PSD_CODE ){
       uShort e2 = digi[ID]->GetData()->GetEnergy2(ch, lastFilledIndex[ID][ch]);
-      hist[ID][ch]->Fill( e2, 1);
+      hist[ID][ch]->Fill(e2, 1);
     }
-    hist2D[ID]->Fill(ch, data);
+    hist2D[ID]->Fill(ch, energy);
 
-    // QCoreApplication::processEvents();
+    // re-insert with decremented backlog if this channel still has quota
+    if( top.backlog - 1 > 0 ) pq.push({top.backlog - 1, ID, ch, top.trueBacklog});
 
     clock_gettime(CLOCK_REALTIME, &tb);
-  }while( isFillingHistograms && (tb.tv_nsec - ta.tv_nsec)/1e6 + (tb.tv_sec - ta.tv_sec)*1e3 < maxFillTimeinMilliSec ); 
-
-  //*--------------- generate fillign report
-  for( size_t i = 0; i < digiChFilled.size() ; i++){
-    printf("Digi-%2d ch-%2d | event filled %d / %d\n", digiChList[i] / 1000, digiChList[i] % 1000, digiChFilledCount[i], digiChAvalibleData[i] );
-  }  
+    if( (tb.tv_nsec - ta.tv_nsec)/1e6 + (tb.tv_sec - ta.tv_sec)*1e3 >= maxFillTimeinMilliSec ) break;
+  }
 
   clock_gettime(CLOCK_REALTIME, &tb);
-  printf("total time : %8.3f ms\n", (tb.tv_nsec - ta.tv_nsec)/1e6 + (tb.tv_sec - ta.tv_sec)*1e3 );
+  printf("total time : %8.3f ms\n", (tb.tv_nsec - ta.tv_nsec)/1e6 + (tb.tv_sec - ta.tv_sec)*1e3);
 
   isFillingHistograms = false;
-
 }
 
 void SingleSpectra::ReplotHistograms(){
@@ -461,13 +444,3 @@ void SingleSpectra::LoadSetting(){
 
 }
 
-QVector<int> SingleSpectra::generateNonRepeatedCombination(int size) {
-  QVector<int> combination;
-  for (int i = 0; i < size; ++i) combination.append(i);
-
-  for (int i = 0; i < size - 1; ++i) {
-    int j = QRandomGenerator::global()->bounded(i, size);
-    combination.swapItemsAt(i, j);
-  }
-  return combination;
-}

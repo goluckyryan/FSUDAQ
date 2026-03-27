@@ -11,7 +11,6 @@
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QVector>
-#include <QRandomGenerator>
 
 #include "macro.h"
 #include "ClassDigitizer.h"
@@ -40,8 +39,6 @@ public:
 
   void SetMaxFillTime(unsigned short milliSec) { maxFillTimeinMilliSec = milliSec;}
   unsigned short GetMaxFillTime() const {return maxFillTimeinMilliSec;};
-
-  QVector<int> generateNonRepeatedCombination(int size);
 
   void ReplotHistograms();
 

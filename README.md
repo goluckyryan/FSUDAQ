@@ -13,27 +13,31 @@ It has scope (updated every half-sec), allow full control of the digitizer (exce
 
 It can be connected to InfluxDB v1.8+ and Elog.
 
-Each channel has it own 1D histogram. It will not be filled by default, but can enable it in the "Online Histgrams" panel. The binning of each histogram will be saved under the raw data path as singleSpectaSetting.txt
+Each channel has its own 1D histogram. It will not be filled by default, but can be enabled in the "Online Histograms" panel. The binning of each histogram will be saved under the raw data path as `HistogramSettings.txt`.
+
+Histogram filling uses a **max-heap (priority queue)** sorted by per-channel backlog, so the most-backlogged channel is always filled first. Each channel is capped at `MaxHistFillPerChannel` events per timer tick (default 1000) to bound memory and CPU usage.
 
 ## Wiki
 https://fsunuc.physics.fsu.edu/wiki/index.php/CAEN_digitizer
 
 # Online analyzer
-A Multi-builder (event builder that can build event across multiple digitizer) is made. It has normal event building code and also a backward event building code that build events from the latest data up to certain amont of event.
+A Multi-builder (event builder that can build events across multiple digitizers) is made. It has a normal forward event building mode and a backward event building mode that builds events from the latest data up to a certain number of events.
 
-A 1-D and 2-D histogram is avalible. In the 2-D histogram, graphical cuts can be created and rename.
+The MultiBuilder uses a **persistent min-heap (priority queue)** to find the earliest timestamp across all channels in O(1) time. This replaces the previous O(N_channels) linear scan and eliminates the per-event sort, giving O(N_hits × log N_channels) overall complexity.
 
-An online analyzer class is created as a template for online analysis. An example is the SplitPoleAnalyzer.h. It demo a 2-D histogram and a 1-D histogram, and the way to output the rates of cuts to influxDB.
+A 1-D and 2-D histogram is available. In the 2-D histogram, graphical cuts can be created and renamed.
 
-<span style="color:red;">Notice that, when the FSUDAQ is started, the online analyzer is not created, no event will be built. Once the online anlyzer is created and opened, event will be built, even the window is closed. </span>
+An online analyzer class is created as a template for online analysis. An example is the SplitPoleAnalyzer.h. It demos a 2-D histogram and a 1-D histogram, and the way to output the rates of cuts to InfluxDB.
+
+<span style="color:red;">Notice that, when the FSUDAQ is started, the online analyzer is not created, no event will be built. Once the online analyzer is created and opened, events will be built, even when the window is closed.</span>
 
 ## Create a custom online analyzer
 
-Under the analyzer folder, there are few examples can be followed. Teh idea is create a derivative class based on the Analyzer.h. To implement the new online analyzer, user need to modify a few things:
-- add the code file into FSUDAQ_At.pro
-- add the header to the top of FSUDAQ.cpp
-- edit the vector onlienAnalyzerList at th etop of FSUDAQ.cpp
-- edit the FSUDAQ::OpenAnalyzer()
+Under the analyzer folder, there are a few examples to follow. The idea is to create a derived class based on `Analyzer.h`. To implement a new online analyzer, modify the following:
+- add the code file into `FSUDAQ_Qt6.pro`
+- add the header to the top of `FSUDAQ.cpp`
+- edit the vector `onlineAnalyzerList` at the top of `FSUDAQ.cpp`
+- edit `FSUDAQ::OpenAnalyzer()`
 
 after that, we need to update the makefile by
 
@@ -84,7 +88,7 @@ User must setup the data path for data take. Without the data path, user still c
 
 # ToDo
 
-- Gaussians fitting for 1D Histogra
+- Gaussian fitting for 1D Histogram
 - Save Histogram?
 
 # Required / Development enviroment

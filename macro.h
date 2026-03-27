@@ -16,6 +16,7 @@
 #define ScalarUpdateinMiliSec  1000 // msec
 
 #define SingleHistogramFillingTime 900 // msec
+#define MaxHistFillPerChannel 1000     // max events filled per channel per timer tick
 
 #define MaxDisplayTraceTimeLength 20000 //ns
 #define ScopeUpdateMiliSec  200 // msec
