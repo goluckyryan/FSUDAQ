@@ -58,8 +58,8 @@ public:
       if( ret == CAEN_DGTZ_Success && !stop){
         digiMTX[ID].lock();
         digi->GetData()->DecodeBuffer(!isScope, 0);
-        if( isSaveData ) digi->GetData()->SaveData();
         digiMTX[ID].unlock();
+        if( isSaveData ) digi->GetData()->SaveData(); // raw buffer only; no lock needed
 
       }else{
         printf("ReadDataThread::%s------------ ret : %d \n", __func__, ret);

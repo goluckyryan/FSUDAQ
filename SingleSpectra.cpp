@@ -251,15 +251,9 @@ void SingleSpectra::FillHistograms(){
   timespec ta, tb;
   clock_gettime(CLOCK_REALTIME, &ta);
 
-  // ---- max-heap: most-backlogged channel first
-  struct ChannelBacklog {
-    int  backlog;   // events queued for this cycle (capped at MaxHistFillPerChannel)
-    int  digiIdx;
-    int  chIdx;
-    long trueBacklog; // actual pending events, for the fill report
-    bool operator<(const ChannelBacklog& o) const { return backlog < o.backlog; }
-  };
-  std::priority_queue<ChannelBacklog> pq;
+  // ---- build sorted work list: most-backlogged channel first
+  struct ChannelWork { int digiIdx; int chIdx; int quota; };
+  std::vector<ChannelWork> work;
 
   for( int ID = 0; ID < (int)nDigi; ID++){
     for( int ch = 0; ch < digi[ID]->GetNumInputCh(); ch++){
@@ -272,47 +266,49 @@ void SingleSpectra::FillHistograms(){
       long dataSize = digi[ID]->GetData()->GetDataSize();
       if( tail - last > dataSize ) last = tail - dataSize;
 
-      long trueBacklog = tail - last;
-      int  capped      = (int)std::min((long)MaxHistFillPerChannel, trueBacklog);
-      pq.push({capped, ID, ch, trueBacklog});
+      int quota = (int)std::min((long)MaxHistFillPerChannel, tail - last);
+      work.push_back({ID, ch, quota});
     }
   }
 
-  if( pq.empty() ){
+  if( work.empty() ){
     isFillingHistograms = false;
     return;
   }
 
-  // ---- drain heap within time budget
-  while( isFillingHistograms && !pq.empty() ){
-    ChannelBacklog top = pq.top(); pq.pop();
-    int  ID   = top.digiIdx;
-    int  ch   = top.chIdx;
-    long tail = digi[ID]->GetData()->GetAbsDataIndex(ch);
+  std::sort(work.begin(), work.end(),
+            [](const ChannelWork& a, const ChannelWork& b){ return a.quota > b.quota; });
 
-    lastFilledIndex[ID][ch]++;
-    if( lastFilledIndex[ID][ch] > tail ){
-      // cursor overtook tail (data stopped); done with this channel this cycle
-      continue;
+  // ---- batch fill: tight inner loop per channel, time-check every 64 events
+  int  fillCount = 0;
+  bool timeDone  = false;
+
+  for( const auto& w : work ){
+    if( !isFillingHistograms || timeDone ) break;
+
+    long tail      = digi[w.digiIdx]->GetData()->GetAbsDataIndex(w.chIdx);
+    int  remaining = w.quota;
+
+    while( remaining-- > 0 ){
+      long idx = ++lastFilledIndex[w.digiIdx][w.chIdx];
+      if( idx > tail ){ lastFilledIndex[w.digiIdx][w.chIdx]--; break; }
+
+      uShort energy = digi[w.digiIdx]->GetData()->GetEnergy(w.chIdx, idx);
+      hist[w.digiIdx][w.chIdx]->Fill(energy);
+      if( digi[w.digiIdx]->GetDPPType() == DPPTypeCode::DPP_PSD_CODE ){
+        uShort e2 = digi[w.digiIdx]->GetData()->GetEnergy2(w.chIdx, idx);
+        hist[w.digiIdx][w.chIdx]->Fill(e2, 1);
+      }
+      hist2D[w.digiIdx]->Fill(w.chIdx, energy);
+
+      if( (++fillCount & 63) == 0 ){
+        clock_gettime(CLOCK_REALTIME, &tb);
+        double elapsed = (tb.tv_sec - ta.tv_sec) * 1e3
+                       + (tb.tv_nsec - ta.tv_nsec) / 1e6;
+        if( elapsed >= maxFillTimeinMilliSec ){ timeDone = true; break; }
+      }
     }
-
-    uShort energy = digi[ID]->GetData()->GetEnergy(ch, lastFilledIndex[ID][ch]);
-    hist[ID][ch]->Fill(energy);
-    if( digi[ID]->GetDPPType() == DPPTypeCode::DPP_PSD_CODE ){
-      uShort e2 = digi[ID]->GetData()->GetEnergy2(ch, lastFilledIndex[ID][ch]);
-      hist[ID][ch]->Fill(e2, 1);
-    }
-    hist2D[ID]->Fill(ch, energy);
-
-    // re-insert with decremented backlog if this channel still has quota
-    if( top.backlog - 1 > 0 ) pq.push({top.backlog - 1, ID, ch, top.trueBacklog});
-
-    clock_gettime(CLOCK_REALTIME, &tb);
-    if( (tb.tv_nsec - ta.tv_nsec)/1e6 + (tb.tv_sec - ta.tv_sec)*1e3 >= maxFillTimeinMilliSec ) break;
   }
-
-  clock_gettime(CLOCK_REALTIME, &tb);
-  printf("total time : %8.3f ms\n", (tb.tv_nsec - ta.tv_nsec)/1e6 + (tb.tv_sec - ta.tv_sec)*1e3);
 
   isFillingHistograms = false;
 }
