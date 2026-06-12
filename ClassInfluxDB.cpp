@@ -2,6 +2,7 @@
 #include "macro.h"
 
 #include <regex>
+#include <sstream>
 
 InfluxDB::InfluxDB(){
   DebugPrint("%s", "InfluxDB");

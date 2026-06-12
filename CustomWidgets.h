@@ -52,7 +52,8 @@ class RSpinBox : public QDoubleSpinBox{
 
 //^====================================================
 class RComboBox : public QComboBox{
-  public : 
+  Q_OBJECT
+  public :
     RComboBox(QWidget * parent = nullptr): QComboBox(parent){
       setFocusPolicy(Qt::StrongFocus);
     }
